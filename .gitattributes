@@ -1,0 +1,2 @@
+# Preserve released specification bytes so MANIFEST.sha256 is stable.
+* -text
