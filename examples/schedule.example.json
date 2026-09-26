@@ -1,0 +1,41 @@
+{
+  "example_only": true,
+  "name": "每日常用查詢（草稿）",
+  "source_task_id": "00000000-0000-4000-8000-000000000001",
+  "query_ref": {
+    "id": "Q01",
+    "version": 1
+  },
+  "rule": {
+    "kind": "weekly",
+    "weekdays": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "time": "09:00",
+    "timezone": "Asia/Taipei"
+  },
+  "parameter_bindings": {
+    "record_code": {
+      "kind": "literal",
+      "value": "DEMO-001"
+    },
+    "from_time": {
+      "kind": "relative_date",
+      "window": "previous_day",
+      "boundary": "start_inclusive"
+    },
+    "to_time": {
+      "kind": "relative_date",
+      "window": "previous_day",
+      "boundary": "end_exclusive"
+    }
+  },
+  "notify_rule": {
+    "kind": "nonempty_on_change"
+  },
+  "enabled": false
+}

@@ -1,0 +1,16 @@
+{
+  "client_request_id": "00000000-0000-4000-8000-000000000002",
+  "type": "query",
+  "title": "示範：查詢結果的時間範圍不清楚",
+  "description": "合成範例：希望畫面顯示查詢起訖時間。",
+  "expected_result": "顯示包含起點、不包含終點的時間範圍。",
+  "app_version": "0.1.0",
+  "feature": "query_result",
+  "error_code": null,
+  "trace_id": "example-trace",
+  "include_context": {
+    "message_ids": [],
+    "task_ids": [],
+    "upload_ids": []
+  }
+}

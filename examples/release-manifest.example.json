@@ -1,0 +1,21 @@
+{
+  "format_version": 1,
+  "example_only": true,
+  "release_id": "00000000-0000-4000-8000-000000000003",
+  "app_id": "unit-helper",
+  "version": "0.1.1",
+  "release_sequence": 2,
+  "platform": "windows-x64",
+  "channel": "stable",
+  "package_path": "/unit-helper/v1/desktop/releases/00000000-0000-4000-8000-000000000003/package",
+  "size_bytes": 123456,
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "unpacked_bytes": 345678,
+  "min_launcher_version": "1.0.0",
+  "min_backend_api": "1.0",
+  "local_data_schema_min": 1,
+  "local_data_schema_max": 1,
+  "notes": "未簽章的格式示範；沒有實際更新包，正式 updater 必須拒絕。",
+  "published_at": "2026-09-25T00:00:00Z",
+  "expires_at": "2026-10-25T00:00:00Z"
+}

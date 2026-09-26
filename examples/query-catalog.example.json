@@ -1,0 +1,225 @@
+{
+  "format_version": "1.0",
+  "example_only": true,
+  "queries": [
+    {
+      "query_id": "Q01",
+      "version": 1,
+      "name": "待公司確認的常用查詢 1",
+      "description": "請填真實業務問題與口徑；此範例不可執行。",
+      "enabled": false,
+      "server_sql": null,
+      "approved_view": null,
+      "data_owner": null,
+      "scope_rule": null,
+      "parameter_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_code",
+          "from_time",
+          "to_time"
+        ],
+        "properties": {
+          "record_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "from_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "output_columns": [],
+      "timeout_seconds": 30,
+      "max_rows": 1000,
+      "max_bytes": 2097152,
+      "validation_cases": [],
+      "display": {
+        "purpose": "待公司補齊的日常查詢用途",
+        "example_prompt": "查詢指定代碼昨天的資料（合成問法，非真實業務定義）",
+        "display_order": 1,
+        "parameters": {
+          "record_code": {
+            "label": "查詢代碼（待公司確認）",
+            "help": "請填公司核准的查詢代碼",
+            "control": "text"
+          },
+          "from_time": {
+            "label": "開始時間（含）",
+            "help": "依公司核准時區",
+            "control": "datetime"
+          },
+          "to_time": {
+            "label": "結束時間（不含）",
+            "help": "需晚於開始時間",
+            "control": "datetime"
+          }
+        },
+        "date_range": {
+          "start_parameter": "from_time",
+          "end_parameter": "to_time",
+          "timezone": "Asia/Taipei",
+          "presets": [
+            "today",
+            "yesterday",
+            "custom"
+          ],
+          "default_preset": "yesterday"
+        }
+      }
+    },
+    {
+      "query_id": "Q02",
+      "version": 1,
+      "name": "待公司確認的常用查詢 2",
+      "description": "請填真實業務問題與口徑；此範例不可執行。",
+      "enabled": false,
+      "server_sql": null,
+      "approved_view": null,
+      "data_owner": null,
+      "scope_rule": null,
+      "parameter_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_code",
+          "from_time",
+          "to_time"
+        ],
+        "properties": {
+          "record_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "from_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "output_columns": [],
+      "timeout_seconds": 30,
+      "max_rows": 1000,
+      "max_bytes": 2097152,
+      "validation_cases": [],
+      "display": {
+        "purpose": "待公司補齊的日常查詢用途",
+        "example_prompt": "查詢指定代碼昨天的資料（合成問法，非真實業務定義）",
+        "display_order": 2,
+        "parameters": {
+          "record_code": {
+            "label": "查詢代碼（待公司確認）",
+            "help": "請填公司核准的查詢代碼",
+            "control": "text"
+          },
+          "from_time": {
+            "label": "開始時間（含）",
+            "help": "依公司核准時區",
+            "control": "datetime"
+          },
+          "to_time": {
+            "label": "結束時間（不含）",
+            "help": "需晚於開始時間",
+            "control": "datetime"
+          }
+        },
+        "date_range": {
+          "start_parameter": "from_time",
+          "end_parameter": "to_time",
+          "timezone": "Asia/Taipei",
+          "presets": [
+            "today",
+            "yesterday",
+            "custom"
+          ],
+          "default_preset": "yesterday"
+        }
+      }
+    },
+    {
+      "query_id": "Q03",
+      "version": 1,
+      "name": "待公司確認的常用查詢 3",
+      "description": "請填真實業務問題與口徑；此範例不可執行。",
+      "enabled": false,
+      "server_sql": null,
+      "approved_view": null,
+      "data_owner": null,
+      "scope_rule": null,
+      "parameter_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_code",
+          "from_time",
+          "to_time"
+        ],
+        "properties": {
+          "record_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "from_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "output_columns": [],
+      "timeout_seconds": 30,
+      "max_rows": 1000,
+      "max_bytes": 2097152,
+      "validation_cases": [],
+      "display": {
+        "purpose": "待公司補齊的日常查詢用途",
+        "example_prompt": "查詢指定代碼昨天的資料（合成問法，非真實業務定義）",
+        "display_order": 3,
+        "parameters": {
+          "record_code": {
+            "label": "查詢代碼（待公司確認）",
+            "help": "請填公司核准的查詢代碼",
+            "control": "text"
+          },
+          "from_time": {
+            "label": "開始時間（含）",
+            "help": "依公司核准時區",
+            "control": "datetime"
+          },
+          "to_time": {
+            "label": "結束時間（不含）",
+            "help": "需晚於開始時間",
+            "control": "datetime"
+          }
+        },
+        "date_range": {
+          "start_parameter": "from_time",
+          "end_parameter": "to_time",
+          "timezone": "Asia/Taipei",
+          "presets": [
+            "today",
+            "yesterday",
+            "custom"
+          ],
+          "default_preset": "yesterday"
+        }
+      }
+    }
+  ]
+}

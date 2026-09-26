@@ -1,0 +1,78 @@
+{
+  "spec_version": "2.2",
+  "mode": "mock",
+  "product": "UnitHelper",
+  "locale": "zh-TW",
+  "timezone": "Asia/Taipei",
+  "backend": {
+    "base_url": null,
+    "api_prefix": "/unit-helper/v1",
+    "authentication": "reuse_existing_company_login"
+  },
+  "assistant": {
+    "adapter": "existing_company_openai_client",
+    "enabled": false,
+    "company_base_url": null,
+    "assistant_ref": null,
+    "secret_ref": null,
+    "public_api_fallback": false
+  },
+  "oracle": {
+    "enabled": false,
+    "business_readonly_connection_ref": null,
+    "application_connection_ref": null,
+    "approved_query_ids": [
+      "Q01",
+      "Q02",
+      "Q03"
+    ]
+  },
+  "limits": {
+    "upload_bytes": 2097152,
+    "text_characters": 50000,
+    "csv_data_rows": 10000,
+    "csv_columns": 100,
+    "query_rows": 1000,
+    "query_result_bytes": 2097152,
+    "query_timeout_seconds": 30,
+    "assistant_calls_per_request": 6,
+    "concurrent_queries": 2,
+    "concurrent_assistant_calls": 2
+  },
+  "updates": {
+    "channel": "stable",
+    "check_mode": "user_initiated",
+    "manifest_host": null,
+    "require_signature": true,
+    "allow_unsigned": false
+  },
+  "scheduler": {
+    "location": "backend",
+    "enabled": false,
+    "tick_seconds": 30,
+    "lease_seconds": 60,
+    "renew_seconds": 20,
+    "misfire_policy": "coalesce_latest",
+    "misfire_window_hours": 24,
+    "overlap_policy": "skip"
+  },
+  "interaction": {
+    "default_mode": "normal",
+    "plan_enabled": true,
+    "choice_forms_enabled": true,
+    "planner_strategy": "fixed_forms",
+    "verified_side_effect_free_assistant": false,
+    "plan_ttl_hours": 24,
+    "execution_deadline_seconds": 300,
+    "max_plan_steps": 3,
+    "max_questions": 3,
+    "max_options": 6
+  },
+  "guided_queries": {
+    "enabled": true,
+    "include_headers_default": true,
+    "selection_scope": "current_page",
+    "clipboard_format": "unicode_tsv",
+    "clipboard_special_characters": "reject_and_offer_csv"
+  }
+}
