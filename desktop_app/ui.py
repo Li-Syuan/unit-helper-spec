@@ -9,7 +9,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from . import dialogs as messagebox
 from . import __version__
 from . import theme
 from .preferences import load_theme, save_theme

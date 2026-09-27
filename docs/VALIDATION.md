@@ -1,12 +1,12 @@
-# QA agent 0.11.0 驗證摘要
+# QA agent 0.11.1 驗證摘要
 
-本版新增原對話確認、查詢結果與自動工作，SQLite 升級 schema 4；沒有新增套件或虛擬環境。正式驗證使用 `D:/unit-helper-spec/.venv/Scripts/python.exe`，恰好 CPython 3.10.4、Windows x64。
+本版統一應用訊息框與原生標題列主題；沿用對話操作及 schema 4，沒有新遷移；沒有新增套件或虛擬環境。正式驗證使用 `D:/unit-helper-spec/.venv/Scripts/python.exe`，恰好 CPython 3.10.4、Windows x64。
 
 ## 本輪回歸
 
-2026-09-27 完整 **299 項測試通過，0 skipped**；命令、直譯器與完整輸出見 [development.json](validation/development.json)。`scripts/verify.py development` 的環境診斷、pip check、鎖檔一致性及完整 unittest 均通過。保留既有263項行為基準，新增36項操作服務與真Tk旅程測試；輸入区改為1～4行後同步更新展開／收回斷言。
+2026-09-27 完整 **304 項測試通過，0 skipped**；命令、直譯器與完整輸出見 [development.json](validation/development.json)。`scripts/verify.py development` 的環境診斷、pip check、鎖檔一致性及完整 unittest 均通過。保留299項基準，新增5項訊息框與原生標題列測試。
 
-首輪發現活動頁偏好未登記、條件式按鈕舊斷言及文字整理誤判為查詢，未記為通過；修正後重跑。獨立流程檢查發現舊修訂取消、新舊解析刷新、Plan／卡片交易及來源提示問題，均納入修正與測試。
+真Tk新增涵蓋：長訊息／主題切換、複製、預設取消與Escape、明確批准、巢狀grab恢復、剪貼簿失敗、原生API不支援及啟動fallback。長中文的Tk clipboard_get讀回出現分段編碼問題；以Windows原生CF_UNICODETEXT核對實際內容完整，沒有把讀回失敗直接當通過。
 
 29 個鎖定套件不變，沿用唯一開發環境。舊 [乾淨重建](validation/clean-rebuild.json) 與 [離線重建](validation/offline-rebuild.json) 各192項是既有0.8.0證據，不代表本輪重跑；不重建離線包。
 
@@ -35,7 +35,7 @@
 
 正式啟動 DPI 模式 system，本機 Windows 倍率150%。實際尺寸：1050×700邏輯→1575×1050，1280×860→1920×1290；最大化由可用工作區决定。原始截圖使用程式自身視窗及暫存合成資料，未擷取私人桌面。
 
-[顯示量測](validation/display-current.json) 與 [使用手冊四張精選畫面](USER-GUIDE.md#介面參考)。完整檢查圖存忽略目錄 artifacts/action-preview，不累積到Git。100／125／150／200%尺寸換算測試保留，真Windows100／125／200%與跨螢幕即時重排仍not_tested。
+[顯示量測](validation/display-current.json) 與 [使用手冊四張精選畫面](USER-GUIDE.md#介面參考)。本輪主視窗及錯誤提示的深淺原始截圖含原生標題列，存於忽略目錄 artifacts/dialog-preview；DWM設定在本機主視窗及提示框皆回傳成功，已目視確認標題列顏色。既有工作流程畫面量測保留；精選四張圖更新為當前工作區及提示框，不累積到Git。100／125／150／200%尺寸換算測試保留，真Windows100／125／200%與跨螢幕即時重排仍not_tested。
 
 ## 人工接手走查
 

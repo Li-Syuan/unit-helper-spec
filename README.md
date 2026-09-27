@@ -1,6 +1,6 @@
 # QA agent
 
-**0.11.0 · Windows x64 · Python 3.10.4 · Tkinter 桌面工作區**
+**0.11.1 · Windows x64 · Python 3.10.4 · Tkinter 桌面工作區**
 
 用一個桌面入口與公司助理對話、整理文字、查詢資料及安排本機排程。UI 與本機流程已完成；預設使用明確標示的合成資料，公司 chatbot、AD 與 Oracle 接線仍需公司資訊及實測。
 

@@ -66,5 +66,43 @@
   "maximized_physical": [
     2560,
     1494
+  ],
+  "dialog_chrome_0_11_1": [
+    {
+      "theme": "dark",
+      "main_dwm": {
+        "dark": true,
+        "caption": true,
+        "text": true,
+        "border": true,
+        "supported": true
+      },
+      "dialog_dwm": {
+        "dark": true,
+        "caption": true,
+        "text": true,
+        "border": true,
+        "supported": true
+      },
+      "close_visible": true
+    },
+    {
+      "theme": "light",
+      "main_dwm": {
+        "dark": true,
+        "caption": true,
+        "text": true,
+        "border": true,
+        "supported": true
+      },
+      "dialog_dwm": {
+        "dark": true,
+        "caption": true,
+        "text": true,
+        "border": true,
+        "supported": true
+      },
+      "close_visible": true
+    }
   ]
 }

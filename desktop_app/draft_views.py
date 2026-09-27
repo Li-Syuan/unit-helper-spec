@@ -1,7 +1,8 @@
 """Debounced, local-only composer recovery with stale-write fences."""
 import copy
 from concurrent.futures import ThreadPoolExecutor
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from . import dialogs as messagebox
 
 
 class DraftViews:

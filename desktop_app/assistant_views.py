@@ -2,7 +2,8 @@
 import copy
 import json
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from . import dialogs as messagebox
 from .branding import apply_child_icons
 from .gateways import GatewayError
 from .display import scroll_frame

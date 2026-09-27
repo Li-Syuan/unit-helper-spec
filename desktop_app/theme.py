@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 import tkinter as tk
 from tkinter import ttk
+from .window_chrome import apply_titlebar
 
 FONT = 'Microsoft JhengHei'
 _TOKENS = {
@@ -24,11 +25,18 @@ def palette(name):
 class Appearance:
     def __init__(self, root, name='dark'):
         self.root = root
+        root._qa_appearance=self
+        root.bind('<Map>',self._mapped,add='+')
+        root.bind_class('Toplevel','<Map>',self._mapped,add='+')
         self.style = ttk.Style(root)
         self.style.theme_use('clam')
         self.name = name
         self.colors = palette(name)
         self.configure(name)
+
+    def _mapped(self,event):
+        if isinstance(event.widget,(tk.Tk,tk.Toplevel)):
+            apply_titlebar(event.widget,self.name,self.colors)
 
     def configure(self, name):
         self.name = name
@@ -63,6 +71,7 @@ class Appearance:
         s.configure('Muted.TLabel',foreground=c.MUTED)
         s.configure('Title.TLabel',font=(FONT,16,'bold'))
         s.configure('Section.TLabel',font=(FONT,11,'bold'))
+        s.configure('DialogMark.TLabel',background=c.TINT,foreground=c.ACCENT,font=(FONT,20,'bold'),padding=6)
         s.configure('Surface.TLabel',background=c.SURFACE)
         s.configure('Empty.TLabel',background=c.SURFACE,foreground=c.MUTED)
         s.configure('Chip.TLabel',background=c.TINT,foreground=c.ACCENT,padding=(10,5),font=(FONT,10,'bold'))
@@ -125,7 +134,9 @@ class Appearance:
         if display:display.scale_widget(widget)
         sidebar=sidebar or getattr(widget,'_theme_role','')=='sidebar'
         role=getattr(widget,'_theme_role','')
-        if isinstance(widget,(tk.Tk,tk.Toplevel)): widget.configure(background=c.BG)
+        if isinstance(widget,(tk.Tk,tk.Toplevel)):
+            widget.configure(background=c.BG)
+            apply_titlebar(widget,self.name,c)
         elif isinstance(widget,tk.Text):
             widget.configure(background=c.SURFACE,foreground=c.INK,insertbackground=c.INK,
                 selectbackground=c.TINT,selectforeground=c.INK,highlightbackground=c.BORDER,highlightcolor=c.ACCENT)

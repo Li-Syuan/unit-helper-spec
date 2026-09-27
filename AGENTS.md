@@ -61,3 +61,7 @@ Store 升級至 schema 4，schema 1／2／3 先以 SQLite backup 備份，再同
 ## 開發分工
 
 允許 Coordinator 委派 Desktop、Adapters（既有 Backend 識別）與 QA，**含 Coordinator 自己的執行工作，最多兩個工作包同時進行**。每包指定可寫路徑、契約、輸入、依賴與驗收；根設定、鎖檔、遷移與整合由 Coordinator 管。子 agent 不另委派；沒工具就順序做，不以角色文字冒充並行。沿用使用者指定模型，不猜公司模型 ID。保留 `.github/agents` 的既有角色識別。
+
+## 0.11.1 視窗與訊息框
+
+應用 showerror／showwarning／showinfo／askyesno 集中 dialogs.py，保留同步結果語意、取消預設焦點及巢狀grab恢復。不把提示關閉當成重試或批准。theme.Appearance 同步更新既有與後開視窗；window_chrome.py 只呼叫原生DWM著色，失敗不影響功能、不以無框視窗替代。檔案選擇器及外觀尚未建立的啟動錯誤才沿用系統。
