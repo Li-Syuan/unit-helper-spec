@@ -40,6 +40,8 @@ Store 升級至 schema 3，schema 1／2 先以 SQLite backup 備份，再同交�
 
 環境、離線安裝與診斷操作見 [開發指南](docs/DEVELOPMENT.md)。正式測試使用專案 Python 3.10.4；`scripts/test.ps1` 執行完整檢查。改依賴須更新鎖檔並在第二乾淨環境及離線來源重建，不借外部 site-packages。離線包缺件／雜湊／lock 不符必須停止，不連外補件。
 
+常駐環境只保留 `.venv`。另建的驗證環境完成後保留實測紀錄，確認程序已結束、解析路徑位於專案內且無連結跳轉，再清除該次建立的環境；不要累積版本備份。刪除前讀取 `.venv/pyvenv.cfg`，保留它依賴的基礎直譯器（此機為 `.runtime/python3104`）。
+
 [串接測試工具包](docs/ADAPTER-TEST-KIT.md) 提供合成斷言與公司 hooks；公司測試預設 `not_tested`，明確執行且能力審查完成才載入可信本地 hook。hook 必須真的斷言公司結果，不能以 canned True、skip 或 demo 假通過。
 
 結果分列 `mock_passed`、`local_real_passed`、`company_real_passed`、`not_tested`。GUI 字串／倍率模擬不等於人工 GUI、Excel、IME 或真實 Windows 倍率驗收。調整 UI 後檢查一般、小工作區及最大化的操作可達性。完成後更新 `docs/PROJECT.md`、`docs/VALIDATION.md`、公司工作單及 manifest；不得捏造測試證據。
