@@ -108,6 +108,14 @@ doctor 檢查 Windows、Python、Tk、依賴／lock、設定、必要變數是�
 
 verify 拒絕 0 tests、skip、非零 exit code 或 freeze 與 lock 不符。證據存 docs/validation，需保留版本／時間並區分 mock、本機真實與公司真實驗證。更新後維護 [驗證摘要](VALIDATION.md)、[產品狀態](PROJECT.md) 與接手文件；不要逐版複製整段歷史到每份文件。
 
+若 Windows 剪貼簿實測出現 `clipboard busy`，先在互動桌面確認一般應用可複製／貼上，關閉正在占用剪貼簿的操作，再執行下列單項。這個訊息也可能是存取遭拒，不能只靠錯誤文字判定占用或防毒誤報。不讀取／分享現有剪貼簿私有內容，不改防毒或存取政策。
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_dialogs.DialogTests.test_long_message_theme_copy_and_close_without_mutation -v
+```
+
+單項成功後再跑 `scripts/verify.py development` 更新完整證據；失敗仍保留非零結果，不能改用 mock、Tcl 快取、skip 或刪除測試。其他独立檢查可繼續。
+
 本機只保留日常使用的 `.venv`。乾淨重建及離線驗證環境完成驗證、保存紀錄並確認沒有程序使用後即清除；需要再次驗證時依鎖檔重建，不長期累積帶版本的環境。既有驗證 JSON 保留歷史實測結果，不代表對應環境仍存在。
 
 開發機直譯器曾因 Windows Installer 問題，從官方 3.10.4 發行 MSI 解出至被忽略的 `.runtime/python3104`，目前 `.venv/pyvenv.cfg` 仍依賴該路徑，不能當作暫存刪除。這不是公司部署方式，公司仍用核准的完整安裝程式。
