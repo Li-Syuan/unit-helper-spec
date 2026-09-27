@@ -17,6 +17,8 @@ cd unit-helper-spec
 
 私人 repo 須使用有權限的 GitHub 帳號。路徑是範例，請替換；不需 activate，不改系統 PATH。PowerShell 腳本若被公司政策阻擋，交由 IT 核准，不要求更改永久 ExecutionPolicy。也可依 [ENVIRONMENT.md](ENVIRONMENT.md) 直接用 Python 指令。
 
+環境建立完成後，直接雙擊根目錄的 **`start-app.bat`** 即可開啟桌面應用，不會留下命令列視窗。啟動器固定使用旁邊的 `.venv`，可隨專案資料夾搬移；環境不存在或版本不符會顯示錯誤。
+
 ## 可以操作
 
 - 對話歷史、背景請求、取消；公司模式使用 `openai` Chat Completions 相容連接器。
