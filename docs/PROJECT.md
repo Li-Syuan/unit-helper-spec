@@ -1,4 +1,4 @@
-# QA agent 0.9.0：產品與架構
+# QA agent 0.9.1：產品與架構
 
 本文件是現行行為契約。程式與 UI 已完成本機功能；公司接線見 [工作單](../COMPANY-HANDOFF.md)，實測與未測項目見 [驗證摘要](VALIDATION.md)。
 
@@ -112,7 +112,7 @@ test_support 包含可重用 adapter 契約，company_templates 提供待填測�
 
 `assistant_views.py` 為管理／轉交、`conversation_views.py` 為刪除、`workspace.py` 為訊息與工作詳情；`branding.py`、`display.py`、`theme.py`、`preferences.py` 管品牌與外觀，`keyboard.py` 管送出與 IME 保護。保持此分層，不因接公司服務重做 UI。
 
-深淺主題原地更新控制項，不清除草稿、選取、附件、Plan 或背景工作；偏好獨立存在 ui-preferences.json，損壞用深色，保存失敗保留本次變更並提示。原生系統對話框遵循 Windows 外觀。
+深淺主題原地更新控制項與品牌圖示（含已開啟附屬視窗）；assets/light 保存淺色包，缺少時提示並使用深色包，桌面捷徑維持深色。不清除草稿、選取、附件、Plan 或背景工作；偏好獨立存在 ui-preferences.json，損壞用深色，保存失敗保留本次變更並提示。原生系統對話框遵循 Windows 外觀。
 
 | 狀態 | 能力 |
 |---|---|

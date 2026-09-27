@@ -2,7 +2,7 @@
 
 ## 當前範圍
 
-先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.9.0 新增個人待辦、常用工作卡片與文字草稿保存；歷史規格由 Git 查閱，不再作為當前開發需求。
+先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.9.1 延續個人待辦、工作卡片與草稿保存，加入隨主題切換的正式品牌圖示；歷史規格由 Git 查閱，不再作為當前開發需求。
 
 沿用 Windows x64、Python **恰好 3.10.4**、Tkinter／ttk、SQLite、OpenAI SDK 與 Windows keyring。公司待辦為 chatbot 契約、AD／名單及 owner 授權、三項 Oracle 查詢、舊資料／排程遷移與現場驗收。不得覆蓋公司原有規則或程式。
 
@@ -22,7 +22,7 @@
 
 ## UI 與資料維護
 
-- 品牌固定 **QA agent**，正式 A 圖示與各倍率圖示隨專案提供，不在 runtime 下載素材。名稱集中 `branding.py`；不得因更名改資料路徑／環境變數。捷徑只更新本工具建立的項目。
+- 品牌固定 **QA agent**，正式 A 深淺圖示與各倍率圖示隨專案提供；assets 根目錄為深色及固定捷徑，assets/light 為淺色，切換须更新已開啟附屬視窗，不在 runtime 下載素材。名稱集中 `branding.py`；不得因更名改資料路徑／環境變數。捷徑只更新本工具建立的項目。
 - System DPI awareness 及 AppUserModelID 在 Tk 建立前設定，保留較高既有模式。沿用 `display.py`：固定尺寸按倍率換算，點數字型不再縮放；不宣稱跨螢幕即時 DPI 重排已完成。
 - 主題、頁面提示及介面刷新保留草稿、附件、游標、選取、捲動、Plan 修訂與工作。訊息是可選取的純文字，不執行模型 HTML；任務狀態來自選定的 task／plan，不捏造百分比或重送。
 - 操作提示位於原頁面，只讀狀態，不填稿或派發；收合不得遮蔽必要警告。`page_hints` 與外觀存 `ui-preferences.json`；舊 `onboarding` 保留原值但不啟用。無獨立體驗資料庫，正常示範操作存目前個人歷史。

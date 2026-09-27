@@ -21,16 +21,23 @@ def set_windows_identity():
         return False
 
 
-def apply_icons(root, assets=None):
-    folder = Path(assets) if assets is not None else ASSETS
+def apply_icons(root, assets=None, theme='dark'):
+    base = Path(assets) if assets is not None else ASSETS
+    folder = base / 'light' if theme == 'light' else base
     images = {}
     failed = False
+    # Keep a usable bundled dark icon if a partial installation lacks the light set.
+    if theme == 'light' and not all((folder / name).is_file() for name in
+            [f'qa-agent-{n}.png' for n in (16,32,48,64,128,256)] + ['qa-agent.ico']):
+        folder = base
+        failed = True
     for size in (16, 32, 48, 64, 128, 256):
         try:
             images[size] = tk.PhotoImage(master=root, file=str(folder / f'qa-agent-{size}.png'))
         except (tk.TclError, OSError):
             failed = True
     root._qa_icon_folder = folder
+    root._qa_icon_theme = 'light' if folder == base / 'light' else 'dark'
     root._qa_icon_images = images  # Tk must retain these references for root's lifetime.
     if images:
         try:
@@ -43,6 +50,12 @@ def apply_icons(root, assets=None):
             root.iconbitmap(str(folder / 'qa-agent.ico'))
         except (tk.TclError, OSError):
             failed = True
+    def update_children(parent):
+        for child in parent.winfo_children():
+            if isinstance(child, tk.Toplevel):
+                apply_child_icons(child)
+            update_children(child)
+    update_children(root)
     display=getattr(root,'_qa_display',None)
     wanted=display.px(32) if display else 32
     selected=images.get(min(images,key=lambda n:abs(n-wanted))) if images else None
@@ -53,6 +66,7 @@ def apply_child_icons(window):
     """Explicit per-window icon as Windows/Tk bitmap queries omit inherited defaults."""
     root=window._root()
     images=getattr(root, '_qa_icon_images', {})
+    window._qa_icon_theme = getattr(root, '_qa_icon_theme', 'dark')
     try:
         if images:
             window.iconphoto(False, *images.values())

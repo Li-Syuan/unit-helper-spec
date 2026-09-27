@@ -1,6 +1,6 @@
 # 開發與部署指南
 
-QA agent 0.9.0。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
+QA agent 0.9.1。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
 
 ## 環境與啟動
 
@@ -102,6 +102,7 @@ verify 拒絕 0 tests、skip、非零 exit code 或 freeze 與 lock 不符。證
 
 ```powershell
 powershell.exe -NoProfile -File scripts/export-icon.ps1
+powershell.exe -NoProfile -File scripts/export-icon.ps1 -Source desktop_app/assets/light/qa-agent.png -Destination desktop_app/assets/light
 .\.venv\Scripts\python.exe scripts/build-ui-icons.py
 ```
 

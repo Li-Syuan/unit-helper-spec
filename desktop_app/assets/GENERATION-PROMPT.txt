@@ -1,9 +1,26 @@
-QA agent official icon — selected design A
-Source: imagegen generation; selected 2026-09-27.
-Original: qa-agent.png (1254×1254, transparent outer corners).
-SHA-256: 7eaafa870bb85f4e685c8a7398c09ae0746c898c055e7086e88ceba17032e3e1
-Derived sizes and ICO: scripts/export-icon.ps1.
-Earlier candidates remain in Git commit c13e583.
+QA agent official design A — dark/light theme variants (0.9.1)
+Source: built-in imagegen, 2026-09-27. User selected the existing Q dialogue partner.
+Dark: regenerated repair exec-ed01d2fc-7c8b-426e-9c4f-9387bd794df8.png.
+Light: exec-fa4babfc-f5a9-4b58-b41a-59c5a1a4aea5.png.
+The rejected dark preview with translucent patches is not shipped.
+Original high-resolution images: qa-agent.png and light/qa-agent.png.
+Derived assets: export-icon.ps1 produces 16/24/32/48/64/128/256 PNG and ICO.
+Runtime uses bundled files only. Desktop shortcut remains the dark ICO.
 
-Prompt:
-Use case: logo-brand. Generate ONE complete standalone Windows desktop app icon for QA agent, square front-on, centered, no perspective scene or mockup. A near-edge rounded-square graphite tile #20252C with genuinely transparent outer corners/background. Restrained warm off-white and icy cyan #66D5EF palette. Professional minimal technology/workspace identity, mostly flat with very subtle depth, thick crisp strokes and strong small-size silhouette legible at 16/32 pixels. Generous simple shapes, clean negative space. No circuitry, wafers, orbits, armor, chrome, neon glow, text captions, watermarks or extra badges. Do not write the app name. Concept A: a distinct geometric Q-shaped conversation bubble, two small round off-white eyes in the open center, a small bold cyan checkmark structurally integrated into the lower-right tail. Approachable collaborative AI colleague. Keep a single integrated silhouette.
+Generation requirements (summary):
+Preserve the official Q speech-partner shape, two circular eyes and lower-right
+integrated checkmark. Front-on rounded-square tile, bold clear small-size shapes.
+Dark palette: graphite #20262D, ivory #F5F3EB, cyan #58D1E8.
+Light palette: porcelain #F4F5F2, slate #263844, teal #087E96.
+Transparent exterior corners only; no interior holes, added symbols, captions,
+glow or scene. Dark repair explicitly requests replacing the erroneous alpha
+patches with a uniform solid tile, keeping the same brand shape.
+
+Validation: interior sample grid has minimum alpha 253/255 in both sources;
+no samples below 250. The repaired dark patches are absent. Outer corner alpha
+is zero. Generated source retains its original alpha; this is not a claim of
+pixel-perfect alpha 255 everywhere. Small PNGs retain antialiased boundaries.
+
+SHA-256 qa-agent.png: 63dd9fa9819387e9551e6f85630b402785e15d88ca1b30f7067639900d89d998
+
+SHA-256 light\qa-agent.png: 2e304c2fc2d985a940ff229489d77ed31b6b7b63c509f42a2f3f603467b447a1

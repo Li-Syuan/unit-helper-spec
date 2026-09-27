@@ -103,10 +103,10 @@ class App(DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews
         self.conversation=None; self.conversation_ids=[]; self.preview_plan=None
         root.title(APP_NAME+' · 本機版 '+__version__)
         self.display=Display(root)
-        self.brand_icon,self.brand_warning=apply_icons(root)
         self.display.size_window(root,1280,860,(1050,700))
         self.preferences_path=self.directory/'ui-preferences.json'
         self.appearance=theme.Appearance(root,load_theme(self.preferences_path))
+        self.brand_icon,self.brand_warning=apply_icons(root,theme=self.appearance.name)
         self.palette=self.appearance.colors; self.style=self.appearance.style
         self.status=tk.StringVar(value='準備就緒。排程只在此程式開啟時執行。')
         self.init_workspace()
@@ -137,8 +137,8 @@ class App(DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews
         tk.Button(help_bar,text='操作提示',relief='flat',command=self.toggle_page_hint).pack(side='left')
         tk.Button(help_bar,text='說明與關於',relief='flat',command=lambda:self.show_help('快速開始')).pack(side='right')
         brand=tk.Frame(side,bg=self.palette.SIDEBAR); brand.pack(fill='x',padx=18,pady=(16,3))
-        if self.brand_icon:
-            tk.Label(brand,image=self.brand_icon,bg=self.palette.SIDEBAR).pack(side='left',padx=(0,8))
+        self.brand_image_label=tk.Label(brand,image=self.brand_icon or '',bg=self.palette.SIDEBAR)
+        self.brand_image_label.pack(side='left',padx=(0,8))
         brand_label=tk.Label(brand,text=APP_NAME,font=(self.palette.FONT,14,'bold'),bg=self.palette.SIDEBAR,fg=self.palette.INK,anchor='w'); brand_label._theme_role='brand'; brand_label.pack(side='left')
         if self.brand_warning:
             warning=tk.Label(side,text=self.brand_warning,font=(self.palette.FONT,10),wraplength=185,bg=self.palette.SIDEBAR,fg=self.palette.WARNING,justify='left'); warning._theme_role='warning'; warning.pack(fill='x',padx=18)
@@ -726,10 +726,12 @@ class App(DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews
     def change_theme(self,name):
         # Recolor in place: no service call, widget rebuild, draft or selection change.
         self.appearance.configure(name); self.palette=self.appearance.colors
+        self.brand_icon,self.brand_warning=apply_icons(self.root,theme=name)
+        self.brand_image_label.configure(image=self.brand_icon or '',bg=self.palette.SIDEBAR)
         self.theme_choice.set(name); self.route_changed();self.workspace_theme()
         try:
             save_theme(self.preferences_path,name)
-            self.status.set('已套用'+('深色' if name=='dark' else '淺色')+'外觀。')
+            self.status.set(self.brand_warning or '已套用'+('深色' if name=='dark' else '淺色')+'外觀。')
         except OSError:
             self.status.set('外觀已套用，但無法保存偏好；下次開啟可能恢復原設定。')
             messagebox.showwarning('外觀未保存','本次切換仍有效，但無法保存偏好。請確認資料目錄可寫入。',parent=self.root)

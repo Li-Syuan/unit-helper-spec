@@ -1,6 +1,6 @@
 # Copilot 接手入口
 
-目前為 **QA agent 0.9.0**：Windows x64、Python 恰好 3.10.4、Tkinter 本機桌面。先讀 [開發守則](../AGENTS.md)、[公司接手工作單](../COMPANY-HANDOFF.md)、[產品與架構](../docs/PROJECT.md) 與 [驗證紀錄](../docs/VALIDATION.md)。
+目前為 **QA agent 0.9.1**：Windows x64、Python 恰好 3.10.4、Tkinter 本機桌面。先讀 [開發守則](../AGENTS.md)、[公司接手工作單](../COMPANY-HANDOFF.md)、[產品與架構](../docs/PROJECT.md) 與 [驗證紀錄](../docs/VALIDATION.md)。
 
 使用專案環境執行 `scripts/test.ps1`，再按六項公司工作包接線。沿用已完成的 UI、Plan gate、助理綁定、對話刪除、本機排程與回報；公司未知契約維持停用，不猜 API／AD／SQL，不把真實錯誤 fallback demo。
 
