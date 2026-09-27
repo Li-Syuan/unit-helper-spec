@@ -4,6 +4,8 @@
 
 ## 本輪回歸
 
+提示符號配色調整後，另外執行 `.venv/Scripts/python.exe -m unittest tests.test_dialogs tests.test_theme -q`，13 項通過。重新檢視真 Tk 深淺錯誤提示截圖，紅色驚嘆號及關閉按鈕可見。此小幅配色調整未重新執行下列完整 304 項測試。
+
 2026-09-27 完整 **304 項測試通過，0 skipped**；命令、直譯器與完整輸出見 [development.json](validation/development.json)。`scripts/verify.py development` 的環境診斷、pip check、鎖檔一致性及完整 unittest 均通過。保留299項基準，新增5項訊息框與原生標題列測試。
 
 真Tk新增涵蓋：長訊息／主題切換、複製、預設取消與Escape、明確批准、巢狀grab恢復、剪貼簿失敗、原生API不支援及啟動fallback。長中文的Tk clipboard_get讀回出現分段編碼問題；以Windows原生CF_UNICODETEXT核對實際內容完整，沒有把讀回失敗直接當通過。

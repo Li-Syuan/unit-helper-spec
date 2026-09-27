@@ -72,6 +72,8 @@ class Appearance:
         s.configure('Title.TLabel',font=(FONT,16,'bold'))
         s.configure('Section.TLabel',font=(FONT,11,'bold'))
         s.configure('DialogMark.TLabel',background=c.TINT,foreground=c.ACCENT,font=(FONT,20,'bold'),padding=6)
+        s.configure('Error.DialogMark.TLabel',background=c.SURFACE,foreground=c.ERROR)
+        s.configure('Warning.DialogMark.TLabel',background=c.SURFACE,foreground=c.WARNING)
         s.configure('Surface.TLabel',background=c.SURFACE)
         s.configure('Empty.TLabel',background=c.SURFACE,foreground=c.MUTED)
         s.configure('Chip.TLabel',background=c.TINT,foreground=c.ACCENT,padding=(10,5),font=(FONT,10,'bold'))

@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox as native
 from .branding import apply_child_icons, APP_NAME
 from .display import Display, work_area
+from .theme import FONT
 
 
 class MessageDialog(tk.Toplevel):
@@ -18,7 +19,10 @@ class MessageDialog(tk.Toplevel):
         body=ttk.Frame(self,padding=20);body.pack(fill='both',expand=True)
         heading=ttk.Frame(body);heading.pack(fill='x',pady=(0,10))
         symbol='?' if question else '!' if kind in ('error','warning') else 'i'
-        ttk.Label(heading,text=symbol,style='DialogMark.TLabel',width=3,anchor='center').pack(side='left',padx=(0,10))
+        mark_style='DialogMark.TLabel'
+        if not question and kind in ('error','warning'):
+            mark_style=kind.title()+'.DialogMark.TLabel'
+        ttk.Label(heading,text=symbol,style=mark_style,font=(FONT,20,'bold'),width=3,anchor='center').pack(side='left',padx=(0,10))
         ttk.Label(heading,text=title,style='Section.TLabel',wraplength=440).pack(side='left',fill='x',expand=True)
         buttons=ttk.Frame(body);buttons.pack(side='bottom',fill='x',pady=(14,0))
         self.copy_status=tk.StringVar(value='')
