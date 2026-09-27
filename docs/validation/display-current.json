@@ -244,5 +244,62 @@
         }
       ]
     }
-  ]
+  ],
+  "notifications_0_12_1": {
+    "method": "Real Windows Tk temporary synthetic App, System DPI, own-window PrintWindow captures visually inspected; no company data.",
+    "logical_window": [
+      1050,
+      700
+    ],
+    "results": [
+      {
+        "theme": "dark",
+        "work_area": [
+          0,
+          0,
+          2560,
+          1528
+        ],
+        "toast": [
+          1951,
+          1211,
+          585,
+          293
+        ],
+        "focus_preserved": true,
+        "grab": "None",
+        "badge_visible": true,
+        "view_visible": true,
+        "minimized_popup_visible": true,
+        "main_remains_minimized": true
+      },
+      {
+        "theme": "light",
+        "work_area": [
+          0,
+          0,
+          2560,
+          1528
+        ],
+        "toast": [
+          1951,
+          1211,
+          585,
+          293
+        ],
+        "focus_preserved": true,
+        "grab": "None",
+        "badge_visible": true,
+        "view_visible": true,
+        "minimized_popup_visible": true,
+        "main_remains_minimized": true
+      }
+    ],
+    "visual_review": "Dark/light toast text and controls readable; red exclamation and border; sidebar red/white unread badge visible. Notification placed inside lower-right monitor work area.",
+    "not_tested": [
+      "Other physical monitors and scaling settings",
+      "Human coworker usability acceptance",
+      "Company notification sources"
+    ]
+  }
 }

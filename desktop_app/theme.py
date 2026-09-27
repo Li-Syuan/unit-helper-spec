@@ -72,6 +72,10 @@ class Appearance:
         s.configure('Title.TLabel',font=(FONT,16,'bold'))
         s.configure('Section.TLabel',font=(FONT,11,'bold'))
         s.configure('DialogMark.TLabel',background=c.TINT,foreground=c.ACCENT,font=(FONT,20,'bold'),padding=6)
+        s.configure('NotificationBadge.TLabel',background='#B42332',foreground='#FFFFFF',padding=(7,3),font=(FONT,10,'bold'))
+        for name,color in [('Info',c.ACCENT),('Success',c.SUCCESS),('Warning',c.WARNING),('Error',c.ERROR)]:
+            s.configure(name+'.ToastBorder.TFrame',background=color)
+            s.configure(name+'.ToastMark.TLabel',background=c.SURFACE,foreground=color,font=(FONT,20,'bold'))
         s.configure('Error.DialogMark.TLabel',background=c.SURFACE,foreground=c.ERROR)
         s.configure('Warning.DialogMark.TLabel',background=c.SURFACE,foreground=c.WARNING)
         s.configure('Surface.TLabel',background=c.SURFACE)

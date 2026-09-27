@@ -24,7 +24,7 @@ def local_time(value):
 class ActionViews:
     def toggle_more_tools(self):
         if self.more_tools.winfo_manager():self.more_tools.pack_forget()
-        else:self.more_tools.pack(fill='x',after=self.nav_buttons['activity'])
+        else:self.more_tools.pack(fill='x',after=self.nav_buttons['notice'])
 
     def toggle_composer_options(self):
         if self.more_options.winfo_manager():self.more_options.pack_forget()

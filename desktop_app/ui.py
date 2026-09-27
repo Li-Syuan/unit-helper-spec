@@ -182,13 +182,13 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
         self.more_tools=ttk.Frame(side)
         for key in ('chat','todo','schedule','activity','query','result','work','notice','settings','issue'):
             title=next(title for name,title,_ in self.routes if name==key)
-            parent=self.more_tools if key in ('query','result','work','notice') else side
+            parent=self.more_tools if key in ('query','result','work') else side
             button=tk.Button(parent,text='  '+title,anchor='w',font=(self.palette.FONT,11),relief='flat',bd=0,padx=10,pady=3,
                              compound='left',command=lambda key=key:self.book.select(self.tabs[key]))
             button._workspace_icon='notice' if key=='activity' else key
             button.pack(side='bottom' if key in ('settings','issue') else 'top',fill='x',padx=12,pady=1)
             self.nav_buttons[key]=button
-            if key=='activity':
+            if key=='notice':
                 self.button(side,'更多工具',self.toggle_more_tools,'Quiet.TButton').pack(fill='x',padx=12)
         divider=tk.Frame(side,height=1); divider._theme_role='divider'; divider.pack(fill='x',padx=20,pady=(8,6))
         history_head=tk.Frame(side);history_head.pack(fill='x',padx=16)
@@ -752,10 +752,27 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
         self.notices=self.tree(holder,[('read','狀態'),('text','通知內容'),('time','台北時間')],5)
         self.notices.column('read',width=85,stretch=False); self.notices.column('text',width=400)
         self.button(tab,'已讀並查看結果',self.read_notice,'Primary.TButton').grid(row=2,column=0,sticky='w',pady=(10,0))
+        from .notifications import NotificationPresenter
+        self.notification_presenter=NotificationPresenter(self)
+        self.notices.bind('<Double-1>',lambda e:self.safe(self.read_notice))
     def read_notice(self):
-        nid=selected(self.notices); notice=next(x for x in self.store.notifications() if x['id']==nid); self.store.mark_read(nid)
-        if notice['task_id']: self.show_result(notice['task_id'])
-        else: self.status.set(notice['text'])
+        return self.open_notice(selected(self.notices))
+    def open_notice(self,nid):
+        notice=next((n for n in self.store.notifications() if n['id']==nid),None)
+        if notice is None:
+            self.status.set('這則通知已移除。');self.refresh_lists();return
+        self.store.mark_read(nid);self.refresh_lists()
+        if self.notices.exists(nid):self.notices.selection_set(nid);self.notices.see(nid)
+        if notice['task_id']:
+            try:task=self.store.task(notice['task_id'])
+            except ValueError:
+                self.book.select(self.tabs['notice']);self.status.set('來源工作已移除，通知內容仍可查看。');return
+            if task['result'] is not None:self.show_result(notice['task_id'])
+            else:
+                self.book.select(self.tabs['notice'])
+                show=messagebox.showerror if task['state']=='failed' else messagebox.showinfo
+                show('工作通知',notice['text']+'\n\n'+(task['error'] or LABELS.get(task['state'],task['state'])),parent=self.root)
+        else:self.book.select(self.tabs['notice']);self.status.set(notice['text'])
     def build_issue(self):
         tab=self.tabs['issue']; tab.columnconfigure(0,weight=1); tab.rowconfigure(8,weight=1)
         ttk.Label(tab,text='回報保存在此電腦，尚未送至管理平台。不會自動附加對話或檔案。',style='Muted.TLabel',wraplength=750).grid(row=0,column=0,sticky='w',pady=(0,12))
@@ -837,9 +854,10 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
             runs=self.store.schedule_runs(s['id']);latest=LABELS.get(runs[0]['state'],runs[0]['state']) if runs else '尚未執行'
             schedule_rows.append((s['id'],[s['name'],{'daily':'每日','weekly':'每週'}[s['frequency']]+' '+s['time_hhmm'],'啟用' if s['enabled'] else '停用',local_time(s['next_fire']),latest]))
         self.sync_tree(self.schedules,schedule_rows)
-        notices=self.store.notifications(); unread=sum(not n['is_read'] for n in notices); self.nav_buttons['notice'].configure(text='  通知'+(f'   {unread}' if unread else ''))
+        notices=self.store.notifications(); unread=sum(not n['is_read'] for n in notices)
         self.notice_hint.set(f'{unread} 則未讀  ·  共 {len(notices)} 則通知' if notices else '目前沒有新通知。符合條件的排程結果與執行失敗會顯示在這裡。')
         self.sync_tree(self.notices,[(n['id'],['已讀' if n['is_read'] else '未讀',n['text'],local_time(n['created_at'])]) for n in notices])
+        self.notification_presenter.update(notices)
         self.sync_tree(self.issues,[(i['id'],[i['id'],i['title'],LABELS[i['status']]]) for i in self.store.issues()])
         if self.schedules.selection(): self.schedule_details()
         busy=sum(t['state'] in ('queued','running') for t in self.store.tasks())
@@ -855,6 +873,7 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
         if active and not force and not messagebox.askyesno('關閉程式','仍有工作進行中。關閉會取消本機後續處理；遠端請求可能持續至 timeout。確定關閉？',parent=self.root): return
         if not self.flush_drafts_for_close(force): return
         self.closed=True; self.stop.set(); self.engine.close(); self.io.shutdown(wait=False,cancel_futures=True)
+        self.notification_presenter.close()
         self.root.after_cancel(self.poll_id)
         if force:
             self.scheduler.join(); self.engine.close(wait=True); self.io.shutdown(wait=True);self.draft_pool.shutdown(wait=True)

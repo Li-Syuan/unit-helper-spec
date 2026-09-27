@@ -1,14 +1,16 @@
-# QA agent 0.12.0 驗證摘要
+# QA agent 0.12.1 驗證摘要
 
-本版增加對話式 Plan、主代理與子代理協作、固定流程排程及 schema 5；沿用 Python 恰好 3.10.4、Windows x64、唯一 .venv 與原有鎖定套件，沒有新增依賴或驗證環境。
+目前保留對話式 Plan、多助理協作、固定流程排程及 schema 5；0.12.1 增加右下角通知彈窗與側欄未讀徽章。沿用 Python 恰好 3.10.4、Windows x64、唯一 .venv 與原有鎖定套件，沒有新增依賴、schema 或驗證環境。
 
 ## 本機回歸
 
-完整 **336 項測試通過，0 skipped**。以 `.venv/Scripts/python.exe scripts/verify.py development` 執行環境診斷、pip check、鎖檔比對及完整 unittest；直譯器、時間、命令與輸出見 [development.json](validation/development.json)。保留原有 304 項涵蓋範圍；既有 migration 斷言更新為 schema 5，隱藏流程面板有獨立操作測試。
+完整 **347 項測試通過，0 skipped**。以 `.venv/Scripts/python.exe scripts/verify.py development` 執行環境診斷、pip check、鎖檔比對及完整 unittest；直譯器、時間、命令與輸出見 [development.json](validation/development.json)。保留原有 336 項涵蓋範圍，新增 11 項真 Tk 通知測試。
+
+通知覆蓋右下角位置、未讀徽章、重複刷新、逾時／懸停、關閉保留未讀、啟動不重播、查看結果與原因、多則合併、99+、來源刪除、長文保留及 timer 清理。完整回歸後微調展開更多工具時通知仍排在前方，另外跑 `tests.test_notifications tests.test_action_ui` 共 30 項通過。
 
 新增覆蓋：主代理追問／修訂、未批准零執行、各助理資料隔離、綁定及能力失效、未知工具與格式拒絕、精確 facts、取消晚到結果、防重、交易回復、schema 4 遷移與前版遷移、來源刪除、排程啟停／重啟／跨日重試、同一失敗步驟只建一個後繼工作。真 Tk 測試涵蓋模式與草稿保存、送出後清除與晚到保存、選取保留、原始表格跨頁複製及公式防護。
 
-完整回歸後的純視覺微調（順序改用主題下拉選單、刪除提示明示流程保留）另外跑 workflow UI／對話刪除相關測試；不改服務或資料行為。
+通知不產生工作、模型呼叫或排程，不改既有通知產生条件。
 
 ## Groq 與公司界線
 
@@ -27,6 +29,8 @@
 | 隔日實際八點與 Norton 成效 | not_tested；受控時鐘不等同隔日等待，未修改防毒設定 |
 
 ## 介面與相容
+
+本機真 Windows／Tk 的深淺通知畫面已實際檢視：1050×700 邏輯視窗、150% 顯示下，徽章可見、彈窗位於工作區右下角且按鈕可達；新通知前後輸入焦點一致、無模態 grab，主視窗最小化時彈窗仍可見且主視窗保持最小化。數據見 [display-current.json](validation/display-current.json) 的 notifications_0_12_1。這是合成資料與程式操作證據，不代替公司實測或同仁人工可用性驗收。既有四張精選截圖保留，不累積本輪截圖至 Git。
 
 用暫存資料開啟真 Tk，已檢視深淺主題、1050×700、1280×860及最大化；送出、修改和批准按鈕可達，另檢視步驟編輯視窗。量測見 [display-current.json](validation/display-current.json) 的 workflow_0_12_0。精選工作區圖已替換為新版 Plan 畫面，紅色錯誤提示圖保留；沒有累積歷代截圖。未宣稱已完成所有實際 Windows 倍率或跨螢幕重排驗收。
 
