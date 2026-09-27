@@ -6,6 +6,7 @@ from .core import stamp
 from .preferences import load_page_hints, save_page_hint
 
 CHAPTERS = {
+    'team':'設定公司助理',
     'activity': '我的排程與通知', 'todo': '我的待辦', 'chat': '對話與鍵盤', 'query': '查資料與匯出', 'work': 'Plan 與選項確認',
     'result': '將資料交給助理', 'schedule': '我的排程與通知',
     'notice': '我的排程與通知', 'settings': '設定公司助理', 'issue': '問題回報',
@@ -89,6 +90,7 @@ class GuidanceViews:
         self.hint_toggle.configure(text='收合提示' if visible else '展開提示')
 
     def page_hint_content(self, page):
+        if page=='team':return '先選擇專長與分工角色，再開始對話或規劃工作。\n角色是用途宣告；公司驗證完成後才會參與自動流程。'
         if self.groq_trial and page=='settings':
             return '這是 Groq 外部 AI 試用入口。\n填好 .env 後可測試連線；回公司時請使用原本 start-app.bat。'
         if page == 'activity':

@@ -23,8 +23,9 @@ class NotificationPresenter:
         self.badge_count=len(unread)
         if unread:
             count=str(len(unread)) if len(unread)<=99 else '99+'
-            self.badge.configure(text=count+' 未讀')
-            self.badge.place(in_=self.app.nav_buttons['notice'],relx=1,rely=.5,anchor='e',x=-self.app.display.px(10))
+            compact=getattr(getattr(self.app,'navigation',None),'collapsed',False)
+            self.badge.configure(text=count if compact else count+' 未讀',padding=(3,1) if compact else (7,3))
+            self.badge.place(in_=self.app.nav_buttons['notice'],relx=1,rely=0 if compact else .5,anchor='ne' if compact else 'e',x=-self.app.display.px(2 if compact else 10))
             self.badge.lift()
         else:self.badge.place_forget()
         self.app.notices.tag_configure('unread_notice',font=(FONT,11,'bold'),foreground=self.app.palette.INK)

@@ -16,6 +16,7 @@ from . import theme
 from .preferences import load_theme, save_theme
 from .profiles import Profiles
 from .assistant_views import AssistantViews
+from .team_views import TeamViews
 from .experience import ExperienceMixin
 from .workspace import WorkspaceViews
 from .guidance import GuidanceViews
@@ -86,7 +87,7 @@ from .workflows import WorkflowService
 from .workflow_views import WorkflowViews
 
 
-class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, ConversationViews):
+class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, ConversationViews):
     def __init__(self, root, config=None, directory=None, config_path=None, groq_trial=False):
         self.drafts={}; self.next_binding=None
         self.groq_trial=groq_trial
@@ -135,9 +136,10 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
         self.init_workspace()
         self.build_shell()
         self.build_chat(); self.init_draft_saving(); self.build_todos(); self.build_query(); self.build_work(); self.build_result()
-        self.build_schedule(); self.build_notice(); self.build_issue(); self.build_settings(); self.build_activity()
+        self.build_schedule(); self.build_notice(); self.build_issue(); self.build_settings(); self.build_activity(); self.build_team()
         self.book.bind('<<NotebookTabChanged>>',self.route_changed)
         self.appearance.apply(root)
+        self.navigation.initialize()
         self.root.bind('<Control-n>',lambda e:self.new_chat())
         self.chat_keyboard=install_chat_keyboard(self.input,lambda:self.safe(self.send_chat))
         self.route_changed()
@@ -150,59 +152,8 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
         self.viewport=WorkspaceViewport(self.root,self.display);self.viewport.pack(fill='both',expand=True)
         self.root.bind('<FocusIn>',self.viewport.reveal,add='+')
         surface=self.viewport.body
-        side=tk.Frame(surface,bg=self.palette.SIDEBAR,width=208)
-        side._theme_role='sidebar'; side.pack(side='left',fill='y'); side.pack_propagate(False)
-        tk.Label(side,text='本機示範身分 · 非 AD\n版本 '+__version__,font=(self.palette.FONT,10),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(side='bottom',fill='x',padx=22,pady=(4,10))
-        tk.Button(side,text='待回答的選項  →',anchor='w',font=(self.palette.FONT,10),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
-                  activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,pady=4,
-                  command=lambda:self.safe(self.resume_form)).pack(side='bottom',fill='x',padx=20)
-        help_bar=tk.Frame(side);help_bar.pack(side='bottom',fill='x',padx=12,pady=3)
-        tk.Button(help_bar,text='操作提示',relief='flat',command=self.toggle_page_hint).pack(side='left')
-        tk.Button(help_bar,text='說明與關於',relief='flat',command=lambda:self.show_help('快速開始')).pack(side='right')
-        brand=tk.Frame(side,bg=self.palette.SIDEBAR); brand.pack(fill='x',padx=18,pady=(16,3))
-        self.brand_image_label=tk.Label(brand,image=self.brand_icon or '',bg=self.palette.SIDEBAR)
-        self.brand_image_label.pack(side='left',padx=(0,8))
-        brand_label=tk.Label(brand,text=APP_NAME,font=(self.palette.FONT,14,'bold'),bg=self.palette.SIDEBAR,fg=self.palette.INK,anchor='w'); brand_label._theme_role='brand'; brand_label.pack(side='left')
-        if self.brand_warning:
-            warning=tk.Label(side,text=self.brand_warning,font=(self.palette.FONT,10),wraplength=185,bg=self.palette.SIDEBAR,fg=self.palette.WARNING,justify='left'); warning._theme_role='warning'; warning.pack(fill='x',padx=18)
-        tk.Label(side,text='讓日常工作，簡單一點。',font=(self.palette.FONT,10),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(fill='x',padx=22,pady=(0,4))
-        new_button=tk.Button(side,text='＋  開始新對話',font=(self.palette.FONT,10,'bold'),bg=self.palette.TINT,fg=self.palette.SIDEBAR,
-                  activebackground=self.palette.SIDEBAR_HOVER,relief='flat',bd=0,pady=6,cursor='hand2',command=lambda:self.safe(self.new_chat)); new_button._theme_role='new_chat'; new_button.pack(fill='x',padx=12,pady=(0,4))
-        self.routes=[('chat','對話','把需求說出來，一起完成手邊的工作。'),
-                     ('todo','我的待辦','把要做的事留下來，按開始、完成追蹤進度。'),
-                     ('query','查資料','選擇常用查詢，快速取得需要的資料。'),
-                     ('work','計畫與任務','先確認步驟，再放心執行。'),
-                     ('result','查詢結果','檢視結果、複製資料，或安排下次查詢。'),
-                     ('schedule','自動工作','把固定查詢交給排程，專注需要你決定的事。'),
-                     ('activity','活動紀錄','查看工作與通知的最新狀態。'),
-                     ('notice','通知','在這裡查看新結果與執行狀態。'),
-                     ('settings','設定','管理助理連線與本機環境。'),
-                     ('issue','問題回報','留下問題或想法，讓 QA agent 逐步變好。')]
-        self.nav_buttons={}
-        self.more_tools=ttk.Frame(side)
-        for key in ('chat','todo','schedule','activity','query','result','work','notice','settings','issue'):
-            title=next(title for name,title,_ in self.routes if name==key)
-            parent=self.more_tools if key in ('query','result','work') else side
-            button=tk.Button(parent,text='  '+title,anchor='w',font=(self.palette.FONT,11),relief='flat',bd=0,padx=10,pady=3,
-                             compound='left',command=lambda key=key:self.book.select(self.tabs[key]))
-            button._workspace_icon='notice' if key=='activity' else key
-            button.pack(side='bottom' if key in ('settings','issue') else 'top',fill='x',padx=12,pady=1)
-            self.nav_buttons[key]=button
-            if key=='notice':
-                self.button(side,'更多工具',self.toggle_more_tools,'Quiet.TButton').pack(fill='x',padx=12)
-        divider=tk.Frame(side,height=1); divider._theme_role='divider'; divider.pack(fill='x',padx=20,pady=(8,6))
-        history_head=tk.Frame(side);history_head.pack(fill='x',padx=16)
-        tk.Label(history_head,text='最近的對話',font=(self.palette.FONT,10)).pack(side='left')
-        self.button(history_head,'管理對話',self.manage_conversations,'Compact.TButton').pack(side='right')
-        history_box=ttk.Frame(side);history_box.pack(fill='both',expand=True,padx=16,pady=4)
-        self.history=tk.Listbox(history_box,height=2,width=16,exportselection=False,bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
-                                selectbackground=self.palette.SIDEBAR_HOVER,selectforeground=self.palette.INK,relief='flat',bd=0,
-                                highlightthickness=0,font=(self.palette.FONT,10),activestyle='none')
-        self.history.pack(side='left',fill='both',expand=True)
-        history_scroll=ttk.Scrollbar(history_box,command=self.history.yview);history_scroll.pack(side='right',fill='y')
-        self.history.configure(yscrollcommand=history_scroll.set)
-        self.history.bind('<Button-3>',self.history_context)
-        self.history.bind('<<ListboxSelect>>',lambda e:self.safe(self.choose_chat))
+        from .navigation import Navigation
+        self.navigation=Navigation(self,surface)
         self.main_area=ttk.Frame(surface);self.main_area.pack(side='left',fill='both',expand=True)
         main=self.main_content=ttk.Frame(self.main_area);main.pack(side='left',fill='both',expand=True)
         self.root.bind('<Configure>',self.place_detail,add='+')
@@ -210,6 +161,8 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
         line=ttk.Frame(header); line.pack(fill='x')
         self.page_title=ttk.Label(line,text='對話',style='Title.TLabel'); self.page_title.pack(side='left')
         self.mode_label=ttk.Label(line,style='Chip.TLabel'); self.mode_label.pack(side='right'); self.update_mode()
+        self.brand_warning_label=ttk.Label(header,text=self.brand_warning,style='Warning.TLabel',wraplength=650)
+        if self.brand_warning:self.brand_warning_label.pack(fill='x',pady=4)
         self.build_page_guidance(header)
         footer=ttk.Frame(main,style='Surface.TFrame'); footer.pack(side='bottom',fill='x')
         self.activity_label=ttk.Label(footer,text='●  就緒',style='Status.TLabel'); self.activity_label.pack(side='right')
@@ -226,6 +179,7 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
                                              fg=self.palette.INK if active else self.palette.MUTED,font=(self.palette.FONT,11,'bold' if active else 'normal'))
             if active: self.page_title.configure(text=title)
         self.refresh_page_hint()
+        if hasattr(self,'team_body') and current==str(self.tabs['team']):self.refresh_team()
         if hasattr(self,'todo_board') and current==str(self.tabs['todo']):self.refresh_todos()
     def button(self,parent,text,action,style=None):
         primary={'送出需求','開始查詢','批准此修訂','查看結果','保存草稿','驗證並保存設定','確認選項','預覽並啟用'}
@@ -821,7 +775,11 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
         self.appearance.configure(name); self.palette=self.appearance.colors
         self.brand_icon,self.brand_warning=apply_icons(self.root,theme=name)
         self.brand_image_label.configure(image=self.brand_icon or '',bg=self.palette.SIDEBAR)
+        self.brand_warning_label.configure(text=self.brand_warning)
+        if self.brand_warning:self.brand_warning_label.pack(fill='x',pady=4)
+        else:self.brand_warning_label.pack_forget()
         self.theme_choice.set(name); self.route_changed();self.workspace_theme()
+        self.refresh_team();self.navigation.apply()
         try:
             save_theme(self.preferences_path,name)
             self.status.set(self.brand_warning or '已套用'+('深色' if name=='dark' else '淺色')+'外觀。')
@@ -873,7 +831,7 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
         if active and not force and not messagebox.askyesno('關閉程式','仍有工作進行中。關閉會取消本機後續處理；遠端請求可能持續至 timeout。確定關閉？',parent=self.root): return
         if not self.flush_drafts_for_close(force): return
         self.closed=True; self.stop.set(); self.engine.close(); self.io.shutdown(wait=False,cancel_futures=True)
-        self.notification_presenter.close()
+        self.notification_presenter.close();self.navigation.close()
         self.root.after_cancel(self.poll_id)
         if force:
             self.scheduler.join(); self.engine.close(wait=True); self.io.shutdown(wait=True);self.draft_pool.shutdown(wait=True)
@@ -892,6 +850,13 @@ class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, Assist
         if hasattr(self.assistant,'close'): self.assistant.close()
         self.io_futures.clear()
         while not self.events.empty(): self.events.get_nowait()
+        # Tcl holds callbacks for Variable traces outside widget command lists.
+        # Remove only this interpreter's traces, on its UI thread after workers drain.
+        # Otherwise closures retain the App and native images after root.destroy().
+        import gc
+        for variable in gc.get_objects():
+            if isinstance(variable,tk.Variable) and variable._tk is self.root.tk:
+                for modes,command in variable.trace_info():variable.trace_remove(modes,command)
         self.lock.close(); self.root.destroy()
 
 

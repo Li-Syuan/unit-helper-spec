@@ -42,14 +42,11 @@ def apply_icons(root, assets=None, theme='dark'):
     if images:
         try:
             root.iconphoto(True, *images.values())  # Default inherited by future Toplevels.
+            root.iconphoto(False, *images.values())  # Also set this existing wrapper HWND.
         except tk.TclError:
             failed = True
-    if sys.platform == 'win32':
-        try:
-            root.iconbitmap(default=str(folder / 'qa-agent.ico'))
-            root.iconbitmap(str(folder / 'qa-agent.ico'))
-        except (tk.TclError, OSError):
-            failed = True
+    # iconphoto supplies native Windows icons too. Tk 8.6's repeated ICO loads
+    # retain GDI/USER handles across theme changes; ICOs remain for shortcuts.
     def update_children(parent):
         for child in parent.winfo_children():
             if isinstance(child, tk.Toplevel):
@@ -63,15 +60,12 @@ def apply_icons(root, assets=None, theme='dark'):
 
 
 def apply_child_icons(window):
-    """Explicit per-window icon as Windows/Tk bitmap queries omit inherited defaults."""
+    """Apply native window icons from the retained multi-size PNG resources."""
     root=window._root()
     images=getattr(root, '_qa_icon_images', {})
     window._qa_icon_theme = getattr(root, '_qa_icon_theme', 'dark')
     try:
         if images:
             window.iconphoto(False, *images.values())
-        if sys.platform == 'win32':
-            folder=getattr(root, '_qa_icon_folder', ASSETS)
-            window.iconbitmap(str(folder/'qa-agent.ico'))
     except (tk.TclError, OSError):
         pass  # Main window already displays the missing-resource notice.

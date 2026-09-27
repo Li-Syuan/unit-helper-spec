@@ -23,8 +23,10 @@ def local_time(value):
 
 class ActionViews:
     def toggle_more_tools(self):
+        if hasattr(self,'navigation') and self.navigation.collapsed:
+            self.navigation.toggle_sidebar()
         if self.more_tools.winfo_manager():self.more_tools.pack_forget()
-        else:self.more_tools.pack(fill='x',after=self.nav_buttons['notice'])
+        else:self.more_tools.pack(fill='x',after=self.navigation.more)
 
     def toggle_composer_options(self):
         if self.more_options.winfo_manager():self.more_options.pack_forget()

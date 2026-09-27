@@ -10,12 +10,13 @@ from .display import scroll_frame
 
 class AssistantViews:
     def build_assistant_bar(self,parent):
-        bar=ttk.Frame(parent); bar.pack(fill='x',pady=(0,6))
-        ttk.Label(bar,text='對話助理').pack(side='left')
-        self.profile_picker=ttk.Combobox(bar,state='readonly',width=22)
+        bar=self.assistant_bar=ttk.Frame(parent); bar.pack(fill='x',pady=(0,6))
+        controls=self.chat_assistant_controls=ttk.Frame(bar);controls.pack(side='left')
+        ttk.Label(controls,text='對話助理').pack(side='left')
+        self.profile_picker=ttk.Combobox(controls,state='readonly',width=22)
         self.profile_picker.pack(side='left',padx=8)
         self.profile_picker.bind('<<ComboboxSelected>>',self.switch_assistant)
-        self.button(bar,'助理資訊',self.assistant_info,'Quiet.TButton').pack(side='left')
+        self.button(controls,'助理資訊',self.assistant_info,'Quiet.TButton').pack(side='left')
         self.assistant_usage=ttk.Label(parent,text='',style='Muted.TLabel',wraplength=650)
         self.assistant_usage.pack(fill='x',pady=(0,4))
         self.assistant_usage.bind('<Configure>',lambda e:self.assistant_usage.configure(wraplength=max(100,e.width-10)))
@@ -99,6 +100,7 @@ class AssistantViews:
             for p in self.profiles.items():
                 self.profile_table.insert('','end',iid=p['id'],values=(p['name'],p['assistant_id'],p['notes'],('預設 · ' if p['id']==self.profiles.data['default'] else '')+('停用' if not p['enabled'] else '待確認 API 格式' if p['id']!='demo' and not p.get('legacy') and self.profiles.data['wire_mode']=='unconfigured' else '啟用')))
         if hasattr(self,'profile_picker'): self.refresh_profile_picker()
+        if hasattr(self,'team_body'):self.refresh_team()
     def selected_profile(self):
         ids=self.profile_table.selection()
         if not ids: raise GatewayError('請先選一位助理。')
@@ -131,7 +133,7 @@ class AssistantViews:
         p=next((x for x in self.profiles.items() if x['id']==pid),{})
         w=tk.Toplevel(self.root);apply_child_icons(w);w.title('編輯助理' if pid else '新增助理');self.display.size_window(w,760,550,(520,360));w.transient(self.root)
         body=scroll_frame(w,padding=20);body.pack(fill='both',expand=True); values={}
-        for key,label in [('name','助理名稱'),('assistant_id','Assistant ID'),('notes','備註')]:
+        for key,label in [('name','助理名稱'),('assistant_id','Assistant ID'),('notes','專長與用途（主代理規劃時會參考）')]:
             ttk.Label(body,text=label).pack(anchor='w');v=tk.StringVar(value=p.get(key,''));values[key]=v
             ttk.Entry(body,textvariable=v,width=65).pack(fill='x',pady=(4,12))
         ttk.Label(body,text='修改 assistant ID 會建立新連線版本；舊對話與 Plan 不會轉送。',style='Muted.TLabel').pack()

@@ -27,7 +27,10 @@ class Appearance:
         self.root = root
         root._qa_appearance=self
         root.bind('<Map>',self._mapped,add='+')
-        root.bind_class('Toplevel','<Map>',self._mapped,add='+')
+        # bind_class uses needcleanup=0 in Python 3.10 Tkinter. Attach its command
+        # to this root's cleanup list, or a closed interpreter retains its bitmaps.
+        mapped_command=root.bind_class('Toplevel','<Map>',self._mapped,add='+')
+        root._tclCommands.append(mapped_command)
         self.style = ttk.Style(root)
         self.style.theme_use('clam')
         self.name = name
@@ -64,6 +67,9 @@ class Appearance:
         s.configure('CardMuted.TLabel',background=c.SURFACE,foreground=c.MUTED,font=(FONT,10))
         s.configure('CardTitle.TLabel',background=c.SURFACE,foreground=c.INK,font=(FONT,11,'bold'))
         s.configure('CardError.TLabel',background=c.SURFACE,foreground=c.ERROR,font=(FONT,10))
+        s.configure('CardSuccess.TLabel',background=c.SURFACE,foreground=c.SUCCESS,font=(FONT,10,'bold'))
+        s.configure('CardWarning.TLabel',background=c.SURFACE,foreground=c.WARNING,font=(FONT,10,'bold'))
+        s.configure('Warning.TLabel',background=c.BG,foreground=c.WARNING,font=(FONT,10))
         s.configure('Compact.TButton',padding=(8,4),font=(FONT,10))
         s.configure('Card.TCheckbutton',background=c.SURFACE)
         s.configure('Workspace.Horizontal.TProgressbar',troughcolor=c.SURFACE,background=c.ACCENT,borderwidth=0,thickness=3)
@@ -104,6 +110,9 @@ class Appearance:
             s.map(kind,background=[('active',c.BG)],foreground=[('disabled',c.DISABLED)],indicatorbackground=[('selected',c.ACCENT),('!selected',c.SURFACE)])
         s.configure('Card.TRadiobutton',padding=(16,12),background=c.SURFACE,font=(FONT,11,'bold'))
         s.map('Card.TRadiobutton',background=[('selected',c.TINT),('active',c.STRIPE)])
+        s.layout('Mode.TRadiobutton',[('Radiobutton.padding',{'sticky':'nswe','children':[('Radiobutton.label',{'sticky':'nswe'})]})])
+        s.configure('Mode.TRadiobutton',padding=(12,4),background=c.BG,foreground=c.MUTED,font=(FONT,10,'bold'))
+        s.map('Mode.TRadiobutton',background=[('selected',c.TINT),('active',c.STRIPE)],foreground=[('selected',c.ACCENT),('active',c.INK)])
         s.configure('Treeview',rowheight=32,background=c.SURFACE,fieldbackground=c.SURFACE,foreground=c.INK,
             bordercolor=c.BORDER,lightcolor=c.BORDER,darkcolor=c.BORDER,borderwidth=1)
         s.configure('Treeview.Heading',background=c.STRIPE,foreground=c.MUTED,font=(FONT,10,'bold'),padding=(10,8),relief='flat')
@@ -115,6 +124,9 @@ class Appearance:
             lightcolor=[('pressed',c.ACCENT),('active',c.MUTED)],
             darkcolor=[('pressed',c.ACCENT),('active',c.MUTED)],arrowcolor=[('disabled',c.DISABLED),('active',c.INK)])
         s.configure('TSeparator',background=c.BORDER)
+        s.configure('TNotebook',background=c.BG,borderwidth=0,tabmargins=(0,0,0,4),bordercolor=c.BORDER,lightcolor=c.BORDER,darkcolor=c.BORDER)
+        s.configure('TNotebook.Tab',background=c.BG,foreground=c.MUTED,padding=(14,8),borderwidth=0,bordercolor=c.BORDER,lightcolor=c.BORDER,darkcolor=c.BORDER)
+        s.map('TNotebook.Tab',background=[('selected',c.SURFACE),('active',c.STRIPE)],foreground=[('selected',c.ACCENT),('active',c.INK)])
         s.layout('Workspace.TNotebook', [('Notebook.client', {'sticky':'nswe'})])
         s.layout('Workspace.TNotebook.Tab', [])
         s.configure('Workspace.TNotebook',background=c.BG,borderwidth=0,tabmargins=0,bordercolor=c.BG,lightcolor=c.BG,darkcolor=c.BG)
@@ -125,6 +137,7 @@ class Appearance:
                 'TButton':('padding','borderwidth'),'Quick.TButton':('padding',),'TEntry':('padding',),
                 'TCombobox':('padding',),'TCheckbutton':('padding',),'TRadiobutton':('padding',),
                 'Card.TRadiobutton':('padding',),'Treeview':('rowheight','borderwidth'),
+                'Mode.TRadiobutton':('padding',),
                 'Treeview.Heading':('padding',),'TScrollbar':('arrowsize',),
                 'Workspace.Horizontal.TProgressbar':('thickness',)
             }.items():

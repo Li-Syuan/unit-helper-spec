@@ -17,7 +17,7 @@ class WorkspaceViews:
         self.detail_window=None
         self.detail_widgets=None
         self.ui_images={}
-        for name in ('chat','query','work','result','schedule','notice','issue','settings','send','attach'):
+        for name in ('chat','query','work','result','schedule','notice','issue','settings','send','attach','todo','activity','team','help','collapse','expand','new','more'):
             for variant in ('dark','light'):
                 size=self.display.icon_size()
                 path=Path(__file__).parent/'assets'/'ui'/f'{name}-{variant}-{size}.png'
@@ -44,7 +44,7 @@ class WorkspaceViews:
         page.bind('<Configure>',width)
         self.build_assistant_bar(tab)
         self.assistant_usage.pack_forget()
-        self.profile_picker.master.pack_configure(pady=0)
+        self.assistant_bar.pack_configure(pady=0)
         self.task_card=ttk.Frame(tab,style='Card.TFrame',padding=(12,8))
         # The selected action already presents its status; no empty work banner.
         self.task_card_label=ttk.Label(self.task_card,text='準備就緒',style='CardMuted.TLabel')

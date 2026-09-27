@@ -301,5 +301,241 @@
       "Human coworker usability acceptance",
       "Company notification sources"
     ]
+  },
+  "workspace_0_13_0": {
+    "recorded_at_utc": "2026-09-27T17:12:09.114561+00:00",
+    "kind": "programmatic_real_Tk_synthetic_data",
+    "network_requests": 0,
+    "team": [
+      {
+        "page": "team",
+        "theme": "dark",
+        "size": [
+          1050,
+          700
+        ],
+        "columns": 1,
+        "cards": 6,
+        "sidebar_visible": {
+          "chat": true,
+          "team": true,
+          "todo": true,
+          "schedule": true,
+          "activity": true,
+          "notice": true,
+          "settings": true,
+          "issue": true
+        }
+      },
+      {
+        "page": "team",
+        "theme": "dark",
+        "size": [
+          1280,
+          860
+        ],
+        "columns": 2,
+        "cards": 6,
+        "sidebar_visible": {
+          "chat": true,
+          "team": true,
+          "todo": true,
+          "schedule": true,
+          "activity": true,
+          "notice": true,
+          "settings": true,
+          "issue": true
+        }
+      },
+      {
+        "page": "team",
+        "theme": "light",
+        "size": [
+          1050,
+          700
+        ],
+        "columns": 1,
+        "cards": 6,
+        "sidebar_visible": {
+          "chat": true,
+          "team": true,
+          "todo": true,
+          "schedule": true,
+          "activity": true,
+          "notice": true,
+          "settings": true,
+          "issue": true
+        }
+      },
+      {
+        "page": "team",
+        "theme": "light",
+        "size": [
+          1280,
+          860
+        ],
+        "columns": 2,
+        "cards": 6,
+        "sidebar_visible": {
+          "chat": true,
+          "team": true,
+          "todo": true,
+          "schedule": true,
+          "activity": true,
+          "notice": true,
+          "settings": true,
+          "issue": true
+        }
+      }
+    ],
+    "workflow": [
+      {
+        "theme": "dark",
+        "size": [
+          1050,
+          700
+        ],
+        "controls": [
+          {
+            "text": "送給主代理討論",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "確認執行",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "修改步驟",
+            "visible": true,
+            "inside": true
+          }
+        ]
+      },
+      {
+        "theme": "dark",
+        "size": [
+          1280,
+          860
+        ],
+        "controls": [
+          {
+            "text": "送給主代理討論",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "確認執行",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "修改步驟",
+            "visible": true,
+            "inside": true
+          }
+        ]
+      },
+      {
+        "theme": "dark",
+        "size": "maximized",
+        "controls": [
+          {
+            "text": "送給主代理討論",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "確認執行",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "修改步驟",
+            "visible": true,
+            "inside": true
+          }
+        ]
+      },
+      {
+        "theme": "light",
+        "size": [
+          1050,
+          700
+        ],
+        "controls": [
+          {
+            "text": "送給主代理討論",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "確認執行",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "修改步驟",
+            "visible": true,
+            "inside": true
+          }
+        ]
+      },
+      {
+        "theme": "light",
+        "size": [
+          1280,
+          860
+        ],
+        "controls": [
+          {
+            "text": "送給主代理討論",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "確認執行",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "修改步驟",
+            "visible": true,
+            "inside": true
+          }
+        ]
+      },
+      {
+        "theme": "light",
+        "size": "maximized",
+        "controls": [
+          {
+            "text": "送給主代理討論",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "確認執行",
+            "visible": true,
+            "inside": true
+          },
+          {
+            "text": "修改步驟",
+            "visible": true,
+            "inside": true
+          }
+        ]
+      }
+    ],
+    "reviewed": [
+      "dark/light 1050x700 and 1280x860",
+      "maximized Plan",
+      "collapsed navigation with unread badge",
+      "assistant details",
+      "step editor"
+    ],
+    "manual_colleague_usability": "not_tested",
+    "company_services": "not_tested"
   }
 }

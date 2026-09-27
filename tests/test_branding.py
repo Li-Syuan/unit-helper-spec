@@ -20,6 +20,27 @@ from types import SimpleNamespace
 
 
 class BrandingTests(unittest.TestCase):
+    def test_repeated_theme_icons_release_native_handles(self):
+        user=ctypes.windll.user32
+        kernel=ctypes.windll.kernel32
+        kernel.GetCurrentProcess.restype=wintypes.HANDLE
+        user.GetGuiResources.argtypes=[wintypes.HANDLE,wintypes.DWORD]
+        user.GetGuiResources.restype=wintypes.DWORD
+        process=kernel.GetCurrentProcess()
+        root=tk.Tk(); root.withdraw()
+        child=tk.Toplevel(root); child.withdraw()
+        try:
+            branding.apply_icons(root); root.update()
+            baseline=[user.GetGuiResources(process,n) for n in (0,1)]
+            for index in range(18):
+                branding.apply_icons(root,theme='light' if index%2 else 'dark')
+                root.update()
+            after=[user.GetGuiResources(process,n) for n in (0,1)]
+            for first,last in zip(baseline,after):
+                self.assertLess(last-first,20,'Theme changes must not accumulate Windows icon handles')
+        finally:
+            child.destroy(); root.destroy(); del child,root; gc.collect()
+
     def test_ico_sizes_and_png_transparent_corners(self):
         for folder in (branding.ASSETS, branding.ASSETS/'light'):
             with self.subTest(folder=folder): self.check_icon_pack(folder)
@@ -118,6 +139,8 @@ class BrandingTests(unittest.TestCase):
                 root.update()
                 self.assertTrue(root.title().startswith('QA agent'))
                 self.assertTrue(app.brand_warning)
+                self.assertEqual(app.brand_warning_label.cget('text'),app.brand_warning)
+                self.assertEqual(app.brand_warning_label.winfo_manager(),'pack')
                 self.assertIsNone(app.brand_icon)
                 app.store.add_message(app.conversation,'assistant','測試答案')
                 app.show_chat()

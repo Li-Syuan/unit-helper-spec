@@ -8,6 +8,7 @@ from .branding import apply_child_icons
 from .display import scroll_frame
 from .query_schema import find_template, parameters, initial_values
 from .preferences import load_preferences, update_preferences
+from .workflow_presenter import WorkflowPresenter, detail_text
 from . import dialogs as messagebox
 
 ROLES={'planner':'主代理／規劃','analysis':'分析','review':'覆核','compose':'彙整','rag':'資料查找'}
@@ -22,10 +23,11 @@ class WorkflowViews:
         stored=load_preferences(self.preferences_path).get('conversation_modes',{})
         self.workflow_modes=stored if isinstance(stored,dict) else {};self.workflow_cid=None
         self.workflow_mode=tk.StringVar(value='chat');self.workflow_consent=tk.BooleanVar(value=False)
-        bar=self.profile_picker.master
+        bar=self.assistant_bar
         self.profile_picker.configure(width=16)
+        modes=self.workflow_mode_controls=ttk.Frame(bar);modes.pack(side='left')
         for text,value in [('聊天','chat'),('規劃工作','workflow')]:
-            ttk.Radiobutton(bar,text=text,value=value,variable=self.workflow_mode,command=self.change_workflow_mode).pack(side='left',padx=(0,4))
+            ttk.Radiobutton(modes,text=text,value=value,variable=self.workflow_mode,style='Mode.TRadiobutton',command=self.change_workflow_mode).pack(side='left',padx=(0,4))
         self.button(bar,'流程紀錄',self.open_workflow_list,'Compact.TButton').pack(side='right')
         self.workflow_panel=ttk.Frame(self.chat_column)
         top=ttk.Frame(self.workflow_panel);top.pack(fill='x')
@@ -36,23 +38,33 @@ class WorkflowViews:
         self.workflow_state.pack(fill='x',pady=4)
         self.workflow_progress=ttk.Progressbar(self.workflow_panel,mode='indeterminate')
         self.workflow_progress_running=False
-        body=ttk.Frame(self.workflow_panel);body.pack(fill='both',expand=True)
+        self.workflow_body=ttk.Frame(self.workflow_panel)
+        self.workflow_notebook=ttk.Notebook(self.workflow_body)
+        self.workflow_notebook.pack(fill='both',expand=True)
+        self.workflow_steps_view=WorkflowPresenter(self.workflow_notebook,self,self.show_workflow_step)
+        self.workflow_notebook.add(self.workflow_steps_view,text='分工進度')
+        body=ttk.Frame(self.workflow_notebook)
+        self.workflow_notebook.add(body,text='完整討論與成果')
         self.workflow_text=tk.Text(body,state='disabled',wrap='word',height=5,exportselection=False)
         self.workflow_text.pack(side='left',fill='both',expand=True)
         scroll=ttk.Scrollbar(body,command=self.workflow_text.yview);scroll.pack(side='right',fill='y')
         self.workflow_text.configure(yscrollcommand=scroll.set)
-        self.workflow_questions_box=ttk.Frame(self.workflow_panel);self.workflow_questions_box.pack(fill='x')
+        self.workflow_steps_key=None
+        self.workflow_footer=ttk.Frame(self.workflow_panel);self.workflow_footer.pack(side='bottom',fill='x')
+        self.workflow_questions_box=ttk.Frame(self.workflow_footer);self.workflow_questions_box.pack(fill='x')
         self.workflow_question_vars={};self.workflow_questions_key=None
-        self.workflow_consent_button=ttk.Checkbutton(self.workflow_panel,text='同意依本版計畫，將指定輸入及前置成果傳給列出的助理',variable=self.workflow_consent)
+        self.workflow_consent_button=ttk.Label(self.workflow_footer,text='按「確認執行」即同意將指定輸入與前置成果交給上述助理。',style='Muted.TLabel',wraplength=650)
         self.workflow_consent_button.pack(anchor='w',pady=3)
-        self.workflow_controls=ttk.Frame(self.workflow_panel);self.workflow_controls.pack(fill='x')
+        self.workflow_controls=ttk.Frame(self.workflow_footer);self.workflow_controls.pack(fill='x')
         self.workflow_buttons={}
-        for text,fn in [('修改步驟',self.edit_workflow_steps),('批准並試跑',self.confirm_workflow),('停止',self.cancel_workflow),
+        for text,fn in [('修改步驟',self.edit_workflow_steps),('批准並試跑',self.confirm_workflow_from_card),('停止',self.cancel_workflow),
                         ('重試未完成步驟',self.retry_workflow),('設為自動工作',self.schedule_workflow),
                         ('現在測試一次',self.run_workflow_now),('暫停自動工作',self.pause_workflow_schedule),('步驟詳情',self.workflow_step_details)]:
             button=self.button(self.workflow_controls,text,fn,'Primary.TButton' if text=='批准並試跑' else 'Compact.TButton')
             self.workflow_buttons[text]=button
-        ttk.Label(self.workflow_panel,text='產生計畫會呼叫主代理；批准前不查詢、不派發子代理。請用輸入框繼續討論。',style='Muted.TLabel',wraplength=680).pack(fill='x',pady=3)
+            if text=='批准並試跑':button.configure(text='確認執行')
+        ttk.Label(self.workflow_footer,text='產生計畫會呼叫主代理；批准前不查詢、不派發子代理。請用輸入框繼續討論。',style='Muted.TLabel',wraplength=680).pack(fill='x',pady=3)
+        self.workflow_body.pack(fill='both',expand=True)
         self.refresh_workflow_catalog()
 
     def refresh_workflow_catalog(self):
@@ -119,10 +131,14 @@ class WorkflowViews:
             self.workflow_mode.set('workflow' if self.workflow_modes.get(self.conversation)=='workflow' else 'chat')
         visible=self.workflow_mode.get()=='workflow'
         if visible:
+            self.chat_assistant_controls.pack_forget();self.assistant_usage.pack_forget()
             for widget in self.workflow_chat_children:widget.pack_forget()
             self.action_panel.pack_forget();self.work_cards_box.pack_forget();self.task_card.pack_forget()
             if not self.workflow_panel.winfo_manager():self.workflow_panel.pack(in_=self._action_conversation_widget,fill='both',expand=True)
         else:
+            if not self.chat_assistant_controls.winfo_manager():
+                self.chat_assistant_controls.pack(side='left',before=self.workflow_mode_controls)
+                self.assistant_usage.pack(fill='x',pady=(0,4),after=self.assistant_bar)
             self.workflow_panel.pack_forget()
             if not self.transcript.winfo_manager():
                 self.transcript.pack(side='left',fill='both',expand=True)
@@ -139,6 +155,11 @@ class WorkflowViews:
         if self.workflow_id!=wid or (record and self.workflow_record and record['revision']!=self.workflow_record['revision']):
             self.workflow_consent.set(False);force=True
         self.workflow_id=wid;self.workflow_record=record
+        steps_key=(wid,bool(record and record.get('steps')))
+        if steps_key!=self.workflow_steps_key:
+            self.workflow_notebook.select(self.workflow_steps_view if steps_key[1] else self.workflow_text.master)
+            self.workflow_steps_key=steps_key
+        self.workflow_steps_view.update_record(record)
         if not record:
             text='先說明你想完成什麼工作。\n\n例如：查昨天 A 類數量合計，請分析助理整理，再交覆核助理檢查，最後產生日報。\n\n主代理會和你補齊條件、提出分工；你批准後才由子代理依序執行。'
             self.workflow_state.configure(text='尚未建立計畫' if self.workflow_planners else '請先在設定配置並驗證規劃助理；不會自動改用外部模型。')
@@ -158,7 +179,7 @@ class WorkflowViews:
             if not force:self.workflow_text.yview_moveto(view[0])
         busy=state in ('planning','queued','running')
         if busy and not self.workflow_progress_running:
-            self.workflow_progress.pack(fill='x',before=self.workflow_text.master);self.workflow_progress.start(12);self.workflow_progress_running=True
+            self.workflow_progress.pack(fill='x',before=self.workflow_body);self.workflow_progress.start(12);self.workflow_progress_running=True
         elif not busy and self.workflow_progress_running:
             self.workflow_progress.stop();self.workflow_progress.pack_forget();self.workflow_progress_running=False
         for button in self.workflow_buttons.values():button.pack_forget()
@@ -174,7 +195,9 @@ class WorkflowViews:
             if record.get('schedule') and not busy:
                 self.workflow_buttons['現在測試一次'].pack(side='left')
                 if record['schedule']['enabled']:self.workflow_buttons['暫停自動工作'].pack(side='right')
-        self.workflow_consent_button.configure(state='normal' if record and not task and not busy else 'disabled')
+        if record and not task and not busy:
+            self.workflow_consent_button.pack(anchor='w',pady=3,before=self.workflow_controls)
+        else:self.workflow_consent_button.pack_forget()
         self.refresh_workflow_questions(record)
         if record:self.workflow_planner.configure(state='disabled')
         else:self.workflow_planner.configure(state='readonly')
@@ -234,10 +257,20 @@ class WorkflowViews:
         self.drafts.pop(self.conversation,None);self.workflow_consent.set(False);self.refresh_workflow_view()
 
     def confirm_workflow(self):
-        if not self.workflow_consent.get():raise ValueError('請先核對每一步的目的助理與資料，再勾選傳送授權。')
+        if not self.workflow_consent.get():raise ValueError('請先核對每一步的目的助理與資料，再按「確認執行」。')
         r=self.workflow_record;preview=self.workflows.preview(r['id'],r['revision'])
         if not preview.get('ready'):raise ValueError(preview.get('error') or '計畫尚未完整。')
         self.workflows.confirm(r['id'],r['revision'],consent=True);self.refresh_workflow_view()
+
+    def confirm_workflow_from_card(self):
+        """One explicit click authorizes exactly the displayed version, never a future revision."""
+        record=self.workflow_record
+        if not record:raise ValueError('請先與主代理建立計畫。')
+        if record.get('task'):return
+        if record['state']!='ready':raise ValueError('請先補齊計畫內容。')
+        self.workflow_consent.set(True)
+        try:self.confirm_workflow()
+        finally:self.workflow_consent.set(False)
 
     def cancel_workflow(self):
         self.workflows.cancel(self.workflow_id);self.refresh_workflow_view()
@@ -255,6 +288,24 @@ class WorkflowViews:
 
     def workflow_step_details(self):
         self.show_workflow_result(self.workflow_record['task']['id'])
+
+    def show_workflow_step(self,row,record):
+        """Open a fixed read-only snapshot, without dispatching or changing approval."""
+        w,body=self.workflow_window('步驟詳情 · '+row['title'])
+        ttk.Label(body,text='本視窗為開啟時的快照；最新進度請回分工清單查看。',style='Muted.TLabel',wraplength=570).pack(fill='x',pady=(0,6))
+        box=ttk.Frame(body);box.pack(fill='both',expand=True)
+        text=tk.Text(box,wrap='word',height=14,exportselection=False)
+        text.pack(side='left',fill='both',expand=True)
+        bar=ttk.Scrollbar(box,command=text.yview);bar.pack(side='right',fill='y')
+        text.configure(yscrollcommand=bar.set)
+        content=detail_text(row,record);text.insert('1.0',content);text.configure(state='disabled')
+        actions=ttk.Frame(w,padding=8);actions.pack(side='bottom',fill='x')
+        self.button(actions,'複製完整內容',lambda:self.clipboard(content),'Compact.TButton').pack(side='left')
+        result=(row['observed'].get('output') or {}).get('query_result')
+        if result:self.button(actions,'查看原始表格',lambda:self.show_workflow_table(result),'Compact.TButton').pack(side='left',padx=6)
+        self.button(actions,'關閉',w.destroy,'Compact.TButton').pack(side='right')
+        self.appearance.apply(w);w.workflow_step_text=text
+        return w
 
     def workflow_window(self,title):
         w=tk.Toplevel(self.root);apply_child_icons(w);w.title(title);w.transient(self.root)
@@ -346,7 +397,15 @@ class WorkflowViews:
     def show_workflow_result(self,tid):
         task=self.store.task(tid);w,body=self.workflow_window('多助理執行結果')
         steps=self.workflows.get_task_steps(tid)
-        text=tk.Text(body,wrap='word',height=12);text.pack(fill='both',expand=True)
+        notebook=ttk.Notebook(body);notebook.pack(fill='both',expand=True)
+        presenter=WorkflowPresenter(notebook,self,self.show_workflow_step)
+        notebook.add(presenter,text='分工與成果')
+        spec=task['payload']['workflow']
+        presenter.update_record(dict(spec,task=task,steps_status=steps))
+        full=ttk.Frame(notebook);notebook.add(full,text='完整成果文字')
+        text=tk.Text(full,wrap='word',height=12);text.pack(side='left',fill='both',expand=True)
+        scrollbar=ttk.Scrollbar(full,command=text.yview);scrollbar.pack(side='right',fill='y')
+        text.configure(yscrollcommand=scrollbar.set)
         lines=[STATES.get(task['state'],task['state']),task.get('error') or '',(task.get('result') or {}).get('report','')]
         for step in steps:
             lines.extend(['\n步驟 '+step['step_id']+' · '+STATES.get(step['state'],step['state']),
@@ -356,7 +415,7 @@ class WorkflowViews:
                 self.button(w,'查看 '+step['step_id']+' 原始表格',lambda s=step:self.show_workflow_table(s['output']['query_result']),'Compact.TButton').pack(side='bottom',pady=3)
         text.insert('1.0','\n'.join(lines))
         self.button(w,'複製成果',lambda:self.clipboard((task.get('result') or {}).get('report') or text.get('1.0','end-1c')),'Compact.TButton').pack(side='bottom',pady=3)
-        text.configure(state='disabled');self.appearance.apply(w)
+        text.configure(state='disabled');self.appearance.apply(w);w.workflow_steps_view=presenter
         return w
 
     def show_workflow_table(self,result):

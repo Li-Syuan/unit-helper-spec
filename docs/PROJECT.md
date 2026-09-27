@@ -1,8 +1,12 @@
-# QA agent 0.12.1：產品與架構
+# QA agent 0.13.0：產品與架構
 
 本文件是現行行為契約。程式與 UI 已完成本機功能；公司接線見 [工作單](../COMPANY-HANDOFF.md)，實測與未測項目見 [驗證摘要](VALIDATION.md)。
 
 ## 分層
+
+0.13.0 新增 `navigation.py` 原地收合側欄、`team_views.py` 助理卡片與既有管理入口、`workflow_presenter.py` 純讀取分工清單。頁面仍為原生 Tkinter，沒有 WebView、套件或 schema 變更。團隊狀態依 Profiles 真實設定顯示；UI 不建立能力驗證紀錄，不因進入團隊或選步而呼叫模型。
+
+一般使用者路徑是「說需求 → 核對分工 → 一次確認執行」。主要按鈕旁明示此版本資料傳送，點擊後才提交 consent；服務層修訂、綁定、防重不变，未來修訂不沿用授權。公司 API 與能力啟用仍由公司接線者負責，不承諾任意 assistant ID 都可直接自動協作。
 
 新增選用的 Groq 個人試用入口 start-trial.bat。trial.py 管固定端點／模型、有限 .env 讀取與唯讀助理清單；--groq-trial 與 --config 互斥。App 使用獨立 groq-trial 子目錄及預設合成查詢／身分，不讀公司 config 或 profiles。原入口與 adapter 契約保持不變，無新套件；本機 schema 5 保存對話來源及協作流程。不是恢復舊導覽流程。
 

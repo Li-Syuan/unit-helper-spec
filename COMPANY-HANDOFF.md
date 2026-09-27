@@ -1,6 +1,10 @@
 # QA agent 公司接手工作單
 
-目前版本 **0.12.1**，已完成本機桌面與接手工具；沿用本機待辦、常用工作與草稿恢復，圖示已隨外觀切換，無須公司重新接線。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。目前沒有公司原始碼、成功 API 樣本或資料庫規格，不能保證只填三個參數就全部接通。
+目前版本 **0.13.0**，已完成本機桌面與接手工具；圖示侧欄、助理團隊及分工進度可直接沿用。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。目前沒有公司原始碼、成功 API 樣本或資料庫規格，不能保證任意端點只填三個參數就全部接通。
+
+交付給一般同仁的目標：公司接線者先配置共用 endpoint、請求／session 映射與核准助理能力；同仁只需設定個人 API key、加入已核准 assistant ID，說需求並按一次「確認執行」。不要要求同仁編輯程式、填驗證證據或理解 adapter。新增未核准 ID 仍顯示待驗證，不能偽裝可自動協作。
+
+UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用與分工設定；分工清單顯示真實狀態並開完整成果；規劃模式隱藏無關的聊天助理選單。公司完成接線後，請用全新使用者實際走一遍「填金鑰與 ID → 需求討論 → 一次確認 → 成果 → 排程」，確認無需修改 UI，記錄 company_real_passed 前不得以本機模擬代替。
 
 通知呈現已集中至 `desktop_app/notifications.py`：右下角非模態彈窗與側欄紅色未讀徽章，直接讀取既有 Store 通知；公司接線不必重做通知 UI，也不得以彈窗取代通知持久保存或新增自動派發。
 
@@ -144,7 +148,7 @@
 ## 可直接貼給 GPT 6 sol
 
 ~~~text
-請接手 QA agent 0.12.1 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或無界限自主代理。
+請接手 QA agent 0.13.0 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或無界限自主代理。一般使用者只負責金鑰／助理 ID、需求與一次確認；你負責預先接好公司 API、session 與助理能力規則。
 
 先盤點公司已有程式、成功 API 範例及環境，依 COMPANY-HANDOFF 的資訊表確認缺項；找得到就沿用，缺少時一次問最少必要問題並繼續獨立可做工作。不要猜 URL、assistant ID 傳送位置、session、AD／SQL 欄位或秘密；秘密不貼對話、不進 repo／log。
 
