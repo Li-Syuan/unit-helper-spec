@@ -12,6 +12,7 @@ from unittest.mock import patch
 from desktop_app import branding
 from desktop_app.theme import Appearance
 from desktop_app.config import DEFAULT
+from desktop_app.display import Display
 from desktop_app.ui import App, ChoiceDialog
 from types import SimpleNamespace
 
@@ -48,7 +49,7 @@ class BrandingTests(unittest.TestCase):
                 icon,error=branding.apply_icons(root)
                 self.assertFalse(error); self.assertEqual(icon.width(),32)
                 appearance=Appearance(root)
-                child=ChoiceDialog(SimpleNamespace(root=root,appearance=appearance,palette=appearance.colors,safe=lambda fn:fn()),{'questions':[]},lambda _:None)
+                child=ChoiceDialog(SimpleNamespace(root=root,display=Display(root),appearance=appearance,palette=appearance.colors,safe=lambda fn:fn()),{'questions':[]},lambda _:None)
                 root.deiconify(); child.deiconify(); root.update()
                 user=ctypes.windll.user32
                 user.SendMessageW.argtypes=[wintypes.HWND,wintypes.UINT,wintypes.WPARAM,wintypes.LPARAM]

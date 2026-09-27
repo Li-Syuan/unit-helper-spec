@@ -18,6 +18,8 @@ from .assistant_views import AssistantViews
 from .experience import ExperienceMixin
 from .workspace import WorkspaceViews
 from .guidance import GuidanceViews
+from .conversation_views import ConversationViews
+from .display import Display, WorkspaceViewport, initialize_dpi, scroll_frame
 from .keyboard import install_chat_keyboard
 from .branding import APP_NAME, apply_icons, apply_child_icons, set_windows_identity
 from .query_schema import find_template, validate_template, parameters as query_parameters, initial_values, describe
@@ -44,8 +46,8 @@ class ChoiceDialog(tk.Toplevel):
     def __init__(self, app, form, callback):
         super().__init__(app.root); apply_child_icons(self); self.title('請確認選項'); self.transient(app.root); self.grab_set()
         self.app,self.form,self.callback=app,form,callback; self.variables={}; self.request_id=uuid.uuid4().hex
-        self.configure(background=app.palette.BG); self.minsize(520,300)
-        body=ttk.Frame(self,padding=24); body.pack(fill='both',expand=True)
+        self.configure(background=app.palette.BG); app.display.size_window(self,650,480,(520,300))
+        body=scroll_frame(self,padding=24); body.pack(fill='both',expand=True)
         ttk.Label(body,text='確認一下你的需求',style='Section.TLabel').pack(anchor='w',pady=(0,8))
         ttk.Label(body,text='選好後確認；這一步不會直接執行工作。',style='Muted.TLabel').pack(anchor='w',pady=(0,8))
         for q in form['questions']:
@@ -74,7 +76,7 @@ class ChoiceDialog(tk.Toplevel):
         self.app.forms.submit(self.form['id'],self.form['version'],answers,self.request_id)
         self.destroy(); self.callback(answers)
 
-class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
+class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, ConversationViews):
     def __init__(self, root, config=None, directory=None, config_path=None):
         self.drafts={}; self.next_binding=None
         self.root=root; self.directory=Path(directory or data_directory()); self.config_path=config_path or self.directory/'config.json'
@@ -96,9 +98,9 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
         self.editing_plan=None; self.issue_id=None; self.seen={t['id']:t['state'] for t in self.store.tasks()}
         self.conversation=None; self.conversation_ids=[]; self.preview_plan=None
         root.title(APP_NAME+' · 本機版 '+__version__)
+        self.display=Display(root)
         self.brand_icon,self.brand_warning=apply_icons(root)
-        root.geometry(f'{min(1280,root.winfo_screenwidth()-60)}x{min(860,root.winfo_screenheight()-100)}')
-        root.minsize(1050,700)
+        self.display.size_window(root,1280,860,(1050,700))
         self.preferences_path=self.directory/'ui-preferences.json'
         self.appearance=theme.Appearance(root,load_theme(self.preferences_path))
         self.palette=self.appearance.colors; self.style=self.appearance.style
@@ -118,11 +120,14 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
         root.protocol('WM_DELETE_WINDOW',self.close); self.poll_id=root.after(150,self.poll)
         self.scheduler=threading.Thread(target=self.scheduler_loop,daemon=True); self.scheduler.start()
     def build_shell(self):
-        side=tk.Frame(self.root,bg=self.palette.SIDEBAR,width=208)
+        self.viewport=WorkspaceViewport(self.root,self.display);self.viewport.pack(fill='both',expand=True)
+        self.root.bind('<FocusIn>',self.viewport.reveal,add='+')
+        surface=self.viewport.body
+        side=tk.Frame(surface,bg=self.palette.SIDEBAR,width=208)
         side._theme_role='sidebar'; side.pack(side='left',fill='y'); side.pack_propagate(False)
-        tk.Label(side,text='本機示範身分 · 非 AD\n版本 '+__version__,font=(self.palette.FONT,8),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(side='bottom',fill='x',padx=22,pady=(5,18))
-        tk.Button(side,text='待回答的選項  →',anchor='w',font=(self.palette.FONT,9),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
-                  activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,pady=10,
+        tk.Label(side,text='本機示範身分 · 非 AD\n版本 '+__version__,font=(self.palette.FONT,10),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(side='bottom',fill='x',padx=22,pady=(4,10))
+        tk.Button(side,text='待回答的選項  →',anchor='w',font=(self.palette.FONT,10),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
+                  activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,pady=4,
                   command=lambda:self.safe(self.resume_form)).pack(side='bottom',fill='x',padx=20)
         help_bar=tk.Frame(side);help_bar.pack(side='bottom',fill='x',padx=12,pady=3)
         tk.Button(help_bar,text='操作提示',relief='flat',command=self.toggle_page_hint).pack(side='left')
@@ -132,10 +137,10 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
             tk.Label(brand,image=self.brand_icon,bg=self.palette.SIDEBAR).pack(side='left',padx=(0,8))
         brand_label=tk.Label(brand,text=APP_NAME,font=(self.palette.FONT,14,'bold'),bg=self.palette.SIDEBAR,fg=self.palette.INK,anchor='w'); brand_label._theme_role='brand'; brand_label.pack(side='left')
         if self.brand_warning:
-            warning=tk.Label(side,text=self.brand_warning,font=(self.palette.FONT,8),wraplength=185,bg=self.palette.SIDEBAR,fg=self.palette.WARNING,justify='left'); warning._theme_role='warning'; warning.pack(fill='x',padx=18)
-        tk.Label(side,text='讓日常工作，簡單一點。',font=(self.palette.FONT,9),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(fill='x',padx=22,pady=(0,8))
+            warning=tk.Label(side,text=self.brand_warning,font=(self.palette.FONT,10),wraplength=185,bg=self.palette.SIDEBAR,fg=self.palette.WARNING,justify='left'); warning._theme_role='warning'; warning.pack(fill='x',padx=18)
+        tk.Label(side,text='讓日常工作，簡單一點。',font=(self.palette.FONT,10),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(fill='x',padx=22,pady=(0,4))
         new_button=tk.Button(side,text='＋  開始新對話',font=(self.palette.FONT,10,'bold'),bg=self.palette.TINT,fg=self.palette.SIDEBAR,
-                  activebackground=self.palette.SIDEBAR_HOVER,relief='flat',bd=0,pady=10,cursor='hand2',command=lambda:self.safe(self.new_chat)); new_button._theme_role='new_chat'; new_button.pack(fill='x',padx=12,pady=(0,8))
+                  activebackground=self.palette.SIDEBAR_HOVER,relief='flat',bd=0,pady=6,cursor='hand2',command=lambda:self.safe(self.new_chat)); new_button._theme_role='new_chat'; new_button.pack(fill='x',padx=12,pady=(0,4))
         self.routes=[('chat','對話','把需求說出來，一起完成手邊的工作。'),
                      ('query','查資料','選擇常用查詢，快速取得需要的資料。'),
                      ('work','計畫與任務','先確認步驟，再放心執行。'),
@@ -148,25 +153,28 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
         for key,title,_ in self.routes:
             if key in ('chat','schedule','issue'):
                 group={'chat':'工作','schedule':'管理','issue':'協助'}[key]
-                tk.Label(side,text=group,font=(self.palette.FONT,8),anchor='w').pack(fill='x',padx=22,pady=(6,2))
-            button=tk.Button(side,text='  '+title,anchor='w',font=(self.palette.FONT,10),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
-                             activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,padx=10,pady=4,
+                tk.Label(side,text=group,font=(self.palette.FONT,10),anchor='w').pack(fill='x',padx=22,pady=(3,2))
+            button=tk.Button(side,text='  '+title,anchor='w',font=(self.palette.FONT,11),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
+                             activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,padx=10,pady=2,
                              cursor='hand2',command=lambda key=key:self.book.select(self.tabs[key]))
             button._workspace_icon=key
             image=self.ui_images.get((key,self.appearance.name))
             if image:button.configure(image=image,compound='left')
             button.pack(fill='x',padx=12,pady=1); self.nav_buttons[key]=button
         divider=tk.Frame(side,height=1); divider._theme_role='divider'; divider.pack(fill='x',padx=20,pady=(8,6))
-        tk.Label(side,text='最近的對話',font=(self.palette.FONT,9),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(fill='x',padx=22)
+        history_head=tk.Frame(side);history_head.pack(fill='x',padx=16)
+        tk.Label(history_head,text='最近的對話',font=(self.palette.FONT,10)).pack(side='left')
+        self.button(history_head,'管理對話',self.manage_conversations,'Compact.TButton').pack(side='right')
         history_box=ttk.Frame(side);history_box.pack(fill='both',expand=True,padx=16,pady=4)
         self.history=tk.Listbox(history_box,height=2,width=16,exportselection=False,bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
                                 selectbackground=self.palette.SIDEBAR_HOVER,selectforeground=self.palette.INK,relief='flat',bd=0,
-                                highlightthickness=0,font=(self.palette.FONT,9),activestyle='none')
+                                highlightthickness=0,font=(self.palette.FONT,10),activestyle='none')
         self.history.pack(side='left',fill='both',expand=True)
         history_scroll=ttk.Scrollbar(history_box,command=self.history.yview);history_scroll.pack(side='right',fill='y')
         self.history.configure(yscrollcommand=history_scroll.set)
+        self.history.bind('<Button-3>',self.history_context)
         self.history.bind('<<ListboxSelect>>',lambda e:self.safe(self.choose_chat))
-        self.main_area=ttk.Frame(self.root);self.main_area.pack(side='left',fill='both',expand=True)
+        self.main_area=ttk.Frame(surface);self.main_area.pack(side='left',fill='both',expand=True)
         main=self.main_content=ttk.Frame(self.main_area);main.pack(side='left',fill='both',expand=True)
         self.root.bind('<Configure>',self.place_detail,add='+')
         header=ttk.Frame(main,padding=(24,12,24,8)); header.pack(fill='x')
@@ -186,7 +194,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
         for key,title,hint in self.routes:
             active=str(self.tabs[key])==current
             self.nav_buttons[key].configure(bg=self.palette.SIDEBAR_HOVER if active else self.palette.SIDEBAR,
-                                             fg=self.palette.INK if active else self.palette.MUTED,font=(self.palette.FONT,10,'bold' if active else 'normal'))
+                                             fg=self.palette.INK if active else self.palette.MUTED,font=(self.palette.FONT,11,'bold' if active else 'normal'))
             if active: self.page_title.configure(text=title)
         self.refresh_page_hint()
     def button(self,parent,text,action,style=None):
@@ -293,19 +301,27 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
         def apply(a):
             self.purpose.set('整理重點' if a['purpose']==['summarize'] else '改寫文字')
             self.input.insert('end','\n需求：'+ '、'.join({'clear':'清楚易讀','brief':'精簡內容','formal':'正式語氣'}[x] for x in a['focus'])+'\n'); self.book.select(self.tabs['chat'])
-        ChoiceDialog(self,form,apply)
+        dialog=ChoiceDialog(self,form,apply);dialog.conversation_source=self.conversation
     def resume_form(self):
         forms=self.forms.open_forms()
         if not forms: raise ValueError('目前沒有待回答的選項。')
         ChoiceDialog(self,forms[-1],lambda a:messagebox.showinfo('答案已保存','已保存答案：'+json.dumps(a,ensure_ascii=False)+'\n請回到原功能繼續；不會自動執行工作。',parent=self.root))
     def upload(self):
         path=filedialog.askopenfilename(filetypes=[('文字或 CSV','*.txt *.csv')])
-        if path: self.background(lambda:load_upload(path),self.preview_upload)
-    def preview_upload(self,data):
-        window=tk.Toplevel(self.root); apply_child_icons(window); window.title('送出前預覽 · '+data['name']); window.geometry('740x520'); window.transient(self.root)
+        cid=self.conversation
+        if path: self.background(lambda:load_upload(path),lambda data:self.preview_upload(data,cid))
+    def preview_upload(self,data,conversation_id=None):
+        cid=conversation_id or self.conversation
+        try:self.store.conversation(cid)
+        except ValueError:return  # Deleted while the local file read was in flight.
+        window=tk.Toplevel(self.root); apply_child_icons(window); window.title('送出前預覽 · '+data['name']); self.display.size_window(window,740,520,(500,360)); window.transient(self.root)
+        window.conversation_source=cid
         text=tk.Text(window,wrap='none'); text.pack(fill='both',expand=True,padx=10,pady=10); put(text,data['preview'])
         ttk.Label(window,text='預覽前 2,000 字／CSV 前 20 列；送出會使用完整內容（超限則拒絕）。\n此步驟只在本機預覽；按送出後才傳給已設定助理。').pack()
-        def accept(): self.attachment=data; self.attachment_label.configure(text=data['name']+' · 已附加（保留原檔）'); window.destroy()
+        def accept():
+            self.store.conversation(cid)
+            if cid!=self.conversation:raise ValueError('請回到原對話附加此檔案。')
+            self.attachment=data;self.attachment_label.configure(text=data['name']+' · 已附加（保留原檔）');window.destroy()
         self.button(window,'使用此檔案',accept).pack(pady=10)
         self.appearance.apply(window)
     def clear_upload(self): self.attachment=None; self.attachment_label.configure(text='可先預覽，再送出')
@@ -385,6 +401,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
         for key in ('from_date','to_date','category'):
             if key in self.query_vars: setattr(self,key,self.query_vars[key])
         self.validate_query_fields()
+        self.appearance.apply(self.query_fields)
     def validate_query_fields(self):
         try:
             template=find_template(self.queries.catalog(),self.query_id.get())
@@ -526,7 +543,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
         if not self.result: self.result_empty.configure(text='目前為文字結果，請閱讀下方內容。'); self.result_empty.place(relx=.5,rely=.45,anchor='center')
         self.table.delete(*self.table.get_children()); columns=self.result['columns'] if self.result else []
         self.table.configure(columns=[c['name'] for c in columns])
-        for c in columns: self.table.heading(c['name'],text=c['label'],anchor='w'); self.table.column(c['name'],width=170,minwidth=120,stretch=True,anchor='e' if c.get('type') in ('integer','decimal') else 'w')
+        for c in columns: self.table.heading(c['name'],text=c['label'],anchor='w'); self.table.column(c['name'],width=self.display.px(170),minwidth=self.display.px(120),stretch=True,anchor='e' if c.get('type') in ('integer','decimal') else 'w')
         rows=self.result['rows'] if self.result else []; start=self.page*100
         for idx,row in enumerate(rows[start:start+100],start):
             values=[row[c['name']] for c in columns] if isinstance(row,dict) else row
@@ -536,7 +553,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
     def fit_result_columns(self,event=None):
         columns=self.table['columns']
         if columns:
-            width=max(120,(self.table.winfo_width()-4)//len(columns))
+            width=max(self.display.px(120),(self.table.winfo_width()-self.display.px(4))//len(columns))
             for name in columns: self.table.column(name,width=width)
     def change_page(self,offset):
         if self.result:
@@ -587,8 +604,8 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
         query_id=self.store.task(source)['payload']['query_id']
         rolling=self.engine.schedule_date_mapping(query_id) is not None
         date_options=['每次前一日','固定原參數'] if rolling else ['固定原參數']
-        window=tk.Toplevel(self.root); apply_child_icons(window); window.title('新增停用中的排程'); window.transient(self.root); window.grab_set()
-        body=ttk.Frame(window,padding=20); body.pack(); variables={}
+        window=tk.Toplevel(self.root); apply_child_icons(window); window.title('新增停用中的排程'); self.display.size_window(window,680,650,(500,400)); window.transient(self.root); window.grab_set()
+        body=scroll_frame(window,padding=20); body.pack(fill='both',expand=True); variables={}
         fields=[('name','名稱','每日查詢',None),('frequency','頻率','每日',['每日','每週']),('time','台北 HH:MM','09:00',None),('weekday','星期（0=一、6=日）','0',[str(x) for x in range(7)]),('dates','參數模式',date_options[0],date_options),('rule','通知','非空且內容改變',['非空且內容改變','數值由未達標轉達標']),('threshold','門檻（單一數值 >=）','10',None)]
         for i,(key,label,value,options) in enumerate(fields):
             ttk.Label(body,text=label).grid(row=i,column=0,sticky='w',pady=5); var=tk.StringVar(value=value); variables[key]=var
@@ -746,6 +763,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
 
 
 def launch(config_path=None):
+    initialize_dpi()
     set_windows_identity()
     root=tk.Tk()
     try: app=App(root,config_path=config_path)

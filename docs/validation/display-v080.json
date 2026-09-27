@@ -1,0 +1,279 @@
+{
+  "startup": {
+    "before": "unaware",
+    "after": "system",
+    "changed": true
+  },
+  "windows": [
+    {
+      "theme": "dark",
+      "state": "normal",
+      "simulation": null,
+      "input_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "transcript_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "send_fully_visible": true,
+      "awareness": "system",
+      "dpi": 143.86,
+      "layout_factor": 1.5,
+      "tk_scaling": 1.9980334316617503,
+      "window_pixels": [
+        1920,
+        1290
+      ],
+      "work_area_pixels": [
+        0,
+        0,
+        2560,
+        1528
+      ],
+      "font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "cross_monitor_live_scaling": "not_supported"
+    },
+    {
+      "theme": "dark",
+      "state": "maximized",
+      "simulation": null,
+      "input_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "transcript_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "send_fully_visible": true,
+      "awareness": "system",
+      "dpi": 143.86,
+      "layout_factor": 1.5,
+      "tk_scaling": 1.9980334316617503,
+      "window_pixels": [
+        2560,
+        1494
+      ],
+      "work_area_pixels": [
+        0,
+        0,
+        2560,
+        1528
+      ],
+      "font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "cross_monitor_live_scaling": "not_supported"
+    },
+    {
+      "theme": "dark",
+      "state": "small",
+      "simulation": null,
+      "input_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "transcript_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "send_fully_visible": true,
+      "awareness": "system",
+      "dpi": 143.86,
+      "layout_factor": 1.5,
+      "tk_scaling": 1.9980334316617503,
+      "window_pixels": [
+        1575,
+        1050
+      ],
+      "work_area_pixels": [
+        0,
+        0,
+        2560,
+        1528
+      ],
+      "font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "cross_monitor_live_scaling": "not_supported"
+    },
+    {
+      "theme": "light",
+      "state": "normal",
+      "simulation": null,
+      "input_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "transcript_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "send_fully_visible": true,
+      "awareness": "system",
+      "dpi": 143.86,
+      "layout_factor": 1.5,
+      "tk_scaling": 1.9980334316617503,
+      "window_pixels": [
+        1920,
+        1290
+      ],
+      "work_area_pixels": [
+        0,
+        0,
+        2560,
+        1528
+      ],
+      "font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "cross_monitor_live_scaling": "not_supported"
+    },
+    {
+      "theme": "light",
+      "state": "maximized",
+      "simulation": null,
+      "input_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "transcript_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "send_fully_visible": true,
+      "awareness": "system",
+      "dpi": 143.86,
+      "layout_factor": 1.5,
+      "tk_scaling": 1.9980334316617503,
+      "window_pixels": [
+        2560,
+        1494
+      ],
+      "work_area_pixels": [
+        0,
+        0,
+        2560,
+        1528
+      ],
+      "font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "cross_monitor_live_scaling": "not_supported"
+    },
+    {
+      "theme": "light",
+      "state": "small",
+      "simulation": null,
+      "input_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "transcript_font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "send_fully_visible": true,
+      "awareness": "system",
+      "dpi": 143.86,
+      "layout_factor": 1.5,
+      "tk_scaling": 1.9980334316617503,
+      "window_pixels": [
+        1575,
+        1050
+      ],
+      "work_area_pixels": [
+        0,
+        0,
+        2560,
+        1528
+      ],
+      "font": {
+        "family": "微軟正黑體",
+        "size": 12,
+        "weight": "normal",
+        "slant": "roman",
+        "underline": 0,
+        "overstrike": 0
+      },
+      "cross_monitor_live_scaling": "not_supported"
+    }
+  ]
+}

@@ -1,8 +1,10 @@
-# 實作狀態 — QA agent 0.7.1
+# 實作狀態 — QA agent 0.8.0
 
 | 工作 | 狀態與界線 | 主要檔案 |
 |---|---|---|
-| Python／鎖版／第二環境 | 0.7.1 三環境各 155 tests／0 skipped，doctor／pip check／freeze lock 通過；依賴未變 | scripts、requirements.lock |
+| 對話清理 | 單筆／搜尋多選預覽刪除；10 分鐘快照 token、真實 future 阻擋與整批交易；檔案／備份／獨立查詢排程／轉交副本保留；本輪證據見 VALIDATION-LOCAL | core、桌面刪除入口、USER-GUIDE |
+| DPI 與清晰度 | Tk 前 System aware、保留較高模式；集中尺寸換算、多尺寸本機圖示及小工作區捲動；真實多倍率／跨螢幕結果另列，不以模擬當通過 | display、theme、UI-DESIGN |
+| Python／鎖版／第二環境 | 0.8.0 三環境各 192 tests／0 skipped，doctor／pip check／freeze lock 通過；依賴未變 | scripts、requirements.lock |
 | 原地操作提示 | 八頁頁首提示、收合偏好與對應手冊；取代歡迎與獨立體驗，提示不派發工作；真 Tk 回歸與自身畫面已驗，見 VALIDATION-LOCAL | guidance、ui、preferences、USER-GUIDE |
 | 對話／歷史／背景／取消 | 本機已完成；Enter 送出／Shift+Enter 換行／Ctrl+Enter，IME 人工驗收待完成 | ui、theme、core |
 | OpenAI 相容 SDK | adapter + MockTransport 通過；公司實測未做 | gateways |
@@ -18,6 +20,8 @@
 | 中央 API／管理／更新／EXE | 本次不實作 | 原 v2.2 為後續路線 |
 
 後續接手 agent 應在這裡補「實際完成條件與證據」，不能把新增 adapter 檔案當成整合成功。
+
+0.8.0 沿用 schema 2、Python 3.10.4 與 29 個鎖定套件，沒有新的執行期依賴。本輪完整測試為三環境各 192 tests；實際 150% 視窗與合成倍率分開記錄，詳見 VALIDATION-LOCAL.md。
 
 ## 0.4.0 接手準備（歷史）
 

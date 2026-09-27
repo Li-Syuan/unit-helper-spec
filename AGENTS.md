@@ -2,7 +2,7 @@
 
 ## 優先範圍
 
-本次使用者核准的是 **QA agent 0.7.1 本機桌面與原地操作提示**，沿用既有公司接手準備包。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
+本次使用者核准的是 **QA agent 0.8.0 對話清理與畫面清晰度**，沿用原地操作提示與既有公司接手準備包。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
 
 ## 已完成，請延續
 
@@ -39,6 +39,10 @@
 完成後更新 docs/current-state.md、docs/implementation-status.md、VALIDATION-LOCAL.md（或另建公司實測檔），維持 manifest 一致。既有 spec ZIP 不重包成看似含原始碼的發布；Git history 保留規格。
 
 ## 介面維護
+
+0.8.0 新增單筆／搜尋勾選批次對話刪除。服務以 10 分鐘一次性 token 綁定完整快照，confirm 時鎖內重查與單一 SQLite 交易；沒有 schema 變更。任何選定對話的 queued/running/executing 或未完成真實 future（含已取消）都拒絕整批，不自動取消；不可只看 UI 狀態。待批准 Plan 可刪除，不派發。保留獨立查詢／排程、回報／表單、檔案／備份、公司端及其他轉交副本；異常跨資料關聯拒絕而不擴大刪除。刪除後關閉相關詳情／未送出預覽，清掉對應草稿，其他對話草稿保留。手冊「管理對話」為章節連結契約。
+
+display.py 在建立 Tk 前設定 Windows System DPI awareness，保留既有較高模式。固定尺寸以 100% 邏輯像素換算，點數字型不重複縮放；主要操作 11 點、聊天 12 點、次要提示至少 10 點，多尺寸本機圖示依倍率選取。小螢幕以工作區限制及可捲動內容保持操作可達。驗證記錄必須區分倍率換算測試、實際本機模式與真實 Windows 倍率／跨螢幕人工操作，不把模擬當完成。最大化不應把文字當圖片拉伸；本機舊模式 unaware 不足以宣稱唯一模糊成因。
 
 0.7.1 移除歡迎彈窗、獨立五步體驗與「快速體驗」入口。八頁在原頁首提供可收合、依目前狀態變更的操作提示與手冊章節入口；側欄「操作提示」切換目前頁面。正常示範助理與合成查詢保留，資料存於目前工作區，不能再宣稱示範操作使用獨立暫存資料。
 

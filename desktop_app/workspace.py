@@ -17,7 +17,9 @@ class WorkspaceViews:
         self.ui_images={}
         for name in ('chat','query','work','result','schedule','notice','issue','settings','send','attach'):
             for variant in ('dark','light'):
-                path=Path(__file__).parent/'assets'/'ui'/f'{name}-{variant}.png'
+                size=self.display.icon_size()
+                path=Path(__file__).parent/'assets'/'ui'/f'{name}-{variant}-{size}.png'
+                if not path.exists():path=Path(__file__).parent/'assets'/'ui'/f'{name}-{variant}.png'
                 try:self.ui_images[name,variant]=tk.PhotoImage(master=self.root,file=str(path))
                 except tk.TclError:pass  # Text labels remain usable without optional icons.
 
@@ -32,8 +34,11 @@ class WorkspaceViews:
         page=self.tabs['chat']
         page.columnconfigure(0,weight=1);page.columnconfigure(2,weight=1);page.rowconfigure(0,weight=1)
         self.chat_column=tab=ttk.Frame(page)
+        # Native Text defaults request 80 characters; do not let that minimum
+        # push the composer outside a narrow page after DPI/font scaling.
+        tab.pack_propagate(False)
         tab.grid(row=0,column=1,sticky='nsew')
-        def width(event):page.columnconfigure(1,minsize=min(820,max(1,event.width)),weight=0)
+        def width(event):page.columnconfigure(1,minsize=min(self.display.px(820),max(1,event.width-self.display.px(4))),weight=0)
         page.bind('<Configure>',width)
         self.build_assistant_bar(tab)
         self.task_card=ttk.Frame(tab,style='Card.TFrame',padding=(12,8))
@@ -57,8 +62,8 @@ class WorkspaceViews:
         for name,settings in {
             'welcome_title':{'font':(self.palette.FONT,20,'bold'),'justify':'center','spacing1':24,'spacing3':12},
             'welcome_body':{'justify':'center','spacing3':8},
-            'speaker_user':{'font':(self.palette.FONT,9,'bold'),'lmargin1':16,'lmargin2':16,'spacing1':16,'spacing3':8},
-            'speaker_assistant':{'font':(self.palette.FONT,9,'bold'),'lmargin1':16,'lmargin2':16,'spacing1':20,'spacing3':8},
+            'speaker_user':{'font':(self.palette.FONT,10,'bold'),'lmargin1':16,'lmargin2':16,'spacing1':16,'spacing3':8},
+            'speaker_assistant':{'font':(self.palette.FONT,10,'bold'),'lmargin1':16,'lmargin2':16,'spacing1':20,'spacing3':8},
             'body_user':{'lmargin1':16,'lmargin2':16,'rmargin':16,'spacing1':8,'spacing3':16},
             'body_assistant':{'lmargin1':16,'lmargin2':16,'rmargin':16,'spacing1':8,'spacing3':16},
             'separator':{'foreground':self.palette.BORDER,'spacing1':4,'spacing3':8}
@@ -176,17 +181,18 @@ class WorkspaceViews:
     def place_detail(self,event=None):
         if event is not None and event.widget is not self.root:return
         if not self.detail_requested:return
-        wide=self.root.winfo_width()>=1380
+        wide=self.root.winfo_width()>=self.display.px(1380)
         mode='panel' if wide else 'window'
         if getattr(self,'detail_mode',None)==mode and self.detail_widgets:return
         self.destroy_detail_view();self.detail_mode=mode
         if wide:
-            self.detail_panel=ttk.Frame(self.main_area,width=300)
+            self.detail_panel=ttk.Frame(self.main_area,width=self.display.px(300))
+            self.detail_panel._qa_pixels_scaled=True
             self.detail_panel.pack(side='right',fill='y',before=self.main_content,padx=(0,16),pady=(8,12));self.detail_panel.pack_propagate(False)
             self.detail_content(self.detail_panel)
         else:
             self.detail_window=tk.Toplevel(self.root);apply_child_icons(self.detail_window)
-            self.detail_window.title('QA agent · 工作詳情');self.detail_window.geometry('380x500');self.detail_window.minsize(340,360)
+            self.detail_window.title('QA agent · 工作詳情');self.display.size_window(self.detail_window,420,560,(340,360))
             self.detail_window.transient(self.root);self.detail_window.protocol('WM_DELETE_WINDOW',self.close_detail)
             self.detail_content(self.detail_window)
         self.refresh_detail()
@@ -214,7 +220,7 @@ class WorkspaceViews:
             convo=self.store.conversation(cid);p=self.profiles.information(payload.get('_binding') or convo['binding'])
             lines+=['對話：'+convo['title'],'助理：'+(p['name'] if p else '舊版／未知歸屬')]
             if p:lines+=['連線版本：'+str((payload.get('_binding') or convo['binding'])['revision'])]
-            if convo['source']:lines+=['來源：'+str(convo['source'])]
+            if convo['source']:lines+=['來源：'+self.source_description(convo['source'])]
         else:lines+=['來源：本機查詢／排程，不自動交給助理']
         if 'query_id' in payload:lines+=['模板：'+payload['query_id'],*self.query_conditions(payload['query_id'],payload['parameters'])]
         if kind=='plan':lines+=['修訂：'+str(record['revision']),'請至計畫頁檢視內容並自行批准。']

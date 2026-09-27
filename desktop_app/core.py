@@ -9,6 +9,7 @@ import hashlib
 import json
 import sqlite3
 import threading
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, wait
 from contextlib import contextmanager
@@ -241,6 +242,8 @@ class Engine:
         self._closed = False
         self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="unit-helper")
         self._futures = set()
+        self._future_tasks = {}
+        self._deletion_previews = {}
         self._assistant_dispatching = set()
         # Only the process holding the app's data-directory lock may create Engine.
         with store.connection() as db:
@@ -257,11 +260,103 @@ class Engine:
         """Called with _lock held so a fast completion cannot evade tracking."""
         future = self._pool.submit(self._work, task_id)
         self._futures.add(future)
+        self._future_tasks[future] = task_id
         future.add_done_callback(self._future_done)
 
     def _future_done(self, future):
         with self._lock:
             self._futures.discard(future)
+            self._future_tasks.pop(future, None)
+
+    def _deletion_snapshot(self, db, ids):
+        """Read one consistent deletion boundary; never follow copied source links."""
+        placeholders = ','.join('?' for _ in ids)
+        data = {}
+        for table, column in (("conversations", "id"), ("messages", "conversation_id"),
+                              ("plans", "conversation_id"), ("tasks", "conversation_id")):
+            data[table] = [dict(row) for row in db.execute(
+                f"SELECT * FROM {table} WHERE {column} IN ({placeholders}) ORDER BY id", ids)]
+        if len(data["conversations"]) != len(ids):
+            raise ValueError("選定對話已不存在，請重新整理後選擇。")
+        task_ids = {row["id"] for row in data["tasks"]}
+        plan_ids = {row["id"] for row in data["plans"]}
+        if (any(row["state"] in {"queued", "running", "executing"} for row in data["tasks"])
+                or any(row["state"] == "executing" for row in data["plans"])
+                or any(task_id in task_ids and not future.done()
+                       for future, task_id in self._future_tasks.items())
+                or bool(task_ids & self._assistant_dispatching)):
+            raise ValueError("選定對話仍有工作進行中，或取消後的遠端請求尚未結束；請稍後再刪除。")
+        # An unexpected cross-boundary link is not permission to delete independent work.
+        if (any(row["schedule_id"] for row in data["tasks"])
+                or any(row["plan_id"] and row["plan_id"] not in plan_ids for row in data["tasks"])
+                or any(row["task_id"] and row["task_id"] not in task_ids for row in data["plans"])):
+            raise ValueError("選定對話含獨立工作或排程關聯，不能直接刪除。")
+        data["notifications"] = []
+        if task_ids:
+            task_marks = ','.join('?' for _ in task_ids)
+            task_args = sorted(task_ids)
+            if db.execute(f"SELECT 1 FROM occurrences WHERE task_id IN ({task_marks})", task_args).fetchone():
+                raise ValueError("選定對話含排程執行紀錄，不能直接刪除。")
+            linked_plans = db.execute(f"SELECT id FROM plans WHERE task_id IN ({task_marks})", task_args)
+            if any(row["id"] not in plan_ids for row in linked_plans):
+                raise ValueError("選定對話含獨立計畫關聯，不能直接刪除。")
+            data["notifications"] = [dict(row) for row in db.execute(
+                f"SELECT * FROM notifications WHERE task_id IN ({task_marks}) ORDER BY id", task_args)]
+        if plan_ids:
+            plan_marks = ','.join('?' for _ in plan_ids)
+            linked_tasks = db.execute(f"SELECT id FROM tasks WHERE plan_id IN ({plan_marks})", sorted(plan_ids))
+            if any(row["id"] not in task_ids for row in linked_tasks):
+                raise ValueError("選定對話含獨立工作關聯，不能直接刪除。")
+        summary = {"conversations": [{"id": row["id"], "title": row["title"]}
+                                     for row in data["conversations"]],
+                   "counts": {table: len(rows) for table, rows in data.items()},
+                   "task_ids": sorted(task_ids), "plan_ids": sorted(plan_ids)}
+        fingerprint = hashlib.sha256(dumps(data).encode('utf-8')).hexdigest()
+        return summary, fingerprint
+
+    def preview_conversation_deletion(self, ids):
+        """Issue an opaque, ten-minute confirmation token for this exact snapshot."""
+        if not isinstance(ids, (list, tuple, set)) or not ids or any(
+                not isinstance(item, str) or not item for item in ids):
+            raise ValueError("請先選擇要刪除的對話。")
+        selected = tuple(sorted(set(ids)))
+        with self._lock:
+            self._ensure_open()
+            with self.store.connection() as db:
+                db.execute("BEGIN")
+                summary, fingerprint = self._deletion_snapshot(db, selected)
+            now = time.monotonic()
+            self._deletion_previews = {key: value for key, value in self._deletion_previews.items()
+                                       if value["expires"] > now}
+            token = uid()
+            self._deletion_previews[token] = {"ids": selected, "fingerprint": fingerprint,
+                                              "expires": now + 600}
+            return dict(summary, token=token)
+
+    def delete_conversations(self, token):
+        """Recheck the preview and remove the whole batch in one SQLite transaction."""
+        with self._lock:
+            self._ensure_open()
+            preview = self._deletion_previews.get(token) if isinstance(token, str) else None
+            if preview is None or preview["expires"] <= time.monotonic():
+                if isinstance(token, str):
+                    self._deletion_previews.pop(token, None)
+                raise ValueError("刪除確認已失效，請重新預覽。")
+            with self.store.connection() as db:
+                db.execute("BEGIN IMMEDIATE")
+                summary, fingerprint = self._deletion_snapshot(db, preview["ids"])
+                if fingerprint != preview["fingerprint"]:
+                    self._deletion_previews.pop(token, None)
+                    raise ValueError("對話內容或工作狀態已變更，請重新預覽後刪除。")
+                if summary["task_ids"]:
+                    marks = ','.join('?' for _ in summary["task_ids"])
+                    db.execute(f"DELETE FROM notifications WHERE task_id IN ({marks})", summary["task_ids"])
+                marks = ','.join('?' for _ in preview["ids"])
+                for table in ("messages", "plans", "tasks"):
+                    db.execute(f"DELETE FROM {table} WHERE conversation_id IN ({marks})", preview["ids"])
+                db.execute(f"DELETE FROM conversations WHERE id IN ({marks})", preview["ids"])
+            self._deletion_previews.pop(token, None)
+            return dict(summary, token=token, deleted_ids=list(preview["ids"]))
 
     def inflight_count(self):
         """Real unfinished workers, including cancelled tasks whose HTTP is draining."""
@@ -306,6 +401,9 @@ class Engine:
         dumps(payload)  # Reject non-serializable values before any write.
 
     def _new_task(self, db, kind, payload, conversation_id=None, request_id=None, plan_id=None, schedule_id=None):
+        if conversation_id is not None and not db.execute(
+                "SELECT 1 FROM conversations WHERE id=?", (conversation_id,)).fetchone():
+            raise ValueError("找不到對話，請建立新對話。")
         if self.assistant_router is not None and kind not in {"query","query_summarize"}:
             row=db.execute("SELECT binding FROM conversations WHERE id=?",(conversation_id,)).fetchone()
             if not row: raise ValueError("找不到對話。")
@@ -374,6 +472,11 @@ class Engine:
             self._ensure_open()
             record_id = uid()
             with self.store.connection() as db:
+                db.execute("BEGIN IMMEDIATE")
+                target_id = conversation_id or payload.get("conversation_id")
+                if target_id is not None and not db.execute(
+                        "SELECT 1 FROM conversations WHERE id=?", (target_id,)).fetchone():
+                    raise ValueError("找不到對話，請建立新對話。")
                 db.execute("INSERT INTO plans VALUES(?,?,?,?,1,'ready',NULL,?,?)",
                            (record_id, kind, dumps(payload), conversation_id or payload.get("conversation_id"),
                             stamp(), stamp(utcnow() + timedelta(hours=24))))
@@ -387,6 +490,10 @@ class Engine:
             p = self.store.decode(db.execute("SELECT * FROM plans WHERE id=?", (plan_id,)).fetchone())
             if p["state"] != "ready" or p["revision"] != expected_revision or p["expires_at"] <= stamp():
                 raise ValueError("計畫已失效或已執行，請建立新計畫。")
+            target_id = payload.get("conversation_id", p["conversation_id"])
+            if target_id is not None and not db.execute(
+                    "SELECT 1 FROM conversations WHERE id=?", (target_id,)).fetchone():
+                raise ValueError("找不到對話，請建立新對話。")
             db.execute("UPDATE plans SET kind=?,payload=?,revision=revision+1,conversation_id=? WHERE id=?",
                        (kind, dumps(payload), payload.get("conversation_id", p["conversation_id"]), plan_id))
         return self.store.plan(plan_id)

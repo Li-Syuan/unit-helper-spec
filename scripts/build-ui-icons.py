@@ -16,8 +16,9 @@ SHAPES={
  'send':[[(3,3),(22,12),(3,21),(6,12),(3,3)],[(6,12),(16,12)]],
  'attach':[[(8,14),(15,7),(18,7),(19,10),(10,19),(6,19),(3,16),(3,12),(13,2),(18,2),(22,6),(22,11),(11,22)]]}
 
-def png(paths,color):
-    size=24;scale=4;pixels=[]
+def png(paths,color,size=24):
+    scale=4;pixels=[]
+    paths=[[(x*size/24,y*size/24) for x,y in line] for line in paths]
     segments=[(a,b) for line in paths for a,b in zip(line,line[1:])]
     for y in range(size):
         pixels.append(0)
@@ -28,7 +29,7 @@ def png(paths,color):
                     px=x+(sx+.5)/scale;py=y+(sy+.5)/scale
                     for (ax,ay),(bx,by) in segments:
                         dx=bx-ax;dy=by-ay;t=max(0,min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy)))
-                        if math.hypot(px-ax-t*dx,py-ay-t*dy)<=.8:count+=1;break
+                        if math.hypot(px-ax-t*dx,py-ay-t*dy)<=.8*size/24:count+=1;break
             pixels.extend((*color,round(255*count/(scale*scale))))
     def chunk(kind,data):return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
     return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',size,size,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(bytes(pixels)))+chunk(b'IEND',b'')
@@ -39,4 +40,6 @@ if __name__=='__main__':
         for variant,color in [('dark',(168,185,202)),('light',(76,96,112))]:
             if name=='send':color=(16,36,42) if variant=='dark' else (255,255,255)
             (folder/f'{name}-{variant}.png').write_bytes(png(paths,color))
-    print('20 original PNG icons generated; no network or runtime dependencies.')
+            for size in (24,30,36,48,60,72,96):
+                (folder/f'{name}-{variant}-{size}.png').write_bytes(png(paths,color,size))
+    print('160 original multi-resolution PNG icons generated; no network or runtime dependencies.')

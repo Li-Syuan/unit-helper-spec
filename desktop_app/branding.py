@@ -43,7 +43,10 @@ def apply_icons(root, assets=None):
             root.iconbitmap(str(folder / 'qa-agent.ico'))
         except (tk.TclError, OSError):
             failed = True
-    return images.get(32), ('應用圖示未完整載入；功能仍可使用，請重新取得完整程式檔。' if failed else '')
+    display=getattr(root,'_qa_display',None)
+    wanted=display.px(32) if display else 32
+    selected=images.get(min(images,key=lambda n:abs(n-wanted))) if images else None
+    return selected, ('應用圖示未完整載入；功能仍可使用，請重新取得完整程式檔。' if failed else '')
 
 
 def apply_child_icons(window):

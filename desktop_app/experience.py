@@ -9,6 +9,7 @@ from tkinter import ttk
 
 from . import __version__
 from .branding import APP_NAME, apply_child_icons
+from .display import scroll_frame
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCUMENTS = [('使用手冊', 'USER-GUIDE.md'), ('資料使用與功能限制', 'DATA-USAGE.md'),
@@ -50,9 +51,8 @@ class ExperienceMixin:
         window = tk.Toplevel(self.root)
         apply_child_icons(window)
         window.title(APP_NAME + ' · 說明與關於')
-        window.geometry('900x610')
-        window.minsize(680, 420)
-        frame = ttk.Frame(window, padding=16)
+        self.display.size_window(window,900,610,(680,420))
+        frame = scroll_frame(window, padding=16)
         frame.pack(fill='both', expand=True)
         bar = ttk.Frame(frame)
         bar.pack(fill='x', pady=(0,12))

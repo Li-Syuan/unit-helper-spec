@@ -41,21 +41,22 @@ class Appearance:
             'highlightColor':c.ACCENT, 'insertBackground':c.INK, 'selectBackground':c.TINT,
             'selectForeground':c.INK, 'padX':14, 'padY':10, 'spacing1':3, 'spacing3':5}.items():
             root.option_add('*Text.'+key, value)
-        root.option_add('*Text.font', (FONT, 11))
+        root.option_add('*font', (FONT, 11))
+        root.option_add('*Text.font', (FONT, 12))
         root.option_add('*Toplevel.background', c.BG)
         root.option_add('*Canvas.background', c.BG)
         for key,value in {'background':c.SURFACE,'foreground':c.INK,'selectBackground':c.TINT,'selectForeground':c.INK}.items():
             root.option_add('*TCombobox*Listbox.'+key,value)
         s=self.style
-        s.configure('.',font=(FONT,10),background=c.BG,foreground=c.INK)
+        s.configure('.',font=(FONT,11),background=c.BG,foreground=c.INK)
         s.configure('TFrame',background=c.BG)
         s.configure('Surface.TFrame',background=c.SURFACE)
         s.configure('Card.TFrame',background=c.SURFACE,borderwidth=1,relief='solid',bordercolor=c.BORDER,lightcolor=c.BORDER,darkcolor=c.BORDER)
         s.configure('CardBody.TFrame',background=c.SURFACE,borderwidth=0,relief='flat')
-        s.configure('CardMuted.TLabel',background=c.SURFACE,foreground=c.MUTED,font=(FONT,9))
+        s.configure('CardMuted.TLabel',background=c.SURFACE,foreground=c.MUTED,font=(FONT,10))
         s.configure('CardTitle.TLabel',background=c.SURFACE,foreground=c.INK,font=(FONT,11,'bold'))
-        s.configure('CardError.TLabel',background=c.SURFACE,foreground=c.ERROR,font=(FONT,9))
-        s.configure('Compact.TButton',padding=(8,4),font=(FONT,9))
+        s.configure('CardError.TLabel',background=c.SURFACE,foreground=c.ERROR,font=(FONT,10))
+        s.configure('Compact.TButton',padding=(8,4),font=(FONT,10))
         s.configure('Card.TCheckbutton',background=c.SURFACE)
         s.configure('Workspace.Horizontal.TProgressbar',troughcolor=c.SURFACE,background=c.ACCENT,borderwidth=0,thickness=3)
         s.configure('TLabel',background=c.BG,foreground=c.INK)
@@ -64,18 +65,18 @@ class Appearance:
         s.configure('Section.TLabel',font=(FONT,11,'bold'))
         s.configure('Surface.TLabel',background=c.SURFACE)
         s.configure('Empty.TLabel',background=c.SURFACE,foreground=c.MUTED)
-        s.configure('Chip.TLabel',background=c.TINT,foreground=c.ACCENT,padding=(10,5),font=(FONT,9,'bold'))
-        s.configure('Status.TLabel',background=c.SURFACE,foreground=c.MUTED,font=(FONT,9),padding=(16,6))
+        s.configure('Chip.TLabel',background=c.TINT,foreground=c.ACCENT,padding=(10,5),font=(FONT,10,'bold'))
+        s.configure('Status.TLabel',background=c.SURFACE,foreground=c.MUTED,font=(FONT,10),padding=(16,6))
         s.configure('TButton',padding=(12,7),background=c.SURFACE,foreground=c.INK,bordercolor=c.BORDER,
             lightcolor=c.SURFACE,darkcolor=c.SURFACE,borderwidth=1,focuscolor=c.ACCENT)
         s.map('TButton',background=[('disabled',c.BG),('pressed',c.TINT),('active',c.STRIPE)],foreground=[('disabled',c.DISABLED)])
         s.configure('Primary.TButton',background=c.ACCENT,foreground=c.BUTTON_INK,bordercolor=c.ACCENT,
-            lightcolor=c.ACCENT,darkcolor=c.ACCENT,font=(FONT,10,'bold'))
+            lightcolor=c.ACCENT,darkcolor=c.ACCENT,font=(FONT,11,'bold'))
         s.map('Primary.TButton',background=[('disabled',c.BORDER),('pressed',c.ACCENT_HOVER),('active',c.ACCENT_HOVER)],
             foreground=[('disabled',c.DISABLED),('!disabled',c.BUTTON_INK)])
         s.configure('Quiet.TButton',background=c.BG,bordercolor=c.BG,lightcolor=c.BG,darkcolor=c.BG,foreground=c.MUTED)
         s.configure('Danger.TButton',foreground=c.ERROR)
-        s.configure('Quick.TButton',padding=(12,9),anchor='w',font=(FONT,10))
+        s.configure('Quick.TButton',padding=(12,9),anchor='w',font=(FONT,11))
         s.configure('TEntry',padding=7,fieldbackground=c.SURFACE,foreground=c.INK,insertcolor=c.INK,
             selectbackground=c.TINT,selectforeground=c.INK,bordercolor=c.BORDER,lightcolor=c.BORDER,darkcolor=c.BORDER)
         s.map('TEntry',bordercolor=[('focus',c.ACCENT)],fieldbackground=[('disabled',c.BG)],foreground=[('disabled',c.DISABLED)])
@@ -90,7 +91,7 @@ class Appearance:
         s.map('Card.TRadiobutton',background=[('selected',c.TINT),('active',c.STRIPE)])
         s.configure('Treeview',rowheight=32,background=c.SURFACE,fieldbackground=c.SURFACE,foreground=c.INK,
             bordercolor=c.BORDER,lightcolor=c.BORDER,darkcolor=c.BORDER,borderwidth=1)
-        s.configure('Treeview.Heading',background=c.STRIPE,foreground=c.MUTED,font=(FONT,9,'bold'),padding=(10,8),relief='flat')
+        s.configure('Treeview.Heading',background=c.STRIPE,foreground=c.MUTED,font=(FONT,10,'bold'),padding=(10,8),relief='flat')
         s.map('Treeview',background=[('selected',c.TINT)],foreground=[('selected',c.INK)])
         s.map('Treeview.Heading',background=[('active',c.BORDER)])
         s.configure('TScrollbar',background=c.BORDER,troughcolor=c.BG,arrowcolor=c.MUTED,
@@ -102,10 +103,26 @@ class Appearance:
         s.layout('Workspace.TNotebook', [('Notebook.client', {'sticky':'nswe'})])
         s.layout('Workspace.TNotebook.Tab', [])
         s.configure('Workspace.TNotebook',background=c.BG,borderwidth=0,tabmargins=0,bordercolor=c.BG,lightcolor=c.BG,darkcolor=c.BG)
+        display=getattr(root,'_qa_display',None)
+        if display:
+            for name,keys in {
+                'Compact.TButton':('padding',),'Chip.TLabel':('padding',),'Status.TLabel':('padding',),
+                'TButton':('padding','borderwidth'),'Quick.TButton':('padding',),'TEntry':('padding',),
+                'TCombobox':('padding',),'TCheckbutton':('padding',),'TRadiobutton':('padding',),
+                'Card.TRadiobutton':('padding',),'Treeview':('rowheight','borderwidth'),
+                'Treeview.Heading':('padding',),'TScrollbar':('arrowsize',),
+                'Workspace.Horizontal.TProgressbar':('thickness',)
+            }.items():
+                for key in keys:
+                    raw=s.configure(name,key)
+                    values=raw if isinstance(raw,(tuple,list)) else root.tk.splitlist(str(raw))
+                    if values:s.configure(name,**{key:tuple(display.px(float(v)) for v in values) if key=='padding' else display.px(float(values[0]))})
         self.apply(root)
 
     def apply(self, widget, sidebar=False):
         c=self.colors
+        display=getattr(self.root,'_qa_display',None)
+        if display:display.scale_widget(widget)
         sidebar=sidebar or getattr(widget,'_theme_role','')=='sidebar'
         role=getattr(widget,'_theme_role','')
         if isinstance(widget,(tk.Tk,tk.Toplevel)): widget.configure(background=c.BG)

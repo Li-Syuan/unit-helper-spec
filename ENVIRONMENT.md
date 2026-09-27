@@ -50,3 +50,6 @@ doctor 真的建立 Tk root 並檢查確切版本／架構，不只是 import；
 0.7.0 沿用上述三個環境，各 150 tests 通過。requirements.lock 與 0.6.0 相同，不新增套件或重建離線包。
 
 0.7.1 沿用上述三個環境，各 155 tests 通過；沒有新依賴或重建離線包。
+
+
+0.8.0 沿用上述三環境，各 192 tests 通過，依賴與離線包不變。顯示診斷使用 `.venv/Scripts/python.exe scripts/display-check.py --output artifacts/diagnostics/display.json`；只記錄 DPI、Tk、字型與視窗尺寸，不讀取設定或使用者內容。

@@ -1,0 +1,38 @@
+[
+  {
+    "state": "normal",
+    "awareness": 0,
+    "tk_scaling": 1.332282448377581,
+    "dpi": 95.92433628318584,
+    "window": [
+      1280,
+      860
+    ],
+    "font": {
+      "family": "微軟正黑體",
+      "size": 11,
+      "weight": "normal",
+      "slant": "roman",
+      "underline": 0,
+      "overstrike": 0
+    }
+  },
+  {
+    "state": "maximized",
+    "awareness": 0,
+    "tk_scaling": 1.332282448377581,
+    "dpi": 95.92433628318584,
+    "window": [
+      1707,
+      996
+    ],
+    "font": {
+      "family": "微軟正黑體",
+      "size": 11,
+      "weight": "normal",
+      "slant": "roman",
+      "underline": 0,
+      "overstrike": 0
+    }
+  }
+]

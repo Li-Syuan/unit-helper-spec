@@ -1,6 +1,6 @@
-# 本機實作驗證紀錄 — QA agent 0.7.1
+# 本機實作驗證紀錄 — QA agent 0.8.0
 
-本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個既有獨立 venv 重驗（開發環境、0.6.0 線上／離線重建環境）。每個環境 **155 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
+本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個既有獨立 venv 重驗（開發環境、0.6.0 線上／離線重建環境）。每個環境 **192 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
 
 ## 可核對證據
 
@@ -133,3 +133,20 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 - 第一輪新增完整回歸發現 UI 測試在清單刷新前選取資料列的時序問題；改為明確刷新後選取，最終依序重跑三環境。未以失敗結果充當通過證據。
 - 真 Tk 合成視窗擷取 20 張，檢視深淺、1050×700／1280×860／1450×860 的聊天、查詢、Plan、設定、回報及收合畫面。HTML／CSS 深色版用本機 Chrome headless 渲染後檢視。精選圖见 docs/UI-DESIGN.md；未宣稱 OS 滑鼠／鍵盤人工全流程。
 - 啟動器 --check 通過。Norton 成效仍為 **未能確認（not_tested）**；公司 API／AD／Oracle／Excel、真實中文 IME 與工作列外觀仍 not_tested。沒有變更防毒例外或執行政策。
+
+
+## 0.8.0 對話清理與 System DPI
+
+三個既有 Python 3.10.4 環境依序完成 **各 192 tests／0 skipped**，pip check 與 freeze/lock 通過；新增 14 項刪除服務、9 項刪除 UI、14 項顯示測試。沒有新增 runtime 依賴、schema 變更或重建離線包。
+
+- local_real_passed：單筆／批次／搜尋全選、取消、刪除目前與最後一筆、重開持久化、草稿／附件保留、原始檔保留、獨立排程與轉交副本不變。
+- local_real_passed：真 future 執行與取消後收尾拒絕整批、預覽過期／內容變更、重複與並行確認、SQLite 觸發錯誤時全交易回復、晚到回覆／上傳及失敗轉交預覽不能重新使用已刪來源。
+- local_real_passed（Tk 程式操作）：四倍率尺寸計算、多尺寸 PNG 實際載入、主題重套不累乘、文字點數不倍增、視窗工作區限制、捲動與鍵盤焦點可達、聊天欄與送出按鈕邊界、最大化保留草稿／附件／字型。這些是合成 Tk scaling 與 API mock，**不等於切換真實 Windows 100／125／200%**。
+- local_real_passed（本機實際 150%）：同螢幕建立原生視窗、拉大／最大化並擷取自己的合成資料視窗。修正前 unaware，Tk scaling 1.3323；修正後 system，Tk scaling 1.9980，DPI 143.86（佈局倍率 1.5）。工作區 2560×1528；一般 1920×1290、最小 1575×1050、最大化 2560×1494。一般與最大化的本文／輸入均為微軟正黑體 12 點，沒有依視窗大小拉伸字型。
+- 檢視深淺一般／最小／最大化、管理／刪除確認、長 Plan、選項及結果表格；另檢視合成 100% 下 1050×700。修正聊天欄受 Text 預設寬度與頁面 padding 撐出右緣，以及小視窗側欄歷史區被擠掉的問題。
+- not_tested：真實 Windows 100／125／200% 設定、跨倍率螢幕移動、OS 滑鼠／中文 IME 人工流程、公司 API／AD／Oracle／Excel。跨螢幕即時重新排版不在本版；需要在目標螢幕重開確認。
+- Norton：**未能確認**。沿用固定腳本；未讀取防毒歷程，不因回歸通過便宣稱警告消失，未變更防毒或系統政策。
+
+顯示證據：[修正前](docs/validation/display-baseline-v080.json)、[本機 150%](docs/validation/display-v080.json)、[合成 100%](docs/validation/display-sim100-v080.json)。僅含視窗、字型及縮放白名單，不讀取公司設定／資料。原始截圖未經拉伸或修改，見 [UI-DESIGN](docs/UI-DESIGN.md)。不同像素大小的縮圖不適合用來主觀比較原尺寸清晰度。
+
+可在公司執行 `.venv/Scripts/python.exe scripts/display-check.py --output artifacts/diagnostics/display.json`，並以實際應用在同螢幕一般／最大化對照。這項顯示診斷不呼叫助理或 DB，也不保存公司內容。

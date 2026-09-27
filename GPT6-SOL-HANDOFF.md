@@ -1,10 +1,14 @@
-請接手這個 repo 的 QA agent 0.7.1。你是 GPT 6 sol 開發 agent，請實際做接線與驗證，不重做 GUI 或另開平台。
+請接手這個 repo 的 QA agent 0.8.0。你是 GPT 6 sol 開發 agent，請實際做接線與驗證，不重做 GUI 或另開平台。
 
 先讀 AGENTS.md、README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md、docs/current-state.md。保留 Windows x64、Python 恰好 3.10.4、Tkinter、現有 SQLite 與 OpenAI SDK 邊界。舊完整 spec 是後續路線；當前不做中央管理、遠端更新、產品 multi agents。
 
 現在開啟直接進入正常工作區；八頁已有可收合操作提示與對應手冊，側欄「操作提示」切換當頁。獨立五步體驗與歡迎彈窗已移除，不要依歷史文件恢復。示範助理和合成查詢保留，產生的資料存於目前個人歷史。提示只說明狀態，不能自動填稿、執行、批准或送出。頁面提示由 guidance.py／ui.py 呈現，偏好由 preferences.py 保存至 page_hints；保留舊 onboarding 原值但不再使用。手冊章節標題是連結契約。
 
 先讀 docs/COMPANY-INPUTS.md，取得 API／AD／Oracle 的最少必要資訊。可直接沿用 docs/QUERY-CATALOG.md 的動態欄位、docs/ADAPTER-TEST-KIT.md 的測試骨架與 docs/OFFLINE-INSTALL.md 的安裝工具；不用重做查詢 UI、測試 runner 或環境诊斷。
+
+0.8.0 加入最近對話右鍵刪除與「管理對話」批次清理。保留 core.py 的預覽 token、10 分鐘期限、資料快照比對、future 活動檢查及單交易刪除；未批准 Plan 可被刪除但不能自動執行。原始檔／匯出／備份、獨立查詢排程、其他轉交副本及公司端歷史不連帶刪除。公司接 AD 後另驗證刪除授權，不要自行擴張到中央資料清除。
+
+正式啟動在建立 Tk 前設定 System DPI awareness；若環境已設定更高模式則保留。沿用 display.py 的倍率與尺寸處理及多尺寸本機圖示，文字用點數指定，不疊加第二次縮放。公司需實際驗證螢幕倍率、一般／最大化及小工作區捲動與按鈕可見性；跨不同倍率螢幕的即時重排未承諾支援。現有圖片及舊版測試只能作歷史比較，本版證據以 VALIDATION-LOCAL 為準。
 
 先以公司核准 Python 執行 scripts/setup.ps1、scripts/test.ps1，更新公司端的驗證記錄。不要使用外部專案環境。依序完成 COMPANY-HANDOFF 的六項工作：
 1. 公司環境／第二乾淨環境基準。
