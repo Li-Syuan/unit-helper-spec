@@ -1,0 +1,36 @@
+{
+  "version": "0.9.2",
+  "recorded_at_utc": "2026-09-27T12:26:12.249538+00:00",
+  "python": "3.10.4",
+  "provider": "Groq",
+  "model": "openai/gpt-oss-20b",
+  "endpoint": "https://api.groq.com/openai/v1",
+  "synthetic_only": true,
+  "checks": [
+    {
+      "check": "real_tk_synthetic_summary",
+      "status": "external_real_passed"
+    },
+    {
+      "check": "real_tk_followup",
+      "status": "external_real_passed"
+    },
+    {
+      "check": "trial_dark_small_tk",
+      "status": "local_real_passed",
+      "send_visible": true
+    },
+    {
+      "check": "trial_light_small_tk",
+      "status": "local_real_passed",
+      "send_visible": true
+    },
+    {
+      "check": "trial_settings_tk",
+      "status": "local_real_passed"
+    }
+  ],
+  "company_services": "not_tested",
+  "manual_ime": "not_tested",
+  "norton": "not_tested"
+}

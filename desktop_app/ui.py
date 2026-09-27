@@ -81,15 +81,26 @@ from .todo_views import TodoViews
 
 
 class App(DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, ConversationViews):
-    def __init__(self, root, config=None, directory=None, config_path=None):
+    def __init__(self, root, config=None, directory=None, config_path=None, groq_trial=False):
         self.drafts={}; self.next_binding=None
+        self.groq_trial=groq_trial
+        if groq_trial:
+            from .config import DEFAULT
+            if config is not None or config_path is not None:
+                raise GatewayError('Groq 試用不能載入公司設定。')
+            directory=Path(directory or data_directory())/'groq-trial'
+            config=copy.deepcopy(DEFAULT)
         self.root=root; self.directory=Path(directory or data_directory()); self.config_path=config_path or self.directory/'config.json'
         self.config=config or load_config(self.config_path);
         self.lock=InstanceLock(self.directory)
         try:
             self.identity=(DemoIdentity() if self.config['identity_mode']=='demo' else CompanyIdentity()).current()
             self.store=Store(self.directory/'local-v1.sqlite3'); self.forms=ChoiceForms(self.store.path)
-            self.profiles=Profiles(self.directory/'assistants.json',self.config['assistant'])
+            if groq_trial:
+                from .trial import TrialProfiles
+                self.profiles=TrialProfiles()
+            else:
+                self.profiles=Profiles(self.directory/'assistants.json',self.config['assistant'])
             self.queries=DemoQueries() if self.config['query_mode']=='demo' else OracleQueries()
             self.assistant=None; self.adapter_error=''
             try: self.assistant=self.make_assistant(self.config)
@@ -101,7 +112,7 @@ class App(DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews
         self.closed=False; self.pending_io=0; self.io_futures=[]; self.attachment=None; self.result=None; self.result_task=None; self.page=0
         self.editing_plan=None; self.issue_id=None; self.seen={t['id']:t['state'] for t in self.store.tasks()}
         self.conversation=None; self.conversation_ids=[]; self.preview_plan=None
-        root.title(APP_NAME+' · 本機版 '+__version__)
+        root.title(APP_NAME+(' · Groq 外部 AI 試用 ' if groq_trial else ' · 本機版 ')+__version__)
         self.display=Display(root)
         self.display.size_window(root,1280,860,(1050,700))
         self.preferences_path=self.directory/'ui-preferences.json'
@@ -234,6 +245,7 @@ class App(DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews
     def update_mode(self):
         binding=self.store.conversation(self.conversation)['binding'] if self.conversation else self.profiles.default_binding()
         mode='舊版對話（唯讀）' if not binding else '示範助理' if binding['profile_id']=='demo' else '公司助理'
+        if self.groq_trial and binding and binding['profile_id']!='demo': mode='Groq 外部 AI 試用'
         self.mode_label.configure(text='●  '+mode+'  ·  '+('合成資料' if self.config['query_mode']=='demo' else 'Oracle 未接線'))
     def scheduler_loop(self):
         while not self.stop.wait(3):
@@ -736,6 +748,7 @@ class App(DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews
             self.status.set('外觀已套用，但無法保存偏好；下次開啟可能恢復原設定。')
             messagebox.showwarning('外觀未保存','本次切換仍有效，但無法保存偏好。請確認資料目錄可寫入。',parent=self.root)
     def apply_settings(self):
+        if self.groq_trial: raise GatewayError('試用入口不修改公司設定。')
         if self.pending_io or self.engine.has_inflight(): raise ValueError('請等待工作完成再修改設定。')
         if any(p['state']=='ready' for p in self.store.plans()): raise ValueError('請先完成或取消待批准計畫，再更換助理設定。')
         config=copy.deepcopy(self.config)
@@ -793,11 +806,11 @@ class App(DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews
         self.lock.close(); self.root.destroy()
 
 
-def launch(config_path=None):
+def launch(config_path=None, groq_trial=False):
     initialize_dpi()
     set_windows_identity()
     root=tk.Tk()
-    try: app=App(root,config_path=config_path)
+    try: app=App(root,config_path=config_path,groq_trial=groq_trial)
     except Exception as exc:
         messagebox.showerror('無法啟動',str(exc) if isinstance(exc,(ValueError,OSError)) else '本機初始化失敗。',parent=root); root.destroy(); return False
     root.mainloop()

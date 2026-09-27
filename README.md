@@ -1,6 +1,6 @@
 # QA agent
 
-**0.9.1 · Windows x64 · Python 3.10.4 · Tkinter 桌面工作區**
+**0.9.2 · Windows x64 · Python 3.10.4 · Tkinter 桌面工作區**
 
 用一個桌面入口與公司助理對話、整理文字、查詢資料及安排本機排程。UI 與本機流程已完成；預設使用明確標示的合成資料，公司 chatbot、AD 與 Oracle 接線仍需公司資訊及實測。
 
@@ -17,6 +17,12 @@ Clone 後，在專案根目錄指定公司核准的 Python **3.10.4** 完整安�
 ```
 
 已有專案 `.venv` 時，直接雙擊 **start-app.bat**。需要桌面捷徑可雙擊 **create-shortcut.bat**；環境有問題使用 **diagnose.bat**。安裝、離線套件、公司 CA 與診斷詳見 [開發指南](docs/DEVELOPMENT.md)。不隨 Git 提供 Python、虛擬環境、金鑰或使用者資料。
+
+## 用 Groq 試用真正 AI
+
+在專案根目錄的 `.env` 填 `GROQ_API_KEY=你的金鑰`，雙擊 **[start-trial.bat](start-trial.bat)**。預設選取 Groq 試用助理，可直接聊天、整理文字及改寫；建議先按「整理重點與待辦」，貼上虛構會議筆記再按 Enter。
+
+試用固定連線 Groq，資料保存在獨立 `groq-trial` 子目錄，不載入公司設定或歷史。`.env` 為本機明文檔且被 Git 忽略，請勿分享；只使用個人測試資料。免費額度取決於 Groq 帳戶方案，超限會提示，不自動重試或升級。查詢仍是合成資料，公司模式繼續使用原本 start-app.bat。完整步驟見 [試用手冊](docs/USER-GUIDE.md#groq-外部-ai-試用)。
 
 ## 目前可以做什麼
 

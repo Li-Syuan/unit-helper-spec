@@ -2,13 +2,15 @@
 
 ## 當前範圍
 
-先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.9.1 延續個人待辦、工作卡片與草稿保存，加入隨主題切換的正式品牌圖示；歷史規格由 Git 查閱，不再作為當前開發需求。
+先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.9.2 增加選用 Groq 外部試用，延續個人待辦、工作卡片、草稿保存與深淺正式品牌圖示；歷史規格由 Git 查閱，不再作為當前開發需求。
 
 沿用 Windows x64、Python **恰好 3.10.4**、Tkinter／ttk、SQLite、OpenAI SDK 與 Windows keyring。公司待辦為 chatbot 契約、AD／名單及 owner 授權、三項 Oracle 查詢、舊資料／排程遷移與現場驗收。不得覆蓋公司原有規則或程式。
 
 中央管理 API、中央 schema／常駐排程、issue 後台、遠端更新、EXE、產品多 agent／持續 Goal、信件、OCR、Office 原檔編輯、多文件及任意 SQL／shell 均不在目前範圍。GPT 6 sol 是開發 agent，不是預設產品模型 ID。
 
 ## 架構與安全契約
+
+- 選用外部試用限 start-trial.bat／--groq-trial。trial.py 固定 Groq 官方端點、模型、無工具、零自動重試；只讀專案 .env 的 GROQ_API_KEY，不得把公司憑證或資料自動帶入。試用子目錄與公司工作區分離，正式入口不讀 .env。這是使用者明確選用的明文檔例外，不能擴大成公司 keyring 失敗 fallback。TLS 使用系統信任庫且強制驗證，不能為連線關閉驗證。
 
 - UI／呈現位於 `desktop_app/ui.py`、`workspace.py`、`theme.py`；服務／Store／本機排程位於 `core.py`。保留 `gateways.py` Protocol 與 `profiles.py` 公司映射邊界，不重做整個應用。
 - 公司模式失敗明確報錯，不 fallback demo；未取得成功 API 範例不得猜 endpoint、assistant ID 的傳送位置、session 或 AD／SQL 欄位。助理原生工具副作用須經公司確認，SDK 呼叫不能視為天然無副作用。

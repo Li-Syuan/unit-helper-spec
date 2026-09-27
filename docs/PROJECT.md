@@ -1,8 +1,10 @@
-# QA agent 0.9.1：產品與架構
+# QA agent 0.9.2：產品與架構
 
 本文件是現行行為契約。程式與 UI 已完成本機功能；公司接線見 [工作單](../COMPANY-HANDOFF.md)，實測與未測項目見 [驗證摘要](VALIDATION.md)。
 
 ## 分層
+
+新增選用的 Groq 個人試用入口 start-trial.bat。trial.py 管固定端點／模型、有限 .env 讀取與唯讀助理清單；--groq-trial 與 --config 互斥。App 使用獨立 groq-trial 子目錄及預設合成查詢／身分，不讀公司 config 或 profiles。原入口與 adapter 契約保持不變，無新套件／schema。不是恢復舊導覽流程。
 
 | 模組 | 責任 |
 |---|---|

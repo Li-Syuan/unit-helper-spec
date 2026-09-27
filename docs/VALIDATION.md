@@ -1,16 +1,24 @@
-# QA agent 0.9.1 驗證摘要
+# QA agent 0.9.2 驗證摘要
 
-本版將已選深淺品牌圖示套用至側欄、主視窗及附屬視窗；沿用個人待辦、工作卡片、文字草稿、公司 adapter、Plan gate、查詢與排程。schema 維持 3，不新增資料遷移或套件。
+本版新增隔離的 Groq 外部 AI 試用入口；沿用深淺品牌圖示、個人待辦、工作卡片、文字草稿、公司 adapter、Plan gate、查詢與排程。schema 維持 3，不新增資料遷移、套件或虛擬環境。
 
 ## 本輪回歸
 
-2026-09-27，使用 `D:/unit-helper-spec/.venv/Scripts/python.exe`，恰好 CPython 3.10.4、Windows x64。執行 `scripts/verify.py development`：doctor、pip check、freeze 與 requirements.lock 比對成功，完整 **228 項測試通過，0 skipped**；保留原有 192 項所涵蓋的行為。
+2026-09-27，使用 `D:/unit-helper-spec/.venv/Scripts/python.exe`，恰好 CPython 3.10.4、Windows x64。執行 `scripts/verify.py development`：doctor、pip check、freeze 與 requirements.lock 比對成功，完整 **241 項測試通過，0 skipped**；包含原有 228 項與新增 13 項試用測試。
 
 - [本輪開發環境完整輸出](validation/development.json)。
 - [乾淨重建](validation/clean-rebuild.json) 與 [離線重建](validation/offline-rebuild.json) 保留 0.8.0 各 192 項基準，不代表本輪重跑。29 個鎖定套件未變，本輪不重建環境或離線包。
 - 啟動檢查、手冊章節、Markdown 本機連結及 manifest 分別校驗。
 
 ## 覆蓋與驗收界線
+
+Groq 試用新增驗證：
+
+- mock_passed：真 OpenAI SDK 搭配合成 transport，固定目的地／模型、對話隔離、401／403／429／500、逾時、連線失敗、空回覆、格式錯誤、不完整回覆與工具要求拒絕；零自動重試、錯誤不含服務原文。
+- local_real_passed：.env 格式／大小／重複鍵／不展開變數、唯讀 profiles、Windows 信任庫且 TLS 強制驗證；真 Tk 啟動不派發、公司設定未讀寫、獨立子目錄、Enter 送出與 Plan 批准後單次派發。
+- external_real_passed：真實 Groq 短句連線，以及真 Tk 中兩筆虛構筆記摘要／接續追問；只記安全狀態於 [外部試用紀錄](validation/external-trial.json)。這是第三方外部服務，不能歸為 company_real_passed。
+- 深淺試用聊天與設定的 1050×700 邏輯尺寸截圖留在忽略的 artifacts/trial-preview，已目視檢查按鈕及標示；未把私有 .env 或回覆日誌提交。
+- 真實中文 IME、公司 chatbot／AD／Oracle、Excel 與 Norton 成效仍 not_tested；沒有更動防毒設定。
 
 | 項目 | 證據與限制 |
 |---|---|
@@ -32,7 +40,7 @@
 
 ## 顯示證據
 
-以獨立暫存資料與合成內容，程式操作真 Tk 並擷取本應用視窗，檢視深淺主題的一般、1050×700 邏輯尺寸與最大化聊天／待辦，以及待辦編輯與草稿畫面。共 14 張檢查圖留於忽略的 artifacts；倉庫只保留 [使用手冊](USER-GUIDE.md#介面參考) 中四張本版精選畫面，替換舊圖。
+一般工作區沿用 0.9.1 的顯示證據：以獨立暫存資料與合成內容，檢視深淺主題的一般、1050×700 邏輯尺寸與最大化聊天／待辦，以及待辦編輯與草稿畫面。共 14 張檢查圖留於忽略的 artifacts；倉庫只保留 [使用手冊](USER-GUIDE.md#介面參考) 中四張精選畫面。本輪新增試用畫面檢查見上方，沒有重做這組截圖。
 
 - [本輪視窗量測](validation/display-current.json)：正式 DPI 啟動方式由 unaware 設為 system，本機實際倍率 150%，Tk scaling 約 1.998，DPI 約 143.86。一般 1920×1290、最小 1575×1050、最大化 2560×1494 實體像素。
 - 看板可用寬度不足 900 邏輯像素切換狀態分頁；一般與最大化呈現三欄。小視窗的輸入區、送出與草稿提示保留空間。

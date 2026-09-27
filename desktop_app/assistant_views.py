@@ -50,6 +50,17 @@ class AssistantViews:
             text=str(exc)+(('\n原 assistant ID：'+p['assistant_id']+'\n備註：'+p['notes']) if p else '')
         messagebox.showinfo('目前對話助理',text,parent=self.root)
     def build_profile_settings(self,tab):
+        if self.groq_trial:
+            from .trial import MODEL
+            self.section(tab,'Groq 外部 AI 試用','獨立試用資料區；不載入公司連線或歷史')
+            ttk.Label(tab,text='模型：'+MODEL).pack(anchor='w',pady=8)
+            self.key_label=ttk.Label(tab,text='API key：'+self.profiles.key_status())
+            self.key_label.pack(anchor='w',pady=8)
+            self.button(tab,'重新檢查 .env',lambda:self.key_label.configure(text='API key：'+self.profiles.key_status())).pack(anchor='w',pady=6)
+            self.button(tab,'測試 Groq 連線',self.test_trial_connection).pack(anchor='w',pady=6)
+            ttk.Label(tab,text='在專案 .env 填寫 GROQ_API_KEY。只傳送你送出的文字與本段對話。\n請用虛構資料體驗，勿傳送公司機密或個資。\n查詢仍使用合成資料，AD／Oracle 尚未接線。\n免費額度由 Groq 帳戶方案決定；超限會停止，不自動重試或更換方案。',wraplength=650,justify='left',style='Muted.TLabel').pack(anchor='w',pady=12)
+            self.button(tab,'試用操作說明',lambda:self.show_help('Groq 外部 AI 試用'),'Quiet.TButton').pack(anchor='w')
+            return
         self.section(tab,'共用連線','所有公司助理共用 endpoint 與 API key')
         self.endpoint_var=tk.StringVar(value=self.profiles.data['endpoint'])
         row=ttk.Frame(tab);row.pack(fill='x',pady=6)
@@ -73,6 +84,13 @@ class AssistantViews:
         self.refresh_profiles()
     def require_profile_edit(self):
         if self.engine.has_inflight() or self.pending_io: raise GatewayError('請等待目前工作結束再修改連線。')
+    def test_trial_connection(self):
+        if not self.groq_trial: raise GatewayError('請使用試用入口。')
+        if self.pending_io or self.engine.has_inflight(): raise GatewayError('請等待目前工作完成。')
+        binding=self.profiles.default_binding()
+        self.status.set('正在測試 Groq 連線…')
+        self.background(lambda:self.profiles.respond([{'role':'user','content':'請只回答：連線成功'}],'chat',binding),
+                        lambda value:messagebox.showinfo('Groq 連線成功',value[:1000],parent=self.root))
     def refresh_profiles(self):
         if hasattr(self,'profile_table'):
             self.profile_table.delete(*self.profile_table.get_children())

@@ -66,6 +66,7 @@ class GuidanceViews:
             self.status.set('提示已切換，但無法保存偏好；下次開啟可能恢復原設定。')
 
     def open_page_help(self):
+        if self.groq_trial and self.current_page()=='settings': return self.show_help('Groq 外部 AI 試用')
         return self.show_help(CHAPTERS[self.current_page()])
 
     def select_hint_work(self, kind):
@@ -88,6 +89,8 @@ class GuidanceViews:
         self.hint_toggle.configure(text='收合提示' if visible else '展開提示')
 
     def page_hint_content(self, page):
+        if self.groq_trial and page=='settings':
+            return '這是 Groq 外部 AI 試用入口。\n填好 .env 後可測試連線；回公司時請使用原本 start-app.bat。'
         if page == 'todo':
             return '新增待辦，或從對話選取文字加入。\n開始處理按「開始」，完成後按「完成」；只保存在本機，不會自動執行。'
         if page in ('chat', 'query') and self.editing_plan:
