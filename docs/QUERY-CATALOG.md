@@ -1,4 +1,4 @@
-# 動態查詢目錄契約（0.4.0）
+# 動態查詢目錄契約
 
 `QueryGateway.catalog()` 回傳 `list[dict]`。目錄由可信的 adapter 程式定義，不能把模型回答直接當成模板。每個模板有唯一非空 `id`、`name`、`parameters`；可提供 `description`、既有 `columns`，以及選用的 `date_range`。不存在、重複或不支援的模板不執行。
 

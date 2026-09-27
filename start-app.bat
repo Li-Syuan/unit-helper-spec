@@ -13,7 +13,7 @@ exit /b 0
 
 :missing
 echo Project Python environment is missing.
-echo Please follow ENVIRONMENT.md to run scripts\setup.ps1 first.
+echo Please follow docs/DEVELOPMENT.md to run scripts\setup.ps1 first.
 goto failed
 
 :failed

@@ -1,6 +1,7 @@
 # Copilot 接手入口
 
-以根目錄 AGENTS.md、LOCAL-SPEC.md、COMPANY-HANDOFF.md 為當前範圍。這是 Python 3.10.4 / Windows x64 / Tkinter 本機程式 0.3.0，不是要重新建立中央平台。
-先執行 scripts/test.ps1，按六項公司接線工作包推進。已完成的 UI、Plan gate、選項、本機排程與回報不重做。
-旧 v2.2 的 BACKEND／UPDATES／M0～M4 是後續完整路線，不能宣稱已完成。真實模式失敗不 demo fallback；沒有內部資料就保留 fail-closed adapter，不猜公司 URL、SQL 或 AD。
-開發分工至多兩個互斥工作包；產品 runtime 維持單助理。詳見 AGENTS.md。
+目前為 **QA agent 0.8.1**：Windows x64、Python 恰好 3.10.4、Tkinter 本機桌面。先讀 [開發守則](../AGENTS.md)、[公司接手工作單](../COMPANY-HANDOFF.md)、[產品與架構](../docs/PROJECT.md) 與 [驗證紀錄](../docs/VALIDATION.md)。
+
+使用專案環境執行 `scripts/test.ps1`，再按六項公司工作包接線。沿用已完成的 UI、Plan gate、助理綁定、對話刪除、本機排程與回報；公司未知契約維持停用，不猜 API／AD／SQL，不把真實錯誤 fallback demo。
+
+開發、離線安裝及診斷見 [開發指南](../docs/DEVELOPMENT.md)。公司真實服務與合成測試分開留證，skip 不算通過。不要新增中央平台、updater 或產品 runtime 多代理。開發分工按 AGENTS.md，含 Coordinator 的執行工作最多兩包並行。

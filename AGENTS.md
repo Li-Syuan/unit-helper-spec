@@ -1,96 +1,45 @@
-# 本機實作與公司接手守則
+# QA agent 開發與公司接手守則
 
-## 優先範圍
+## 當前範圍
 
-本次使用者核准的是 **QA agent 0.8.0 對話清理與畫面清晰度**，沿用原地操作提示與既有公司接手準備包。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
+先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.8.1 精簡倉庫與交接文件，保留現有 UI、功能、資料及測試；歷史規格由 Git 查閱，不再作為當前開發需求。
 
-## 已完成，請延續
+沿用 Windows x64、Python **恰好 3.10.4**、Tkinter／ttk、SQLite、OpenAI SDK 與 Windows keyring。公司待辦為 chatbot 契約、AD／名單及 owner 授權、三項 Oracle 查詢、舊資料／排程遷移與現場驗收。不得覆蓋公司原有規則或程式。
 
-- Windows x64、Python 恰好 3.10.4、Tkinter、OpenAI SDK 及 SQLite。
-- desktop_app/ui.py 畫面、theme.py 統一樣式（0.3.1），core.py 的 Store／服務流程／本機排程，choices.py 表單，files.py 輸出，config.py 設定及單例鎖。
-- 本機示範與公司 adapter 明確分離；真實模式失敗不 fallback demo。
-- Plan／選項、對話、TXT／CSV、三項合成查詢、通知與本機回報。
-- 可重建 .venv、requirements.lock、scripts、測試與驗證紀錄。
+中央管理 API、中央 schema／常駐排程、issue 後台、遠端更新、EXE、產品多 agent／持續 Goal、信件、OCR、Office 原檔編輯、多文件及任意 SQL／shell 均不在目前範圍。GPT 6 sol 是開發 agent，不是預設產品模型 ID。
 
-## 待公司接線
+## 架構與安全契約
 
-依 COMPANY-HANDOFF.md：成功 chatbot API 契約、AD／名單／owner 授權、Oracle 三模板、舊資料移轉防雙跑、公司 GUI／Excel 真實驗收。保持 Protocol 和服務邊界，先依 docs/QUERY-CATALOG.md 宣告 catalog 欄位／日期映射；不要重做整套程式。
+- UI／呈現位於 `desktop_app/ui.py`、`workspace.py`、`theme.py`；服務／Store／本機排程位於 `core.py`。保留 `gateways.py` Protocol 與 `profiles.py` 公司映射邊界，不重做整個應用。
+- 公司模式失敗明確報錯，不 fallback demo；未取得成功 API 範例不得猜 endpoint、assistant ID 的傳送位置、session 或 AD／SQL 欄位。助理原生工具副作用須經公司確認，SDK 呼叫不能視為天然無副作用。
+- Plan 預覽不呼叫 bot，`validate` 不查 DB；批准、修訂、期限、綁定及防重由服務層強制。選項不是工具授權，換助理／連線版本不能把舊 Plan 改送新目標。資料轉交只送明確選取、預覽及確認的內容；排程不自動交助理整理。
+- UI thread 只操作 widget，I/O 在背景；取消後晚到結果不得覆寫狀態，未完成真實 future 存在時禁止更換 client，關閉完成才釋放單例鎖。
+- AD 接線必須補每次派發／排程授權及跨登入者資料隔離；目前本機 profile 並無多租戶 ACL。`local-demo` 不得冒充 AD，UI 隱藏不等於授權，停用／逾期後應拒絕操作。
+- Oracle 僅核准模板、bind、可信身份注入範圍及有限唯讀結果；不要把共享 DB 密碼放桌面或模型。依 [查詢契約](docs/QUERY-CATALOG.md) 宣告動態欄位／日期映射，未宣告映射不能使用前一日排程。精度不用 float，不覆寫原文／原檔，Excel 公式防護與實際貼上分別驗證。
+- 金鑰存 Windows 認證管理員，設定只存索引；舊環境變數相容讀取，不自動搬移或刪除。禁止明文 fallback、`keyrings.alt`、停用 TLS 驗證；不記 HTTP body、密碼或原始敏感錯誤。
+- `.venv*`、`.runtime`、本機 config、`.env`、SQLite、使用者資料、`company_local`、`artifacts` 不進 Git。分享診斷只輸出白名單安全欄位。
+- 新 SQLite 與公司舊 DB 分離。移轉先一致性備份、唯讀盤點、dry-run、防重與回復；舊 runner 未停用且未確認無執行中工作前，不啟用對應新排程。
 
-## 後續才做
+## UI 與資料維護
 
-共用管理 API、中央 Oracle schema、中央常駐排程、issue 後台、簽章遠端更新與回復、EXE 打包。產品 runtime 多 agent、持續 Goal、信件擷取、OCR、Office 原檔編輯、多文件、任意 SQL/shell 均未授權加入本機版本。
+- 品牌固定 **QA agent**，正式 A 圖示與各倍率圖示隨專案提供，不在 runtime 下載素材。名稱集中 `branding.py`；不得因更名改資料路徑／環境變數。捷徑只更新本工具建立的項目。
+- System DPI awareness 及 AppUserModelID 在 Tk 建立前設定，保留較高既有模式。沿用 `display.py`：固定尺寸按倍率換算，點數字型不再縮放；不宣稱跨螢幕即時 DPI 重排已完成。
+- 主題、頁面提示及介面刷新保留草稿、附件、游標、選取、捲動、Plan 修訂與工作。訊息是可選取的純文字，不執行模型 HTML；任務狀態來自選定的 task／plan，不捏造百分比或重送。
+- 操作提示位於原頁面，只讀狀態，不填稿或派發；收合不得遮蔽必要警告。`page_hints` 與外觀存 `ui-preferences.json`；舊 `onboarding` 保留原值但不啟用。無獨立體驗資料庫，正常示範操作存目前個人歷史。
+- `experience.py` 提供離線手冊／關於／診斷；[使用手冊](docs/USER-GUIDE.md) 章節標題是 UI 入口契約，包括「管理對話」。修改章節須同步檢查入口。
+- 永久刪除使用 10 分鐘一次性預覽 token、完整資料快照、Engine 鎖及單一交易；queued/running/executing 或未結束真實 future（含已取消）拒絕整批。不自動取消或擴大刪除，未批准 Plan 可刪但不得派發。
+- 刪除保留獨立查詢／排程、回報／表單、原檔／匯出／備份、公司端及其他轉交副本；異常跨資料關聯拒絕。清除對應草稿與過期詳情／轉交預覽，保留其他對話草稿；不宣稱安全抹除。
 
-## 開發規則
+## 驗證與交付
 
-- 所有正式測試用 `.venv/Scripts/python.exe` 3.10.4；`scripts/test.ps1` 為完整檢查。改依賴後於第二乾淨 venv 重建，不借別人的 site-packages。
-- `.venv*`、`.runtime`、本機 config、.env、sqlite 與使用者資料不進 Git。API key 優先保存 Windows keyring；舊設定可相容讀取環境變數；不記錄 HTTP response body 或密碼。
-- UI thread 只操作 widget；HTTP／檔案使用背景工作。取消後的晚到結果不能覆寫狀態；真實 future 尚未結束時禁止更換 client；關閉後才釋放 singleton lock。
-- Plan 預覽不呼叫 bot；純參數驗證不能跑查詢。批准、修訂、期限、idempotency 在服務層檢查，不能以 prompt／disabled button 代替。
-- 選項資料只視為候選答案，不等於工具授權。公司原生 bot 工具的副作用需查證，不能假設 SDK 呼叫是純文字。
-- Oracle 使用核准模板、bind、驗證身份注入範圍及唯讀有限結果；不把 DB 共享密碼放桌面／模型。
-- 不改寫使用者原文或原檔；精度不用 float；Excel 公式防護與真實貼上需分別驗證。
-- SQLite 本機 schema 與舊公司 DB 分離；移轉先備份、dry-run、防重、可回復。舊 runner 未停用前不啟動對應新排程。
-- 實測結果分為 mock_passed、local_real_passed、company_real_passed、not_tested。GUI 字串測試不等於人工 GUI／Excel 驗收。
+環境、離線安裝與診斷操作見 [開發指南](docs/DEVELOPMENT.md)。正式測試使用專案 Python 3.10.4；`scripts/test.ps1` 執行完整檢查。改依賴須更新鎖檔並在第二乾淨環境及離線來源重建，不借外部 site-packages。離線包缺件／雜湊／lock 不符必須停止，不連外補件。
 
-## 分工
+[串接測試工具包](docs/ADAPTER-TEST-KIT.md) 提供合成斷言與公司 hooks；公司測試預設 `not_tested`，明確執行且能力審查完成才載入可信本地 hook。hook 必須真的斷言公司結果，不能以 canned True、skip 或 demo 假通過。
 
-使用者允許開發 subagents。Coordinator 可把互斥工作包交 Desktop、Adapters、QA，**最多兩個執行工作包同時進行**；列明可寫檔案、契約、輸入、驗收。根設定、鎖檔、遷移與整合由 Coordinator 管。沒有工具就順序開發，不以角色文字冒充並行。沿用使用者指定開發模型，不猜公司模型 ID。
+結果分列 `mock_passed`、`local_real_passed`、`company_real_passed`、`not_tested`。GUI 字串／倍率模擬不等於人工 GUI、Excel、IME 或真實 Windows 倍率驗收。調整 UI 後檢查一般、小工作區及最大化的操作可達性。完成後更新 `docs/PROJECT.md`、`docs/VALIDATION.md`、公司工作單及 manifest；不得捏造測試證據。
 
-完成後更新 docs/current-state.md、docs/implementation-status.md、VALIDATION-LOCAL.md（或另建公司實測檔），維持 manifest 一致。既有 spec ZIP 不重包成看似含原始碼的發布；Git history 保留規格。
+開發優先固定腳本與直接參數；捷徑測試保留 `tests/helpers/shortcut-fixture.ps1` 的 `-File` 流程，不恢復 EncodedCommand、動態 shell 字串或政策繞過。不要關防毒／加排除；警告出現時記錄操作、程式路徑及警示 ID，獨立確認成效，不用測試通過代替防毒驗證。
 
-## 介面維護
+## 開發分工
 
-0.8.0 新增單筆／搜尋勾選批次對話刪除。服務以 10 分鐘一次性 token 綁定完整快照，confirm 時鎖內重查與單一 SQLite 交易；沒有 schema 變更。任何選定對話的 queued/running/executing 或未完成真實 future（含已取消）都拒絕整批，不自動取消；不可只看 UI 狀態。待批准 Plan 可刪除，不派發。保留獨立查詢／排程、回報／表單、檔案／備份、公司端及其他轉交副本；異常跨資料關聯拒絕而不擴大刪除。刪除後關閉相關詳情／未送出預覽，清掉對應草稿，其他對話草稿保留。手冊「管理對話」為章節連結契約。
-
-display.py 在建立 Tk 前設定 Windows System DPI awareness，保留既有較高模式。固定尺寸以 100% 邏輯像素換算，點數字型不重複縮放；主要操作 11 點、聊天 12 點、次要提示至少 10 點，多尺寸本機圖示依倍率選取。小螢幕以工作區限制及可捲動內容保持操作可達。驗證記錄必須區分倍率換算測試、實際本機模式與真實 Windows 倍率／跨螢幕人工操作，不把模擬當完成。最大化不應把文字當圖片拉伸；本機舊模式 unaware 不足以宣稱唯一模糊成因。
-
-0.7.1 移除歡迎彈窗、獨立五步體驗與「快速體驗」入口。八頁在原頁首提供可收合、依目前狀態變更的操作提示與手冊章節入口；側欄「操作提示」切換目前頁面。正常示範助理與合成查詢保留，資料存於目前工作區，不能再宣稱示範操作使用獨立暫存資料。
-
-提示僅讀取狀態，不填草稿、不建立工作、不呼叫服務、不批准或轉交。切換不得清除草稿、附件、選取、游標、捲動或 Plan 修訂；收合不得隱藏示範標示、錯誤與必要確認。各頁 `page_hints` 布林偏好保存於 ui-preferences.json，預設展開；寫入失敗保留本次 UI 選擇並提示。舊 `onboarding` 值只保留，不再讀寫或觸發導覽。手冊章節標題是 UI 連結契約，修改時同步檢查入口。呈現入口 guidance.py／ui.py，偏好入口 preferences.py；experience.py 僅保留手冊、關於與診斷。
-
-0.3.1 以原生 Tkinter/ttk 改善介面，無新 GUI 依賴。調整佈局後檢查 1050×700 與一般尺寸的按鈕可見性，保留 sidebar 導覽／既有 Notebook 服務介面、Plan gate、原文與資料匯出行為；歡迎文案不得當成使用者訊息保存或傳給助理。UI 證據見 docs/UI-DESIGN.md。
-
-## 0.4.0 接手工具
-
-- query_schema 提供共用欄位契約；不要重新把公司欄位寫死在 ui.py。query_catalog／date_range 由服務層驗證，未宣告映射不能使用 previous_day。
-- test_support 與 company_templates 為可沿用的 adapter 測試工具；公司 mock fixture 與真實服務驗證分開。company_check 預設 not_tested，不載入 hook；明確執行與能力審查後才跑可信本地 hook。
-- company_local 與 artifacts 被忽略；內部樣本、帳號、網址及原始錯誤不得加入分享報告或 Git。公司 hook 回傳 True 前須真的斷言公司結果，不能用 canned True 或 demo 填滿項目。
-- 診斷與離線安裝見 docs/OFFLINE-INSTALL.md；offline 安裝缺件／雜湊／lock 不符必須停止，不得改成連外補件。
-- 公司資訊清單見 docs/COMPANY-INPUTS.md。舊資料盤點／移轉、正式登入授權、Oracle 接線、EXE 與中央更新仍未實作。
-
-## QA agent 品牌
-
-產品名稱固定為 QA agent（保留大小寫），集中於 desktop_app/branding.py。PNG／ICO 是本機打包資源，不能在執行期下載或呼叫生圖服務。Windows AppUserModelID 在建立 Tk 前設定；主視窗保存 PhotoImage 引用，附屬視窗套用相同品牌。不得為更名而改資料路徑、SQLite、環境變數或舊規格。捷徑只更新本工具所建立的項目，不能覆蓋其他程式。
-
-## 0.5.0 深淺主題與候選圖示（歷史；0.6.0 已採用 A）
-
-- 首次預設深色；設定 → 外觀可立即切換深色／淺色。
-- 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
-- 主題原地更新現有控制項及已開啟的應用內對話框；保留草稿、附件、選取、游標、捲動、Plan 修訂與背景工作。Windows 原生檔案／訊息框遵循系統外觀。
-- Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
-- A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
-- 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
-
-## 0.6.0 接手重點（歷史；獨立體驗已於 0.7.1 移除）
-
-已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
-
-修改入口：profiles.py 負責公司請求映射及憑證；assistant_views.py 為管理／轉交 UI；core.py schema 2 保存 binding/source，experience.py 管隔離導覽。公司請先提供遮蔽值的成功 API 範例，確認 ID 放 model 或獨立 body 欄位、session 規則及副作用能力。未配置 mapping 的新公司助理不能呼叫，不假裝用示範回答。具體步驟與命令見 docs/ASSISTANT-INTEGRATION.md。
-
-環境新增 keyring==25.7.0，總鎖定套件 29 個；不得使用 keyrings.alt 或明文 fallback。完整離線包以新鎖檔重建，舊包指紋不符必須拒絕。正式驗證用 .venv、.venv-verify060、.venv-offline060，均恰好 Python 3.10.4。
-
-完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。
-
-## 0.7.0 工作區改版（沿用）
-
-- 原生 Tkinter／ttk，未新增 runtime 套件。HTML／CSS 只是可離線開啟的視覺稿，入口 docs/design/workspace.html，不嵌入正式應用。
-- 工作／管理／協助分組、原創線條 PNG、820px 聊天閱讀寬度、可選取的訊息卡片樣式、3～6 行整合輸入框及真實任務狀態。
-- 工作詳情由明確選定的 task／plan ID 取得，顯示來源與助理版本；寬度至少 1380px 使用右欄，較窄以附屬視窗呈現。切換聊天不會改送正在執行的工作，已開啟詳情保留明確選定的來源。
-- 開發改用固定檢查／測試腳本。沒有變更防毒設定、例外或執行政策；Norton 是否不再警告尚未確認，見 docs/NORTON-DEVELOPMENT.md。
-- 沿用 Python 3.10.4 三個合格環境、29 個鎖定套件與 schema 2；公司 API、AD、Oracle、Excel 及原生中文 IME 仍需現場驗收。
-
-### 0.7.0 維護入口
-
-workspace.py 為純呈現層，ui.py 保留事件與服務入口，theme.py 管理配色；不能從任務卡推測進度百分比或觸發重送。訊息仍是原生 Text 純文字，選取與轉交須保持可用；HTML 視覺稿不得被接成處理公司資料的新入口。
-
-捷徑測試使用固定 tests/helpers/shortcut-fixture.ps1 與 -File 參數；不要恢復 EncodedCommand、動態命令字串或政策繞過。優先修改固定檔案、直接執行專案 Python。若防毒再次警告，先記錄該操作與警示，不能自動加排除或不停重試。
+允許 Coordinator 委派 Desktop、Adapters（既有 Backend 識別）與 QA，**含 Coordinator 自己的執行工作，最多兩個工作包同時進行**。每包指定可寫路徑、契約、輸入、依賴與驗收；根設定、鎖檔、遷移與整合由 Coordinator 管。子 agent 不另委派；沒工具就順序做，不以角色文字冒充並行。沿用使用者指定模型，不猜公司模型 ID。保留 `.github/agents` 的既有角色識別。

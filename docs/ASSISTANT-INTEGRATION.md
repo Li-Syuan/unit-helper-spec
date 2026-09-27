@@ -1,4 +1,4 @@
-# 公司多助理接線 — 0.6.0
+# 公司多助理接線
 
 ## 現有行為
 
@@ -33,4 +33,4 @@
 .\.venv\Scripts\python.exe scripts/verify.py development
 ~~~
 
-公司實測仍按 COMPANY-HANDOFF.md 和 ADAPTER-TEST-KIT.md 明確啟動；先完成 mock 契約，再用公司測試助理執行。完成條件是對話隔離、正確助理 ID、資料送出範圍與失敗狀態皆與公司人工結果一致。未拿到範例前保持 not_tested。
+公司實測仍按 [接手工作單](../COMPANY-HANDOFF.md) 和 [測試契約](ADAPTER-TEST-KIT.md) 明確啟動；先完成 mock 契約，再用公司測試助理執行。完成條件是對話隔離、正確助理 ID、資料送出範圍與失敗狀態皆與公司人工結果一致。未拿到範例前保持 not_tested。

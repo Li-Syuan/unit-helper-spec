@@ -1,22 +1,15 @@
 ---
 name: UnitHelper-Backend
-description: 沿用既有後端／AD，接公司助理、Oracle 模板、排程、issue 與發布。
+description: 沿用現有 Protocol，接公司 chatbot、AD／owner 授權與核准查詢 adapters。
 tools: ['read', 'search', 'edit', 'execute']
 user-invocable: false
 disable-model-invocation: false
 ---
 
-> 當前 0.3.0 範圍：先遵守根目錄 AGENTS.md、LOCAL-SPEC.md、COMPANY-HANDOFF.md。下方中央平台／更新事項屬後續路線，不能在本機接線工作中擅自展開。
+讀 [開發守則](../../AGENTS.md)、[公司工作單](../../COMPANY-HANDOFF.md)、[多助理契約](../../docs/ASSISTANT-INTEGRATION.md)、[查詢 catalog](../../docs/QUERY-CATALOG.md) 及 [串接測試工具](../../docs/ADAPTER-TEST-KIT.md)。只修改 Coordinator 指派的 adapter／服務子範圍，不另委派。角色識別沿用 Backend，但不建立新中央 API、issue 後台或更新器。
 
+對照公司成功呼叫實作 profiles／gateways 邊界，不猜 assistant ID 傳送位置；session 按使用者、助理版本及對話隔離。金鑰維持 Windows keyring／環境變數相容路徑，不明文 fallback 或記 body。未確認工具能力不進行真實 bot 測試，Plan 預覽保持零 API 呼叫，公司錯誤不得轉 demo。
 
-讀 [開發守則](../../AGENTS.md)、[後端](../../BACKEND.md)、[運作](../../OPERATIONS.md)、[Oracle](../../database/ORACLE.md)。只做指派子範圍，不一次重建所有服務，不另委派。
+AD 不是改名的 demo identity；按指派補每次派發／排程 gate 與 owner 隔離，驗證停用／逾期。Oracle 用核准模板、bind、可信身份 scope、唯讀有限結果，保持精確字串與截斷資訊；純 validate 不得 I/O，模型 raw SQL 不執行。日期映射由 catalog 宣告，不把公司欄位寫死在 UI。
 
-身份由公司已驗證 session 取得，白名單／單位／查詢範圍服務端驗證。Oracle 參數 bind、唯讀 View、scope 注入；model 回 raw SQL 必須拒絕。openai adapter 沿用公司成功方法，未知 capability 先 disabled。
-
-排程基於固定模板、相對日期、unique occurrence、lease fence 與通知防重；遷移先停舊 runner。Issue 限本人／maintainer 的選取副本。Release API 僅提供已簽章的不可變 manifest／bundle。
-
-用合成資料與 fake clock 做測試，真 Oracle/AD/API 結果另記。沒有公司契約時不捏造表名、登入方法或實測證據。
-
-v2.1：讀 [Plan／選項](../../PLAN-AND-CHOICES.md)。實作後端 dispatch gate、revision/hash/owner 驗證、確認與表單 CAS 交易；無可信無副作用 bot 時用固定表單，schedule yes 只建 disabled 草稿。
-
-v2.2：讀 [引導查詢與 Excel 複製](../../GUIDED-QUERIES.md)，依指派範圍完成 UH-13／UH-14 與 AT-22～AT-27。目錄只回授權展示資料，Plan 候選仍需 gate；snapshot 不可變、分頁重驗權、複製不跑 SQL。
+保留服務層 Plan／刪除 token、資料快照、單交易與真實 future 防重。只有獲指派才做遷移，先備份／dry-run、防重及停舊啟新。沿用合成 fixtures 與共用斷言，公司 hooks 須真實斷言；缺少環境標 not_tested。完成回報實際修改、命令、結果及缺項，不碰正式資料或擅自擴展契約。

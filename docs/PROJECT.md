@@ -1,6 +1,6 @@
-# QA agent 本機桌面 0.8.0 範圍與行為契約
+# QA agent 0.8.1：產品與架構
 
-此文件優先於 v2.2 中涉及中央後端、遠端更新的假設；其餘完整產品規劃保留作後續路線。
+本文件是現行行為契約。程式與 UI 已完成本機功能；公司接線見 [工作單](../COMPANY-HANDOFF.md)，實測與未測項目見 [驗證摘要](VALIDATION.md)。
 
 ## 分層
 
@@ -18,7 +18,7 @@
 
 UI 不直接持有 SQL、密碼或 HTTP 細節。公司請求映射與憑證集中 profiles.py，SDK 傳输維持 gateways.py；未來需要獨立 adapter 檔可在保持介面下拆出，不重寫 UI。
 
-## 0.7.1 原地操作提示
+## 工作區與原地操作提示
 
 啟動直接進入正常工作區；不再建立歡迎視窗、獨立體驗程序、暫存體驗工作區或五步控制器。一般示範助理及 DEMO 合成查詢繼續保留，操作會保存在目前個人歷史，所有示範標示保持明確。
 
@@ -38,7 +38,7 @@ UI 不直接持有 SQL、密碼或 HTTP 細節。公司請求映射與憑證集�
 取消在派發界線前阻止新助理呼叫；界線後可能已送出至公司，不能保證遠端撤回。晚到結果不寫回已取消工作。已完成查詢表格可保留，摘要失敗不重跑查詢。未結束的真實 future 會阻擋切換設定，即使工作已標取消。關閉等待遠端 drain 後才釋放資料目錄鎖。
 沒有持續自主 Goal、通用 shell／任意 SQL、產品 runtime 多 agent。
 
-## 0.8.0 對話刪除契約
+## 對話刪除
 
 最近對話的右鍵提供單筆刪除；「管理對話」可依標題搜尋、勾選多筆與全選目前搜尋結果。變更搜尋條件會清除已被隱藏的選取，不把看不到的對話暗中加入刪除。確認顯示對話名稱與數量、訊息／Plan／工作／通知數量，預設焦點在取消，明示永久刪除與無法由應用復原。
 
@@ -50,7 +50,7 @@ Engine.preview_conversation_deletion(ids) 回傳 token、conversations、counts�
 
 刪除後關閉選定資料的詳情及未送出轉交預覽，清除對應草稿及附件引用。刪除目前對話後切到最近保留對話；全部刪除後建立一個空白新對話，其他對話的草稿及附件保持不變。已刪對話不可由舊畫面或舊 Plan 再派發。
 
-## 0.8.0 顯示與 DPI 契約
+## 顯示與 DPI
 
 在建立 Tk 前設定 System DPI awareness；啟動環境已有更高感知模式時保留，不強制覆寫。display.py 集中處理顯示倍率與尺寸換算；以 100% 的邏輯像素為基準換算固定尺寸，避免字體放大而容器不變，或字型與容器重複縮放。微軟正黑體主要操作 11 點、聊天本文 12 點、次要提示至少 10 點。
 
@@ -77,39 +77,36 @@ Engine.preview_conversation_deletion(ids) 回傳 token、conversations、counts�
 
 獨立 `local-v1.sqlite3`、schema user_version=2、WAL；本應用 schema 1 升級前以 SQLite backup 備份，再以交易遷移。無可靠助理歸屬的舊對話保留閱讀／轉交，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
 回報 draft 可讀取修改，local_saved 只表示保存在此電腦；編號 LOCAL-*。不自動附加對話、資料或檔案，不冒稱管理者已收到。未實作處理狀態同步／修正版本管理。
-公司舊資料移轉、中央 API、AD、Oracle、簽章更新及 EXE 打包均另列交接；禁止將原 v2.2 相關 AT 記成已通過。
+公司舊資料移轉、中央 API、AD、Oracle、簽章更新及 EXE 打包均另列交接；未接線或未實測項目不得記成已通過。
 
-## 0.4.0 公司接手準備
+## 接線工具
 
-catalog 的參數定義支援 text/date/integer/decimal/single_choice/boolean、required/default 與適用範圍。UI、Plan 修改與預覽、結果條件及排程共用定義；decimal 保持文字，未知欄位／模板或不支援定義拒絕。adapter.validate 仍為純驗證且保有查詢商業規則；一般送出／批准與排程服務均檢查。細節見 docs/QUERY-CATALOG.md。
+catalog 的參數定義支援 text/date/integer/decimal/single_choice/boolean、required/default 與適用範圍。UI、Plan 修改與預覽、結果條件及排程共用定義；decimal 保持文字，未知欄位／模板或不支援定義拒絕。adapter.validate 仍為純驗證且保有查詢商業規則；一般送出／批准與排程服務均檢查。細節見 [查詢契約](QUERY-CATALOG.md)。
 
 本機診斷不連網、逐项收集結果與白名單分享報告；company_acceptance 不因本機通過而改為通過。離線套件包綁定 requirements.lock 指紋與各 wheel SHA-256，缺失或損壞停止，無連外 fallback。雜湊保護傳輸完整性，不是公司發布簽章。
 
 test_support 包含可重用 adapter 契約，company_templates 提供待填測試骨架，company_check 必須明確啟動且完成公司能力審查才載入可信 hooks。無 hooks 或缺項是 not_tested，不能以 demo／skip 替代公司驗收。不包括正式 AD、Oracle 或舊資料移轉。
 
-## 0.5.0 深淺主題與候選圖示（歷史；0.6.0 已採用 A）
 
-- 首次預設深色；設定 → 外觀可立即切換深色／淺色。
-- 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
-- 主題原地更新現有控制項及已開啟的應用內對話框；保留草稿、附件、選取、游標、捲動、Plan 修訂與背景工作。Windows 原生檔案／訊息框遵循系統外觀。
-- Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
-- A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
-- 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
+## 助理連線與資料轉交
 
-## 0.6.0 接手重點（歷史；獨立體驗已於 0.7.1 移除）
+`profiles.py` 管理共用 endpoint、金鑰索引、多助理名稱／ID／備註與連線版本；金鑰由 Windows keyring 保存，舊環境變數只相容讀取，不自動匯入、不明文 fallback。公司成功 API 範例未確認前，wire_mode 保持 unconfigured，不猜 ID 傳送位置。
 
-已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
+每段對話固定 profile_id／revision；改 endpoint 或 assistant ID 使舊綁定失效，名稱／備註不換版本。切換助理另開對話，草稿及附件不自動轉交；Plan 保留目標版本，批准與派發時重驗。公司 session 若非 stateless messages，須沿 adapter 邊界擴充並驗證隔離。
 
-修改入口：profiles.py 負責公司請求映射及憑證；assistant_views.py 為管理／轉交 UI；core.py schema 2 保存 binding/source，experience.py 管隔離導覽。公司請先提供遮蔽值的成功 API 範例，確認 ID 放 model 或獨立 body 欄位、session 規則及副作用能力。未配置 mapping 的新公司助理不能呼叫，不假裝用示範回答。具體步驟與命令見 docs/ASSISTANT-INTEGRATION.md。
+查詢結果與對話選定內容先指定目的助理、預覽再確認；建立獨立新對話並記來源。最多 50,000 字，超限拒絕、不默默截斷；失敗保留來源。排程不自動送模型。細節見 [助理接線](ASSISTANT-INTEGRATION.md)。
 
-環境新增 keyring==25.7.0，總鎖定套件 29 個；不得使用 keyrings.alt 或明文 fallback。完整離線包以新鎖檔重建，舊包指紋不符必須拒絕。正式驗證用 .venv、.venv-verify060、.venv-offline060，均恰好 Python 3.10.4。
+## 維護入口与完成界線
 
-完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。
+`assistant_views.py` 為管理／轉交、`conversation_views.py` 為刪除、`workspace.py` 為訊息與工作詳情；`branding.py`、`display.py`、`theme.py`、`preferences.py` 管品牌與外觀，`keyboard.py` 管送出與 IME 保護。保持此分層，不因接公司服務重做 UI。
 
-## 0.7.0 工作區改版（沿用）
+深淺主題原地更新控制項，不清除草稿、選取、附件、Plan 或背景工作；偏好獨立存在 ui-preferences.json，損壞用深色，保存失敗保留本次變更並提示。原生系統對話框遵循 Windows 外觀。
 
-- 原生 Tkinter／ttk，未新增 runtime 套件。HTML／CSS 只是可離線開啟的視覺稿，入口 docs/design/workspace.html，不嵌入正式應用。
-- 工作／管理／協助分組、原創線條 PNG、820px 聊天閱讀寬度、可選取的訊息卡片樣式、3～6 行整合輸入框及真實任務狀態。
-- 工作詳情由明確選定的 task／plan ID 取得，顯示來源與助理版本；寬度至少 1380px 使用右欄，較窄以附屬視窗呈現。切換聊天不會改送正在執行的工作，已開啟詳情保留明確選定的來源。
-- 開發改用固定檢查／測試腳本。沒有變更防毒設定、例外或執行政策；Norton 是否不再警告尚未確認，見 docs/NORTON-DEVELOPMENT.md。
-- 沿用 Python 3.10.4 三個合格環境、29 個鎖定套件與 schema 2；公司 API、AD、Oracle、Excel 及原生中文 IME 仍需現場驗收。
+| 狀態 | 能力 |
+|---|---|
+| 本機已實作 | 八頁 UI、助理管理、Plan、選項、TXT／CSV、合成查詢、轉交、排程／通知、回報、刪除、深淺與 DPI |
+| 工具已準備，待公司接線 | chatbot API 契約、AD／名單與 owner 授權、Oracle 三查詢、公司資料移轉 |
+| 仍待真實驗收 | 公司服務、Excel、中文 IME、公司設備倍率與跨螢幕；詳見驗證摘要 |
+| 後續才做 | 中央管理／協作、遠端更新、EXE、持續 Goal、多 agent 自主分工、信件／OCR、多文件與 Office 原檔編修 |
+
+Python 3.10.4、29 個鎖定套件與 schema 2 維持不變。0.8.1 僅整理倉庫、文件及入口引用，不新增產品功能。歷史規劃由 Git 保存，不當成目前交付能力。

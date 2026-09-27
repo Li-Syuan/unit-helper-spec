@@ -3,7 +3,7 @@ setlocal
 set "PYTHONIOENCODING=utf-8"
 cd /d "%~dp0"
 if not exist ".venv\Scripts\python.exe" (
-  echo Project environment missing. Read ENVIRONMENT.md and run scripts\setup.ps1 first.
+  echo Project environment missing. Read docs/DEVELOPMENT.md and run scripts\setup.ps1 first.
   pause
   exit /b 1
 )
