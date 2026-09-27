@@ -104,9 +104,25 @@ def inspect_environment(project=PROJECT, config_path=None, data_path=None, envir
     except Exception:
         config = None
         checks.append({"check": "configuration", "status": "failed", "code": "configuration_invalid"})
+    # Assistant metadata may exist independently of legacy config; inspect locally only.
+    profile_path=(Path(data_path) if data_path is not None else data_directory())/'assistants.json'
+    if profile_path.exists():
+        try:
+            from desktop_app.profiles import Profiles
+            profiles=Profiles(profile_path,config['assistant'] if config else {})
+            checks.append({"check":"assistant_profiles","status":"passed","code":"ok"})
+            if any(p['id']!='demo' and p['enabled'] for p in profiles.items()):
+                check("profile_credential","credential_store_unavailable_or_empty",lambda:bool(profiles.key()))
+                checks.append({"check":"assistant_mapping","status":"not_tested","code":"requires_company_acceptance"})
+        except Exception:
+            checks.append({"check":"assistant_profiles","status":"failed","code":"assistant_profiles_invalid"})
+    else:
+        checks.append({"check":"assistant_profiles","status":"not_applicable","code":"no_assistant_profiles"})
     if config:
         assistant = config["assistant"]
-        if assistant["mode"] == "company":
+        if profile_path.exists():
+            names = list(headers.values())
+        if assistant["mode"] == "company" or (profile_path.exists() and headers):
             check("credential_presence", "required_environment_missing_or_invalid", lambda: all(bool(environ.get(n)) for n in names) and all("\r" not in environ.get(n, "") and "\n" not in environ.get(n, "") for n in headers.values()))
         else:
             checks.append({"check": "credential_presence", "status": "not_applicable", "code": "demo_mode"})
@@ -167,6 +183,7 @@ def main(argv=None):
     if args.human:
         labels = {"python":"Python 3.10.4", "architecture":"64 位元架構", "platform":"Windows 平台", "tk":"Tk 視窗元件",
                   "dependencies":"套件與鎖檔", "configuration":"設定格式", "credential_presence":"必要環境變數",
+                  "assistant_profiles":"助理清單", "profile_credential":"助理金鑰", "assistant_mapping":"公司請求格式",
                   "ca_bundle":"CA 憑證", "data_directory":"資料目錄", "company_chatbot":"公司助理", "company_identity":"AD 與名單",
                   "company_queries":"Oracle 查詢", "excel":"Excel 貼上"}
         statuses = {"passed":"通過", "failed":"需修正", "not_tested":"尚未實測", "not_applicable":"無需檢查"}

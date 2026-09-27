@@ -1,6 +1,6 @@
-# 本機實作驗證紀錄 — QA agent 0.5.0
+# 本機實作驗證紀錄 — QA agent 0.6.0
 
-本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個既有獨立 venv 重驗（其中一個先前由離線包建立）。每個環境 **111 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
+本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個獨立 venv 驗證（開發環境、全新線上重建、全新離線重建）。每個環境 **139 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
 
 ## 可核對證據
 
@@ -9,17 +9,17 @@
 - [離線重建環境原始輸出](docs/validation/offline-rebuild.json)
 - 證據含 UTC 執行時間、實際直譯器完整路徑、版本、架構、Tk、全部套件、逐項測試及 exit code。
 - 開發直譯器：`D:/unit-helper-spec/.venv/Scripts/python.exe`。
-- 重建直譯器：`D:/unit-helper-spec/.venv-verify/Scripts/python.exe`。
-- 離線重建直譯器：`D:/unit-helper-spec/.venv-offline2/Scripts/python.exe`。
+- 重建直譯器：`D:/unit-helper-spec/.venv-verify060/Scripts/python.exe`。
+- 離線重建直譯器：`D:/unit-helper-spec/.venv-offline060/Scripts/python.exe`。
 - 三者各自 site-packages，`include-system-site-packages=false`，由同一官方 CPython 3.10.4 建立；沒借用 Conda 或其他專案環境。
-- `scripts/setup.ps1 -PythonExe .runtime/python3104/python.exe -Environment .venv-verify -CaBundle .runtime/windows-ca.pem` 實際成功；公司使用自身核准的直譯器／CA。
+- `scripts/setup.ps1 -PythonExe .runtime/python3104/python.exe -Environment .venv-verify060 -CaBundle .runtime/windows-ca.pem` 實際成功；公司使用自身核准的直譯器／CA。
 
 重跑並保存證據：
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/verify.py development
-.\.venv-verify\Scripts\python.exe scripts/verify.py clean-rebuild
-.\.venv-offline2\Scripts\python.exe scripts/verify.py offline-rebuild
+.\.venv-verify060\Scripts\python.exe scripts/verify.py clean-rebuild
+.\.venv-offline060\Scripts\python.exe scripts/verify.py offline-rebuild
 ```
 
 verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不符。程式不需要真實 API 金鑰即可通過基準。
@@ -52,7 +52,7 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 
 ## 0.3.1 介面更新
 
-加入 theme.py 集中樣式，不增加套件或變更 schema。重新配置側欄、對話、查詢、計畫、表格、排程、回報、設定；修正小視窗動作列被擠出畫面的問題。0.3.1 發布時的完整測試為各 67 項；目前上述 JSON 已更新為 0.5.0 的三環境完整證據。公司 API／AD／Oracle／Excel 的未實測界線不變。
+加入 theme.py 集中樣式，不增加套件或變更 schema。重新配置側欄、對話、查詢、計畫、表格、排程、回報、設定；修正小視窗動作列被擠出畫面的問題。0.3.1 發布時的完整測試為各 67 項；目前上述 JSON 已更新為 0.6.0 的三環境完整證據。公司 API／AD／Oracle／Excel 的未實測界線不變。
 
 ## 0.4.0 公司接手準備包
 
@@ -81,7 +81,7 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 
 ## 0.5.0 深淺工作區與候選圖示
 
-2026-09-27 於三個既有合格 Python 3.10.4 環境各完成 **111 tests、0 skipped**，pip check／freeze lock 一致；本輪沒有新增依賴或重建環境。三份 JSON 是本版本最終結果。
+2026-09-27 於三個既有合格 Python 3.10.4 環境各完成 **111 tests、0 skipped**，pip check／freeze lock 一致；本輪沒有新增依賴或重建環境。此段為 0.5.0 歷史；目前三份 JSON 已更新為 0.6.0。
 
 新增 8 項偏好／主題測試：缺失、損壞、未知值、原子保存失敗保留舊檔；App 重開讀取偏好；保存失敗仍套用；草稿、附件、游標、選取、捲動與待批准 Plan 保留；背景工作不中斷不多派發；已開啟／新開選項及檔案預覽同步；下拉清單及捲軸配色；八頁最小尺寸按鈕；不同 Tk interpreter 主題隔離。
 
@@ -92,3 +92,19 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 四款候選各有高解析透明 PNG、16／32／48 px 預覽及深淺比較圖。原始正式圖示 SHA-256 保持 29cd697887263a1bb195b1e06d6be19a466a40353e678d6a4a74620cd411bf69，沒有更換候選 ICO 或捷徑。啟動器 --check 通過。
 
 以上屬本機真 Tk 程式操作與畫面檢視；公司 API／AD／Oracle／Excel 與 OS 人工全流程維持 not_tested。
+
+## 0.6.0 多助理與新手體驗（目前交付）
+
+2026-09-27，三環境各 **139 tests、0 skipped**，doctor／pip check／freeze lock 完全通過。新增 keyring==25.7.0，鎖定共 29 個套件；全新 .venv-verify060 由線上鎖檔建立，全新 .venv-offline060 由 wheelhouse-v060 無 index 安裝建立。舊環境保留，不列為本版基準。
+
+- Windows 認證管理員：真實獨立測試項目保存、讀取、更換、移除，finally 清除；拒絕明文 fallback。失敗案例使用注入 backend；不接觸真實金鑰。
+- 助理／Plan：對話上下文隔離、路由固定、修改連線後舊批准拒絕、預覽零派發；升級匯入舊助理識別重開保持固定。工作中切換與私人草稿／附件保存。
+- 診斷：助理清單依實際使用者資料目錄讀取；切換 keyring 後不再誤報缺舊環境變數。植入清單秘密及憑證錯誤仍不洩露，診斷不改清單。
+- 資料轉交：跨頁列索引與精度、預覽目標／來源、重複確認防重、超限拒絕；失敗保留原查詢。修改其他對話 Plan 時不帶入當前附件。
+- SQLite：schema 1 → 2 前真備份及交易遷移；舊對話無 binding 保留閱讀／轉交，未碰公司原始 DB。
+- 體驗：真 Tk 控制項完成五步，必須實際批准／查詢／選取／預覽／整理；臨時資料隔離，無公司呼叫，也不讀正式金鑰。歡迎略過、重開、重試與偏好保存通過。
+- 手冊：離線文件章節、關於、完整第三方授權可讀；深淺主題截圖及 1050×700 下新導覽／表單／預覽已檢視。曾發現導覽擠掉查詢送出，壓縮底部導覽後重新截圖並驗證按鈕在可見範圍。
+- 鍵盤：Enter、Shift+Enter、Ctrl+Enter、空白、長按、重複鍵及注入 IME 狀態通過；Windows IME guard 已整合。**真實中文組字／選字仍 not_tested**，人工步驟見 COMPANY-ACCEPTANCE。
+- A 正式圖示七尺寸、主／附屬視窗圖示與 COM 捷徑回歸通過；已更新目前使用者 QA agent 桌面捷徑。OS 工作列／桌面最終外觀未人工檢视。
+
+新公司 assistant ID 映射保持 unconfigured，須公司成功範例確認；公司 API／AD／Oracle／Excel 不以本機通過代替驗收。原始完整輸出見上方三份 JSON，畫面見 docs/UI-DESIGN.md。

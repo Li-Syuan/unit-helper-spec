@@ -49,8 +49,11 @@ class Store:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version > 1:
+            if version > 2:
                 raise ValueError("資料庫版本較新，請使用相容的應用程式。")
+            if version == 1:
+                backup=self.path.with_name(self.path.name+'.pre-v2-'+uid()+'.bak')
+                with sqlite3.connect(str(backup)) as target: db.backup(target)
             db.executescript("""
                 PRAGMA journal_mode=WAL;
                 CREATE TABLE IF NOT EXISTS conversations(
@@ -85,8 +88,13 @@ class Store:
                     id TEXT PRIMARY KEY,type TEXT NOT NULL,title TEXT NOT NULL,
                     description TEXT NOT NULL,expected TEXT NOT NULL,status TEXT NOT NULL,
                     created_at TEXT NOT NULL);
-                PRAGMA user_version=1;
+
             """)
+            if version < 2:
+                db.execute("BEGIN IMMEDIATE")
+                db.execute("ALTER TABLE conversations ADD COLUMN binding TEXT")
+                db.execute("ALTER TABLE conversations ADD COLUMN source TEXT")
+                db.execute("PRAGMA user_version=2")
 
     @contextmanager
     def connection(self):
@@ -108,7 +116,7 @@ class Store:
         if row is None:
             raise ValueError("找不到這筆本機資料。")
         item = dict(row)
-        for field in ("payload", "result", "parameters", "threshold"):
+        for field in ("payload", "result", "parameters", "threshold", "binding", "source"):
             if field in item and item[field] is not None:
                 item[field] = json.loads(item[field])
         return item
@@ -126,12 +134,16 @@ class Store:
     def conversations(self):
         return self._list("conversations")
 
-    def create_conversation(self, title):
+    def conversation(self, record_id):
+        return self._get("conversations",record_id)
+
+    def create_conversation(self, title, binding=None, source=None):
         if not isinstance(title, str) or not title.strip():
             raise ValueError("請輸入對話名稱。")
         record_id = uid()
         with self.connection() as db:
-            db.execute("INSERT INTO conversations VALUES(?,?,?)", (record_id, title[:120], stamp()))
+            db.execute("INSERT INTO conversations(id,title,created_at,binding,source) VALUES(?,?,?,?,?)",
+                       (record_id,title[:120],stamp(),dumps(binding or {"profile_id":"demo","revision":1}),dumps(source) if source else None))
         return record_id
 
     def messages(self, conversation_id):
@@ -220,8 +232,9 @@ class Store:
 class Engine:
     """Single-process local runner. UI polls Store; never receives worker callbacks."""
 
-    def __init__(self, store, query_runner, assistant_runner, query_validator=None, query_catalog=None):
+    def __init__(self, store, query_runner, assistant_runner, query_validator=None, query_catalog=None, assistant_router=None, binding_validator=None):
         self.store, self.query_runner, self.assistant_runner = store, query_runner, assistant_runner
+        self.assistant_router=assistant_router; self.binding_validator=binding_validator
         self.query_validator = query_validator
         self.query_catalog = query_catalog or getattr(getattr(query_runner, "__self__", None), "catalog", None)
         self._lock = threading.RLock()
@@ -267,6 +280,10 @@ class Engine:
                 return _NOT_DISPATCHED
             self._assistant_dispatching.add(task_id)
         try:
+            if self.assistant_router is not None:
+                binding=self.store.task(task_id)["payload"].get("_binding")
+                self.binding_validator(binding)
+                return self.assistant_router(messages,purpose,binding)
             return self.assistant_runner(messages, purpose)
         finally:
             with self._lock:
@@ -275,6 +292,8 @@ class Engine:
     def _validate(self, kind, payload):
         if kind not in {"query", "query_summarize", "chat", "summarize", "rewrite"} or not isinstance(payload, dict):
             raise ValueError("不支援此工作流程。")
+        if kind == "query_summarize" and self.assistant_router is not None:
+            raise ValueError("請先完成查詢，再選擇資料與助理，預覽後送出。")
         if kind in {"query", "query_summarize"}:
             if not isinstance(payload.get("query_id"), str) or not payload["query_id"] or not isinstance(payload.get("parameters"), dict):
                 raise ValueError("請先填妥查詢及條件。")
@@ -287,6 +306,13 @@ class Engine:
         dumps(payload)  # Reject non-serializable values before any write.
 
     def _new_task(self, db, kind, payload, conversation_id=None, request_id=None, plan_id=None, schedule_id=None):
+        if self.assistant_router is not None and kind not in {"query","query_summarize"}:
+            row=db.execute("SELECT binding FROM conversations WHERE id=?",(conversation_id,)).fetchone()
+            if not row: raise ValueError("找不到對話。")
+            binding=json.loads(row["binding"]) if row["binding"] else None
+            self.binding_validator(binding)
+            if "_binding" in payload and payload["_binding"]!=binding: raise ValueError("計畫助理版本不符，請建立新計畫。")
+            payload=dict(payload,_binding=binding)
         request_hash = hashlib.sha256(dumps([kind, payload, conversation_id, plan_id, schedule_id]).encode()).hexdigest()
         if request_id:
             existing = db.execute("SELECT id,request_hash FROM tasks WHERE request_id=?", (request_id,)).fetchone()
@@ -335,7 +361,14 @@ class Engine:
             raise ValueError("文字操作類型無效。")
         return self._queue(purpose, {"text": text, "conversation_id": conversation_id}, conversation_id, request_id)
 
+    def _plan_binding(self,kind,payload,conversation_id=None):
+        if self.assistant_router is None or kind in {"query","query_summarize"}: return payload
+        binding=self.store.conversation(conversation_id or payload.get("conversation_id"))["binding"]
+        self.binding_validator(binding)
+        return dict(payload,_binding=binding)
+
     def create_plan(self, kind, payload, conversation_id=None):
+        payload=self._plan_binding(kind,payload,conversation_id)
         self._validate(kind, payload)
         with self._lock:
             self._ensure_open()
@@ -347,6 +380,7 @@ class Engine:
             return record_id
 
     def edit_plan(self, plan_id, expected_revision, kind, payload):
+        payload=self._plan_binding(kind,payload)
         self._validate(kind, payload)
         with self._lock, self.store.connection() as db:
             db.execute("BEGIN IMMEDIATE")

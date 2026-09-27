@@ -1,9 +1,9 @@
-# 實作狀態
+# 實作狀態 — QA agent 0.6.0
 
 | 工作 | 狀態與界線 | 主要檔案 |
 |---|---|---|
-| Python／鎖版／第二環境 | 三個既有環境各 111 tests 通過，其中一個由離線重建；見 VALIDATION-LOCAL | scripts、requirements.lock |
-| 對話／歷史／背景／取消 | 本機已完成；0.3.1 新增側欄、視覺層級、Ctrl+Enter 與按鈕狀態 | ui、theme、core |
+| Python／鎖版／第二環境 | 三個獨立環境各 139 tests 通過，含全新線上與離線重建；見 VALIDATION-LOCAL | scripts、requirements.lock |
+| 對話／歷史／背景／取消 | 本機已完成；Enter 送出／Shift+Enter 換行／Ctrl+Enter，IME 人工驗收待完成 | ui、theme、core |
 | OpenAI 相容 SDK | adapter + MockTransport 通過；公司實測未做 | gateways |
 | Plan／是非／單選／多選 | 本機固定流程、服務 gate、修訂／期限／防重 | core、choices、ui |
 | TXT／CSV／文字預覽輸出 | 本機已完成；真摘要／改寫需公司 API | files、ui、gateways |
@@ -18,23 +18,23 @@
 
 後續接手 agent 應在這裡補「實際完成條件與證據」，不能把新增 adapter 檔案當成整合成功。
 
-## 0.4.0 接手準備
+## 0.4.0 接手準備（歷史）
 
 | 工作 | 實際完成與界線 | 入口 |
 |---|---|---|
 | 動態表單／Plan／排程 | 六種型別，模板失效拒絕、舊 DEMO 相容、不同日期映射；本機合成測試通過 | query_schema、QUERY-CATALOG |
 | 串接工具包 | 可重用 SDK／查詢契約與待填公司 hook，正式服務仍未測試 | ADAPTER-TEST-KIT |
 | 一鍵診斷 | 真環境檢查與分享白名單報告，沒有公司連線 | diagnose.bat、doctor |
-| 離線安裝 | 20-wheel 包驗證，.venv-offline2 已由包重建；本輪重驗 111 tests、lock 一致 | OFFLINE-INSTALL |
+| 離線安裝 | 20-wheel 包驗證，.venv-offline2 已由包重建；當時重驗 111 tests、lock 一致 | OFFLINE-INSTALL |
 | 公司接手工作單 | 必要輸入、六項接線與現場驗收；未填不視為完成 | COMPANY-INPUTS、COMPANY-HANDOFF、COMPANY-ACCEPTANCE |
 
-最終完整證據：docs/validation/development.json、clean-rebuild.json、offline-rebuild.json。依賴無新增；不把骨架、合成測試或本機通過當真實公司通過。
+目前完整證據：docs/validation/development.json、clean-rebuild.json、offline-rebuild.json（已更新為 0.6.0）。0.4.0 當時依賴無新增；不把骨架、合成測試或本機通過當真實公司通過。
 
 ## QA agent 0.4.1
 
 圖示生成、七尺寸 ICO、主／附屬視窗、側欄、對話署名與啟動名稱已更新；捷徑建立工具通過 5 項真 COM 測試，使用者桌面已建立 QA agent 捷徑。資料目錄／schema／依賴未變，原始圖及提示詞已進 repo。三環境最終各 103 項測試。Windows 工作列／桌面外觀及公司服務仍依 BRANDING.md／VALIDATION-LOCAL.md 分開記錄未實測部分。
 
-## 0.5.0 深淺主題與候選圖示
+## 0.5.0 深淺主題與候選圖示（歷史）
 
 - 首次預設深色；設定 → 外觀可立即切換深色／淺色。
 - 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
@@ -42,3 +42,18 @@
 - Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
+
+## 0.6.0 目前完成
+
+| 工作 | 完成與界線 | 修改入口 |
+|---|---|---|
+| 多助理／憑證 | 清單、預設、停用、連線版本、Windows keyring；新公司映射待成功樣本 | profiles、assistant_views、ASSISTANT-INTEGRATION |
+| 固定對話／Plan | binding/source、改連線舊 Plan 拒絕、背景派發固定目標、草稿隔離 | core、ui |
+| 結果／對話轉交 | 選取→指定助理→完整預覽→確認→新對話，超限拒絕、失敗保留來源 | assistant_views |
+| 歡迎與五步體驗 | 獨立程序／臨時資料、真操作進度、退出／重試／偏好保存 | experience、preferences |
+| 手冊／資料说明／授權 | 應用內離線章節、完整 29 個套件授權文字、關於與回報入口 | USER-GUIDE、DATA-USAGE、THIRD-PARTY-NOTICES、licenses |
+| 鍵盤 | Enter／Shift+Enter／Ctrl+Enter、防重、IME guard；原生中文 IME 待人工 | keyboard |
+| 依賴／資料升級 | 29-wheel 新包與兩個全新 venv 重建；schema 2 升級前備份 | requirements.lock、core、setup |
+| 正式 A 圖示 | 七尺寸 PNG／ICO、視窗、侧欄、桌面捷徑 | assets、BRANDING |
+
+本版三環境各 139 tests、0 skipped。公司 API／AD／Oracle／Excel、原生中文輸入法與 OS 最終外觀不冒稱通過；人工清單见 COMPANY-ACCEPTANCE。

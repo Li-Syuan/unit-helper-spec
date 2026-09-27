@@ -94,7 +94,7 @@ class CompanyAssistant:
     `assistant_ref` plus `assistant_ref_field` adds exactly one company body field.
     """
 
-    def __init__(self, config: dict, client=None):
+    def __init__(self, config: dict, client=None, api_key=None):
         from openai import OpenAI
         import httpx
 
@@ -119,7 +119,7 @@ class CompanyAssistant:
             raise GatewayError("max_context_chars 必須介於 1 與 50000。")
         self.limit = limit
         env = self.config.get("api_key_env", "UNIT_HELPER_API_KEY")
-        key = os.environ.get(env, "") if isinstance(env, str) else ""
+        key = api_key if api_key is not None else (os.environ.get(env, "") if isinstance(env, str) else "")
         if not key:
             raise GatewayError("未設定公司 API 金鑰環境變數。")
         headers = {}

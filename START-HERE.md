@@ -1,6 +1,6 @@
 # 開始這裡
 
-本次交付已從 spec 前進到 **QA agent 0.5.0 本機桌面與公司接手準備包**。
+本次交付已從 spec 前進到 **QA agent 0.6.0 本機桌面與公司接手準備包**。
 
 依序讀 README.md → LOCAL-SPEC.md → VALIDATION-LOCAL.md → COMPANY-HANDOFF.md。
 GPT 6 sol 的起始工作指令在 GPT6-SOL-HANDOFF.md。開發守則在 AGENTS.md。
@@ -9,7 +9,7 @@ GPT 6 sol 的起始工作指令在 GPT6-SOL-HANDOFF.md。開發守則在 AGENTS.
 
 公司先填 docs/COMPANY-INPUTS.md；動態查詢契約、測試工具包、離線安裝與現場驗收的入口集中在 README 的「公司接手準備包」。雙擊 start-app.bat 開應用，diagnose.bat 產生安全的本機環境報告。
 
-## 0.5.0 深淺主題與候選圖示
+## 0.5.0 深淺主題與候選圖示（歷史；0.6.0 已採用 A）
 
 - 首次預設深色；設定 → 外觀可立即切換深色／淺色。
 - 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
@@ -17,3 +17,13 @@ GPT 6 sol 的起始工作指令在 GPT6-SOL-HANDOFF.md。開發守則在 AGENTS.
 - Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
+
+## 0.6.0 接手重點
+
+已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
+
+修改入口：profiles.py 負責公司請求映射及憑證；assistant_views.py 為管理／轉交 UI；core.py schema 2 保存 binding/source，experience.py 管隔離導覽。公司請先提供遮蔽值的成功 API 範例，確認 ID 放 model 或獨立 body 欄位、session 規則及副作用能力。未配置 mapping 的新公司助理不能呼叫，不假裝用示範回答。具體步驟與命令見 docs/ASSISTANT-INTEGRATION.md。
+
+環境新增 keyring==25.7.0，總鎖定套件 29 個；不得使用 keyrings.alt 或明文 fallback。完整離線包以新鎖檔重建，舊包指紋不符必須拒絕。正式驗證用 .venv、.venv-verify060、.venv-offline060，均恰好 Python 3.10.4。
+
+完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。

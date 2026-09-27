@@ -23,3 +23,7 @@ company_local/
 
 # Appearance is personal local data
 ui-preferences.json
+
+wheelhouse*/
+assistants.json
+*.pre-v2-*.bak

@@ -65,6 +65,31 @@ class DiagnosticTests(unittest.TestCase):
             self.assertIn({'check':'configuration','status':'failed','code':'configuration_invalid'}, report['checks'])
 
 
+    def test_profiles_use_data_directory_and_keyring_without_legacy_key(self):
+        from desktop_app.profiles import Profiles, CredentialVault
+        secret = 'PRIVATE_PROFILE_SECRET_94012'
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); data=root/'data'; config=root/'config.json'
+            config.write_text(json.dumps({'assistant':{'mode':'company','base_url':'https://company.example/v1','model':'test','api_key_env':'MISSING_OLD_KEY'}}),encoding='utf-8')
+            profiles=Profiles(data/'assistants.json')
+            profiles.save(secret,secret,secret)
+            profiles.data['credential_source']='keyring'
+            profiles._write(profiles.data)
+            before=(data/'assistants.json').read_bytes()
+            with patch.object(doctor,'data_directory',return_value=data), patch.object(CredentialVault,'get',return_value=secret):
+                report=doctor.inspect_environment(ROOT,config,environ={})
+            states={v['check']:v['status'] for v in report['checks']}
+            self.assertEqual(states['assistant_profiles'],'passed')
+            self.assertEqual(states['profile_credential'],'passed')
+            self.assertEqual(states['credential_presence'],'passed')
+            self.assertEqual(states['company_chatbot'],'not_tested')
+            self.assertNotIn(secret,json.dumps(report))
+            self.assertEqual(before,(data/'assistants.json').read_bytes())
+            with patch.object(doctor,'data_directory',return_value=data), patch.object(CredentialVault,'get',side_effect=RuntimeError(secret)):
+                failed=doctor.inspect_environment(ROOT,config,environ={})
+            self.assertIn({'check':'profile_credential','status':'failed','code':'credential_store_unavailable_or_empty'},failed['checks'])
+            self.assertNotIn(secret,json.dumps(failed))
+
     def test_adapter_restrictions_fail_before_company_calls(self):
         invalids = [
             {"header_env":{"Authorization":"TEST_KEY"}},

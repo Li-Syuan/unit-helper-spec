@@ -58,7 +58,10 @@ class DesktopTests(unittest.TestCase):
         a=self.app; a.setting_vars['mode'].set('company')
         with self.assertRaises(ValueError): a.apply_settings()
         self.assertEqual(a.config['assistant']['mode'],'demo')
-        a.assistant=None; a.adapter_error='公司連線失敗'; a.input.insert('end','你好'); a.send_chat(); t=self.wait_task()
+        def fail_company(messages,purpose,binding):
+            from desktop_app.gateways import GatewayError
+            raise GatewayError('公司連線失敗')
+        a.engine.assistant_router=fail_company; a.input.insert('end','你好'); a.send_chat(); t=self.wait_task()
         self.assertEqual(t['state'],'failed'); self.assertNotIn('示範',t['error'])
 
     def test_cross_workflow_plan_edit_rejected_and_exit_supported(self):
@@ -73,7 +76,7 @@ class DesktopTests(unittest.TestCase):
         entered=threading.Event(); release=threading.Event()
         def delayed(messages,purpose):
             entered.set(); release.wait(3); return 'late'
-        a=self.app; a.engine.assistant_runner=delayed; a.input.insert('end','資料'); a.send_chat()
+        a=self.app; a.engine.assistant_router=lambda messages,purpose,binding:delayed(messages,purpose); a.input.insert('end','資料'); a.send_chat()
         self.assertTrue(entered.wait(2)); a.cancel_latest()
         try:
             with self.assertRaises(ValueError): a.apply_settings()
@@ -103,7 +106,7 @@ class DesktopTests(unittest.TestCase):
         a=self.app
         def delayed(messages,purpose):
             entered.set(); release.wait(3); return 'late'
-        a.engine.assistant_runner=delayed; a.input.insert('end','測試'); a.send_chat(); self.assertTrue(entered.wait(2))
+        a.engine.assistant_router=lambda messages,purpose,binding:delayed(messages,purpose); a.input.insert('end','測試'); a.send_chat(); self.assertTrue(entered.wait(2))
         with patch('desktop_app.ui.messagebox.askyesno',return_value=True): a.close()
         self.assertFalse(a.lock.handle.closed); release.set()
         deadline=time.monotonic()+5

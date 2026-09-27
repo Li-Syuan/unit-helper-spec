@@ -1,28 +1,15 @@
-# 現況盤點
+# 現況盤點 — QA agent 0.6.0
 
-- 此工作區最初只有規格，沒有公司的 Tkinter 原始碼、DB、API 成功樣本或 AD 配置。
-- 目前新增獨立 desktop_app 套件；沒有修改或移轉原公司系統。
-- OpenAI SDK adapter 是可執行 Chat Completions 相容實作，已用真 SDK + MockTransport 測請求／錯誤；尚未呼叫公司 API。
-- 公司正式身分與 Oracle 仍是拒絕未接線的邊界。示範查詢不是公司資料。
-- SQLite 是本機單使用者 profile，新檔 local-v1.sqlite3；程式之外未新增共用服務。
-- 三個合格專案 venv（.venv、.venv-verify、.venv-offline2） 使用確切 CPython 3.10.4 x64 / Tk 8.6.12。機器安裝例外與重建方式見 ENVIRONMENT.md。
-- 當前程式版 QA agent 0.5.0；完整產品規格 v2.2 的中央更新／issue 後台等仍待未來階段。
+- 專案在 D:/unit-helper-spec；獨立 Tkinter 桌面，沒有公司的原始碼、API 成功範例或真實資料；未更動原公司系統。
+- 已完成多助理管理、Windows keyring、對話／Plan 固定助理版本、預覽後轉交資料、Enter 送出、五步隔離體驗、離線手冊／資料說明與正式 A 圖示。深淺主題與動態查詢／排程仍沿用。
+- 新助理只要求 endpoint、assistant ID、API key；公司請求映射初始 unconfigured。OpenAI SDK 合成契約通過不代表公司 API 已接通；session 規則與副作用能力待公司確認。
+- 本機檔名維持 local-v1.sqlite3，schema 已為 2；升級前備份並交易遷移，保存 binding/source。舊對話缺乏歸屬，保留閱讀／明確轉交。未讀取公司舊資料庫。
+- 正式身分與 Oracle 未配置時拒絕；三項 demo 為合成資料。排程只查詢通知，不自動送模型；程式關閉不執行。
+- 三個獨立環境 .venv、.venv-verify060、.venv-offline060，皆 Python 3.10.4 x64／Tk 8.6.12；各 139 tests、0 skipped，pip check／freeze lock 一致。後兩者本版全新重建。
+- 鎖檔共 29 個套件，新增 keyring 及相依；wheelhouse-v060 已完整重建並實際離線安裝。套件包／環境不進 Git，舊鎖檔套件包不能用於本版。
+- 診斷只檢查本機環境與憑證是否存在，分享白名單不含秘密或內部網址；不呼叫公司服務。
+- 真 Tk 程式操作、實際自身視窗截圖、真 Windows 測試憑證及 COM 已驗；真實中文輸入法、OS 人工流程、工作列／桌面外觀、公司 API／AD／Oracle／Excel 仍 not_tested。
+- 公司接手入口：COMPANY-HANDOFF.md、GPT6-SOL-HANDOFF.md、docs/ASSISTANT-INTEGRATION.md、docs/COMPANY-INPUTS.md、docs/COMPANY-ACCEPTANCE.md。
+- 中央管理、遠端更新、EXE、持續 Goal、自動多 agent 協作均未加入。規格 v2.2 與 B～D 圖示保留歷史，不代表目前功能。
 
-- 0.3.1 已更新 Tkinter 視覺、側邊導覽與各頁動作配置；實際畫面及驗證界線見 UI-DESIGN.md。
-
-- 0.4.0 加入 catalog 動態欄位、服務層模板驗證與排程日期映射，Plan／結果／歷史同步支援。
-- 已提供 test_support、company_templates、scripts/company_check.py；公司實測需可信 hook 與明確啟動，尚未接線仍 not_tested。
-- diagnose.bat／doctor 提供無網路白名單報告；setup -OfflineBundle 可從完整驗證的 20-wheel 套件包重建。
-- 最終三環境各 111 tests、0 skipped，pip check／freeze lock 一致；原始證據見 docs/validation。第一個離線嘗試 .venv-offline 因 freeze 路徑格式不合格而保留，不當正式基準。
-- 工作單與公司驗收：COMPANY-INPUTS、ADAPTER-TEST-KIT、QUERY-CATALOG、OFFLINE-INSTALL、COMPANY-ACCEPTANCE。未新增 runtime 套件，SQLite schema 仍為 1，未讀取或遷移舊公司 DB。
-
-- 0.4.1 品牌更新：生成透明 Q 形夥伴圖示，提供七尺寸 ICO，套用主／附屬視窗、側欄與對話署名；桌面捷徑工具見 SHORTCUT.md。資料與依賴未變。
-
-## 0.5.0 深淺主題與候選圖示
-
-- 首次預設深色；設定 → 外觀可立即切換深色／淺色。
-- 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
-- 主題原地更新現有控制項及已開啟的應用內對話框；保留草稿、附件、選取、游標、捲動、Plan 修訂與背景工作。Windows 原生檔案／訊息框遵循系統外觀。
-- Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
-- A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
-- 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
+歷史版本與修正紀錄見 VALIDATION-LOCAL.md；目前機器可核對證據在 docs/validation，畫面在 docs/UI-DESIGN.md。

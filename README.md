@@ -1,21 +1,23 @@
-# QA agent — 本機可執行版 0.5.0
+# QA agent — 本機可執行版 0.6.0
 
 Windows x64 / **Python 3.10.4** / Tkinter / SQLite / OpenAI SDK。
 這個 repo 現在包含可執行程式，不只是 spec。預設示範身分、示範助理與合成資料，**沒有連到公司服務**。
 
-## QA agent 圖示與捷徑
+## 先體驗，不用設定
 
-0.4.1 統一名稱為 **QA agent**，視窗、側欄及對話署名已更新。圖示採 Q 形對話夥伴與確認勾；資料與設定位置保持相容。
+啟動後選「先體驗，不用設定」，在獨立視窗完成查詢 → Plan → 自行批准 → 選取資料 → 預覽轉交。全部是合成資料，不需要公司 API key，不會混入個人歷史。略過後仍可從側欄「快速體驗」重開。
 
-雙擊 **create-shortcut.bat** 可建立帶新圖示的 **QA agent** 桌面捷徑；以後直接從捷徑開啟。既有 start-app.bat 仍可使用。見 [捷徑說明](docs/SHORTCUT.md) 與 [圖示來源、生成提示詞及驗證](docs/BRANDING.md)。
+![第一次使用](docs/images/v060-welcome.png)
 
-## 桌面介面
+## 日常使用
 
-0.5.0 提供石墨深色／霧白淺色工作區，首次預設深色。到「設定 → 外觀」立即切換並記住選擇；草稿、Plan 與工作保留。沒有新增 GUI 套件。
+- 「設定」管理共用 endpoint、Windows keyring API key，以及多個助理名稱／assistant ID／備註。新 API 映射尚未確認時保持停用。
+- 每段對話固定助理；切換開新對話。查詢結果及選取文字可明確預覽後轉交。
+- Enter 送出、Shift+Enter 換行，Ctrl+Enter 保留。中文輸入法最終人工驗收仍待完成。
+- 「說明與關於」提供離線手冊、資料使用限制、第三方授權及診斷。深淺主題可在設定切換。
+- 正式採用 A 圖示。雙擊 create-shortcut.bat 建立／更新 QA agent 桌面捷徑；既有 start-app.bat 可繼續使用。
 
-![對話工作區](docs/images/ui-dark-chat.png)
-
-[更多介面與驗證說明](docs/UI-DESIGN.md) · [A～D 候選圖示比較](docs/ICON-CANDIDATES.md)（待選，現有正式圖示保留）
+[使用手冊](docs/USER-GUIDE.md) · [資料使用說明](docs/DATA-USAGE.md) · [介面實際畫面](docs/UI-DESIGN.md) · [公司多助理接線](docs/ASSISTANT-INTEGRATION.md)
 
 ## Clone 後開始
 
@@ -70,3 +72,9 @@ cd unit-helper-spec
 
 `SPEC.md`、`BACKEND.md`、`OPERATIONS.md`、`UPDATES.md`、`IMPLEMENTATION.md`、`FULL-SPEC.md` 與 `Unit-Helper-Spec-v2.2.zip` 保留原規劃。其中中央排程、管理平台及更新系統是後續階段，不是 0.3.0 已完成內容。
 `MANIFEST.sha256` 對應目前 repo 的交付檔；歷史 ZIP 內的 manifest 仍對應該 ZIP 的 v2.2 內容。
+
+## 從 0.5.0 升級
+
+本版新增 keyring 與其依賴。維護者依新 requirements.lock 更新專案環境，或指定新的 .venv 名稱重建；setup 不覆寫既有環境。使用者資料路徑不變。SQLite 首次開啟會先保留 pre-v2 備份，再交易式升至 schema 2；舊對話因無可靠助理歸屬只讀，需要續談時選內容轉交。不要以舊版程式開啟已升級資料庫。
+
+實測環境為 .venv、全新 .venv-verify060 及全新離線 .venv-offline060；舊驗證環境保留，不作本版基準。

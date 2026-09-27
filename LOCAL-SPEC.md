@@ -1,4 +1,4 @@
-# QA agent 本機桌面 0.5.0 範圍與行為契約
+# QA agent 本機桌面 0.6.0 範圍與行為契約
 
 此文件優先於 v2.2 中涉及中央後端、遠端更新的假設；其餘完整產品規劃保留作後續路線。
 
@@ -14,12 +14,12 @@
 | desktop_app/query_schema.py | 動態欄位、純型別驗證、顯示與日期映射 |
 | desktop_app/config.py | 本機設定、資料路徑、單一執行個體鎖 |
 
-UI 不直接持有 SQL、密碼或 HTTP 細節。公司差異先集中 gateways.py；未來需要獨立 adapter 檔可在保持介面下拆出，不重寫 UI。
+UI 不直接持有 SQL、密碼或 HTTP 細節。公司請求映射與憑證集中 profiles.py，SDK 傳输維持 gateways.py；未來需要獨立 adapter 檔可在保持介面下拆出，不重寫 UI。
 
 ## 對話、Plan 與選項
 
 對話歷史完整保存，送給 SDK 時使用指定對話的不可變快照；同一對話尚有工作則拒絕重疊提交。總內容超限拒絕，不靜默裁切。
-一般模式明確送出即執行。先規劃模式只建立本機固定候選，不呼叫 bot。只有 `confirm_plan` 成功才建立工作；24 小時期限、修訂比對、原子交易與 request ID 防止舊卡片／雙擊重跑。修改需重新批准。流程限查詢、查詢後摘要、對話、摘要、改寫。
+一般模式明確送出即執行。先規劃模式只建立本機固定候選，不呼叫 bot。只有 `confirm_plan` 成功才建立工作；24 小時期限、修訂比對、原子交易與 request ID 防止舊卡片／雙擊重跑。修改需重新批准。桌面流程限查詢、對話、摘要、改寫；查詢後整理須預覽並確認轉交。舊獨立 Engine 契約保留 query_summarize，但桌面的 routed Engine 拒絕直接自動整理。
 
 選項有 yes_no／single_choice／multi_choice；最多 3 題，每題 2～6 選項。未選不當同意，未知值與數量不符拒絕；owner、version、expiry、request ID 由本機服務檢查。取消後不可提交。選項答案不等於任意工具授權。「是，設排程」只開設定，仍建立停用草稿並另確認啟用。重開待答表單可保存答案，**不重播先前 UI callback**，使用者回原工作繼續。
 
@@ -43,9 +43,9 @@ UI 不直接持有 SQL、密碼或 HTTP 細節。公司差異先集中 gateways.
 
 ## 資料與回報
 
-獨立 `local-v1.sqlite3`、schema user_version=1、WAL；首次建檔，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
+獨立 `local-v1.sqlite3`、schema user_version=2、WAL；本應用 schema 1 升級前以 SQLite backup 備份，再以交易遷移。無可靠助理歸屬的舊對話保留閱讀／轉交，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
 回報 draft 可讀取修改，local_saved 只表示保存在此電腦；編號 LOCAL-*。不自動附加對話、資料或檔案，不冒稱管理者已收到。未實作處理狀態同步／修正版本管理。
-資料移轉、中央 API、AD、Oracle、簽章更新及 EXE 打包均另列交接；禁止將原 v2.2 相關 AT 記成已通過。
+公司舊資料移轉、中央 API、AD、Oracle、簽章更新及 EXE 打包均另列交接；禁止將原 v2.2 相關 AT 記成已通過。
 
 ## 0.4.0 公司接手準備
 
@@ -55,7 +55,7 @@ catalog 的參數定義支援 text/date/integer/decimal/single_choice/boolean、
 
 test_support 包含可重用 adapter 契約，company_templates 提供待填測試骨架，company_check 必須明確啟動且完成公司能力審查才載入可信 hooks。無 hooks 或缺項是 not_tested，不能以 demo／skip 替代公司驗收。不包括正式 AD、Oracle 或舊資料移轉。
 
-## 0.5.0 深淺主題與候選圖示
+## 0.5.0 深淺主題與候選圖示（歷史；0.6.0 已採用 A）
 
 - 首次預設深色；設定 → 外觀可立即切換深色／淺色。
 - 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
@@ -63,3 +63,13 @@ test_support 包含可重用 adapter 契約，company_templates 提供待填測�
 - Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
+
+## 0.6.0 接手重點
+
+已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
+
+修改入口：profiles.py 負責公司請求映射及憑證；assistant_views.py 為管理／轉交 UI；core.py schema 2 保存 binding/source，experience.py 管隔離導覽。公司請先提供遮蔽值的成功 API 範例，確認 ID 放 model 或獨立 body 欄位、session 規則及副作用能力。未配置 mapping 的新公司助理不能呼叫，不假裝用示範回答。具體步驟與命令見 docs/ASSISTANT-INTEGRATION.md。
+
+環境新增 keyring==25.7.0，總鎖定套件 29 個；不得使用 keyrings.alt 或明文 fallback。完整離線包以新鎖檔重建，舊包指紋不符必須拒絕。正式驗證用 .venv、.venv-verify060、.venv-offline060，均恰好 Python 3.10.4。
+
+完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。

@@ -1,3 +1,5 @@
 # Runtime dependencies; exact tested transitive versions are in requirements.lock.
 openai==2.54.0
 httpx==0.28.1
+
+keyring==25.7.0

@@ -2,7 +2,7 @@
 
 ## 優先範圍
 
-本次使用者核准的是 **QA agent 0.5.0 本機桌面與公司接手準備包**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
+本次使用者核准的是 **QA agent 0.6.0 本機桌面與公司接手準備包**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
 
 ## 已完成，請延續
 
@@ -23,7 +23,7 @@
 ## 開發規則
 
 - 所有正式測試用 `.venv/Scripts/python.exe` 3.10.4；`scripts/test.ps1` 為完整檢查。改依賴後於第二乾淨 venv 重建，不借別人的 site-packages。
-- `.venv*`、`.runtime`、本機 config、.env、sqlite 與使用者資料不進 Git。金鑰從環境變數讀取；不記錄 HTTP response body 或密碼。
+- `.venv*`、`.runtime`、本機 config、.env、sqlite 與使用者資料不進 Git。API key 優先保存 Windows keyring；舊設定可相容讀取環境變數；不記錄 HTTP response body 或密碼。
 - UI thread 只操作 widget；HTTP／檔案使用背景工作。取消後的晚到結果不能覆寫狀態；真實 future 尚未結束時禁止更換 client；關閉後才釋放 singleton lock。
 - Plan 預覽不呼叫 bot；純參數驗證不能跑查詢。批准、修訂、期限、idempotency 在服務層檢查，不能以 prompt／disabled button 代替。
 - 選項資料只視為候選答案，不等於工具授權。公司原生 bot 工具的副作用需查證，不能假設 SDK 呼叫是純文字。
@@ -54,7 +54,7 @@
 
 產品名稱固定為 QA agent（保留大小寫），集中於 desktop_app/branding.py。PNG／ICO 是本機打包資源，不能在執行期下載或呼叫生圖服務。Windows AppUserModelID 在建立 Tk 前設定；主視窗保存 PhotoImage 引用，附屬視窗套用相同品牌。不得為更名而改資料路徑、SQLite、環境變數或舊規格。捷徑只更新本工具所建立的項目，不能覆蓋其他程式。
 
-## 0.5.0 深淺主題與候選圖示
+## 0.5.0 深淺主題與候選圖示（歷史；0.6.0 已採用 A）
 
 - 首次預設深色；設定 → 外觀可立即切換深色／淺色。
 - 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
@@ -62,3 +62,13 @@
 - Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
+
+## 0.6.0 接手重點
+
+已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
+
+修改入口：profiles.py 負責公司請求映射及憑證；assistant_views.py 為管理／轉交 UI；core.py schema 2 保存 binding/source，experience.py 管隔離導覽。公司請先提供遮蔽值的成功 API 範例，確認 ID 放 model 或獨立 body 欄位、session 規則及副作用能力。未配置 mapping 的新公司助理不能呼叫，不假裝用示範回答。具體步驟與命令見 docs/ASSISTANT-INTEGRATION.md。
+
+環境新增 keyring==25.7.0，總鎖定套件 29 個；不得使用 keyrings.alt 或明文 fallback。完整離線包以新鎖檔重建，舊包指紋不符必須拒絕。正式驗證用 .venv、.venv-verify060、.venv-offline060，均恰好 Python 3.10.4。
+
+完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。

@@ -1,6 +1,6 @@
 # 公司接手工作包 — GPT 6 sol
 
-**先保留本機可用功能，再逐一接公司服務。** 目前程式為 0.5.0，已完成桌面介面與公司接手準備包。 本次沒有公司原始碼、成功 API 樣本、AD 配置、Oracle schema 或真實 Excel。不能把下列事項描述成只填密碼就保證完成。
+**先保留本機可用功能，再逐一接公司服務。** 目前程式為 0.6.0，已完成桌面介面與公司接手準備包。 本次沒有公司原始碼、成功 API 樣本、AD 配置、Oracle schema 或真實 Excel。不能把下列事項描述成只填密碼就保證完成。
 
 ## 0. 已完成與不可重做
 
@@ -26,11 +26,11 @@
 
 ## 2. 接公司 chatbot
 
-- 修改位置：先用 `config.example.json` 建本機設定；API 差異改 `CompanyAssistant`，保持 `respond(messages,purpose)->str` 介面。
+- 修改位置：先讀 docs/ASSISTANT-INTEGRATION.md；使用者在設定管理助理。profiles.py 固定助理版本與 API 映射，CompanyAssistant 處理 SDK，保留 respond 介面。config.example.json 是進階相容設定。
 - 需內部資訊：一份公司目前成功呼叫的去識別範例（URL、HTTP method、headers 名稱、SDK 用法、request/response shape）、模型／部署名稱、助理 ID、認證環境變數、session/thread 生命週期、TLS CA、timeout／流量限制、原生工具是否有副作用。
 - 預設支援 `client.chat.completions.create(model=..., messages=..., stream=False)`；**不假設平台和 OpenAI 完全相容**。自訂 session、request wrapper、response parser 都在這一個串接邊界處理。不要改成公共 OpenAI URL。
 - `header_env` 格式為 `{"X-Example-Tenant":"COMPANY_TENANT_ENV"}`；值是環境變數名稱。`assistant_ref` + `assistant_ref_field` 須依公司文件指定；不傳任意 extra_body。
-- 金鑰從 `api_key_env` 指定變數讀取；UI 與 repo 不能保存金鑰。`ca_bundle` 指定可信 PEM；禁止 verify=False。依 IT 的密鑰配送方式設定，不把秘密貼到 agent 對話。
+- UI 經 Windows keyring 保存金鑰；assistants.json 只存索引。舊 `api_key_env` 保留相容讀取，明確保存 keyring 後切換來源；repo 與 SQLite 不保存金鑰。`ca_bundle` 指定可信 PEM；禁止 verify=False。依 IT 的密鑰配送方式設定，不把秘密貼到 agent 對話。
 - `verified_side_effect_free` 預留為公司能力紀錄，目前不能繞過 gate。Plan 預覽固定本機表單，完全不呼叫 API；不要只憑 system prompt 說「不要執行工具」就認為沒有副作用。測試連線會真的呼叫 bot，必須先確認測試助理能力。
 - 完成條件：真實回覆、401／403、timeout、空回覆、格式錯誤均合理；兩個對話相互隔離；有原生工具的服務需公司側關閉、使用文字專用助理或明確授權路徑；失敗不回 demo；金鑰／HTTP body 不進 log。
 - 基準命令：`.\.venv\Scripts\python.exe -m unittest tests.test_gateways tests.test_core -v`。沿用 `test_support/assistant_contract.py` 與 `company_templates/test_company_offline.py.example`，補公司 wire 差異。真實驗證依 docs/ADAPTER-TEST-KIT.md 建立 company_local/company_hooks.py，執行 scripts/company_check.py 的明確啟動流程；不得以 mock／缺項代替 company_real_passed。
@@ -75,7 +75,7 @@
 
 AD 中央化權限、可信後端 Oracle schema、常駐中央排程／lease、issue 工作台、跨人協作、簽章完整包更新／rollback 都屬後續另立工作。不要讓公司 agent 因讀到舊 UPDATES.md 就誤以為本地已有更新器。
 
-## 0.5.0 深淺主題與候選圖示
+## 0.5.0 深淺主題與候選圖示（歷史；0.6.0 已採用 A）
 
 - 首次預設深色；設定 → 外觀可立即切換深色／淺色。
 - 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
@@ -83,3 +83,13 @@ AD 中央化權限、可信後端 Oracle schema、常駐中央排程／lease、i
 - Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
+
+## 0.6.0 接手重點
+
+已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
+
+修改入口：profiles.py 負責公司請求映射及憑證；assistant_views.py 為管理／轉交 UI；core.py schema 2 保存 binding/source，experience.py 管隔離導覽。公司請先提供遮蔽值的成功 API 範例，確認 ID 放 model 或獨立 body 欄位、session 規則及副作用能力。未配置 mapping 的新公司助理不能呼叫，不假裝用示範回答。具體步驟與命令見 docs/ASSISTANT-INTEGRATION.md。
+
+環境新增 keyring==25.7.0，總鎖定套件 29 個；不得使用 keyrings.alt 或明文 fallback。完整離線包以新鎖檔重建，舊包指紋不符必須拒絕。正式驗證用 .venv、.venv-verify060、.venv-offline060，均恰好 Python 3.10.4。
+
+完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。

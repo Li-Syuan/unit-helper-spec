@@ -101,7 +101,7 @@ class ThemeTests(TestCase):
         a=self.app; entered=threading.Event(); release=threading.Event(); calls=[]
         def respond(messages,purpose):
             calls.append(messages); entered.set(); release.wait(5); return 'finished'
-        a.engine.assistant_runner=respond; a.input.insert('end','工作'); a.send_chat()
+        a.engine.assistant_router=lambda messages,purpose,binding:respond(messages,purpose); a.input.insert('end','工作'); a.send_chat()
         self.assertTrue(entered.wait(2))
         try:
             task=a.store.tasks()[0]; a.change_theme('light'); a.change_theme('dark')

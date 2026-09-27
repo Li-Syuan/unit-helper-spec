@@ -1,28 +1,16 @@
-# QA agent 0.5.0 雙主題工作區
+# QA agent 0.6.0 桌面體驗
 
-保留原生 Tkinter／ttk，首次預設石墨深色；設定 → 外觀可切換霧白淺色並保留偏好。青藍色用於主要操作及選取，細邊框區分工作層次；品牌與頁首縮小，側欄更緊湊，對話及輸入區共用閱讀寬度。
+深／淺主題繼續原地切換。新手不需要先讀維護文件：歡迎視窗帶入獨立示範工作區，側欄有快速體驗及說明入口。資料轉交明確呈現目的助理與預覽，設定頁集中三項連線資訊。
 
-外觀獨立保存 ui-preferences.json，不改公司連線 config。缺失或損壞時深色，保存失敗時提示並保留本次切換。Appearance 每個 Tk interpreter 獨立，直接更新現有 widgets；草稿、附件、Plan 修訂、選取、游標、捲動與背景工作不重建。
+![首次開啟](images/v060-welcome.png)
+![獨立體驗：1050×700](images/v060-tutorial.png)
+![助理管理：1050×700](images/v060-settings.png)
+![對話](images/v060-chat.png)
+![送出前預覽](images/v060-transfer.png)
+![離線手冊](images/v060-help.png)
 
-## 實際畫面
+截圖使用本應用自己建立的暫存合成資料視窗。導覽原本擠壓查詢按鈕，已壓縮底部提示列並驗證按鈕完整位於父容器內。手冊採中文換行，長篇授權文字可捲動。入口與文件從程式所在目錄解析，不依賴目前工作目錄。
 
-以下均為此程式自行建立的隔離測試視窗，使用示範身分／合成資料，沒有公司資料。
+完整導覽驗證使用真 Tk 控制項走五步，未跳過批准或預覽；沒有公司 API／Oracle。實際中文輸入法選字、Windows 任務列／桌面、公司縮放與 Excel 仍待人工驗收，沒有冒稱通過。
 
-![深色對話 1280×860](images/ui-dark-chat.png)
-![淺色對話 1280×860](images/ui-light-chat.png)
-![深色 Plan 1050×700](images/ui-dark-plan.png)
-![淺色表格 1050×700](images/ui-light-results.png)
-![深色動態表單 1050×700](images/ui-dark-catalog.png)
-![淺色動態表單 1050×700](images/ui-light-catalog.png)
-![深色選項對話框](images/ui-dark-choice.png)
-![淺色設定 1050×700](images/ui-light-settings.png)
-
-## 維護與驗證界線
-
-theme.py 集中背景、文字、邊框、懸停、選取、停用、成功／失敗配色；preferences.py 保存偏好；ui.py 組合頁面。八頁、表格、文字、下拉與應用對話框同步切換。Windows 原生檔案／訊息框沿用 OS 外觀。
-
-本次實際建立 1280×860 及 1050×700 視窗，檢視聊天、Plan、六欄位動態表單、結果、排程、設定及選項對話框。程式驅動真 Tk 測試驗證工作中、Plan 待批准與對話框已開啟時切換，以及偏好重開／損壞／保存失敗。回歸證據見 [VALIDATION-LOCAL.md](../VALIDATION-LOCAL.md)。
-
-Computer Use helper 在此環境無法啟動，因此沒有聲稱 OS 滑鼠／鍵盤人工全流程完成。畫面只捕捉本應用暫存視窗；公司縮放比例、API、AD、Oracle、Excel 的驗收仍待公司執行。Windows 工作列與真實桌面圖示外觀也未人工驗收。
-
-重新開啟 start-app.bat 即可使用新版；舊的已開啟程式不會自動替換。正式綠色圖示保留，A～D 候選見 [ICON-CANDIDATES.md](ICON-CANDIDATES.md)。
+本版 UI 採用正式 A 圖示；舊圖示和早期畫面仍可於 Git 歷史找回。舊版畫面檔若仍存在只供歷史參考。

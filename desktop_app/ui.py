@@ -13,6 +13,10 @@ from tkinter import ttk, messagebox, filedialog
 from . import __version__
 from . import theme
 from .preferences import load_theme, save_theme
+from .profiles import Profiles
+from .assistant_views import AssistantViews
+from .experience import ExperienceMixin
+from .keyboard import install_chat_keyboard
 from .branding import APP_NAME, apply_icons, apply_child_icons, set_windows_identity
 from .query_schema import find_template, validate_template, parameters as query_parameters, initial_values, describe
 from .config import load_config, save_config, data_directory, InstanceLock
@@ -68,18 +72,24 @@ class ChoiceDialog(tk.Toplevel):
         self.app.forms.submit(self.form['id'],self.form['version'],answers,self.request_id)
         self.destroy(); self.callback(answers)
 
-class App:
-    def __init__(self, root, config=None, directory=None, config_path=None):
+class App(AssistantViews, ExperienceMixin):
+    def __init__(self, root, config=None, directory=None, config_path=None, tutorial=False, show_welcome=False):
+        self.tutorial=tutorial; self.drafts={}; self.next_binding=None
         self.root=root; self.directory=Path(directory or data_directory()); self.config_path=config_path or self.directory/'config.json'
-        self.config=config or load_config(self.config_path); self.lock=InstanceLock(self.directory)
+        self.config=config or load_config(self.config_path);
+        if tutorial:
+            from .config import DEFAULT
+            self.config=copy.deepcopy(DEFAULT)
+        self.lock=InstanceLock(self.directory)
         try:
             self.identity=(DemoIdentity() if self.config['identity_mode']=='demo' else CompanyIdentity()).current()
             self.store=Store(self.directory/'local-v1.sqlite3'); self.forms=ChoiceForms(self.store.path)
+            self.profiles=Profiles(self.directory/'assistants.json',self.config['assistant'])
             self.queries=DemoQueries() if self.config['query_mode']=='demo' else OracleQueries()
             self.assistant=None; self.adapter_error=''
             try: self.assistant=self.make_assistant(self.config)
             except GatewayError as exc: self.adapter_error=str(exc)
-            self.engine=Engine(self.store,self.queries.run,self.respond,query_validator=self.queries.validate,query_catalog=self.queries.catalog)
+            self.engine=Engine(self.store,self.queries.run,self.respond,query_validator=self.queries.validate,query_catalog=self.queries.catalog,assistant_router=self.profiles.respond,binding_validator=self.profiles.validate)
         except BaseException:
             self.lock.close(); raise
         self.io=ThreadPoolExecutor(max_workers=1); self.events=queue.Queue(); self.stop=threading.Event()
@@ -100,13 +110,14 @@ class App:
         self.book.bind('<<NotebookTabChanged>>',self.route_changed)
         self.appearance.apply(root)
         self.root.bind('<Control-n>',lambda e:self.new_chat())
-        self.input.bind('<Control-Return>',self.send_shortcut)
+        self.chat_keyboard=install_chat_keyboard(self.input,lambda:self.safe(self.send_chat))
         self.route_changed()
         self.refresh_history(); self.refresh_lists()
         if self.conversation_ids: self.conversation=self.conversation_ids[0]; self.history.selection_set(0); self.show_chat()
         else: self.new_chat()
         root.protocol('WM_DELETE_WINDOW',self.close); self.poll_id=root.after(150,self.poll)
         self.scheduler=threading.Thread(target=self.scheduler_loop,daemon=True); self.scheduler.start()
+        self.setup_experience(show_welcome=show_welcome)
     def build_shell(self):
         side=tk.Frame(self.root,bg=self.palette.SIDEBAR,width=216)
         side._theme_role='sidebar'; side.pack(side='left',fill='y'); side.pack_propagate(False)
@@ -114,6 +125,9 @@ class App:
         tk.Button(side,text='待回答的選項  →',anchor='w',font=(self.palette.FONT,9),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
                   activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,pady=10,
                   command=lambda:self.safe(self.resume_form)).pack(side='bottom',fill='x',padx=20)
+        help_bar=tk.Frame(side);help_bar.pack(side='bottom',fill='x',padx=12,pady=3)
+        tk.Button(help_bar,text='快速體驗',relief='flat',command=lambda:self.safe(self.start_tutorial)).pack(side='left')
+        tk.Button(help_bar,text='說明與關於',relief='flat',command=lambda:self.show_help('快速開始')).pack(side='right')
         brand=tk.Frame(side,bg=self.palette.SIDEBAR); brand.pack(fill='x',padx=18,pady=(16,3))
         if self.brand_icon:
             tk.Label(brand,image=self.brand_icon,bg=self.palette.SIDEBAR).pack(side='left',padx=(0,8))
@@ -193,7 +207,8 @@ class App:
         if self.assistant is None: raise GatewayError(self.adapter_error or '公司助理尚未設定。')
         return self.assistant.respond(messages,purpose)
     def update_mode(self):
-        mode='示範助理' if self.config['assistant']['mode']=='demo' else '公司助理'
+        binding=self.store.conversation(self.conversation)['binding'] if self.conversation else self.profiles.default_binding()
+        mode='舊版對話（唯讀）' if not binding else '示範助理' if binding['profile_id']=='demo' else '公司助理'
         self.mode_label.configure(text='●  '+mode+'  ·  '+('合成資料' if self.config['query_mode']=='demo' else 'Oracle 未接線'))
     def scheduler_loop(self):
         while not self.stop.wait(3):
@@ -241,6 +256,7 @@ class App:
         def reading_width(event):
             width=min(920,max(1,event.width)); page.columnconfigure(1,weight=0,minsize=width)
         page.bind('<Configure>',reading_width)
+        self.build_assistant_bar(tab)
         quick=ttk.Frame(tab); quick.pack(fill='x',pady=(0,12))
         actions=[('查找資料  →',lambda:self.book.select(self.tabs['query'])),
                  ('整理／改寫文字  →',self.text_choices),('我的排程  →',lambda:self.book.select(self.tabs['schedule']))]
@@ -248,7 +264,7 @@ class App:
             quick.columnconfigure(index,weight=1,uniform='quick')
             self.button(quick,title,action,'Quick.TButton').grid(row=0,column=index,sticky='ew',padx=(0,8 if index<2 else 0))
         conversation=ttk.Frame(tab); conversation.pack(fill='both',expand=True)
-        self.transcript=tk.Text(conversation,height=8,wrap='word',state='disabled',highlightthickness=0,padx=24,pady=18)
+        self.transcript=tk.Text(conversation,height=1,wrap='word',state='disabled',highlightthickness=0,padx=24,pady=18)
         self.transcript.pack(side='left',fill='both',expand=True)
         scrollbar=ttk.Scrollbar(conversation,command=self.transcript.yview); scrollbar.pack(side='right',fill='y'); self.transcript.configure(yscrollcommand=scrollbar.set)
         for name,settings in {
@@ -259,8 +275,8 @@ class App:
             'body_user':{'background':self.palette.TINT,'lmargin1':12,'lmargin2':12,'rmargin':14,'spacing1':8,'spacing3':10},
             'body_assistant':{'lmargin1':2,'lmargin2':2,'spacing3':12}}.items(): self.transcript.tag_configure(name,**settings)
         composer=ttk.Frame(tab); composer.pack(fill='x',pady=(10,0))
-        self.section(composer,'你的需求','Ctrl + Enter 送出  ·  Enter 換行')
-        self.input=tk.Text(composer,height=3,wrap='word',padx=16,pady=12); self.input.pack(fill='x')
+        self.section(composer,'你的需求','Enter 送出 · Shift + Enter 換行')
+        self.input=tk.Text(composer,height=2,wrap='word',padx=16,pady=12); self.input.pack(fill='x')
         options=ttk.Frame(composer); options.pack(fill='x',pady=(10,6))
         self.purpose=tk.StringVar(value='一般對話'); ttk.Combobox(options,textvariable=self.purpose,values=['一般對話','整理重點','改寫文字'],state='readonly',width=11).pack(side='left')
         self.plan_mode=tk.BooleanVar(); ttk.Checkbutton(options,text='先規劃，再執行',variable=self.plan_mode).pack(side='left',padx=12)
@@ -274,26 +290,36 @@ class App:
         self.button(attachments,'回報問題',lambda:self.quick_issue('answer'),'Quiet.TButton').pack(side='right')
     def update_composer(self):
         active=any(t['conversation_id']==self.conversation and t['state'] in ('queued','running') for t in self.store.tasks())
-        self.send_button.configure(text='建立計畫' if self.plan_mode.get() else '送出需求',state='disabled' if active else 'normal')
+        readonly=False
+        if self.conversation:
+            try:self.profiles.validate(self.store.conversation(self.conversation)['binding'])
+            except GatewayError:readonly=True
+        self.send_button.configure(text='舊版／停用對話（唯讀）' if readonly else '建立計畫' if self.plan_mode.get() else '送出需求',state='disabled' if active or readonly else 'normal')
         self.cancel_button.configure(state='normal' if active else 'disabled')
     def new_chat(self):
         self.editing_plan=None
         from datetime import datetime
-        self.conversation=self.store.create_conversation('對話 '+datetime.now().strftime('%m/%d %H:%M:%S')); self.refresh_history(); self.history.selection_clear(0,'end'); self.history.selection_set(0); self.show_chat(); self.book.select(self.tabs['chat']); self.input.focus_set()
+        self.stash_draft()
+        binding=self.next_binding or self.profiles.default_binding();self.next_binding=None
+        self.conversation=self.store.create_conversation('對話 '+datetime.now().strftime('%m/%d %H:%M:%S'),binding)
+        self.restore_draft();self.refresh_history();self.history.selection_clear(0,'end');self.history.selection_set(0);self.show_chat();self.book.select(self.tabs['chat']);self.input.focus_set()
     def refresh_history(self):
         records=self.store.conversations(); self.conversation_ids=[r['id'] for r in records]; self.history.delete(0,'end')
         for r in records: self.history.insert('end',r['title'])
     def choose_chat(self):
         self.editing_plan=None
-        if self.history.curselection(): self.conversation=self.conversation_ids[self.history.curselection()[0]]; self.show_chat(); self.book.select(self.tabs['chat'])
+        if self.history.curselection():
+            index=self.history.curselection()[0];self.stash_draft();self.conversation=self.conversation_ids[index];self.restore_draft()
+            self.show_chat();self.book.select(self.tabs['chat'])
     def show_chat(self):
+        self.refresh_profile_picker();self.update_mode()
         messages=self.store.messages(self.conversation)
         self.transcript.configure(state='normal'); self.transcript.delete('1.0','end')
         if not messages:
             self.transcript.insert('end','今天，想先完成哪件事？\n','welcome_title')
             self.transcript.insert('end','查找資料、整理重點，或把文字改得更清楚。\n','welcome_body')
             self.transcript.insert('end','選擇上方的常用工作，或在下方寫下你的需求。\n','welcome_body')
-            if self.config['assistant']['mode']=='demo':
+            if (self.store.conversation(self.conversation)['binding'] or {}).get('profile_id')=='demo':
                 self.transcript.insert('end','目前為示範模式，尚未連接公司助理與資料。','welcome_body')
         else:
             for message in messages:
@@ -325,6 +351,7 @@ class App:
         self.appearance.apply(window)
     def clear_upload(self): self.attachment=None; self.attachment_label.configure(text='可先預覽，再送出')
     def send_chat(self):
+        self.profiles.validate(self.store.conversation(self.conversation)['binding'])
         text=self.input.get('1.0','end-1c').strip(); purpose={'一般對話':'chat','整理重點':'summarize','改寫文字':'rewrite'}[self.purpose.get()]
         if self.attachment:
             if self.attachment['kind']=='csv' and purpose=='rewrite': raise ValueError('CSV 支援整理；文字改寫請用 TXT 或貼上文字。')
@@ -335,7 +362,7 @@ class App:
         if self.plan_mode.get(): self.save_plan(purpose,payload,self.conversation)
         else:
             tid=self.engine.run_chat(self.conversation,text,purpose=purpose,request_id=uuid.uuid4().hex); self.status.set('已送出 '+tid[:8]); self.show_chat()
-        self.input.delete('1.0','end'); self.clear_upload()
+        self.input.delete('1.0','end'); self.clear_upload();self.drafts.pop(self.conversation,None)
     def cancel_latest(self):
         tasks=[t for t in self.store.tasks() if t['conversation_id']==self.conversation and t['state'] in ('queued','running')]
         if tasks: self.engine.cancel_task(tasks[0]['id']); self.status.set('已取消本機後續處理；已送出的遠端請求可能仍在完成。')
@@ -359,8 +386,7 @@ class App:
         self.query_vars={}; self.query_plan=tk.BooleanVar(); self.query_summary=tk.BooleanVar()
         self.section(tab,'03  選擇處理方式')
         ttk.Checkbutton(tab,text='先規劃，確認條件後再執行',variable=self.query_plan).pack(anchor='w',pady=3)
-        ttk.Checkbutton(tab,text='取得結果後，請助理幫我整理重點',variable=self.query_summary).pack(anchor='w',pady=3)
-        ttk.Label(tab,text='勾選整理會將查詢結果送至已設定的助理。',style='Muted.TLabel').pack(anchor='w',padx=22,pady=(0,8))
+        ttk.Label(tab,text='查詢完成後，在結果頁選資料與助理，預覽後再送出整理。',style='Muted.TLabel').pack(anchor='w',pady=(0,8))
         row=ttk.Frame(tab); row.pack(fill='x',pady=8)
         self.query_submit=self.button(row,'開始查詢',self.submit_query); self.query_submit.pack(side='left')
         self.button(row,'回報查詢問題',lambda:self.quick_issue('query'),'Quiet.TButton').pack(side='right')
@@ -413,10 +439,10 @@ class App:
     def submit_query(self):
         template=find_template(self.queries.catalog(),self.query_id.get())
         payload={'query_id':self.query_id.get(),'parameters':query_parameters(template,{k:v.get() for k,v in self.query_vars.items()},from_ui=True)}
-        kind='query_summarize' if self.query_summary.get() else 'query'
+        kind='query'
         if self.query_plan.get() or self.editing_plan: self.save_plan(kind,payload)
         else:
-            fn=self.engine.run_query_summarize if self.query_summary.get() else self.engine.run_query
+            fn=self.engine.run_query
             tid=fn(payload['query_id'],payload['parameters'],request_id=uuid.uuid4().hex); self.status.set('查詢已排入 '+tid[:8]); self.book.select(self.tabs['work'])
     def save_plan(self,kind,payload,conversation=None):
         if self.editing_plan:
@@ -466,7 +492,10 @@ class App:
             lines += ['查詢：'+query_name]+self.query_conditions(payload['query_id'],parameters)+[
                       '', '批准後的步驟', '1. 依照上述條件執行唯讀查詢。', '2. 保存查詢結果，供檢視與匯出。']
             if plan['kind']=='query_summarize': lines.append('3. 將結果交給已設定助理整理重點。')
-        else: lines += ['批准後，將以下內容交給已設定助理處理。','原文會保留，不覆蓋任何檔案。','','提供的內容',payload['text']]
+        else:
+            binding=payload.get('_binding');info=self.profiles.information(binding)
+            destination=(info['name']+' · '+info['assistant_id']+' · v'+str(binding['revision'])) if info else '舊版／未知歸屬（不可送出）'
+            lines += ['目的助理：'+destination,'批准後，只交給這位助理處理。','原文會保留，不覆蓋任何檔案。','','提供的內容',payload['text']]
         lines += ['', '確認期限（UTC）：'+plan['expires_at'][:19].replace('T',' ')]
         put(self.plan_preview,'\n'.join(lines))
     def approve_plan(self):
@@ -483,7 +512,9 @@ class App:
             self.query_id.set(payload['query_id']); self.render_query_fields(payload['parameters'])
             self.query_plan.set(True); self.query_summary.set(plan['kind']=='query_summarize'); self.book.select(self.tabs['query'])
         else:
-            self.conversation=plan['conversation_id']; self.show_chat(); self.input.delete('1.0','end'); self.input.insert('end',payload['text']); self.plan_mode.set(True)
+            self.profiles.validate(self.store.conversation(plan['conversation_id'])['binding'])
+            self.stash_draft();self.conversation=plan['conversation_id'];self.clear_upload()
+            self.show_chat();self.input.delete('1.0','end');self.input.insert('end',payload['text']);self.plan_mode.set(True)
             self.purpose.set({'chat':'一般對話','summarize':'整理重點','rewrite':'改寫文字'}[plan['kind']]); self.book.select(self.tabs['chat'])
         self.status.set('正在修改計畫；送出後需重新批准。')
         if plan['kind'] in ('query','query_summarize'): self.query_submit.configure(text='儲存計畫修改')
@@ -507,6 +538,7 @@ class App:
         self.button(row,'複製全部列',lambda:self.copy_table(False),'Primary.TButton').pack(side='left')
         self.button(row,'複製選取列',lambda:self.copy_table(True)).pack(side='left',padx=8)
         self.button(row,'匯出 CSV',self.export_csv).pack(side='left'); self.button(row,'設為排程',self.offer_schedule).pack(side='right')
+        self.handoff_button=self.button(row,'交給助理整理',self.open_result_handoff);self.handoff_button.pack(side='right',padx=6)
         ttk.Label(tab,text='全部複製包含所有頁。代碼、長整數貼到 Excel 前，請將目的欄設為文字。',style='Muted.TLabel',wraplength=730).grid(row=4,column=0,sticky='w',pady=(0,8))
         self.output=tk.Text(tab,height=3,wrap='word',state='disabled'); self.output.grid(row=5,column=0,sticky='nsew')
         put(self.output,'助理整理與文字結果會顯示在這裡。')
@@ -681,21 +713,9 @@ class App:
             ttk.Radiobutton(appearance,text=label,value=value,variable=self.theme_choice,
                 command=lambda:self.change_theme(self.theme_choice.get())).pack(side='left',padx=(0,14))
         ttk.Label(appearance,text='立即切換並記住選擇',style='Muted.TLabel').pack(side='right')
-        self.section(tab,'助理連線','設定僅保存在此電腦')
-        ttk.Label(tab,text='金鑰透過環境變數讀取。公司連線失敗時，會顯示錯誤，不會改用示範答案。',style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=(0,16))
-        self.setting_vars={}
-        for key,label in [('mode','連線模式 demo / company'),('base_url','公司助理端點網址'),('model','模型／部署識別'),('api_key_env','金鑰環境變數名稱'),('timeout_seconds','回覆等候時間（秒）')]:
-            row=ttk.Frame(tab); row.pack(fill='x',pady=5); ttk.Label(row,text=label,width=25).pack(side='left'); var=tk.StringVar(value=str(self.config['assistant'][key])); self.setting_vars[key]=var
-            if key=='mode': ttk.Combobox(row,textvariable=var,values=['demo','company'],state='readonly',width=18).pack(side='left')
-            else: ttk.Entry(row,textvariable=var,width=35).pack(side='left',fill='x',expand=True)
-        row=ttk.Frame(tab); row.pack(fill='x',pady=(16,12))
-        self.button(row,'驗證並保存設定',self.apply_settings).pack(side='left')
-        self.button(row,'測試已保存的連線',self.test_connection).pack(side='left',padx=10)
-        ttk.Label(tab,text='連線測試會真的呼叫助理；請先由公司確認原生工具是否有副作用。',style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=(0,16))
-        self.section(tab,'本機環境')
-        ttk.Label(tab,text='AD 與 Oracle 尚未接線，正式身分與正式查詢保持停用。',style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=4)
-        ttk.Label(tab,text='資料目錄：'+str(self.directory),style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=4)
-        ttk.Label(tab,text='進階連接設定請參考 COMPANY-HANDOFF.md。',style='Muted.TLabel').pack(anchor='w',pady=4)
+        # Hidden legacy variables retain the old maintenance API; user settings use assistant profiles.
+        self.setting_vars={k:tk.StringVar(value=str(self.config['assistant'][k])) for k in ('mode','base_url','model','api_key_env','timeout_seconds')}
+        self.build_profile_settings(tab)
     def change_theme(self,name):
         # Recolor in place: no service call, widget rebuild, draft or selection change.
         self.appearance.configure(name); self.palette=self.appearance.colors
@@ -707,6 +727,7 @@ class App:
             self.status.set('外觀已套用，但無法保存偏好；下次開啟可能恢復原設定。')
             messagebox.showwarning('外觀未保存','本次切換仍有效，但無法保存偏好。請確認資料目錄可寫入。',parent=self.root)
     def apply_settings(self):
+        if self.tutorial: raise GatewayError("體驗工作區不可修改公司連線。")
         if self.pending_io or self.engine.has_inflight(): raise ValueError('請等待工作完成再修改設定。')
         if any(p['state']=='ready' for p in self.store.plans()): raise ValueError('請先完成或取消待批准計畫，再更換助理設定。')
         config=copy.deepcopy(self.config)
@@ -721,6 +742,7 @@ class App:
         if hasattr(old,'close'): old.close()
         self.status.set('設定已保存；尚未測試真實 API。')
     def test_connection(self):
+        if self.tutorial: raise GatewayError("體驗工作區不可測試公司連線。")
         if self.pending_io: raise ValueError('已有背景作業，請稍候。')
         self.background(lambda:self.respond([{'role':'user','content':'連線測試，請只回覆連線成功，不執行任何工具。'}],'chat'),lambda text:messagebox.showinfo('連線回覆',text[:1000],parent=self.root))
     def refresh_lists(self):
@@ -755,6 +777,7 @@ class App:
         if self.scheduler.is_alive() or self.engine.has_inflight() or any(not f.done() for f in self.io_futures):
             self.root.after(50,self.finish_close); return
         self.engine.close(wait=True); self.io.shutdown(wait=True)
+        self.close_experience();self.chat_keyboard.close()
         if hasattr(self.assistant,'close'): self.assistant.close()
         self.io_futures.clear()
         while not self.events.empty(): self.events.get_nowait()
@@ -764,7 +787,7 @@ class App:
 def launch(config_path=None):
     set_windows_identity()
     root=tk.Tk()
-    try: app=App(root,config_path=config_path)
+    try: app=App(root,config_path=config_path,show_welcome=True)
     except Exception as exc:
         messagebox.showerror('無法啟動',str(exc) if isinstance(exc,(ValueError,OSError)) else '本機初始化失敗。',parent=root); root.destroy(); return False
     root.mainloop()

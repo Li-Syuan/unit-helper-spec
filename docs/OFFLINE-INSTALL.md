@@ -9,25 +9,25 @@ PowerShell 若受公司政策限制，請由 IT 核准腳本；不需變更永�
 在專案根目錄，以已驗證的 `.venv` 建立套件包：
 
 ```powershell
-.\scripts\prepare-offline.ps1
+.\scripts\prepare-offline.ps1 -Destination wheelhouse-v060
 # 公司核准 CA 時，可附加 -CaBundle 'C:\approved\company-ca.pem'
 ```
 
-輸出 `wheelhouse/`，含鎖檔要求的全部 wheel 及 `manifest.json`。命令拒絕覆寫既有目錄；失敗的半成品不視為可用套件包。使用新目錄重試，例如 `-Destination wheelhouse/retry`，並指定該子目錄安裝。
+輸出 `wheelhouse-v060/`，含鎖檔要求的全部 wheel 及 `manifest.json`。命令拒絕覆寫既有目錄；失敗的半成品不視為可用套件包。使用新目錄重試，例如 `-Destination wheelhouse/retry`，並指定該子目錄安裝。
 
 包的目標為 CPython 3.10／Windows x64；來源使用 pip 既有的核准索引設定，TLS 不停用。`manifest.json` 記錄每個 wheel 的 SHA-256、套件名稱與版本，以及原始 `requirements.lock` 指紋。
 
-將 **同一 Git 版本的專案、整個 wheelhouse、公司核准的 Python 3.10.4 安裝程式**帶至公司。套件包不提交 Git；經公司核准管道傳遞。雜湊用於偵測損壞與版本不符，**不是發布者簽章**；請從可信準備機取得整包。
+將 **同一 Git 版本的專案、整個 wheelhouse-v060、公司核准的 Python 3.10.4 安裝程式**帶至公司。套件包不提交 Git；經公司核准管道傳遞。雜湊用於偵測損壞與版本不符，**不是發布者簽章**；請從可信準備機取得整包。
 
 ## 離線機重建
 
 ```powershell
 .\scripts\setup.ps1 `
   -PythonExe 'C:\approved\Python3104\python.exe' `
-  -Environment .venv -OfflineBundle 'D:\transfer\wheelhouse'
+  -Environment .venv -OfflineBundle 'D:\transfer\wheelhouse-v060'
 ```
 
-建立環境前先檢查檔案集合、名稱、套件版本、雜湊與鎖檔指紋；任何缺件、損壞、不符或額外檔案都停止。安裝使用本機 wheel、`--no-index`，不連外補件。已存在的環境不覆寫；驗證用可改為 `.venv-offline`。
+建立環境前先檢查檔案集合、名稱、套件版本、雜湊與鎖檔指紋；任何缺件、損壞、不符或額外檔案都停止。安裝使用本機 wheel、`--no-index`，不連外補件。已存在的環境不覆寫；驗證用可改為 `.venv-offline060`。
 
 安裝完成執行依賴檢查與環境診斷。若環境建立成功但本機公司設定缺少金鑰，診斷仍會明確失敗，請依各項結果補齊；不得將公司設定失敗解讀成套件安裝失敗後偷偷切示範模式。
 
@@ -48,8 +48,10 @@ PowerShell 若受公司政策限制，請由 IT 核准腳本；不需變更永�
 
 ```powershell
 .venv\Scripts\python.exe -m unittest discover -s tests -p test_environment.py -v
-.venv-offline\Scripts\python.exe -m pip check
-.venv-offline\Scripts\python.exe -m unittest discover -s tests -v
+.venv-offline060\Scripts\python.exe -m pip check
+.venv-offline060\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
 離線安裝不涵蓋 Python 安裝程式、Oracle 驅動、公司內部憑證及公司服務驗收。這些必須經公司核准後另行提供。
+
+0.6.0 實際包含 29 個 wheel，鎖檔 SHA-256：8a7c356f8c4f2dd1f8dd235e5757e1cc1ed53d1c3bb5647bcfd2e39fa7860d5c。已於全新 .venv-offline060 以 --no-index 安裝並完成 139 項測試及 lock 一致檢查；舊包不相容。
