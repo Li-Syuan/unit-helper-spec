@@ -34,9 +34,9 @@ class WorkspaceTests(TestCase):
         a.quick_work('summarize');self.root.update()
         self.assertEqual(a.purpose.get(),'整理重點');self.assertEqual(a.store.tasks(),[])
         a.input.insert('end','\n資料'*20);self.root.update()
-        self.assertEqual(int(a.input['height']),6)
+        self.assertEqual(int(a.input['height']),4)
         draft=a.input.get('1.0','end');a.quick_work('rewrite');self.assertEqual(a.input.get('1.0','end'),draft)
-        a.input.delete('1.0','end');self.root.update();self.assertEqual(int(a.input['height']),3)
+        a.input.delete('1.0','end');self.root.update();self.assertEqual(int(a.input['height']),1)
         a.quick_work('query');self.root.update();self.assertEqual(a.book.select(),str(a.tabs['query']))
         self.assertEqual(a.store.tasks(),[]);self.assertEqual(a.store.plans(),[])
 
@@ -142,5 +142,5 @@ class WorkspaceTests(TestCase):
         pid=a.engine.create_plan('chat',{'text':'x','conversation_id':a.conversation},a.conversation)
         a.open_work_detail('plan',pid);self.root.update()
         lines=a.input.count('1.0','end','displaylines')[0]
-        self.assertEqual(int(a.input['height']),max(3,min(6,lines)))
+        self.assertEqual(int(a.input['height']),max(1,min(4,lines)))
         self.assertEqual(a.input.get('1.0','end'),before);self.assertEqual(a.input.index('insert'),'1.10')

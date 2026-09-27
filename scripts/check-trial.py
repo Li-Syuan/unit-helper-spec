@@ -13,15 +13,16 @@ def check_reports():
     """Temporary synthetic data only; never change the user's schedules."""
     import tempfile
     import time
-    from desktop_app.report_drafts import extract_draft
+    from desktop_app.intent_drafts import extract_action
+    from desktop_app.conversation_actions import ActionService
     from desktop_app.report_engine import ReportEngine
     from desktop_app.core import Store
     from desktop_app.gateways import DemoQueries
     from desktop_app.trial import TrialProfiles
-    parsed=extract_draft('每天早上八點查昨天 A 類數量合計，整理日報。')
-    if any(parsed[k]!=v for k,v in {'query_id':'DEMO03','time_hhmm':'08:00','category':'A','date_mode':'previous_day','frequency':'daily'}.items()):
+    parsed=extract_action('每天早上八點查昨天 A 類數量合計，整理日報。','report')
+    if parsed['parameters'].get('category')!='A' or any(parsed[k]!=v for k,v in {'query_id':'DEMO03','time_hhmm':'08:00','date_mode':'previous_day','frequency':'daily'}.items()):
         raise GatewayError('完整需求解析未符合預期；沒有啟用使用者排程。')
-    missing=extract_draft('每天幫我查資料做報告。')
+    missing=extract_action('每天幫我查資料做報告。','report')
     if missing['query_id'] is not None or missing['time_hhmm'] is not None or not missing['questions']:
         raise GatewayError('缺少條件時未正確追問；沒有啟用使用者排程。')
     with tempfile.TemporaryDirectory(prefix='qa-report-check-') as tmp:
@@ -29,10 +30,16 @@ def check_reports():
         engine=ReportEngine(store,queries.run,None,query_validator=queries.validate,query_catalog=queries.catalog,
                             assistant_router=profiles.respond,binding_validator=profiles.validate)
         try:
-            preview=engine.preview_report({'name':'合成日報測試','query_id':parsed['query_id'],
-                'parameters':{'category':parsed['category']},'time_hhmm':parsed['time_hhmm']},profiles.default_binding())
+            actions=ActionService(engine);cid=store.create_conversation('合成驗證',profiles.default_binding())
+            spec={k:parsed[k] for k in ('query_id','parameters','time_hhmm','frequency','date_mode')}
+            spec.update(name='合成日報測試',weekday=0)
+            action=actions.create(cid,'report','合成日報驗證',spec)
+            preview=actions.preview(action['id'],1)
+            if not preview['ready']:raise GatewayError('合成需求尚未通過條件核對。')
             if store.schedules() or store.tasks():raise GatewayError('未批准前產生工作，驗證失敗。')
-            sid=engine.confirm_report(preview['token']);tid=engine.run_schedule_now(sid,request_id='synthetic-check')
+            action=actions.confirm(action['id'],1,True);sid=action['schedule_id']
+            next_fire=store.schedule(sid)['next_fire']
+            tid=actions.run_now(action['id'],'synthetic-check')
             until=time.monotonic()+40
             while time.monotonic()<until:
                 task=store.task(tid)
@@ -40,6 +47,8 @@ def check_reports():
                 time.sleep(.05)
             if task['state']!='succeeded' or task['result'].get('summary_status')!='succeeded' or not task['result'].get('summary') or not store.notifications():
                 raise GatewayError('合成查詢／日報／通知未全部通過；沒有啟用使用者排程。')
+            if store.messages(cid) or store.schedule(sid)['next_fire']!=next_fire:
+                raise GatewayError('模型歷史或原定時間被改變，驗證失敗。')
         finally:engine.close(wait=True)
     return {'complete_request':'external_real_passed','missing_conditions':'external_real_passed',
             'approved_query_report_notification':'external_real_passed','synthetic_only':True}

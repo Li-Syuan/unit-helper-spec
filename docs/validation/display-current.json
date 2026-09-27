@@ -1,5 +1,5 @@
 {
-  "startup": {
+  "dpi": {
     "before": "unaware",
     "after": "system",
     "changed": true
@@ -7,133 +7,64 @@
   "windows": [
     {
       "theme": "dark",
-      "mode": "normal",
-      "page": "chat",
-      "size": [
-        1920,
-        1290
+      "logical": [
+        1050,
+        700
       ],
-      "send_visible": 1
-    },
-    {
-      "theme": "dark",
-      "mode": "normal",
-      "page": "todo",
-      "wide": true,
-      "size": [
-        1920,
-        1290
-      ],
-      "send_visible": null
-    },
-    {
-      "theme": "dark",
-      "mode": "small",
-      "page": "chat",
-      "size": [
+      "physical": [
         1575,
         1050
       ],
-      "send_visible": 1
+      "confirm_mapped": true,
+      "confirm_in_window": true
     },
     {
       "theme": "dark",
-      "mode": "small",
-      "page": "todo",
-      "wide": false,
-      "size": [
-        1575,
-        1050
+      "logical": [
+        1280,
+        860
       ],
-      "send_visible": null
-    },
-    {
-      "theme": "dark",
-      "mode": "maximized",
-      "page": "chat",
-      "size": [
-        2560,
-        1494
-      ],
-      "send_visible": 1
-    },
-    {
-      "theme": "dark",
-      "mode": "maximized",
-      "page": "todo",
-      "wide": true,
-      "size": [
-        2560,
-        1494
-      ],
-      "send_visible": null
-    },
-    {
-      "theme": "light",
-      "mode": "normal",
-      "page": "chat",
-      "size": [
+      "physical": [
         1920,
         1290
       ],
-      "send_visible": 1
+      "confirm_mapped": true,
+      "confirm_in_window": true
     },
     {
       "theme": "light",
-      "mode": "normal",
-      "page": "todo",
-      "wide": true,
-      "size": [
+      "logical": [
+        1050,
+        700
+      ],
+      "physical": [
+        1575,
+        1050
+      ],
+      "confirm_mapped": true,
+      "confirm_in_window": true
+    },
+    {
+      "theme": "light",
+      "logical": [
+        1280,
+        860
+      ],
+      "physical": [
         1920,
         1290
       ],
-      "send_visible": null
-    },
-    {
-      "theme": "light",
-      "mode": "small",
-      "page": "chat",
-      "size": [
-        1575,
-        1050
-      ],
-      "send_visible": 1
-    },
-    {
-      "theme": "light",
-      "mode": "small",
-      "page": "todo",
-      "wide": false,
-      "size": [
-        1575,
-        1050
-      ],
-      "send_visible": null
-    },
-    {
-      "theme": "light",
-      "mode": "maximized",
-      "page": "chat",
-      "size": [
-        2560,
-        1494
-      ],
-      "send_visible": 1
-    },
-    {
-      "theme": "light",
-      "mode": "maximized",
-      "page": "todo",
-      "wide": true,
-      "size": [
-        2560,
-        1494
-      ],
-      "send_visible": null
+      "confirm_mapped": true,
+      "confirm_in_window": true
     }
   ],
-  "version": "0.9.1",
-  "evidence": "local_real_passed_programmatic_tk",
-  "data": "synthetic_temporary_directory",
-  "human_ime": "not_tested"
+  "external_calls": 0,
+  "version": "0.11.0",
+  "kind": "programmatic_real_tk",
+  "manual_usability": "not_tested",
+  "windows_scale": "150%",
+  "maximized_physical": [
+    2560,
+    1494
+  ]
 }

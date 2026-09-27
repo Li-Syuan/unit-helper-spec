@@ -130,6 +130,11 @@ class DesktopTests(unittest.TestCase):
                 if isinstance(widget,ttk.Button):
                     if widget is a.draft_retry or (key=='todo' and not widget.winfo_ismapped()):
                         continue  # Retry is conditional; narrow todo pages hide inactive columns.
+                    if key=='chat' and not widget.winfo_ismapped() and (str(widget).startswith(str(a.action_panel))
+                            or str(widget).startswith(str(a.more_options)) or str(widget).startswith(str(a.task_card))
+                            or str(widget).startswith(str(a.work_toolbar))
+                            or widget in (a.selection_todo,a.selection_handoff,a.cancel_button,a.remove_upload_button)):
+                        continue  # Contextual controls are intentionally hidden; action journeys verify their visible state.
                     self.assertTrue(widget.winfo_ismapped(),(key,widget.cget('text')))
                     self.assertLessEqual(widget.winfo_rooty()+widget.winfo_height(),bottom+2,(key,widget.cget('text')))
                     self.assertLessEqual(widget.winfo_rootx()+widget.winfo_width(),right+2,(key,widget.cget('text')))

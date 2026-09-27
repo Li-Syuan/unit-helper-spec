@@ -1,20 +1,16 @@
 {
-  "provider": "Groq",
+  "status": "external_real_passed",
   "synthetic_only": true,
   "checks": [
-    {
-      "name": "complete_request",
-      "status": "external_real_passed"
-    },
-    {
-      "name": "missing_conditions",
-      "status": "external_real_passed"
-    },
-    {
-      "name": "approved_query_report_notification",
-      "status": "external_real_passed"
-    }
+    "query_and_report_structured_parsing",
+    "approved_linked_report_run_result_notification"
   ],
-  "status": "external_real_passed",
-  "recorded_at_utc": "2026-09-27T13:08:56.454088+00:00"
+  "recorded_at_utc": "2026-09-27T14:07:07.124331+00:00",
+  "reusable_check": {
+    "command": ".venv/Scripts/python.exe scripts/check-trial.py --live --reports",
+    "complete_request": "external_real_passed",
+    "missing_conditions": "external_real_passed",
+    "approved_query_report_notification": "external_real_passed",
+    "temporary_data_only": true
+  }
 }

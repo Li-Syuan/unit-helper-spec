@@ -19,6 +19,7 @@ from pathlib import Path
 
 from .gateways import GatewayError
 from .local_work import LocalWorkStore, initialize_work_schema
+from .conversation_actions import initialize_action_schema
 from .query_schema import find_template, parameters as validate_parameters, date_mapping, LEGACY_DATE_RANGES
 
 UTC = timezone.utc
@@ -53,10 +54,10 @@ class Store(LocalWorkStore):
         self._draft_revisions = {}
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version > 3:
+            if version > 4:
                 raise ValueError("資料庫版本較新，請使用相容的應用程式。")
-            if version in (1, 2):
-                backup=self.path.with_name(self.path.name+'.pre-v3-'+uid()+'.bak')
+            if version in (1, 2, 3):
+                backup=self.path.with_name(self.path.name+'.pre-v4-'+uid()+'.bak')
                 with sqlite3.connect(str(backup)) as target: db.backup(target)
             db.executescript("""
                 PRAGMA journal_mode=WAL;
@@ -99,7 +100,8 @@ class Store(LocalWorkStore):
                 db.execute("ALTER TABLE conversations ADD COLUMN binding TEXT")
                 db.execute("ALTER TABLE conversations ADD COLUMN source TEXT")
             initialize_work_schema(db)
-            db.execute("PRAGMA user_version=3")
+            initialize_action_schema(db)
+            db.execute("PRAGMA user_version=4")
             self._draft_revisions = {row['conversation_id']: row['revision'] for row in db.execute('SELECT conversation_id,revision FROM drafts')}
 
     @contextmanager
@@ -181,6 +183,11 @@ class Store(LocalWorkStore):
 
     def schedule(self, schedule_id):
         return self._get("schedules", schedule_id)
+
+    def schedule_source(self, schedule_id):
+        with self.connection() as db:
+            row=db.execute('SELECT conversation_id FROM schedule_sources WHERE schedule_id=?',(schedule_id,)).fetchone()
+            return dict(row) if row is not None else None
 
     def schedule_runs(self, schedule_id):
         return self._list("occurrences", "WHERE schedule_id=?", (schedule_id,))
@@ -285,6 +292,17 @@ class Engine:
             raise ValueError("選定對話已不存在，請重新整理後選擇。")
         data['drafts'] = [dict(row) for row in db.execute(
             f"SELECT * FROM drafts WHERE conversation_id IN ({placeholders}) ORDER BY conversation_id", ids)]
+        actions=[dict(row) for row in db.execute(
+            f"SELECT * FROM conversation_actions WHERE conversation_id IN ({placeholders}) ORDER BY id",ids)]
+        if actions:data['actions']=actions
+        if any(cid in ids for cid in getattr(self,'_action_parsing',{}).values()):
+            raise ValueError('選定對話的需求解析尚未結束，請稍後再刪除。')
+        linked={a['task_id'] for a in actions if a['task_id']}
+        for task_id in linked:
+            row=db.execute('SELECT state FROM tasks WHERE id=?',(task_id,)).fetchone()
+            if (row and row['state'] in {'queued','running'}) or any(
+                tid==task_id and not f.done() for f,tid in self._future_tasks.items()):
+                raise ValueError('選定對話交辦的工作尚未結束，請稍後再刪除。')
         task_ids = {row["id"] for row in data["tasks"]}
         plan_ids = {row["id"] for row in data["plans"]}
         if (any(row["state"] in {"queued", "running", "executing"} for row in data["tasks"])
@@ -359,6 +377,8 @@ class Engine:
                     marks = ','.join('?' for _ in summary["task_ids"])
                     db.execute(f"DELETE FROM notifications WHERE task_id IN ({marks})", summary["task_ids"])
                 marks = ','.join('?' for _ in preview["ids"])
+                db.execute(f"DELETE FROM conversation_actions WHERE conversation_id IN ({marks})",preview['ids'])
+                db.execute(f"UPDATE schedule_sources SET conversation_id=NULL WHERE conversation_id IN ({marks})",preview['ids'])
                 for table in ("messages", "plans", "tasks", "drafts"):
                     db.execute(f"DELETE FROM {table} WHERE conversation_id IN ({marks})", preview["ids"])
                 db.execute(f"DELETE FROM conversations WHERE id IN ({marks})", preview["ids"])
@@ -524,21 +544,28 @@ class Engine:
             self._ensure_open()
             with self.store.connection() as db:
                 db.execute("BEGIN IMMEDIATE")
-                p = self.store.decode(db.execute("SELECT * FROM plans WHERE id=?", (plan_id,)).fetchone())
-                if p["revision"] != revision:
-                    raise ValueError("計畫已修改，請重新預覽後確認。")
-                if p["state"] == "cancelled":
-                    raise ValueError("計畫已取消，請建立新計畫。")
-                if p["task_id"]:
-                    return p["task_id"]
-                if p["state"] != "ready" or p["expires_at"] <= stamp():
-                    raise ValueError("計畫已取消或過期，請建立新計畫。")
-                self._validate(p["kind"], p["payload"])
-                task_id, created = self._new_task(db, p["kind"], p["payload"], p["conversation_id"], request_id, plan_id)
-                db.execute("UPDATE plans SET state='executing',task_id=? WHERE id=?", (task_id, plan_id))
+                task_id, created = self._confirm_plan_tx(db, plan_id, revision, request_id)
             if created:
                 self._submit(task_id)
             return task_id
+
+    def _confirm_plan_tx(self, db, plan_id, revision, request_id):
+        """Caller holds the engine lock and transaction; dispatch only after commit."""
+        if not request_id:
+            raise ValueError("確認必須有請求編號。")
+        p = self.store.decode(db.execute("SELECT * FROM plans WHERE id=?", (plan_id,)).fetchone())
+        if p["revision"] != revision:
+            raise ValueError("計畫已修改，請重新預覽後確認。")
+        if p["state"] == "cancelled":
+            raise ValueError("計畫已取消，請建立新計畫。")
+        if p["task_id"]:
+            return p["task_id"], False
+        if p["state"] != "ready" or p["expires_at"] <= stamp():
+            raise ValueError("計畫已取消或過期，請建立新計畫。")
+        self._validate(p["kind"], p["payload"])
+        task_id, created = self._new_task(db, p["kind"], p["payload"], p["conversation_id"], request_id, plan_id)
+        db.execute("UPDATE plans SET state='executing',task_id=? WHERE id=?", (task_id, plan_id))
+        return task_id, created
 
     def cancel_plan(self, plan_id):
         with self._lock:

@@ -6,7 +6,7 @@ from .core import stamp
 from .preferences import load_page_hints, save_page_hint
 
 CHAPTERS = {
-    'todo': '我的待辦', 'chat': '對話與鍵盤', 'query': '查資料與匯出', 'work': 'Plan 與選項確認',
+    'activity': '我的排程與通知', 'todo': '我的待辦', 'chat': '對話與鍵盤', 'query': '查資料與匯出', 'work': 'Plan 與選項確認',
     'result': '將資料交給助理', 'schedule': '我的排程與通知',
     'notice': '我的排程與通知', 'settings': '設定公司助理', 'issue': '問題回報',
 }
@@ -91,6 +91,8 @@ class GuidanceViews:
     def page_hint_content(self, page):
         if self.groq_trial and page=='settings':
             return '這是 Groq 外部 AI 試用入口。\n填好 .env 後可測試連線；回公司時請使用原本 start-app.bat。'
+        if page == 'activity':
+            return '工作與通知依時間排列。\n選取一筆查看原對話、確認卡或結果。'
         if page == 'todo':
             return '新增待辦，或從對話選取文字加入。\n開始處理按「開始」，完成後按「完成」；只保存在本機，不會自動執行。'
         if page in ('chat', 'query') and self.editing_plan:

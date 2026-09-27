@@ -71,6 +71,8 @@ class ConversationViews:
         body=ttk.Frame(w,padding=20);body.pack(fill='both',expand=True)
         ttk.Label(body,text='永久刪除後，無法由應用復原。已另存的待辦會保留。',style='CardError.TLabel').pack(anchor='w')
         counts=preview['counts']
+        if counts.get('actions'):
+            ttk.Label(body,text=f"另移除 {counts['actions']} 筆對話操作與來源連結；獨立查詢及自動工作保留。",wraplength=650).pack(anchor='w',pady=4)
         ttk.Label(body,text=f"{counts['conversations']} 段對話 · {counts['messages']} 則訊息 · {counts['plans']} 份計畫\n{counts['tasks']} 項工作（含輸入／結果）· {counts['notifications']} 則通知 · {counts['drafts']} 份草稿",justify='left').pack(anchor='w',pady=10)
         holder=ttk.Frame(body);holder.pack(fill='both',expand=True)
         names=tk.Listbox(holder,height=4,exportselection=False)

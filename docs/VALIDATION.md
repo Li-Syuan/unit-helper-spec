@@ -1,62 +1,50 @@
-# QA agent 0.10.0 驗證摘要
+# QA agent 0.11.0 驗證摘要
 
-本版新增 Groq 試用的確認式每日合成查詢日報；沿用深淺品牌圖示、個人待辦、工作卡片、文字草稿、公司 adapter、Plan gate、查詢與排程。schema 維持 3，不新增資料遷移、套件或虛擬環境。
+本版新增原對話確認、查詢結果與自動工作，SQLite 升級 schema 4；沒有新增套件或虛擬環境。正式驗證使用 `D:/unit-helper-spec/.venv/Scripts/python.exe`，恰好 CPython 3.10.4、Windows x64。
 
 ## 本輪回歸
 
-2026-09-27，使用 `D:/unit-helper-spec/.venv/Scripts/python.exe`，恰好 CPython 3.10.4、Windows x64。執行 `scripts/verify.py development`：doctor、pip check、freeze 與 requirements.lock 比對成功，完整 **263 項測試通過，0 skipped**；沿用 241 項基準並新增 22 項日報服務／Tk／解析案例。首次完整回歸超過測試工具原有 120 秒限制，未記為通過；僅將整套 unittest 等待上限調為 300 秒後重跑完成，API timeout／重試行為不變。
+2026-09-27 完整 **299 項測試通過，0 skipped**；命令、直譯器與完整輸出見 [development.json](validation/development.json)。`scripts/verify.py development` 的環境診斷、pip check、鎖檔一致性及完整 unittest 均通過。保留既有263項行為基準，新增36項操作服務與真Tk旅程測試；輸入区改為1～4行後同步更新展開／收回斷言。
 
-- [本輪開發環境完整輸出](validation/development.json)。
-- [乾淨重建](validation/clean-rebuild.json) 與 [離線重建](validation/offline-rebuild.json) 保留 0.8.0 各 192 項基準，不代表本輪重跑。29 個鎖定套件未變，本輪不重建環境或離線包。
-- 啟動檢查、手冊章節、Markdown 本機連結及 manifest 分別校驗。
+首輪發現活動頁偏好未登記、條件式按鈕舊斷言及文字整理誤判為查詢，未記為通過；修正後重跑。獨立流程檢查發現舊修訂取消、新舊解析刷新、Plan／卡片交易及來源提示問題，均納入修正與測試。
 
-## 覆蓋與驗收界線
+29 個鎖定套件不變，沿用唯一開發環境。舊 [乾淨重建](validation/clean-rebuild.json) 與 [離線重建](validation/offline-rebuild.json) 各192項是既有0.8.0證據，不代表本輪重跑；不重建離線包。
 
-日報新增驗證：
+## 旅程與界線
 
-- local_real_passed／mock_passed：22 項涵蓋純預覽、批准防重、過期／取消、交易回復、綁定失效、精確合計與錯誤遮蔽、摘要失敗保留表格、空結果／截斷不送 AI、取消／關閉晚到回覆、真實 future 防重疊、可控制時鐘的每日／前一日／重啟／漏跑／啟停。Tk 驗證原草稿保留、授權／修改失效、主題切換及過期解析結果不套用。
-- external_real_passed：[Groq 日報實測](validation/report-trial.json) 記錄完整需求、缺少條件追問，以及批准後查詢→真實 Groq 日報→通知；全為合成資料與暫存資料庫，未建立使用者永久排程。早期 strict schema 的 anyOf 被 API 拒絕，已改用平面 nullable schema；另曾遇服務拒絕，沒有自動重試或以假結果替代，修正後明確重測三項通過。
-- local_real_passed（程式操作與截圖檢查）：真 Tk 深／淺、1050×700 與 1280×860 邏輯視窗，日報確認按鈕固定底部可達；[量測](validation/report-display.json)。八張合成截圖留於 artifacts/report-preview，不新增歷代素材到 Git。
-- 排程明日 08:00 的真實等待、人工 IME、公司服務及 Norton 成效仍 not_tested；受控時鐘測試不是隔天實地驗收。
-
-既有 Groq 試用驗證：
-
-- mock_passed：真 OpenAI SDK 搭配合成 transport，固定目的地／模型、對話隔離、401／403／429／500、逾時、連線失敗、空回覆、格式錯誤、不完整回覆與工具要求拒絕；零自動重試、錯誤不含服務原文。
-- local_real_passed：.env 格式／大小／重複鍵／不展開變數、唯讀 profiles、Windows 信任庫且 TLS 強制驗證；真 Tk 啟動不派發、公司設定未讀寫、獨立子目錄、Enter 送出與 Plan 批准後單次派發。
-- external_real_passed：真實 Groq 短句連線，以及真 Tk 中兩筆虛構筆記摘要／接續追問；只記安全狀態於 [外部試用紀錄](validation/external-trial.json)。這是第三方外部服務，不能歸為 company_real_passed。
-- 深淺試用聊天與設定的 1050×700 邏輯尺寸截圖留在忽略的 artifacts/trial-preview，已目視檢查按鈕及標示；未把私有 .env 或回覆日誌提交。
-- 真實中文 IME、公司 chatbot／AD／Oracle、Excel 與 Norton 成效仍 not_tested；沒有更動防毒設定。
-
-| 項目 | 證據與限制 |
+| 項目 | 結果與限制 |
 |---|---|
-| 主題圖示 | local_real_passed：兩款七尺寸 PNG／ICO、透明外角、保存主題開啟、切換更新原有／後開視窗與側欄、缺淺色包提示並退回深色；切換零工作派發 |
-| 待辦 | local_real_passed：真 SQLite 與 Tk 新增、長文字／日期驗證、搜尋、排序、狀態切換、刪除取消、重複保存、來源刪除後保留；台北日期邊界使用可控制時鐘 |
-| 工作卡片 | local_real_passed：只填草稿、原稿與附件保留、同助理新對話、用途顯示；預覽及新增待辦零模型派發 |
-| 草稿 | local_real_passed：延遲保存、重開恢復、附件重選提示、快速切換、失敗重試、送出失敗補存、晚到寫入失效、Plan 編輯隔離、刪除競態與正常關閉補存 |
-| 遷移及交易 | local_real_passed：schema 1／2 升級與備份、schema 2 故障回復、現有資料保留；工作／Plan 受理與草稿移除同交易，失敗回復且零派發 |
-| SDK 契約 | mock_passed：真 SDK 搭配合成 transport；請求、解析、401、逾時、空回覆、格式錯誤、隔離與 TLS。不是公司 API 實測 |
-| 既有本機服務 | local_real_passed：Plan gate、修訂／過期／防重、選項、取消收尾、多助理路由、資料轉交、對話批次刪除與交易回復 |
-| 檔案／查詢／排程 | local_real_passed：UTF-8、CSV／TSV、精確字串及公式防護、動態參數、每日／每週、漏跑／重啟防重及通知；Excel 實際貼上另驗 |
-| Tk 與工具 | local_real_passed（程式操作）：真 Tk、主題與狀態保持、Enter／Shift+Enter 既有保護、離線手冊、Windows clipboard、素材、COM 捷徑建立／搬移／同名保護及固定啟動檢查 |
-| 憑證 | local_real_passed：Windows keyring 獨立合成項目保存／讀取／更換／移除並清除；不使用真實 API key |
-| 公司服務 | not_tested：chatbot、AD／員工名單、Oracle 尚需內部資訊及核准接線 |
-| 人工操作 | not_tested：OS 滑鼠鍵盤全流程、真實中文 IME、Excel 真實貼上、工作列／桌面最終外觀 |
-| Norton | not_tested／未能確認：沒有可核對防毒歷程；未變更防毒或執行政策，測試通過不代表警告消失 |
+| 首次查詢 | local_real_passed：真 Tk 按範例、送出、確認；此前零查詢，原對話得到表格；不需 API key |
+| 補條件／批准 | local_real_passed：catalog 欄位、純驗證、修訂、過期、目的綁定、取消及雙擊防重；先批准才派發 |
+| 文字整理 | mock_passed／local_real_passed：真 Tk Enter 送出、範本只填草稿；普通文字不因含查詢字眼被攔截 |
+| 日報 | external_real_passed：Groq 解析完整需求／缺條件追問，確認後合成查詢→真實摘要→通知，立即執行不改原時間；[安全紀錄](validation/report-trial.json) |
+| 公司與外部隔離 | mock_passed：未配置公司模式不呼叫 Groq；模型 messages 與操作／表格分離；僅明示的轉交或日報授權送資料 |
+| 失敗與取消 | local_real_passed／mock_passed：部分失敗保留表格、晚到結果不覆寫；解析及取消後仍在處理的 future 阻擋刪除 |
+| 重開與刪除 | local_real_passed：操作連結恢復不派發；刪來源保留獨立查詢／自動工作，來源標示已刪除 |
+| schema 遷移 | local_real_passed：schema 1／2／3 升至4、可讀備份、交易故障回復、原資料保留；Plan與操作連結同交易後才派發 |
+| 既有服務 | local_real_passed／mock_passed：待辦、草稿、多助理、Plan／選項、檔案、精度、表格、刪除、排程／通知與工具完整回歸 |
+| 真 Tk 顯示 | local_real_passed（程式操作與目視截圖）：深淺、1050×700、1280×860及最大化；詳見下節 |
+| 不看手冊的人工走查 | not_tested：尚無使用者／獨立人工實際操作，不能以自動測試宣稱直觀性已驗收 |
+| 公司 chatbot／AD／Oracle | not_tested：需內部資訊與公司驗收；Groq不算公司通過 |
+| 真中文 IME／Excel | not_tested：保留既有程式測試，真輸入法選字與Excel貼上需人工核對 |
+| 隔日08:00與Norton | not_tested：受控時鐘不等於隔日等待；沒有可核對防毒紀錄，未更動防毒設定 |
 
-公司驗收填寫 [接手工作單](../COMPANY-HANDOFF.md)。doctor 不呼叫模型或資料庫；company_check 未配置項目保持 not_tested。
+外部請求全部使用虛構文字與合成資料、暫存資料庫；沒有修改使用者的正式對話、自動工作或公司設定。早期解析不符預期曾失敗，沒有假回覆替代；修正提示後明確重測通過。不保證自然語言每次解析完全正確，確認卡始終需要核對。
 
 ## 顯示證據
 
-一般工作區沿用 0.9.1 的顯示證據：以獨立暫存資料與合成內容，檢視深淺主題的一般、1050×700 邏輯尺寸與最大化聊天／待辦，以及待辦編輯與草稿畫面。共 14 張檢查圖留於忽略的 artifacts；倉庫只保留 [使用手冊](USER-GUIDE.md#介面參考) 中四張精選畫面。本輪新增試用畫面檢查見上方，沒有重做這組截圖。
+正式啟動 DPI 模式 system，本機 Windows 倍率150%。實際尺寸：1050×700邏輯→1575×1050，1280×860→1920×1290；最大化由可用工作區决定。原始截圖使用程式自身視窗及暫存合成資料，未擷取私人桌面。
 
-- [本輪視窗量測](validation/display-current.json)：正式 DPI 啟動方式由 unaware 設為 system，本機實際倍率 150%，Tk scaling 約 1.998，DPI 約 143.86。一般 1920×1290、最小 1575×1050、最大化 2560×1494 實體像素。
-- 看板可用寬度不足 900 邏輯像素切換狀態分頁；一般與最大化呈現三欄。小視窗的輸入區、送出與草稿提示保留空間。
-- 另以最小視窗檢查「已加入我的待辦」提示、送出及草稿狀態均可見，保存提示不強制切換頁面。
-- 自動測試涵蓋 100／125／150／200% 換算與素材；真 Windows 100／125／200% 及跨倍率螢幕移動仍 not_tested，不以模擬代替。
-- 截圖檢視與程式操作不等於人工鍵盤／IME 驗收。公司可依 [開發指南](DEVELOPMENT.md) 執行 display-check，在目標螢幕核對。
+[顯示量測](validation/display-current.json) 與 [使用手冊四張精選畫面](USER-GUIDE.md#介面參考)。完整檢查圖存忽略目錄 artifacts/action-preview，不累積到Git。100／125／150／200%尺寸換算測試保留，真Windows100／125／200%與跨螢幕即時重排仍not_tested。
 
-## 資料及交付
+## 人工接手走查
 
-待辦與 AI 工作分開保存；使用者標為完成不會變更工作結果。刪除來源對話會同時清除草稿，另存待辦仍可編輯，來源標示已刪除。原始附件、匯出及備份保持原界線。
+請讓未看手冊的同仁依序完成，記錄卡住位置與是否需要口頭提示：
 
-不新增執行期依賴、中央服務或背景通知，不接觸公司原始資料庫。文件保持目前功能與公司接線入口，未重新累積歷史規格或候選素材。
+1. 開啟 start-app.bat，試查一筆資料，確認後找到前五列與完整表格，返回原對話。
+2. 輸入缺條件查詢，在原處補齊並確認；取消一次再修改，確認不會多跑。
+3. 開啟 start-trial.bat，用虛構內容整理；選取一句加入待辦。
+4. 說出每天八點日報需求，核對並勾選授權、確認啟用；現在測試一次、看結果、暫停。
+5. 重開後找到同一自動工作；刪來源對話，確認工作仍在且來源已刪除。
+
+紀錄只有實際完成後才能改為人工通過。公司項目填 [接手工作單](../COMPANY-HANDOFF.md)。

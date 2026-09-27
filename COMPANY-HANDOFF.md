@@ -1,6 +1,6 @@
 # QA agent 公司接手工作單
 
-目前版本 **0.10.0**，已完成本機桌面與接手工具；沿用本機待辦、常用工作與草稿恢復，圖示已隨外觀切換，無須公司重新接線。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。目前沒有公司原始碼、成功 API 樣本或資料庫規格，不能保證只填三個參數就全部接通。
+目前版本 **0.11.0**，已完成本機桌面與接手工具；沿用本機待辦、常用工作與草稿恢復，圖示已隨外觀切換，無須公司重新接線。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。目前沒有公司原始碼、成功 API 樣本或資料庫規格，不能保證只填三個參數就全部接通。
 
 先讀 [開發守則](AGENTS.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md)。已完成多助理、keyring、對話與刪除、Plan／選項、TXT／CSV、三項合成查詢、表格／匯出、本機排程／通知、回報草稿、深淺主題、DPI 與原地提示。沿用現有畫面及 Protocol；GPT 6 sol 是開發 agent，不是產品模型 ID。
 
@@ -39,11 +39,13 @@
 
 ## Groq 日報試用與公司界線
 
-已完成 `report_drafts.py` 的受限結構化解析、`report_views.py` 的編輯確認及 `report_engine.py` 的批准式日報。只在 start-trial.bat 的獨立資料區啟用；schema／公司 adapter 契約不變。公司 agent 可參考流程，但不得將 Oracle 結果自動送至 Groq。
+已完成 `intent_drafts.py` 的受限結構化建議、`action_views.py` 的同頁確認及 `report_engine.py` 的日報執行。Groq 只在 start-trial.bat 獨立資料區啟用；公司 adapter 契約不變。schema 4 的 conversation_actions／schedule_sources 保存來源，不混入模型歷史，也不改變排程工作歸屬。公司 agent 可參考流程，但不得將 Oracle 結果自動送至 Groq。
 
 本機測試：`.venv/Scripts/python.exe -m unittest tests.test_report_engine tests.test_report_views -v`。個人明確允許外部合成測試時，執行 `.venv/Scripts/python.exe scripts/check-trial.py --live --reports`，最多三筆 Groq 請求，暫存資料庫結束後清除；一般 doctor 不呼叫模型。此項不是公司驗收。
 
 若公司後續要開放日報整理，需另核准助理資料去向、持續傳送授權、模型結構化能力、查詢範圍與每次派發身分檢查，再接公司 adapter；不僅更換 endpoint。公司持續 Goal、Windows 背景排程及自動寄信仍未實作。
+
+公司對話操作接線新增要求：保留 catalog 動態欄位，先以同頁表單完成核准查詢；目前公司解析能力預設關閉。若公司要開放自然語言解析，須提供可信模板目錄、成功結構化回傳與副作用審查結果，新增解析 adapter 後驗證缺條件、未知欄位、錯誤型別、惡意內容及零未批准派發，不能只把 capability 改成 True。測試入口為 `tests.test_conversation_actions` 與 `tests.test_action_ui`，公司 DB 結果仍依下列工作單人工比對。
 
 ## 六項接線工作
 
@@ -112,7 +114,7 @@
 | 文字／Excel | TXT／CSV 預覽、原文保留、另存及重開；全部／選取／含或不含標題，前導零、18 位編號、高精度、負數、中文、NULL、逗號／引號／公式型文字逐字核對；剪貼簿占用明示失敗 |
 | IME／鍵盤 | 微軟注音及公司慣用 IME：組字 Enter 不送，完成後 Enter 只送一次，Shift+Enter 換行、Ctrl+Enter 送出，長按／連按／空白不重複派發 |
 | 待辦／草稿 | 選文加入、期限、開始／完成／重開、來源失效及刪除；重開恢復文字、不自動載入附件、不送到其他助理；背景晚到不復活已清草稿 |
-| 提示／手冊／回報 | 九頁原地提示及章節入口、收合偏好重開保留，不填稿／派發；回報編號與草稿保留，明示只存本機且不自動附私人資料 |
+| 提示／手冊／回報 | 四個主要入口及更多工具原地提示及章節入口、收合偏好重開保留，不填稿／派發；回報編號與草稿保留，明示只存本機且不自動附私人資料 |
 | 對話刪除 | 右鍵、標題搜尋、批次及篩選全選；取消為預設且不變資料；刪目前／最後一筆後可繼續，其他草稿保留，舊詳情／預覽關閉，重開不再出現 |
 | 刪除保護 | 未批准 Plan 刪除不執行；執行中／取消後 future 未結束整批拒絕；10 分鐘或快照過期重預覽；原檔、匯出、備份、獨立查詢／排程、回報、轉交副本及公司歷史保留，失效來源明示 |
 | 顯示 | 記正式啟動 DPI 模式／Tk scaling／字型／工作區；深淺一般、小工作區、最大化操作可達；可取得的 100／125／150／200% 真實倍率各驗，未取得標未測；最大化不改點數，跨螢幕另記限制 |
@@ -123,7 +125,7 @@
 ## 可直接貼給 GPT 6 sol
 
 ~~~text
-請接手 QA agent 0.10.0 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或產品多代理。
+請接手 QA agent 0.11.0 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或產品多代理。
 
 先盤點公司已有程式、成功 API 範例及環境，依 COMPANY-HANDOFF 的資訊表確認缺項；找得到就沿用，缺少時一次問最少必要問題並繼續獨立可做工作。不要猜 URL、assistant ID 傳送位置、session、AD／SQL 欄位或秘密；秘密不貼對話、不進 repo／log。
 
