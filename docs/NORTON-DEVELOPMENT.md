@@ -1,0 +1,31 @@
+# Norton 與開發命令紀錄 — QA agent 0.7.0
+
+## 這版調整了什麼
+
+啟動器和捷徑建立工具改為執行固定的 `scripts/check-launch.py`；保留 Windows、Python 3.10.4、64 位元、Tcl/Tk 及圖示存在檢查。啟動器另檢查 OpenAI SDK。檢查不讀取金鑰或公司設定、不呼叫網路服務。
+
+捷徑整合測試不再使用 `-EncodedCommand` 或動態組成 PowerShell 程式碼，改由 `-File` 執行正式腳本和可閱讀的測試輔助檔。建立、重複更新、包含空白／中文／單引號的搬移位置、缺少素材及同名捷徑保護仍有測試。測試只使用專屬暫存目錄，不變更使用者桌面。
+
+日常桌面捷徑直接啟動專案 `pythonw.exe -m desktop_app`。這些調整是增加可檢查性與減少不必要的命令字串，不表示已找到 Norton 警告原因，也不保證防毒不再提示。没有關閉防毒、加入排除、修改執行政策或繞過偵測。
+
+## 本機重跑
+
+~~~powershell
+.\.venv\Scripts\python.exe scripts/check-launch.py --check-sdk
+.\.venv\Scripts\python.exe -m unittest tests.test_launch_check tests.test_shortcut -v
+.\start-app.bat --check
+~~~
+
+PowerShell 若被公司執行政策拒絕，保留錯誤並交 IT 審核，不調整政策來通過測試。
+
+## 防毒成效與比對步驟
+
+目前防毒成效：**未能確認（not_tested）**。程式測試通過不等於 Norton 驗證通過；沒有讀取 Norton 偵測紀錄時，也不能宣稱未觀察到警告。原先截圖只有命令列偵測名稱，沒有足夠資料證明遭攔截的檔案或命令。
+
+1. 開發前記錄時間，依序進行啟動檢查與上述測試。
+2. 若警告再次出現，在 Norton 安全性歷程查看該事件，記下時間、偵測名稱／警示 ID、檔案路徑和命令列，對照正在執行的操作。
+3. 先保留紀錄並停止重跑被阻擋的同一操作；其他獨立工作可繼續。不要直接還原遭隔離檔案或加入廣泛排除。
+4. 由本人或公司 IT 確認來源，再依 Norton 官方／公司流程複查。無法確認時維持待查，不把警告自動歸為誤報。
+5. 將結果分別記為「測試期間未觀察到警告」「仍有警告」或「未能確認」，附時間及受測操作。私有原始紀錄與內部路徑保存在被忽略的 `artifacts` 或公司核准位置；不要把公司資料、API key 或原始命令中的秘密推送 Git。
+
+測试輔助檔位於 `tests/helpers/shortcut-fixture.ps1`；正式捷徑工具仍只更新本工具建立的捷徑，不覆蓋其他程式。

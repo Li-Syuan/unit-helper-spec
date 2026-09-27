@@ -4,7 +4,7 @@ cd /d "%~dp0"
 if errorlevel 1 goto failed
 if not exist ".venv\Scripts\python.exe" goto missing
 if not exist ".venv\Scripts\pythonw.exe" goto missing
-".venv\Scripts\python.exe" -c "import sys, struct, tkinter, openai; assert sys.version_info[:3] == (3, 10, 4), sys.version; assert struct.calcsize('P') == 8"
+".venv\Scripts\python.exe" "scripts\check-launch.py" --check-sdk
 if errorlevel 1 goto failed
 if /i "%~1"=="--check" exit /b 0
 start "" /d "%~dp0" ".venv\Scripts\pythonw.exe" -m desktop_app

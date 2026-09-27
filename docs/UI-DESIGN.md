@@ -1,16 +1,25 @@
-# QA agent 0.6.0 桌面體驗
+# QA agent 0.7.0 工作區
 
-深／淺主題繼續原地切換。新手不需要先讀維護文件：歡迎視窗帶入獨立示範工作區，側欄有快速體驗及說明入口。資料轉交明確呈現目的助理與預覽，設定頁集中三項連線資訊。
+正式桌面保留 Tkinter／ttk。新版採原創線條 PNG、分組側欄、訊息層次、統一閱讀寬度、整合輸入框及真實工作狀態。A 正式圖示與深淺主題沿用。
 
-![首次開啟](images/v060-welcome.png)
-![獨立體驗：1050×700](images/v060-tutorial.png)
-![助理管理：1050×700](images/v060-settings.png)
-![對話](images/v060-chat.png)
-![送出前預覽](images/v060-transfer.png)
-![離線手冊](images/v060-help.png)
+![深色訊息工作區](images/v070-dark-workspace.png)
+![1050×700 最小視窗](images/v070-small.png)
+![寬視窗詳情](images/v070-details.png)
+![淺色詳情](images/v070-light-details.png)
+![五步體驗中的 Plan](images/v070-plan.png)
+![失敗狀態](images/v070-failure.png)
 
-截圖使用本應用自己建立的暫存合成資料視窗。導覽原本擠壓查詢按鈕，已壓縮底部提示列並驗證按鈕完整位於父容器內。手冊採中文換行，長篇授權文字可捲動。入口與文件從程式所在目錄解析，不依賴目前工作目錄。
+以上為本應用真 Tk 視窗，資料與助理回覆均為合成。本機完整截圖放在忽略目錄 artifacts/v070-preview，選取代表畫面隨 repo 交付。未以修改圖片的方式製造介面結果。
 
-完整導覽驗證使用真 Tk 控制項走五步，未跳過批准或預覽；沒有公司 API／Oracle。實際中文輸入法選字、Windows 任務列／桌面、公司縮放與 Excel 仍待人工驗收，沒有冒稱通過。
+## HTML／CSS 視覺稿
 
-本版 UI 採用正式 A 圖示；舊圖示和早期畫面仍可於 Git 歷史找回。舊版畫面檔若仍存在只供歷史參考。
+[開啟離線視覺稿](design/workspace.html)。可切換深淺與五種狀態，不連網、不存資料、不呼叫公司服務，亦不嵌入正式應用。以下為 Chrome headless 的實際渲染。
+
+![HTML 深色視覺稿](images/v070-html-dark.png)
+![HTML 淺色視覺稿](images/v070-html-light.png)
+
+文字樣式、圓角及原生控制項略有差異；以桌面操作及驗證為正式交付。UI 不宣稱增加 API 能力、持續 Goal 或自動多助理分工。
+
+## 核對界線
+
+三環境完整回歸、程式操作真 Tk 與自身截圖已完成；原生中文輸入法、公司 API／AD／Oracle／Excel 仍待現場驗收。防毒成效獨立記錄於 NORTON-DEVELOPMENT.md，沒有因測試通過便宣稱 Norton 不再警告。

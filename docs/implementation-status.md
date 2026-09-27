@@ -1,8 +1,8 @@
-# 實作狀態 — QA agent 0.6.0
+# 實作狀態 — QA agent 0.7.0
 
 | 工作 | 狀態與界線 | 主要檔案 |
 |---|---|---|
-| Python／鎖版／第二環境 | 三個獨立環境各 139 tests 通過，含全新線上與離線重建；見 VALIDATION-LOCAL | scripts、requirements.lock |
+| Python／鎖版／第二環境 | 三個既有獨立環境各 150 tests 通過；線上／離線重建於 0.6.0 完成；見 VALIDATION-LOCAL | scripts、requirements.lock |
 | 對話／歷史／背景／取消 | 本機已完成；Enter 送出／Shift+Enter 換行／Ctrl+Enter，IME 人工驗收待完成 | ui、theme、core |
 | OpenAI 相容 SDK | adapter + MockTransport 通過；公司實測未做 | gateways |
 | Plan／是非／單選／多選 | 本機固定流程、服務 gate、修訂／期限／防重 | core、choices、ui |
@@ -57,3 +57,13 @@
 | 正式 A 圖示 | 七尺寸 PNG／ICO、視窗、侧欄、桌面捷徑 | assets、BRANDING |
 
 本版三環境各 139 tests、0 skipped。公司 API／AD／Oracle／Excel、原生中文輸入法與 OS 最終外觀不冒稱通過；人工清單见 COMPANY-ACCEPTANCE。
+
+## 0.7.0 工作區改版（目前版本）
+
+- 原生 Tkinter／ttk，未新增 runtime 套件。HTML／CSS 只是可離線開啟的視覺稿，入口 docs/design/workspace.html，不嵌入正式應用。
+- 工作／管理／協助分組、原創線條 PNG、820px 聊天閱讀寬度、可選取的訊息卡片樣式、3～6 行整合輸入框及真實任務狀態。
+- 工作詳情由明確選定的 task／plan ID 取得，顯示來源與助理版本；寬度至少 1380px 使用右欄，較窄以附屬視窗呈現。切換聊天不會改送正在執行的工作，已開啟詳情保留明確選定的來源。
+- 開發改用固定檢查／測試腳本。沒有變更防毒設定、例外或執行政策；Norton 是否不再警告尚未確認，見 docs/NORTON-DEVELOPMENT.md。
+- 沿用 Python 3.10.4 三個合格環境、29 個鎖定套件與 schema 2；公司 API、AD、Oracle、Excel 及原生中文 IME 仍需現場驗收。
+
+新增工作區測試 7 項、啟動檢查 4 項，保留既有 139 項覆蓋。真 Tk 視窗、合成流程及真 COM 通過；Norton 成效未能確認，不能寫成防毒驗收通過。

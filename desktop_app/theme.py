@@ -5,9 +5,9 @@ from tkinter import ttk
 
 FONT = 'Microsoft JhengHei'
 _TOKENS = {
-    'dark': dict(BG='#202124', SURFACE='#282A2E', INK='#ECEEF1', MUTED='#B1B7C0',
+    'dark': dict(BG='#181C21', SURFACE='#22272E', INK='#ECEEF1', MUTED='#B1B7C0',
         BORDER='#41464F', ACCENT='#63D3EC', ACCENT_HOVER='#8DE3F5', TINT='#263E49',
-        SIDEBAR='#18191C', SIDEBAR_HOVER='#30343B', STRIPE='#2D3035',
+        SIDEBAR='#11151A', SIDEBAR_HOVER='#30343B', STRIPE='#2D3035',
         ERROR='#FF9C94', SUCCESS='#88D8B0', DISABLED='#868D98', BUTTON_INK='#10242A', WARNING='#F0CC89'),
     'light': dict(BG='#F6F7F9', SURFACE='#FFFFFF', INK='#222833', MUTED='#5C6675',
         BORDER='#D5DAE2', ACCENT='#08768E', ACCENT_HOVER='#075E73', TINT='#DFF1F6',
@@ -50,9 +50,17 @@ class Appearance:
         s.configure('.',font=(FONT,10),background=c.BG,foreground=c.INK)
         s.configure('TFrame',background=c.BG)
         s.configure('Surface.TFrame',background=c.SURFACE)
+        s.configure('Card.TFrame',background=c.SURFACE,borderwidth=1,relief='solid',bordercolor=c.BORDER,lightcolor=c.BORDER,darkcolor=c.BORDER)
+        s.configure('CardBody.TFrame',background=c.SURFACE,borderwidth=0,relief='flat')
+        s.configure('CardMuted.TLabel',background=c.SURFACE,foreground=c.MUTED,font=(FONT,9))
+        s.configure('CardTitle.TLabel',background=c.SURFACE,foreground=c.INK,font=(FONT,11,'bold'))
+        s.configure('CardError.TLabel',background=c.SURFACE,foreground=c.ERROR,font=(FONT,9))
+        s.configure('Compact.TButton',padding=(8,4),font=(FONT,9))
+        s.configure('Card.TCheckbutton',background=c.SURFACE)
+        s.configure('Workspace.Horizontal.TProgressbar',troughcolor=c.SURFACE,background=c.ACCENT,borderwidth=0,thickness=3)
         s.configure('TLabel',background=c.BG,foreground=c.INK)
         s.configure('Muted.TLabel',foreground=c.MUTED)
-        s.configure('Title.TLabel',font=(FONT,18,'bold'))
+        s.configure('Title.TLabel',font=(FONT,16,'bold'))
         s.configure('Section.TLabel',font=(FONT,11,'bold'))
         s.configure('Surface.TLabel',background=c.SURFACE)
         s.configure('Empty.TLabel',background=c.SURFACE,foreground=c.MUTED)
@@ -105,7 +113,7 @@ class Appearance:
             widget.configure(background=c.SURFACE,foreground=c.INK,insertbackground=c.INK,
                 selectbackground=c.TINT,selectforeground=c.INK,highlightbackground=c.BORDER,highlightcolor=c.ACCENT)
             for tag,opts in {'welcome_title':{'foreground':c.INK},'welcome_body':{'foreground':c.MUTED},
-                'speaker_user':{'foreground':c.ACCENT},'speaker_assistant':{'foreground':c.MUTED},'body_user':{'background':c.TINT}}.items():
+                'speaker_user':{'foreground':c.ACCENT},'speaker_assistant':{'foreground':c.MUTED},'body_user':{'background':c.TINT},'body_assistant':{'background':c.SURFACE},'separator':{'foreground':c.BORDER}}.items():
                 if tag in widget.tag_names(): widget.tag_configure(tag,**opts)
         elif isinstance(widget,tk.Canvas): widget.configure(background=c.BG,highlightbackground=c.BORDER)
         elif isinstance(widget,tk.Scrollbar) and not isinstance(widget,ttk.Scrollbar):

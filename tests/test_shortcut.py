@@ -1,5 +1,4 @@
 """Real Windows shortcut integration checks; never touches the user's Desktop."""
-import base64
 import json
 import shutil
 import subprocess
@@ -9,17 +8,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MARKER = 'QA agent desktop launcher [unit-helper-spec]'
+FIXTURE = ROOT / 'tests/helpers/shortcut-fixture.ps1'
 
 
-def literal(value):
-    return "'" + str(value).replace("'", "''") + "'"
-
-
-def powershell(code):
-    code = '[Console]::OutputEncoding = [Text.UTF8Encoding]::new(); ' + code
-    encoded = base64.b64encode(code.encode('utf-16-le')).decode('ascii')
+def powershell_file(script, *arguments):
     return subprocess.run(
-        ['powershell.exe', '-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', encoded],
+        ['powershell.exe', '-NoLogo', '-NoProfile', '-NonInteractive', '-File', str(script),
+         *map(str, arguments)],
         capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=45,
     )
 
@@ -34,14 +29,11 @@ class ShortcutTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def create(self, project=ROOT, destination=None):
-        code = "$ErrorActionPreference='Stop'; & " + literal(project / 'scripts/create-shortcut.ps1')
-        code += ' -Destination ' + literal(destination or self.destination)
-        return powershell(code)
+        return powershell_file(project / 'scripts/create-shortcut.ps1',
+                               '-Destination', destination or self.destination)
 
     def inspect(self):
-        code = "$s=New-Object -ComObject WScript.Shell; $l=$s.CreateShortcut(" + literal(self.shortcut) + ");"
-        code += '@{target=$l.TargetPath;arguments=$l.Arguments;directory=$l.WorkingDirectory;icon=$l.IconLocation;description=$l.Description}|ConvertTo-Json -Compress'
-        result = powershell(code)
+        result = powershell_file(FIXTURE, '-Action', 'Inspect', '-ShortcutPath', self.shortcut)
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)
 
@@ -61,9 +53,7 @@ class ShortcutTests(unittest.TestCase):
         self.assertEqual(list(self.destination.glob('*.lnk')), [self.shortcut])
 
     def test_unrelated_shortcut_is_preserved(self):
-        code = "$s=New-Object -ComObject WScript.Shell; $l=$s.CreateShortcut(" + literal(self.shortcut) + ");"
-        code += "$l.TargetPath=$env:ComSpec; $l.Description='Another application'; $l.Save()"
-        result = powershell(code)
+        result = powershell_file(FIXTURE, '-Action', 'CreateUnrelated', '-ShortcutPath', self.shortcut)
         self.assertEqual(result.returncode, 0, result.stderr)
         before = self.shortcut.read_bytes()
         result = self.create()
@@ -73,8 +63,8 @@ class ShortcutTests(unittest.TestCase):
 
     def fixture_project(self):
         project = self.destination / "relocated project ' 中文"
-        for relative in ['scripts/create-shortcut.ps1', '.venv/Scripts/python.exe',
-                         '.venv/Scripts/pythonw.exe', '.venv/pyvenv.cfg',
+        for relative in ['scripts/create-shortcut.ps1', 'scripts/check-launch.py',
+                         '.venv/Scripts/python.exe', '.venv/Scripts/pythonw.exe', '.venv/pyvenv.cfg',
                          'desktop_app/assets/qa-agent.ico', 'desktop_app/assets/qa-agent.png']:
             target = project / relative
             target.parent.mkdir(parents=True, exist_ok=True)

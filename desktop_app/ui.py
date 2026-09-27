@@ -16,6 +16,7 @@ from .preferences import load_theme, save_theme
 from .profiles import Profiles
 from .assistant_views import AssistantViews
 from .experience import ExperienceMixin
+from .workspace import WorkspaceViews
 from .keyboard import install_chat_keyboard
 from .branding import APP_NAME, apply_icons, apply_child_icons, set_windows_identity
 from .query_schema import find_template, validate_template, parameters as query_parameters, initial_values, describe
@@ -72,7 +73,7 @@ class ChoiceDialog(tk.Toplevel):
         self.app.forms.submit(self.form['id'],self.form['version'],answers,self.request_id)
         self.destroy(); self.callback(answers)
 
-class App(AssistantViews, ExperienceMixin):
+class App(AssistantViews, ExperienceMixin, WorkspaceViews):
     def __init__(self, root, config=None, directory=None, config_path=None, tutorial=False, show_welcome=False):
         self.tutorial=tutorial; self.drafts={}; self.next_binding=None
         self.root=root; self.directory=Path(directory or data_directory()); self.config_path=config_path or self.directory/'config.json'
@@ -104,6 +105,7 @@ class App(AssistantViews, ExperienceMixin):
         self.appearance=theme.Appearance(root,load_theme(self.preferences_path))
         self.palette=self.appearance.colors; self.style=self.appearance.style
         self.status=tk.StringVar(value='準備就緒。排程只在此程式開啟時執行。')
+        self.init_workspace()
         self.build_shell()
         self.build_chat(); self.build_query(); self.build_work(); self.build_result()
         self.build_schedule(); self.build_notice(); self.build_issue(); self.build_settings()
@@ -119,7 +121,7 @@ class App(AssistantViews, ExperienceMixin):
         self.scheduler=threading.Thread(target=self.scheduler_loop,daemon=True); self.scheduler.start()
         self.setup_experience(show_welcome=show_welcome)
     def build_shell(self):
-        side=tk.Frame(self.root,bg=self.palette.SIDEBAR,width=216)
+        side=tk.Frame(self.root,bg=self.palette.SIDEBAR,width=208)
         side._theme_role='sidebar'; side.pack(side='left',fill='y'); side.pack_propagate(False)
         tk.Label(side,text='本機示範身分 · 非 AD\n版本 '+__version__,font=(self.palette.FONT,8),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(side='bottom',fill='x',padx=22,pady=(5,18))
         tk.Button(side,text='待回答的選項  →',anchor='w',font=(self.palette.FONT,9),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
@@ -131,35 +133,46 @@ class App(AssistantViews, ExperienceMixin):
         brand=tk.Frame(side,bg=self.palette.SIDEBAR); brand.pack(fill='x',padx=18,pady=(16,3))
         if self.brand_icon:
             tk.Label(brand,image=self.brand_icon,bg=self.palette.SIDEBAR).pack(side='left',padx=(0,8))
-        brand_label=tk.Label(brand,text=APP_NAME,font=(self.palette.FONT,15,'bold'),bg=self.palette.SIDEBAR,fg=self.palette.INK,anchor='w'); brand_label._theme_role='brand'; brand_label.pack(side='left')
+        brand_label=tk.Label(brand,text=APP_NAME,font=(self.palette.FONT,14,'bold'),bg=self.palette.SIDEBAR,fg=self.palette.INK,anchor='w'); brand_label._theme_role='brand'; brand_label.pack(side='left')
         if self.brand_warning:
             warning=tk.Label(side,text=self.brand_warning,font=(self.palette.FONT,8),wraplength=185,bg=self.palette.SIDEBAR,fg=self.palette.WARNING,justify='left'); warning._theme_role='warning'; warning.pack(fill='x',padx=18)
-        tk.Label(side,text='讓日常工作，簡單一點。',font=(self.palette.FONT,9),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(fill='x',padx=22,pady=(0,14))
+        tk.Label(side,text='讓日常工作，簡單一點。',font=(self.palette.FONT,9),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(fill='x',padx=22,pady=(0,8))
         new_button=tk.Button(side,text='＋  開始新對話',font=(self.palette.FONT,10,'bold'),bg=self.palette.TINT,fg=self.palette.SIDEBAR,
-                  activebackground=self.palette.SIDEBAR_HOVER,relief='flat',bd=0,pady=10,cursor='hand2',command=lambda:self.safe(self.new_chat)); new_button._theme_role='new_chat'; new_button.pack(fill='x',padx=12,pady=(0,12))
+                  activebackground=self.palette.SIDEBAR_HOVER,relief='flat',bd=0,pady=10,cursor='hand2',command=lambda:self.safe(self.new_chat)); new_button._theme_role='new_chat'; new_button.pack(fill='x',padx=12,pady=(0,8))
         self.routes=[('chat','對話','把需求說出來，一起完成手邊的工作。'),
                      ('query','查資料','選擇常用查詢，快速取得需要的資料。'),
                      ('work','計畫與任務','先確認步驟，再放心執行。'),
                      ('result','查詢結果','檢視結果、複製資料，或安排下次查詢。'),
                      ('schedule','我的排程','把固定查詢交給排程，專注需要你決定的事。'),
                      ('notice','通知','在這裡查看新結果與執行狀態。'),
-                     ('issue','問題回報','留下問題或想法，讓 QA agent 逐步變好。'),
-                     ('settings','設定','管理助理連線與本機環境。')]
+                     ('settings','設定','管理助理連線與本機環境。'),
+                     ('issue','問題回報','留下問題或想法，讓 QA agent 逐步變好。')]
         self.nav_buttons={}
         for key,title,_ in self.routes:
+            if key in ('chat','schedule','issue'):
+                group={'chat':'工作','schedule':'管理','issue':'協助'}[key]
+                tk.Label(side,text=group,font=(self.palette.FONT,8),anchor='w').pack(fill='x',padx=22,pady=(6,2))
             button=tk.Button(side,text='  '+title,anchor='w',font=(self.palette.FONT,10),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
-                             activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,padx=14,pady=8,
+                             activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,padx=10,pady=4,
                              cursor='hand2',command=lambda key=key:self.book.select(self.tabs[key]))
+            button._workspace_icon=key
+            image=self.ui_images.get((key,self.appearance.name))
+            if image:button.configure(image=image,compound='left')
             button.pack(fill='x',padx=12,pady=1); self.nav_buttons[key]=button
-        divider=tk.Frame(side,height=1); divider._theme_role='divider'; divider.pack(fill='x',padx=20,pady=(12,10))
+        divider=tk.Frame(side,height=1); divider._theme_role='divider'; divider.pack(fill='x',padx=20,pady=(8,6))
         tk.Label(side,text='最近的對話',font=(self.palette.FONT,9),bg=self.palette.SIDEBAR,fg=self.palette.MUTED,anchor='w').pack(fill='x',padx=22)
-        self.history=tk.Listbox(side,height=4,width=20,exportselection=False,bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
+        history_box=ttk.Frame(side);history_box.pack(fill='both',expand=True,padx=16,pady=4)
+        self.history=tk.Listbox(history_box,height=2,width=16,exportselection=False,bg=self.palette.SIDEBAR,fg=self.palette.MUTED,
                                 selectbackground=self.palette.SIDEBAR_HOVER,selectforeground=self.palette.INK,relief='flat',bd=0,
                                 highlightthickness=0,font=(self.palette.FONT,9),activestyle='none')
-        self.history.pack(fill='both',expand=True,padx=20,pady=8)
+        self.history.pack(side='left',fill='both',expand=True)
+        history_scroll=ttk.Scrollbar(history_box,command=self.history.yview);history_scroll.pack(side='right',fill='y')
+        self.history.configure(yscrollcommand=history_scroll.set)
         self.history.bind('<<ListboxSelect>>',lambda e:self.safe(self.choose_chat))
-        main=ttk.Frame(self.root); main.pack(side='left',fill='both',expand=True)
-        header=ttk.Frame(main,padding=(24,16,24,12)); header.pack(fill='x')
+        self.main_area=ttk.Frame(self.root);self.main_area.pack(side='left',fill='both',expand=True)
+        main=self.main_content=ttk.Frame(self.main_area);main.pack(side='left',fill='both',expand=True)
+        self.root.bind('<Configure>',self.place_detail,add='+')
+        header=ttk.Frame(main,padding=(24,12,24,8)); header.pack(fill='x')
         line=ttk.Frame(header); line.pack(fill='x')
         self.page_title=ttk.Label(line,text='對話',style='Title.TLabel'); self.page_title.pack(side='left')
         self.mode_label=ttk.Label(line,style='Chip.TLabel'); self.mode_label.pack(side='right'); self.update_mode()
@@ -250,44 +263,7 @@ class App(AssistantViews, ExperienceMixin):
             state='failure' if any('失敗' in str(v) for v in values) else ('success' if '完成' in values else '')
             tree.item(key,tags=('odd' if idx%2 else 'even',state))
     def build_chat(self):
-        page=self.tabs['chat']
-        page.columnconfigure(0,weight=1); page.columnconfigure(2,weight=1); page.columnconfigure(1,weight=20); page.rowconfigure(0,weight=1)
-        tab=ttk.Frame(page); tab.grid(row=0,column=1,sticky='nsew')
-        def reading_width(event):
-            width=min(920,max(1,event.width)); page.columnconfigure(1,weight=0,minsize=width)
-        page.bind('<Configure>',reading_width)
-        self.build_assistant_bar(tab)
-        quick=ttk.Frame(tab); quick.pack(fill='x',pady=(0,12))
-        actions=[('查找資料  →',lambda:self.book.select(self.tabs['query'])),
-                 ('整理／改寫文字  →',self.text_choices),('我的排程  →',lambda:self.book.select(self.tabs['schedule']))]
-        for index,(title,action) in enumerate(actions):
-            quick.columnconfigure(index,weight=1,uniform='quick')
-            self.button(quick,title,action,'Quick.TButton').grid(row=0,column=index,sticky='ew',padx=(0,8 if index<2 else 0))
-        conversation=ttk.Frame(tab); conversation.pack(fill='both',expand=True)
-        self.transcript=tk.Text(conversation,height=1,wrap='word',state='disabled',highlightthickness=0,padx=24,pady=18)
-        self.transcript.pack(side='left',fill='both',expand=True)
-        scrollbar=ttk.Scrollbar(conversation,command=self.transcript.yview); scrollbar.pack(side='right',fill='y'); self.transcript.configure(yscrollcommand=scrollbar.set)
-        for name,settings in {
-            'welcome_title':{'font':(self.palette.FONT,22,'bold'),'foreground':self.palette.INK,'justify':'center','spacing1':40,'spacing3':14},
-            'welcome_body':{'foreground':self.palette.MUTED,'justify':'center','spacing3':12},
-            'speaker_user':{'font':(self.palette.FONT,9,'bold'),'foreground':self.palette.ACCENT,'spacing1':16,'spacing3':4},
-            'speaker_assistant':{'font':(self.palette.FONT,9,'bold'),'foreground':self.palette.MUTED,'spacing1':20,'spacing3':4},
-            'body_user':{'background':self.palette.TINT,'lmargin1':12,'lmargin2':12,'rmargin':14,'spacing1':8,'spacing3':10},
-            'body_assistant':{'lmargin1':2,'lmargin2':2,'spacing3':12}}.items(): self.transcript.tag_configure(name,**settings)
-        composer=ttk.Frame(tab); composer.pack(fill='x',pady=(10,0))
-        self.section(composer,'你的需求','Enter 送出 · Shift + Enter 換行')
-        self.input=tk.Text(composer,height=2,wrap='word',padx=16,pady=12); self.input.pack(fill='x')
-        options=ttk.Frame(composer); options.pack(fill='x',pady=(10,6))
-        self.purpose=tk.StringVar(value='一般對話'); ttk.Combobox(options,textvariable=self.purpose,values=['一般對話','整理重點','改寫文字'],state='readonly',width=11).pack(side='left')
-        self.plan_mode=tk.BooleanVar(); ttk.Checkbutton(options,text='先規劃，再執行',variable=self.plan_mode).pack(side='left',padx=12)
-        self.send_button=self.button(options,'送出需求',self.send_chat); self.send_button.pack(side='right')
-        self.cancel_button=self.button(options,'取消工作',self.cancel_latest); self.cancel_button.pack(side='right',padx=8)
-        self.plan_mode.trace_add('write',lambda *args:self.update_composer())
-        attachments=ttk.Frame(composer); attachments.pack(fill='x')
-        self.button(attachments,'＋ TXT / CSV',self.upload,'Quiet.TButton').pack(side='left')
-        self.attachment_label=ttk.Label(attachments,text='可先預覽，再送出',style='Muted.TLabel'); self.attachment_label.pack(side='left',padx=8)
-        self.button(attachments,'移除',self.clear_upload,'Quiet.TButton').pack(side='left')
-        self.button(attachments,'回報問題',lambda:self.quick_issue('answer'),'Quiet.TButton').pack(side='right')
+        self.build_workspace_chat()
     def update_composer(self):
         active=any(t['conversation_id']==self.conversation and t['state'] in ('queued','running') for t in self.store.tasks())
         readonly=False
@@ -312,22 +288,7 @@ class App(AssistantViews, ExperienceMixin):
             index=self.history.curselection()[0];self.stash_draft();self.conversation=self.conversation_ids[index];self.restore_draft()
             self.show_chat();self.book.select(self.tabs['chat'])
     def show_chat(self):
-        self.refresh_profile_picker();self.update_mode()
-        messages=self.store.messages(self.conversation)
-        self.transcript.configure(state='normal'); self.transcript.delete('1.0','end')
-        if not messages:
-            self.transcript.insert('end','今天，想先完成哪件事？\n','welcome_title')
-            self.transcript.insert('end','查找資料、整理重點，或把文字改得更清楚。\n','welcome_body')
-            self.transcript.insert('end','選擇上方的常用工作，或在下方寫下你的需求。\n','welcome_body')
-            if (self.store.conversation(self.conversation)['binding'] or {}).get('profile_id')=='demo':
-                self.transcript.insert('end','目前為示範模式，尚未連接公司助理與資料。','welcome_body')
-        else:
-            for message in messages:
-                role='user' if message['role']=='user' else 'assistant'
-                self.transcript.insert('end',('你' if role=='user' else APP_NAME)+'\n','speaker_'+role)
-                self.transcript.insert('end',message['text']+'\n','body_'+role)
-        self.transcript.configure(state='disabled'); self.transcript.see('end' if messages else '1.0')
-        self.update_composer()
+        self.render_workspace_chat()
     def text_choices(self):
         form=self.forms.create([{'id':'purpose','title':'這份文字要怎麼處理？','type':'single_choice','options':[{'id':'summarize','label':'整理重點'},{'id':'rewrite','label':'改寫文字'}]},
           {'id':'focus','title':'希望注重哪些方向？（可選 1～3 項）','type':'multi_choice','min':1,'max':3,'options':[{'id':'clear','label':'清楚易讀'},{'id':'brief','label':'精簡內容'},{'id':'formal','label':'正式語氣'}]}])
@@ -470,6 +431,7 @@ class App(AssistantViews, ExperienceMixin):
         put(self.plan_preview,'先選擇左側的計畫。\n\n在這裡確認條件與執行步驟，再決定批准、修改或取消。')
         row=ttk.Frame(tab); row.grid(row=3,column=0,sticky='ew',pady=(2,14))
         for text,fn in [('批准此修訂',self.approve_plan),('修改',self.edit_plan),('取消計畫',lambda:self.engine.cancel_plan(selected(self.plans)))]: self.button(row,text,fn).pack(side='left',padx=(0,8))
+        self.button(row,'計畫詳情',lambda:self.open_work_detail('plan',selected(self.plans)),'Compact.TButton').pack(side='left')
         self.button(row,'退出修改',self.discard_edit,'Quiet.TButton').pack(side='right')
         ttk.Label(tab,text='工作紀錄',style='Section.TLabel').grid(row=4,column=0,sticky='w')
         holder=ttk.Frame(tab); holder.grid(row=5,column=0,sticky='nsew')
@@ -477,6 +439,7 @@ class App(AssistantViews, ExperienceMixin):
         self.tasks.bind('<Double-1>',lambda e:self.safe(lambda:self.show_result(selected(self.tasks))))
         row=ttk.Frame(tab); row.grid(row=6,column=0,sticky='ew',pady=(8,0))
         self.button(row,'查看結果',lambda:self.show_result(selected(self.tasks))).pack(side='left')
+        self.button(row,'工作詳情',lambda:self.open_work_detail('task',selected(self.tasks)),'Compact.TButton').pack(side='right')
         self.button(row,'取消工作',lambda:self.engine.cancel_task(selected(self.tasks))).pack(side='left',padx=8)
     def discard_edit(self):
         self.editing_plan=None; self.query_submit.configure(text='建立查詢計畫' if self.query_plan.get() else '開始查詢'); self.status.set("已退出修改；原計畫維持未批准狀態。")
@@ -719,7 +682,7 @@ class App(AssistantViews, ExperienceMixin):
     def change_theme(self,name):
         # Recolor in place: no service call, widget rebuild, draft or selection change.
         self.appearance.configure(name); self.palette=self.appearance.colors
-        self.theme_choice.set(name); self.route_changed()
+        self.theme_choice.set(name); self.route_changed();self.workspace_theme()
         try:
             save_theme(self.preferences_path,name)
             self.status.set('已套用'+('深色' if name=='dark' else '淺色')+'外觀。')
@@ -756,7 +719,7 @@ class App(AssistantViews, ExperienceMixin):
         if self.schedules.selection(): self.schedule_details()
         busy=sum(t['state'] in ('queued','running') for t in self.store.tasks())
         self.activity_label.configure(text=f'●  {busy} 項工作進行中' if busy else '●  就緒')
-        self.update_composer()
+        self.update_composer();self.refresh_workspace()
         plans=self.store.plans(); tasks=self.store.tasks()
         self.work_hint.set(f'{sum(p["state"]=="ready" for p in plans)} 份待確認計畫  ·  {len(tasks)} 項工作紀錄' if plans or tasks else '選擇「先規劃」建立計畫，批准前不會執行。')
     def close(self,force=False):
@@ -777,7 +740,7 @@ class App(AssistantViews, ExperienceMixin):
         if self.scheduler.is_alive() or self.engine.has_inflight() or any(not f.done() for f in self.io_futures):
             self.root.after(50,self.finish_close); return
         self.engine.close(wait=True); self.io.shutdown(wait=True)
-        self.close_experience();self.chat_keyboard.close()
+        self.close_experience();self.chat_keyboard.close();self.close_detail();self.task_progress.stop()
         if hasattr(self.assistant,'close'): self.assistant.close()
         self.io_futures.clear()
         while not self.events.empty(): self.events.get_nowait()

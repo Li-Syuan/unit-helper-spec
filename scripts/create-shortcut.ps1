@@ -7,12 +7,13 @@ $Python = Join-Path $Project '.venv\Scripts\python.exe'
 $Pythonw = Join-Path $Project '.venv\Scripts\pythonw.exe'
 $Icon = Join-Path $Project 'desktop_app\assets\qa-agent.ico'
 $Png = Join-Path $Project 'desktop_app\assets\qa-agent.png'
-foreach ($Required in @($Python, $Pythonw, $Icon, $Png)) {
+$LaunchCheck = Join-Path $Project 'scripts\check-launch.py'
+foreach ($Required in @($Python, $Pythonw, $Icon, $Png, $LaunchCheck)) {
     if (-not (Test-Path -LiteralPath $Required -PathType Leaf)) {
         throw "Required project file is missing: $Required. Rebuild the environment or restore app assets first."
     }
 }
-& $Python -c "import sys,struct,tkinter; assert sys.platform=='win32'; assert sys.version_info[:3]==(3,10,4); assert struct.calcsize('P')==8; r=tkinter.Tk(); r.withdraw(); r.destroy()"
+& $Python $LaunchCheck
 if ($LASTEXITCODE -ne 0) { throw 'Requires Windows x64 Python exactly 3.10.4 with working Tcl/Tk.' }
 if ([string]::IsNullOrWhiteSpace($Destination) -or -not (Test-Path -LiteralPath $Destination -PathType Container)) {
     throw 'Destination must be an existing directory. The Windows Desktop folder could not be resolved.'

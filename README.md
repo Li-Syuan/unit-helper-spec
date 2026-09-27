@@ -1,4 +1,4 @@
-# QA agent — 本機可執行版 0.6.0
+# QA agent — 本機可執行版 0.7.0
 
 Windows x64 / **Python 3.10.4** / Tkinter / SQLite / OpenAI SDK。
 這個 repo 現在包含可執行程式，不只是 spec。預設示範身分、示範助理與合成資料，**沒有連到公司服務**。
@@ -7,7 +7,7 @@ Windows x64 / **Python 3.10.4** / Tkinter / SQLite / OpenAI SDK。
 
 啟動後選「先體驗，不用設定」，在獨立視窗完成查詢 → Plan → 自行批准 → 選取資料 → 預覽轉交。全部是合成資料，不需要公司 API key，不會混入個人歷史。略過後仍可從側欄「快速體驗」重開。
 
-![第一次使用](docs/images/v060-welcome.png)
+![目前桌面工作區](docs/images/v070-dark-workspace.png)
 
 ## 日常使用
 
@@ -78,3 +78,11 @@ cd unit-helper-spec
 本版新增 keyring 與其依賴。維護者依新 requirements.lock 更新專案環境，或指定新的 .venv 名稱重建；setup 不覆寫既有環境。使用者資料路徑不變。SQLite 首次開啟會先保留 pre-v2 備份，再交易式升至 schema 2；舊對話因無可靠助理歸屬只讀，需要續談時選內容轉交。不要以舊版程式開啟已升級資料庫。
 
 實測環境為 .venv、全新 .venv-verify060 及全新離線 .venv-offline060；舊驗證環境保留，不作本版基準。
+
+## 0.7.0 新版畫面與開發方式
+
+[離線 HTML／CSS 視覺稿](docs/design/workspace.html) 可直接用瀏覽器開啟，切换深淺主題與五種合成狀態；正式應用仍由 start-app.bat 啟動 Tkinter。視覺稿按鈕不呼叫助理。
+
+聊天加入分層訊息、整合輸入框、真實任務狀態及工作詳情；對話與資料處理規則保持相容。寬視窗側欄與小視窗詳情會依尺寸切換。
+
+捷徑測試與環境檢查改為固定腳本，防毒是否不再提示仍待核對，詳見 [Norton 與開發說明](docs/NORTON-DEVELOPMENT.md)。本版未新增依賴，不需重新建立離線包。三個既有 Python 3.10.4 環境各 150 tests 通過；公司驗收與 IME 人工測試仍另列。

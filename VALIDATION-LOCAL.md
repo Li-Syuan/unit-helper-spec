@@ -1,6 +1,6 @@
-# 本機實作驗證紀錄 — QA agent 0.6.0
+# 本機實作驗證紀錄 — QA agent 0.7.0
 
-本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個獨立 venv 驗證（開發環境、全新線上重建、全新離線重建）。每個環境 **139 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
+本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個既有獨立 venv 重驗（開發環境、0.6.0 線上／離線重建環境）。每個環境 **150 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
 
 ## 可核對證據
 
@@ -108,3 +108,15 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 - A 正式圖示七尺寸、主／附屬視窗圖示與 COM 捷徑回歸通過；已更新目前使用者 QA agent 桌面捷徑。OS 工作列／桌面最終外觀未人工檢视。
 
 新公司 assistant ID 映射保持 unconfigured，須公司成功範例確認；公司 API／AD／Oracle／Excel 不以本機通過代替驗收。原始完整輸出見上方三份 JSON，畫面見 docs/UI-DESIGN.md。
+
+## 0.7.0 工作區與固定腳本（目前交付）
+
+三份 docs/validation JSON 已更新為本版，各 **150 tests、0 skipped**，doctor、pip check、pip freeze／lock 一致。29 個依賴未變，未重建離線包。0.6.0 段落中的 139 tests 與全新環境是歷史紀錄。
+
+- 真 Tk：1050×700、1280×860、1450×860，深淺主題、訊息、輸入、任務狀態、附屬／側邊詳情、查詢、Plan、結果、設定及五步體驗。
+- 新回歸：快捷入口零派發，輸入 3～6 行及寬度改變後重算，跨訊息選取、刷新／主題保留，新增長回覆時保持頂部文字位置；待批准零工作、真實執行／取消／失敗、詳情固定來源、狀態更新保留選取。
+- 程式操作與自身視窗截圖發現卡片多餘巢狀邊框及深色預設邊框偏灰白，已統一樣式並重新截圖。查詢／導覽主要按鈕小視窗保持可見。
+- HTML／CSS 視覺稿以本機 Chrome headless 渲染深色寬版和淺色小版，檢視離線素材與版面；五種情境由 CSS 控制，只展示合成內容。未宣稱瀏覽器或桌面的 OS 人工全流程。
+- 固定脚本：新增 4 項啟動檢查正反案例；原 5 項 Windows COM 捷徑案例全保留，含中文、空白及單引號的搬移路徑。沒有 EncodedCommand、明文密鑰或執行政策繞過。
+- **Norton 成效未能確認（not_tested）**：未取得可核對的防毒事件紀錄。測試 exit 0 不代表沒有 Norton 通知，固定腳本也不是完全避免偵測的保證。核對步驟見 docs/NORTON-DEVELOPMENT.md。
+- 公司 API／AD／Oracle／Excel、真實中文 IME／OS 滑鼠鍵盤流程與工作列最終外觀仍 not_tested；合成截圖不取代公司驗收。
