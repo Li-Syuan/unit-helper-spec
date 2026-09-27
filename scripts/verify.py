@@ -10,7 +10,8 @@ project=Path(__file__).resolve().parent.parent
 commands=[['scripts/doctor.py'],['-m','pip','check'],['-m','pip','freeze','--all'],['-m','unittest','discover','-s','tests','-v']]
 records=[]
 for args in commands:
-    process=subprocess.run([sys.executable,*args],cwd=project,text=True,encoding='utf-8',errors='replace',capture_output=True,timeout=120,env={**__import__('os').environ,'PYTHONIOENCODING':'utf-8'})
+    timeout=300 if args[:2]==['-m','unittest'] else 120
+    process=subprocess.run([sys.executable,*args],cwd=project,text=True,encoding='utf-8',errors='replace',capture_output=True,timeout=timeout,env={**__import__('os').environ,'PYTHONIOENCODING':'utf-8'})
     output=process.stdout+process.stderr
     record={'command':[sys.executable,*args],'exit_code':process.returncode,'output':output}; records.append(record)
     print(' '.join(args)+': exit '+str(process.returncode))

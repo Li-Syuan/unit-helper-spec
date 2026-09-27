@@ -52,6 +52,7 @@ class WorkspaceViews:
         self.task_progress_running=False
         self.work_toolbar=ttk.Frame(tab);self.work_toolbar.pack(fill='x',pady=(0,6))
         self.button(self.work_toolbar,'常用工作',self.open_work_cards,'Compact.TButton').pack(side='left')
+        if self.groq_trial:self.button(self.work_toolbar,'日報排程',self.open_report_schedule,'Compact.TButton').pack(side='left',padx=4)
         self.button(self.work_toolbar,'查詢資料',lambda:self.book.select(self.tabs['query']),'Quiet.TButton').pack(side='left',padx=4)
         self.button(self.work_toolbar,'加入待辦',self.add_selected_todo,'Compact.TButton').pack(side='right')
         self.button(self.work_toolbar,'轉交選取文字',self.open_chat_handoff,'Quiet.TButton').pack(side='right',padx=4)

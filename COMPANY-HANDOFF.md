@@ -1,6 +1,6 @@
 # QA agent 公司接手工作單
 
-目前版本 **0.9.2**，已完成本機桌面與接手工具；沿用本機待辦、常用工作與草稿恢復，圖示已隨外觀切換，無須公司重新接線。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。目前沒有公司原始碼、成功 API 樣本或資料庫規格，不能保證只填三個參數就全部接通。
+目前版本 **0.10.0**，已完成本機桌面與接手工具；沿用本機待辦、常用工作與草稿恢復，圖示已隨外觀切換，無須公司重新接線。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。目前沒有公司原始碼、成功 API 樣本或資料庫規格，不能保證只填三個參數就全部接通。
 
 先讀 [開發守則](AGENTS.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md)。已完成多助理、keyring、對話與刪除、Plan／選項、TXT／CSV、三項合成查詢、表格／匯出、本機排程／通知、回報草稿、深淺主題、DPI 與原地提示。沿用現有畫面及 Protocol；GPT 6 sol 是開發 agent，不是產品模型 ID。
 
@@ -36,6 +36,14 @@
 | 比對人、日期、結論、證據位置 | 待確認 | 待確認 | 待確認 |
 
 人工比對使用相同資料時間、參數與授權範圍，逐欄比對精確值、筆數及截斷資訊；正式資料不放 repo。
+
+## Groq 日報試用與公司界線
+
+已完成 `report_drafts.py` 的受限結構化解析、`report_views.py` 的編輯確認及 `report_engine.py` 的批准式日報。只在 start-trial.bat 的獨立資料區啟用；schema／公司 adapter 契約不變。公司 agent 可參考流程，但不得將 Oracle 結果自動送至 Groq。
+
+本機測試：`.venv/Scripts/python.exe -m unittest tests.test_report_engine tests.test_report_views -v`。個人明確允許外部合成測試時，執行 `.venv/Scripts/python.exe scripts/check-trial.py --live --reports`，最多三筆 Groq 請求，暫存資料庫結束後清除；一般 doctor 不呼叫模型。此項不是公司驗收。
+
+若公司後續要開放日報整理，需另核准助理資料去向、持續傳送授權、模型結構化能力、查詢範圍與每次派發身分檢查，再接公司 adapter；不僅更換 endpoint。公司持續 Goal、Windows 背景排程及自動寄信仍未實作。
 
 ## 六項接線工作
 
@@ -115,7 +123,7 @@
 ## 可直接貼給 GPT 6 sol
 
 ~~~text
-請接手 QA agent 0.9.2 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或產品多代理。
+請接手 QA agent 0.10.0 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或產品多代理。
 
 先盤點公司已有程式、成功 API 範例及環境，依 COMPANY-HANDOFF 的資訊表確認缺項；找得到就沿用，缺少時一次問最少必要問題並繼續獨立可做工作。不要猜 URL、assistant ID 傳送位置、session、AD／SQL 欄位或秘密；秘密不貼對話、不進 repo／log。
 

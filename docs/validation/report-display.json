@@ -1,0 +1,54 @@
+[
+  {
+    "theme": "dark",
+    "root": [
+      1575,
+      1050
+    ],
+    "dialog": [
+      1275,
+      1050
+    ],
+    "confirmation_bottom": 1035,
+    "button_mapped": true
+  },
+  {
+    "theme": "dark",
+    "root": [
+      1920,
+      1290
+    ],
+    "dialog": [
+      1275,
+      1050
+    ],
+    "confirmation_bottom": 1035,
+    "button_mapped": true
+  },
+  {
+    "theme": "light",
+    "root": [
+      1575,
+      1050
+    ],
+    "dialog": [
+      1275,
+      1050
+    ],
+    "confirmation_bottom": 1035,
+    "button_mapped": true
+  },
+  {
+    "theme": "light",
+    "root": [
+      1920,
+      1290
+    ],
+    "dialog": [
+      1275,
+      1050
+    ],
+    "confirmation_bottom": 1035,
+    "button_mapped": true
+  }
+]

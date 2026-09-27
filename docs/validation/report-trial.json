@@ -1,0 +1,20 @@
+{
+  "provider": "Groq",
+  "synthetic_only": true,
+  "checks": [
+    {
+      "name": "complete_request",
+      "status": "external_real_passed"
+    },
+    {
+      "name": "missing_conditions",
+      "status": "external_real_passed"
+    },
+    {
+      "name": "approved_query_report_notification",
+      "status": "external_real_passed"
+    }
+  ],
+  "status": "external_real_passed",
+  "recorded_at_utc": "2026-09-27T13:08:56.454088+00:00"
+}

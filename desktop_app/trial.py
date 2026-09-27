@@ -54,15 +54,19 @@ class GroqAssistant:
         self.client = client
 
     def respond(self, messages, purpose='chat'):
+        return self._complete(messages,purpose)
+
+    def _complete(self, messages, purpose='chat', response_format=None):
         import openai
         if purpose not in PURPOSES:
             raise GatewayError('不支援的助理操作。')
         clean = validated_messages(messages, 6000)
         try:
+            options={} if response_format is None else {'response_format':response_format}
             response = self.client.chat.completions.create(
                 model=MODEL, messages=[{'role':'system', 'content':PURPOSES[purpose]}, *clean],
                 stream=False, max_completion_tokens=2048, reasoning_effort='low',
-                extra_body={'include_reasoning':False})
+                extra_body={'include_reasoning':False}, **options)
             choice = response.choices[0]
             message = choice.message
             if getattr(message, 'tool_calls', None) or getattr(message, 'function_call', None):

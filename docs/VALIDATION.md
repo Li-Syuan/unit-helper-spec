@@ -1,10 +1,10 @@
-# QA agent 0.9.2 驗證摘要
+# QA agent 0.10.0 驗證摘要
 
-本版新增隔離的 Groq 外部 AI 試用入口；沿用深淺品牌圖示、個人待辦、工作卡片、文字草稿、公司 adapter、Plan gate、查詢與排程。schema 維持 3，不新增資料遷移、套件或虛擬環境。
+本版新增 Groq 試用的確認式每日合成查詢日報；沿用深淺品牌圖示、個人待辦、工作卡片、文字草稿、公司 adapter、Plan gate、查詢與排程。schema 維持 3，不新增資料遷移、套件或虛擬環境。
 
 ## 本輪回歸
 
-2026-09-27，使用 `D:/unit-helper-spec/.venv/Scripts/python.exe`，恰好 CPython 3.10.4、Windows x64。執行 `scripts/verify.py development`：doctor、pip check、freeze 與 requirements.lock 比對成功，完整 **241 項測試通過，0 skipped**；包含原有 228 項與新增 13 項試用測試。
+2026-09-27，使用 `D:/unit-helper-spec/.venv/Scripts/python.exe`，恰好 CPython 3.10.4、Windows x64。執行 `scripts/verify.py development`：doctor、pip check、freeze 與 requirements.lock 比對成功，完整 **263 項測試通過，0 skipped**；沿用 241 項基準並新增 22 項日報服務／Tk／解析案例。首次完整回歸超過測試工具原有 120 秒限制，未記為通過；僅將整套 unittest 等待上限調為 300 秒後重跑完成，API timeout／重試行為不變。
 
 - [本輪開發環境完整輸出](validation/development.json)。
 - [乾淨重建](validation/clean-rebuild.json) 與 [離線重建](validation/offline-rebuild.json) 保留 0.8.0 各 192 項基準，不代表本輪重跑。29 個鎖定套件未變，本輪不重建環境或離線包。
@@ -12,7 +12,14 @@
 
 ## 覆蓋與驗收界線
 
-Groq 試用新增驗證：
+日報新增驗證：
+
+- local_real_passed／mock_passed：22 項涵蓋純預覽、批准防重、過期／取消、交易回復、綁定失效、精確合計與錯誤遮蔽、摘要失敗保留表格、空結果／截斷不送 AI、取消／關閉晚到回覆、真實 future 防重疊、可控制時鐘的每日／前一日／重啟／漏跑／啟停。Tk 驗證原草稿保留、授權／修改失效、主題切換及過期解析結果不套用。
+- external_real_passed：[Groq 日報實測](validation/report-trial.json) 記錄完整需求、缺少條件追問，以及批准後查詢→真實 Groq 日報→通知；全為合成資料與暫存資料庫，未建立使用者永久排程。早期 strict schema 的 anyOf 被 API 拒絕，已改用平面 nullable schema；另曾遇服務拒絕，沒有自動重試或以假結果替代，修正後明確重測三項通過。
+- local_real_passed（程式操作與截圖檢查）：真 Tk 深／淺、1050×700 與 1280×860 邏輯視窗，日報確認按鈕固定底部可達；[量測](validation/report-display.json)。八張合成截圖留於 artifacts/report-preview，不新增歷代素材到 Git。
+- 排程明日 08:00 的真實等待、人工 IME、公司服務及 Norton 成效仍 not_tested；受控時鐘測試不是隔天實地驗收。
+
+既有 Groq 試用驗證：
 
 - mock_passed：真 OpenAI SDK 搭配合成 transport，固定目的地／模型、對話隔離、401／403／429／500、逾時、連線失敗、空回覆、格式錯誤、不完整回覆與工具要求拒絕；零自動重試、錯誤不含服務原文。
 - local_real_passed：.env 格式／大小／重複鍵／不展開變數、唯讀 profiles、Windows 信任庫且 TLS 強制驗證；真 Tk 啟動不派發、公司設定未讀寫、獨立子目錄、Enter 送出與 Plan 批准後單次派發。

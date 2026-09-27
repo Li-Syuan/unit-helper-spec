@@ -1,15 +1,17 @@
 # 開發與部署指南
 
-QA agent 0.9.2。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
+QA agent 0.10.0。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
 
 ## 個人 Groq 試用
 
-start-trial.bat 使用同一 .venv，沒有新依賴或第二個環境。正常入口不變。專案 .env 僅填 GROQ_API_KEY，不提交 Git。`scripts/check-trial.py` 預設只檢查格式，不連外；明確加 `--live` 才會以合成短句測試 Groq，僅輸出安全狀態，不列金鑰／回覆內容。請在已確認帳戶方案後操作。
+start-trial.bat 使用同一 .venv，沒有新依賴或第二個環境。正常入口不變。專案 .env 僅填 GROQ_API_KEY，不提交 Git。`scripts/check-trial.py` 預設只檢查格式，不連外；明確加 `--live` 才會以合成短句測試 Groq，僅輸出安全狀態，不列金鑰／回覆內容。`--live --reports` 改跑最多三筆請求，檢查條件解析、追問及批准後日報；只用暫存資料庫、不改使用者排程，沒有自動重試。請在已確認帳戶方案後操作。
 
 ```powershell
 .venv\Scripts\python.exe scripts/check-trial.py
 .venv\Scripts\python.exe scripts/check-trial.py --live
+.venv\Scripts\python.exe scripts/check-trial.py --live --reports
 .venv\Scripts\python.exe -m unittest tests.test_trial -v
+.venv\Scripts\python.exe -m unittest tests.test_report_engine tests.test_report_views -v
 ```
 
 HTTPX 使用 Python 系統預設信任庫（Windows ROOT／CA），保留主機名與憑證驗證；不略過錯誤、不新增憑證或防毒排除。正式公司 CA 設定仍遵循原 adapter 契約。變更試用目的地／模型時須修訂連線版本，舊對話不能默默改送。
