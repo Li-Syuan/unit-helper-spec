@@ -1,0 +1,10 @@
+{
+  "model": "company-assistant",
+  "messages": [
+    {
+      "role": "user",
+      "content": "SYNTHETIC-ONLY"
+    }
+  ],
+  "stream": false
+}

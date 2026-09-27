@@ -140,3 +140,48 @@ class DesktopTests(unittest.TestCase):
         self.assertNotIn('conversation_id',a.plan_preview.get('1.0','end'))
         a.approve_plan(); self.wait_task()
         self.assertEqual(a.store.messages(a.conversation)[0]['text'],'需要確認的文字')
+
+    def test_dynamic_custom_fields_plan_and_result(self):
+        from tests.test_query_schema import catalog
+        from desktop_app.query_schema import find_template, parameters
+        a=self.app; templates=catalog()
+        class Custom:
+            def catalog(self): return templates
+            def validate(self,q,p): parameters(find_template(templates,q),p)
+            def run(self,q,p):
+                self.validate(q,p)
+                return {'rows':[[p.get('amount','1')]],'columns':[{'name':'value','label':'數值','type':'decimal'}],
+                    'parameters':p,'source_label':'合成測試','row_count':1,'truncated':False,'fetched_at_utc':'2026-09-26T00:00:00+00:00'}
+        a.queries=Custom(); a.engine.query_catalog=a.queries.catalog; a.engine.query_validator=a.queries.validate; a.engine.query_runner=a.queries.run
+        a.reload_query_catalog(); self.assertEqual(len(a.query_vars),6)
+        a.query_vars['count'].set('bad'); self.assertEqual(str(a.query_submit['state']),'disabled')
+        a.query_vars['count'].set('12'); a.query_plan.set(True); a.submit_query()
+        self.assertEqual(a.store.tasks(),[]); self.assertIn('精確金額',a.plan_preview.get('1.0','end'))
+        a.edit_plan(); a.query_vars['active'].set('是'); a.submit_query(); a.approve_plan(); t=self.wait_task()
+        self.assertIs(t['payload']['parameters']['active'],True)
+        a.show_result(t['id']); self.assertIn('123456789012345678.0010',a.result_meta.get())
+        sid=a.engine.create_schedule(t['id'],'固定條件','daily','09:00'); a.refresh_lists(); a.schedules.selection_set(sid); a.schedule_details()
+        self.assertIn('精確金額',a.schedule_info.get('1.0','end'))
+        self.root.deiconify(); self.root.geometry('1050x700'); a.book.select(a.tabs['query']); self.root.update()
+        self.assertLessEqual(a.query_submit.winfo_rooty()+a.query_submit.winfo_height(),a.tabs['query'].winfo_rooty()+a.tabs['query'].winfo_height())
+        a.query_id.set('DATES'); self.assertEqual(set(a.query_vars),{'begin','until'})
+        a.query_id.set('missing'); self.assertEqual(str(a.query_submit['state']),'disabled')
+        with self.assertRaises(ValueError): a.submit_query()
+
+    def test_malformed_catalog_and_invalid_schedule_remain_readable(self):
+        a=self.app; a.submit_query(); task=self.wait_task(); sid=a.engine.create_schedule(task['id'],'舊模板','daily','09:00')
+        a.query_plan.set(True); a.submit_query()
+        a.engine.query_catalog=lambda:a.queries.catalog()
+        with patch.object(a.queries,'catalog',return_value=[None]):
+            a.reload_query_catalog(); self.assertEqual(str(a.query_submit['state']),'disabled')
+            a.preview_selected_plan(); self.assertIn('失效',a.plan_preview.get('1.0','end'))
+            with self.assertRaises(ValueError): a.edit_plan()
+            self.assertIsNone(a.editing_plan)
+            a.engine.run_schedule_now(sid,'invalid'); a.refresh_lists(); a.schedules.selection_set(sid); a.schedule_details()
+            self.assertIn('無法預覽',a.schedule_info.get('1.0','end')); self.assertTrue(a.runs.get_children())
+            nid=a.store.notifications()[0]['id']; a.refresh_lists(); a.notices.selection_set(nid); a.read_notice()
+            self.assertIn('失效',a.status.get())
+        for bad_type in ([],{}):
+            values=a.queries.catalog(); values[0]['parameters']['from_date']['type']=bad_type
+            with patch.object(a.queries,'catalog',return_value=values):
+                a.reload_query_catalog(); self.assertEqual(str(a.query_submit['state']),'disabled')

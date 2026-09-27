@@ -1,12 +1,20 @@
 # 公司接手工作包 — GPT 6 sol
 
-**先保留本機可用功能，再逐一接公司服務。** 目前程式為 0.3.1，已完成桌面介面整理。 本次沒有公司原始碼、成功 API 樣本、AD 配置、Oracle schema 或真實 Excel。不能把下列事項描述成只填密碼就保證完成。
+**先保留本機可用功能，再逐一接公司服務。** 目前程式為 0.4.0，已完成桌面介面與公司接手準備包。 本次沒有公司原始碼、成功 API 樣本、AD 配置、Oracle schema 或真實 Excel。不能把下列事項描述成只填密碼就保證完成。
 
 ## 0. 已完成與不可重做
 
 已完成：Python 3.10.4 獨立環境／鎖版、Tkinter、SQLite、固定 Plan gate、選項、三項合成查詢、文字／檔案、OpenAI SDK adapter、本機排程、通知、回報草稿。詳細證據見 VALIDATION-LOCAL.md。
 
 程式入口 `python -m desktop_app`；介面見 `desktop_app/gateways.py` 的 Protocol；業務流程 `core.py`；UI `ui.py`。不能換框架、把真實模式失敗變成 demo、把測試跳過當通過、把舊 SQLite 刪除或覆蓋。GPT 6 sol 是開發 agent，不是這個產品必須呼叫的模型識別。
+
+## 已準備好的公司接手工具
+
+- 動態參數規格：[QUERY-CATALOG](docs/QUERY-CATALOG.md)；提供欄位與日期映射即可沿用 UI／Plan／排程。
+- 離線與真實測試分離：[ADAPTER-TEST-KIT](docs/ADAPTER-TEST-KIT.md)；有合成樣本、共用斷言及公司測試骨架。
+- 離線環境：[OFFLINE-INSTALL](docs/OFFLINE-INSTALL.md)；套件包完整性驗證，不自動連外補件。
+- 雙擊 diagnose.bat 或執行 scripts/doctor.py 檢查環境；診斷不呼叫公司服務，也不表示 AD／Oracle 已接通。
+- 公司先填 [COMPANY-INPUTS](docs/COMPANY-INPUTS.md)，只填規格與資訊負責窗口；不填秘密。內部 hooks／fixture／報告放 company_local 或 artifacts，不推入 Git。
 
 ## 1. 重建公司 Python 3.10.4 基準
 
@@ -25,7 +33,7 @@
 - 金鑰從 `api_key_env` 指定變數讀取；UI 與 repo 不能保存金鑰。`ca_bundle` 指定可信 PEM；禁止 verify=False。依 IT 的密鑰配送方式設定，不把秘密貼到 agent 對話。
 - `verified_side_effect_free` 預留為公司能力紀錄，目前不能繞過 gate。Plan 預覽固定本機表單，完全不呼叫 API；不要只憑 system prompt 說「不要執行工具」就認為沒有副作用。測試連線會真的呼叫 bot，必須先確認測試助理能力。
 - 完成條件：真實回覆、401／403、timeout、空回覆、格式錯誤均合理；兩個對話相互隔離；有原生工具的服務需公司側關閉、使用文字專用助理或明確授權路徑；失敗不回 demo；金鑰／HTTP body 不進 log。
-- 基準命令：`.\.venv\Scripts\python.exe -m unittest tests.test_gateways tests.test_core -v`。另建立 `tests/test_company_chatbot.py`，以公司測試端點驗證上述事項，再跑 `.\.venv\Scripts\python.exe -m unittest tests.test_company_chatbot -v`。此檔尚未提供，完成接線時新增；不得以缺檔／skip 代替 real_passed。
+- 基準命令：`.\.venv\Scripts\python.exe -m unittest tests.test_gateways tests.test_core -v`。沿用 `test_support/assistant_contract.py` 與 `company_templates/test_company_offline.py.example`，補公司 wire 差異。真實驗證依 docs/ADAPTER-TEST-KIT.md 建立 company_local/company_hooks.py，執行 scripts/company_check.py 的明確啟動流程；不得以 mock／缺項代替 company_real_passed。
 
 ## 3. 接 AD 與指定員工名單
 
@@ -34,17 +42,17 @@
 - 目前 `local-demo` 是固定本機展示身分，**不能直接把它改名就當 AD**。目前 Store 是單本機 profile，尚無多租戶 ACL；正式共用裝置需依登入者分目錄或補 owner 驗證及資料遷移。UI 隱藏功能不等於授權。
 - AD 密碼不得持久化或送給模型；每次查詢與排程重新檢查啟用／名單。授權失敗停止操作，不 fallback demo；現有排程持有人失效須停用並提示。
 - 完成條件：允許者可用、錯密碼／錯單位／不在名單／已停用者拒絕；不能讀取其他人的對話／結果；session 過期及離線拒絕策略經公司核准。
-- 命令：保留 `.\.venv\Scripts\python.exe -m unittest tests.test_local tests.test_gateways -v`；接線時新增 `tests/test_company_identity.py`，使用公司測試帳號跑同名 unittest module。紀錄真實授權正反案例，不保存帳密。
+- 命令：保留 `.\.venv\Scripts\python.exe -m unittest tests.test_local tests.test_gateways -v`；沿用 company_templates/company_hooks.py.example 的四個 identity 案例，接線時另補派發 gate、owner 隔離測試，使用公司核准測試帳號執行。紀錄真實授權正反案例，不保存帳密。
 
 ## 4. 接 Oracle 三項核准查詢
 
-- 修改位置：`OracleQueries.catalog/validate/run`，保持結果契約；公司 agent 可拆出 `oracle_adapter.py`。UI 目前示範查詢的 category／日期欄需對應真實 catalog，若三項模板參數不同，只調整 query form 對 catalog 的映射。
+- 修改位置：`OracleQueries.catalog/validate/run`，保持結果契約；公司 agent 可拆出 `oracle_adapter.py`。UI 已依 catalog 自動產生參數、Plan／結果／排程預覽；依 docs/QUERY-CATALOG.md 宣告欄位與可選 date_range，不必重寫畫面。未宣告日期映射的模板只提供固定參數排程。
 - 需內部資訊：Q01～03 SQL 核准版本、欄位／型別／精度、主表關聯、bind 參數、日期時區、資料範圍、授權身份欄、row cap、timeout、可重試錯誤分類、人工基準結果。
 - 原架構要求 DB 密碼在可信服務端。優先接公司**既有**核准查詢服務；此 repo 沒有另造共用 API。如公司要求桌面直連，先取得其帳號／密碼治理與資料權限方案核准，不把共享 DB 密碼打包至桌面。不要因這個工作包擅自建立整套中央平台。
 - 模型只能選核准模板與參數，不能執行模型生成 SQL。使用 bind 與 server-derived scope；有限讀取、明確截斷；Decimal／NUMBER 轉精確字串，不經 float。結果 `columns` 的順序與 `rows`（list of lists）一致，需含 query_ref、parameters、source_label、fetched_at_utc、row_count、truncated。
 - `validate` 必須是純驗證，不執行 DB 查詢；查詢前再次授權。`run` 只能唯讀；不要把一般 Oracle driver 例外都標成可重試錯誤。
 - 完成條件：三項各有正常／空資料／界線／越權／超時案例，與同條件人工 SQL 結果逐欄校對；不把 DEMO 資料標成公司資料。
-- 命令：`.\.venv\Scripts\python.exe -m unittest tests.test_gateways tests.test_files tests.test_core -v`；新增 `tests/test_company_queries.py`，以去識別 fixture + 公司唯讀環境測試，並保存人工比對結果。正式測試需公司環境，不能在本機合成結果上蓋 real_passed。
+- 命令：`.\.venv\Scripts\python.exe -m unittest tests.test_gateways tests.test_files tests.test_core -v`；沿用 test_support/query_contract.py，以合成 fixture 補公司離線測試；在 company_local/company_hooks.py 的 query.q01～q03 以公司唯讀環境執行並保存人工比對結果。正式測試需公司環境，不能在本機合成結果上蓋 real_passed。
 
 ## 5. 舊 SQLite 與排程遷移
 

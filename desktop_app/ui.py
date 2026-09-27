@@ -12,6 +12,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from . import __version__
 from . import theme
+from .query_schema import find_template, validate_template, parameters as query_parameters, initial_values, describe
 from .config import load_config, save_config, data_directory, InstanceLock
 from .core import Store, Engine
 from .choices import ChoiceForms
@@ -75,7 +76,7 @@ class App:
             self.assistant=None; self.adapter_error=''
             try: self.assistant=self.make_assistant(self.config)
             except GatewayError as exc: self.adapter_error=str(exc)
-            self.engine=Engine(self.store,self.queries.run,self.respond,query_validator=self.queries.validate)
+            self.engine=Engine(self.store,self.queries.run,self.respond,query_validator=self.queries.validate,query_catalog=self.queries.catalog)
         except BaseException:
             self.lock.close(); raise
         self.io=ThreadPoolExecutor(max_workers=1); self.events=queue.Queue(); self.stop=threading.Event()
@@ -321,35 +322,78 @@ class App:
         if tasks: self.engine.cancel_task(tasks[0]['id']); self.status.set('已取消本機後續處理；已送出的遠端請求可能仍在完成。')
         else: raise ValueError('沒有可取消的對話工作。')
     def build_query(self):
-        tab=self.tabs['query']; self.section(tab,'01  選擇查詢','目前使用合成示範資料')
-        self.query_id=tk.StringVar(value='DEMO01'); cards=ttk.Frame(tab); cards.pack(fill='x',pady=(2,18))
-        for idx,item in enumerate(self.queries.catalog()):
-            cards.columnconfigure(idx,weight=1,uniform='querycards')
-            descriptions=['查看每日庫存異動\n依分類篩選料號與數量','查看訂單與精確金額\n保留完整訂單編號','計算庫存異動總量\n可用來設定門檻通知']
-            ttk.Radiobutton(cards,text=item['name']+'\n\n'+descriptions[idx],variable=self.query_id,
-                            value=item['id'],style='Card.TRadiobutton').grid(row=0,column=idx,sticky='nsew',padx=(0,10 if idx<2 else 0))
-        if not self.queries.catalog(): ttk.Label(cards,text='Oracle 尚未接線，正式查詢停用。',style='Muted.TLabel').pack(anchor='w')
-        self.section(tab,'02  設定範圍','起日含當天，迄日不含當天')
-        row=ttk.Frame(tab); row.pack(fill='x',pady=(2,18))
-        self.from_date=tk.StringVar(value=(date.today()-timedelta(days=1)).isoformat()); self.to_date=tk.StringVar(value=date.today().isoformat()); self.category=tk.StringVar(value='all')
-        for col,(label,var) in enumerate([('開始日期',self.from_date),('結束日期',self.to_date)]):
-            field=ttk.Frame(row); field.grid(row=0,column=col,sticky='ew',padx=(0,16)); row.columnconfigure(col,weight=1)
-            ttk.Label(field,text=label,style='Muted.TLabel').pack(anchor='w',pady=(0,6)); ttk.Entry(field,textvariable=var,width=15).pack(fill='x')
-        field=ttk.Frame(row); field.grid(row=0,column=2,sticky='ew'); row.columnconfigure(2,weight=1)
-        ttk.Label(field,text='資料分類（all = 全部）',style='Muted.TLabel').pack(anchor='w',pady=(0,6))
-        ttk.Combobox(field,textvariable=self.category,values=['all','A','B'],state='readonly',width=12).pack(fill='x')
+        tab=self.tabs['query']; self.section(tab,'01  選擇查詢','依核准模板填寫條件；示範模板使用合成資料')
+        self.query_id=tk.StringVar(); self.query_names=tk.StringVar()
+        self.query_picker=ttk.Combobox(tab,textvariable=self.query_names,state='readonly')
+        self.query_picker.pack(fill='x',pady=(2,6))
+        self.query_picker.bind('<<ComboboxSelected>>',lambda e:self.query_id.set(self.query_catalog_items[self.query_picker.current()]['id']))
+        self.query_description=tk.StringVar(); ttk.Label(tab,textvariable=self.query_description,wraplength=710,style='Muted.TLabel').pack(anchor='w')
+        self.section(tab,'02  設定條件')
+        # Scroll only the fields: the submit controls stay visible for large catalogs.
+        holder=ttk.Frame(tab); holder.pack(fill='both',expand=True,pady=6)
+        canvas=tk.Canvas(holder,height=125,highlightthickness=0); canvas.pack(side='left',fill='both',expand=True)
+        scroll=ttk.Scrollbar(holder,orient='vertical',command=canvas.yview); scroll.pack(side='right',fill='y'); canvas.configure(yscrollcommand=scroll.set)
+        self.query_fields=ttk.Frame(canvas); window=canvas.create_window((0,0),window=self.query_fields,anchor='nw')
+        canvas.bind('<Configure>',lambda e:canvas.itemconfigure(window,width=e.width))
+        self.query_fields.bind('<Configure>',lambda e:canvas.configure(scrollregion=canvas.bbox('all')))
+        self.query_feedback=tk.StringVar(); ttk.Label(tab,textvariable=self.query_feedback,style='Muted.TLabel',wraplength=710).pack(anchor='w')
+        self.query_vars={}; self.query_plan=tk.BooleanVar(); self.query_summary=tk.BooleanVar()
         self.section(tab,'03  選擇處理方式')
-        self.query_plan=tk.BooleanVar(); self.query_summary=tk.BooleanVar()
         ttk.Checkbutton(tab,text='先規劃，確認條件後再執行',variable=self.query_plan).pack(anchor='w',pady=3)
         ttk.Checkbutton(tab,text='取得結果後，請助理幫我整理重點',variable=self.query_summary).pack(anchor='w',pady=3)
-        ttk.Label(tab,text='勾選整理會將查詢結果送至已設定的助理。',style='Muted.TLabel').pack(anchor='w',padx=22,pady=(0,15))
-        row=ttk.Frame(tab); row.pack(fill='x',pady=12)
+        ttk.Label(tab,text='勾選整理會將查詢結果送至已設定的助理。',style='Muted.TLabel').pack(anchor='w',padx=22,pady=(0,8))
+        row=ttk.Frame(tab); row.pack(fill='x',pady=8)
         self.query_submit=self.button(row,'開始查詢',self.submit_query); self.query_submit.pack(side='left')
         self.button(row,'回報查詢問題',lambda:self.quick_issue('query'),'Quiet.TButton').pack(side='right')
         self.query_plan.trace_add('write',lambda *args:self.query_submit.configure(text='建立查詢計畫' if self.query_plan.get() else '開始查詢'))
-        ttk.Label(tab,text='日期格式 YYYY-MM-DD  ·  最多 90 日 / 1,000 列  ·  結果可複製到 Excel 或匯出 CSV',style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=8)
+        self.query_id.trace_add('write',lambda *args:self.render_query_fields())
+        self.reload_query_catalog()
+    def reload_query_catalog(self):
+        self.query_catalog_items=[]
+        items=self.queries.catalog()
+        if not isinstance(items,list) or any(not isinstance(q,dict) or not isinstance(q.get('id'),str) or not isinstance(q.get('name'),str) for q in items):
+            self.query_picker.configure(values=[],state='disabled'); self.query_id.set('')
+            self.query_feedback.set('查詢目錄格式錯誤，請回報管理者。'); self.query_submit.configure(state='disabled'); return
+        self.query_catalog_items=items
+        self.query_picker.configure(values=[q['name'] for q in items],state='readonly' if items else 'disabled')
+        self.query_id.set(items[0]['id'] if items else '')
+    def render_query_fields(self,values=None):
+        for child in self.query_fields.winfo_children(): child.destroy()
+        self.query_vars={}
+        try:
+            template=find_template(self.queries.catalog(),self.query_id.get())
+            validate_template(template)
+        except ValueError as exc:
+            self.query_feedback.set(str(exc)); self.query_submit.configure(state='disabled'); self.query_description.set('目前沒有可用的查詢模板。'); return
+        self.query_description.set(template.get('description',''))
+        self.query_names.set(template['name'])
+        defaults=initial_values(template) if values is None else values
+        for index,(key,field) in enumerate(template['parameters'].items()):
+            box=ttk.Frame(self.query_fields); box.grid(row=index//2,column=index%2,sticky='ew',padx=(0,16),pady=(0,10)); self.query_fields.columnconfigure(index%2,weight=1)
+            ttk.Label(box,text=field['label']+(' *' if field.get('required',True) else '（選填）'),style='Muted.TLabel').pack(anchor='w',pady=(0,4))
+            value=defaults.get(key,''); value=('是' if value else '否') if type(value) is bool else str(value)
+            var=tk.StringVar(value=value); self.query_vars[key]=var
+            options=field.get('options') if field['type']=='single_choice' else ['是','否'] if field['type']=='boolean' else None
+            if options and not field.get('required',True): options=['']+options
+            widget=ttk.Combobox(box,textvariable=var,values=options,state='readonly') if options else ttk.Entry(box,textvariable=var)
+            widget.pack(fill='x'); var.trace_add('write',lambda *args:self.validate_query_fields())
+        # Backward-compatible aliases for existing demo integrations.
+        for key in ('from_date','to_date','category'):
+            if key in self.query_vars: setattr(self,key,self.query_vars[key])
+        self.validate_query_fields()
+    def validate_query_fields(self):
+        try:
+            template=find_template(self.queries.catalog(),self.query_id.get())
+            query_parameters(template,{k:v.get() for k,v in self.query_vars.items()},from_ui=True)
+        except ValueError as exc:
+            self.query_feedback.set(str(exc)); self.query_submit.configure(state='disabled'); return
+        self.query_feedback.set('條件格式正確；送出前仍會檢查模板規則。'); self.query_submit.configure(state='normal')
+    def query_conditions(self,query_id,values):
+        try: return describe(find_template(self.queries.catalog(),query_id),values)
+        except ValueError: return ['模板已失效；以下為已保存條件。']+[str(k)+'：'+str(v) for k,v in values.items() if not k.startswith('_')]
     def submit_query(self):
-        payload={'query_id':self.query_id.get(),'parameters':{'from_date':self.from_date.get(),'to_date':self.to_date.get(),'category':self.category.get()}}
+        template=find_template(self.queries.catalog(),self.query_id.get())
+        payload={'query_id':self.query_id.get(),'parameters':query_parameters(template,{k:v.get() for k,v in self.query_vars.items()},from_ui=True)}
         kind='query_summarize' if self.query_summary.get() else 'query'
         if self.query_plan.get() or self.editing_plan: self.save_plan(kind,payload)
         else:
@@ -397,10 +441,10 @@ class App:
         payload=plan['payload']
         lines=[KINDS[plan['kind']]+'  ·  第 '+str(plan['revision'])+' 版', '']
         if plan['kind'] in ('query','query_summarize'):
-            catalog={q['id']:q['name'] for q in self.queries.catalog()}; parameters=payload['parameters']
-            lines += ['查詢：'+catalog.get(payload['query_id'],payload['query_id']),
-                      '期間：'+parameters['from_date']+' → '+parameters['to_date']+'（迄日不含）',
-                      '分類：'+{'all':'全部','A':'A 類','B':'B 類'}.get(parameters['category'],parameters['category']),
+            parameters=payload['parameters']
+            try: query_name=find_template(self.queries.catalog(),payload['query_id'])['name']
+            except ValueError: query_name=payload['query_id']
+            lines += ['查詢：'+query_name]+self.query_conditions(payload['query_id'],parameters)+[
                       '', '批准後的步驟', '1. 依照上述條件執行唯讀查詢。', '2. 保存查詢結果，供檢視與匯出。']
             if plan['kind']=='query_summarize': lines.append('3. 將結果交給已設定助理整理重點。')
         else: lines += ['批准後，將以下內容交給已設定助理處理。','原文會保留，不覆蓋任何檔案。','','提供的內容',payload['text']]
@@ -412,9 +456,12 @@ class App:
     def edit_plan(self):
         plan=self.store.plan(selected(self.plans))
         if plan['state']!='ready': raise ValueError('只有未批准的草稿可修改。')
-        self.editing_plan=(plan['id'],plan['revision']); payload=plan['payload']
+        payload=plan['payload']
+        if plan['kind'] in ('query','query_summarize'): find_template(self.queries.catalog(),payload['query_id'])
+        self.editing_plan=(plan['id'],plan['revision'])
         if plan['kind'] in ('query','query_summarize'):
-            self.query_id.set(payload['query_id']); self.from_date.set(payload['parameters']['from_date']); self.to_date.set(payload['parameters']['to_date']); self.category.set(payload['parameters']['category'])
+            find_template(self.queries.catalog(),payload['query_id'])
+            self.query_id.set(payload['query_id']); self.render_query_fields(payload['parameters'])
             self.query_plan.set(True); self.query_summary.set(plan['kind']=='query_summarize'); self.book.select(self.tabs['query'])
         else:
             self.conversation=plan['conversation_id']; self.show_chat(); self.input.delete('1.0','end'); self.input.insert('end',payload['text']); self.plan_mode.set(True)
@@ -452,8 +499,7 @@ class App:
         if result is None: raise ValueError(task['error'] or '工作尚無結果。')
         if isinstance(result,dict) and 'rows' in result:
             self.result=result
-            labels={'from_date':'起日','to_date':'迄日（不含）','category':'分類'}
-            conditions='  ·  '.join(labels.get(k,k)+'：'+({'all':'全部'}.get(str(v),str(v))) for k,v in result['parameters'].items())
+            conditions='  ·  '.join(self.query_conditions(task['payload']['query_id'],result['parameters']))
             self.result_meta.set(result['source_label']+'  ·  '+str(result['row_count'])+' 列'+('（已達上限，結果截斷）' if result['truncated'] else '')+'\n'+conditions+'\n資料時間：'+result['fetched_at_utc'][:19].replace('T',' ')+' UTC')
 
             put(self.output,result.get('summary') or result.get('summary_error') or '表格是固定快照；複製與匯出不會重新查詢。')
@@ -524,17 +570,20 @@ class App:
         form=self.forms.create([{'id':'schedule','title':'要以這份成功查詢建立排程草稿嗎？','type':'yes_no','options':[{'id':'yes','label':'是，設定排程'},{'id':'no','label':'否'}]}])
         ChoiceDialog(self,form,lambda a:self.schedule_dialog(source) if a['schedule']==['yes'] else None)
     def schedule_dialog(self,source):
+        query_id=self.store.task(source)['payload']['query_id']
+        rolling=self.engine.schedule_date_mapping(query_id) is not None
+        date_options=['每次前一日','固定原參數'] if rolling else ['固定原參數']
         window=tk.Toplevel(self.root); window.title('新增停用中的排程'); window.transient(self.root); window.grab_set()
         body=ttk.Frame(window,padding=20); body.pack(); variables={}
-        fields=[('name','名稱','每日查詢',None),('frequency','頻率','每日',['每日','每週']),('time','台北 HH:MM','09:00',None),('weekday','星期（0=一、6=日）','0',[str(x) for x in range(7)]),('dates','日期','每次前一日',['每次前一日','固定原日期']),('rule','通知','非空且內容改變',['非空且內容改變','數值由未達標轉達標']),('threshold','門檻（單一數值 >=）','10',None)]
+        fields=[('name','名稱','每日查詢',None),('frequency','頻率','每日',['每日','每週']),('time','台北 HH:MM','09:00',None),('weekday','星期（0=一、6=日）','0',[str(x) for x in range(7)]),('dates','參數模式',date_options[0],date_options),('rule','通知','非空且內容改變',['非空且內容改變','數值由未達標轉達標']),('threshold','門檻（單一數值 >=）','10',None)]
         for i,(key,label,value,options) in enumerate(fields):
             ttk.Label(body,text=label).grid(row=i,column=0,sticky='w',pady=5); var=tk.StringVar(value=value); variables[key]=var
             widget=ttk.Combobox(body,textvariable=var,values=options,state='readonly',width=25) if options else ttk.Entry(body,textvariable=var,width=28)
             widget.grid(row=i,column=1,padx=10)
-        ttk.Label(body,text='每次前一日：按排定日計算昨天。\n固定原日期：每次查詢相同日期區間。\n門檻通知僅適用單一數值查詢。\n失敗會通知；建立後仍需預覽並啟用。',wraplength=500).grid(row=7,column=0,columnspan=2,pady=12)
+        ttk.Label(body,text='每次前一日：按排定日計算昨天。\n固定原參數：每次查詢相同條件。\n門檻通知僅適用單一數值查詢。\n失敗會通知；建立後仍需預覽並啟用。',wraplength=500).grid(row=7,column=0,columnspan=2,pady=12)
         def create():
             v={k:var.get() for k,var in variables.items()}
-            v['frequency']={'每日':'daily','每週':'weekly'}[v['frequency']]; v['dates']={'每次前一日':'previous_day','固定原日期':'literal'}[v['dates']]; v['rule']={'非空且內容改變':'nonempty_on_change','數值由未達標轉達標':'threshold_crossing'}[v['rule']]
+            v['frequency']={'每日':'daily','每週':'weekly'}[v['frequency']]; v['dates']={'每次前一日':'previous_day','固定原參數':'literal'}[v['dates']]; v['rule']={'非空且內容改變':'nonempty_on_change','數值由未達標轉達標':'threshold_crossing'}[v['rule']]
             threshold={'operator':'>=','value':v['threshold']} if v['rule']=='threshold_crossing' else None
             sid=self.engine.create_schedule(source,v['name'],v['frequency'],v['time'],int(v['weekday']),v['rule'],threshold)
             self.engine.set_schedule_date_mode(sid,v['dates']); window.destroy(); self.refresh_lists(); self.schedules.selection_set(sid); self.schedule_details(); self.book.select(self.tabs['schedule'])
@@ -545,11 +594,14 @@ class App:
     def schedule_details(self):
         if not self.schedules.selection(): return
         sid=selected(self.schedules); record=self.store.schedule(sid)
-        parameters=record['parameters']; preview=self.engine.schedule_preview(sid)
-        mode='每次查詢前一日' if parameters.get('_date_mode')=='previous_day' else '固定日期區間'
+        parameters=record['parameters']
+        try: preview=self.engine.schedule_preview(sid); preview_error=None
+        except ValueError as exc: preview=[]; preview_error='無法預覽／執行：'+str(exc)
+        mode='每次查詢前一日' if parameters.get('_date_mode')=='previous_day' else '固定查詢參數'
         rule='非空且內容改變才通知' if record['notify_rule']=='nonempty_on_change' else '數值達到門檻時通知'
-        lines=[record['name'],mode+'  ·  '+rule,'分類：'+{'all':'全部','A':'A 類','B':'B 類'}.get(parameters.get('category'),''),'','未來三次執行（UTC）']
-        for item in preview: lines.extend([item['scheduled_at'][:19].replace('T',' '),'查詢 '+item['parameters']['from_date']+' → '+item['parameters']['to_date']])
+        lines=[record['name'],mode+'  ·  '+rule]+self.query_conditions(record['query_id'],parameters)+['','未來三次執行（UTC）']
+        if preview_error: lines.append(preview_error)
+        for item in preview: lines.extend([item['scheduled_at'][:19].replace('T',' ')]+self.query_conditions(record['query_id'],item['parameters']))
         if record['threshold']: lines.extend(['','門檻：'+str(record['threshold']['operator'])+' '+str(record['threshold']['value'])])
         put(self.schedule_info,'\n'.join(lines))
         self.sync_tree(self.runs,[(r['id'],[r['scheduled_at'],LABELS.get(r['state'],r['state'])]) for r in self.store.schedule_runs(sid)])
@@ -566,7 +618,9 @@ class App:
         self.notices.column('read',width=85,stretch=False); self.notices.column('text',width=400)
         self.button(tab,'已讀並查看結果',self.read_notice,'Primary.TButton').grid(row=2,column=0,sticky='w',pady=(10,0))
     def read_notice(self):
-        nid=selected(self.notices); notice=next(x for x in self.store.notifications() if x['id']==nid); self.store.mark_read(nid); self.show_result(notice['task_id'])
+        nid=selected(self.notices); notice=next(x for x in self.store.notifications() if x['id']==nid); self.store.mark_read(nid)
+        if notice['task_id']: self.show_result(notice['task_id'])
+        else: self.status.set(notice['text'])
     def build_issue(self):
         tab=self.tabs['issue']; tab.columnconfigure(0,weight=1); tab.rowconfigure(8,weight=1)
         ttk.Label(tab,text='回報保存在此電腦，尚未送至管理平台。不會自動附加對話或檔案。',style='Muted.TLabel',wraplength=750).grid(row=0,column=0,sticky='w',pady=(0,12))

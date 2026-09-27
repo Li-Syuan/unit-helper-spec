@@ -1,6 +1,8 @@
-請接手這個 repo 的單位桌面小幫手 0.3.1。你是 GPT 6 sol 開發 agent，請實際做接線與驗證，不重做 GUI 或另開平台。
+請接手這個 repo 的單位桌面小幫手 0.4.0。你是 GPT 6 sol 開發 agent，請實際做接線與驗證，不重做 GUI 或另開平台。
 
 先讀 AGENTS.md、README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md、docs/current-state.md。保留 Windows x64、Python 恰好 3.10.4、Tkinter、現有 SQLite 與 OpenAI SDK 邊界。舊完整 spec 是後續路線；當前不做中央管理、遠端更新、產品 multi agents。
+
+先讀 docs/COMPANY-INPUTS.md，取得 API／AD／Oracle 的最少必要資訊。可直接沿用 docs/QUERY-CATALOG.md 的動態欄位、docs/ADAPTER-TEST-KIT.md 的測試骨架與 docs/OFFLINE-INSTALL.md 的安裝工具；不用重做查詢 UI、測試 runner 或環境诊斷。
 
 先以公司核准 Python 執行 scripts/setup.ps1、scripts/test.ps1，更新公司端的驗證記錄。不要使用外部專案環境。依序完成 COMPANY-HANDOFF 的六項工作：
 1. 公司環境／第二乾淨環境基準。
@@ -15,3 +17,5 @@
 每項工作先列修改位置與驗收，再實作與跑測試；同步更新 docs/implementation-status.md 及公司實测記錄。mock_passed 與 real_passed 分列，skip 不算通過。當前基準測試必須持續通過；公司新增測試不得停用安全 gate。公司模式錯誤必須明確顯示，禁止 demo fallback。
 
 可以依 AGENTS.md 用至多兩個互斥 subagent 工作包；沒有 subagent 能力就順序做。不要把自己分工的角色當產品 runtime 多代理。不要改公司原有規則，不執行未授權的正式發布／資料變更。
+
+公司實測入口 scripts/company_check.py 預設不連線，缺項回報 not_tested。將 company_templates 的範本複製到 company_local，補有真實斷言的 hooks；確認測試 bot 無未授權副作用後，才明確加 --execute --capabilities-reviewed。不要把單純回傳 True、skip 或 mock 當公司通過。沒有能力確認時先完成離線契約與其他接線工作。

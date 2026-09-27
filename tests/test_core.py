@@ -179,6 +179,9 @@ class CoreTests(unittest.TestCase):
             self.engine.create_schedule(self.success(), "壞時間", "daily", "25:99")
 
     def test_daily_occurrence_once_and_previous_day_by_scheduled_time(self):
+        self.engine.query_catalog = lambda: [{'id':'demo','name':'Explicit date fixture','parameters':{
+            'from_date':{'label':'Start','type':'date'}, 'to_date':{'label':'End','type':'date'},
+            'category':{'label':'Category','type':'text'}}, 'date_range':{'start':'from_date','end':'to_date'}}]
         s = self.make_schedule()
         self.engine.set_schedule_date_mode(s, "previous_day")
         start = datetime(2026, 9, 25, 0, 0, tzinfo=timezone.utc)

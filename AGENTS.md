@@ -2,7 +2,7 @@
 
 ## 優先範圍
 
-本次使用者核准的是 **0.3.0 本機桌面**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
+本次使用者核准的是 **0.4.0 本機桌面與公司接手準備包**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
 
 ## 已完成，請延續
 
@@ -14,7 +14,7 @@
 
 ## 待公司接線
 
-依 COMPANY-HANDOFF.md：成功 chatbot API 契約、AD／名單／owner 授權、Oracle 三模板、舊資料移轉防雙跑、公司 GUI／Excel 真實驗收。保持 Protocol 和服務邊界，必要時只擴充 query UI 的真實參數表單；不要重做整套程式。
+依 COMPANY-HANDOFF.md：成功 chatbot API 契約、AD／名單／owner 授權、Oracle 三模板、舊資料移轉防雙跑、公司 GUI／Excel 真實驗收。保持 Protocol 和服務邊界，先依 docs/QUERY-CATALOG.md 宣告 catalog 欄位／日期映射；不要重做整套程式。
 
 ## 後續才做
 
@@ -41,3 +41,11 @@
 ## 介面維護
 
 0.3.1 以原生 Tkinter/ttk 改善介面，無新 GUI 依賴。調整佈局後檢查 1050×700 與一般尺寸的按鈕可見性，保留 sidebar 導覽／既有 Notebook 服務介面、Plan gate、原文與資料匯出行為；歡迎文案不得當成使用者訊息保存或傳給助理。UI 證據見 docs/UI-DESIGN.md。
+
+## 0.4.0 接手工具
+
+- query_schema 提供共用欄位契約；不要重新把公司欄位寫死在 ui.py。query_catalog／date_range 由服務層驗證，未宣告映射不能使用 previous_day。
+- test_support 與 company_templates 為可沿用的 adapter 測試工具；公司 mock fixture 與真實服務驗證分開。company_check 預設 not_tested，不載入 hook；明確執行與能力審查後才跑可信本地 hook。
+- company_local 與 artifacts 被忽略；內部樣本、帳號、網址及原始錯誤不得加入分享報告或 Git。公司 hook 回傳 True 前須真的斷言公司結果，不能用 canned True 或 demo 填滿項目。
+- 診斷與離線安裝見 docs/OFFLINE-INSTALL.md；offline 安裝缺件／雜湊／lock 不符必須停止，不得改成連外補件。
+- 公司資訊清單見 docs/COMPANY-INPUTS.md。舊資料盤點／移轉、正式登入授權、Oracle 接線、EXE 與中央更新仍未實作。

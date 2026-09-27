@@ -1,0 +1,34 @@
+"""Copy to company_local/company_hooks.py; trusted COMPANY TEST code only.
+Do not put credentials here. None means not_tested (exit 2), never passed.
+Every hook must perform real checks using approved test accounts/services, assert
+expected behavior and return exactly True. Do not replace hooks with canned True.
+Bound all network calls with a timeout; no production writes or tool side effects.
+"""
+
+
+def identity_case(provider, expected_subject=None, rejected=False):
+    """Optional helper: caller creates allowed/denied/disabled/expired providers.
+    Company must also check Engine dispatch/scheduler gates and owner isolation.
+    GatewayError must specifically represent expected authentication/authorization
+    rejection; outages/timeouts must not be mapped to that rejection in the hook.
+    """
+    if rejected:
+        raise NotImplementedError('Implement company-specific rejection-code assertions')
+    identity = provider.current()
+    if identity['subject'] != expected_subject or identity['mode'] == 'demo':
+        raise ValueError('Unexpected company identity')
+    return True
+
+
+# Register only completed real checks, not mock/offline adapters.
+CASES = {
+    'chatbot.reply': None,       # Real textual response from approved text-only bot.
+    'chatbot.isolation': None,   # Two new sessions; verify server session boundaries.
+    'identity.allowed': None,
+    'identity.denied': None,     # Wrong password/unit/not allowlisted, all variants.
+    'identity.disabled': None,  # Revoke access after login, recheck dispatch/schedule.
+    'identity.expired': None,
+    'query.q01': None,          # Manual approved SQL comparison + edge/empty/scope.
+    'query.q02': None,
+    'query.q03': None,
+}

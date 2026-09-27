@@ -199,16 +199,16 @@ def _column(name, label, type="text", copy_as_text=False):
 class DemoQueries:
     def catalog(self) -> list[dict]:
         parameters = {
-            "from_date": {"label": "起日（含）", "type": "date"},
-            "to_date": {"label": "迄日（不含）", "type": "date"},
-            "category": {"label": "類別", "type": "single_choice", "options": ["all", "A", "B"]},
+            "from_date": {"label": "起日（含）", "type": "date", "default": (date.today()-timedelta(days=1)).isoformat()},
+            "to_date": {"label": "迄日（不含）", "type": "date", "default": date.today().isoformat()},
+            "category": {"label": "類別", "type": "single_choice", "options": ["all", "A", "B"], "default": "all"},
         }
         return [
-            {"id": "DEMO01", "name": "示範庫存明細", "description": "合成庫存異動資料，非公司庫存。", "example": "查昨天的 A 類庫存", "parameters": copy.deepcopy(parameters),
+            {"id": "DEMO01", "name": "示範庫存明細", "description": "合成庫存異動資料，非公司庫存。", "example": "查昨天的 A 類庫存", "parameters": copy.deepcopy(parameters), "date_range": {"start":"from_date", "end":"to_date"},
              "columns": [_column("record_date", "日期"), _column("item_id", "料號", copy_as_text=True), _column("category", "類別"), _column("quantity", "數量", "integer")]},
-            {"id": "DEMO02", "name": "示範訂單明細", "description": "合成訂單及精確金額字串，非公司訂單。", "example": "查昨天的全部訂單", "parameters": copy.deepcopy(parameters),
+            {"id": "DEMO02", "name": "示範訂單明細", "description": "合成訂單及精確金額字串，非公司訂單。", "example": "查昨天的全部訂單", "parameters": copy.deepcopy(parameters), "date_range": {"start":"from_date", "end":"to_date"},
              "columns": [_column("record_date", "日期"), _column("order_id", "訂單編號", copy_as_text=True), _column("category", "類別"), _column("amount", "金額", "decimal", True)]},
-            {"id": "DEMO03", "name": "示範數量合計", "description": "以同一批示範庫存異動計算總量，可測門檻通知。", "example": "查昨天 A 類數量合計", "parameters": copy.deepcopy(parameters),
+            {"id": "DEMO03", "name": "示範數量合計", "description": "以同一批示範庫存異動計算總量，可測門檻通知。", "example": "查昨天 A 類數量合計", "parameters": copy.deepcopy(parameters), "date_range": {"start":"from_date", "end":"to_date"},
              "columns": [_column("quantity", "合計數量", "integer")]},
         ]
 

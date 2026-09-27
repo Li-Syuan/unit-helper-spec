@@ -1,0 +1,28 @@
+"""Copy into company_local/test_company_offline.py and implement the factories.
+Run: python -m unittest discover -s company_local -p test_company_offline.py -v
+This suite is mock_passed only, never company_real_passed.
+"""
+import unittest
+from test_support.assistant_contract import AssistantContractMixin
+from test_support.query_contract import QueryContractMixin
+
+
+class CompanyChatbotOfflineTests(AssistantContractMixin, unittest.TestCase):
+    # For a Chat Completions-compatible subclass override adapter_class.
+    # For a different protocol override adapter(handler), success(request), and
+    # wire-specific assertions while preserving timeout/error/isolation coverage.
+    pass
+
+
+class CompanyQueryOfflineTests(QueryContractMixin, unittest.TestCase):
+    query_id = 'Q01'
+    valid_parameters = {}  # Replace with approved parameters and synthetic values.
+    invalid_parameters = [{'unknown_field': 'SYNTHETIC'}]
+
+    def make_gateway(self):
+        raise NotImplementedError('Inject the company adapter with a fake transport')
+
+    def validation_guard(self, gateway):
+        # Return a context manager that patches the DB/HTTP boundary to raise if
+        # validate() attempts IO. Do not merely assert no rows were returned.
+        raise NotImplementedError('Patch actual company transport before validation')

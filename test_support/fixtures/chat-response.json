@@ -1,0 +1,16 @@
+{
+  "id": "offline-test",
+  "object": "chat.completion",
+  "created": 0,
+  "model": "company-assistant",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "合成回覆格式測試"
+      }
+    }
+  ]
+}

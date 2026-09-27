@@ -1,15 +1,17 @@
-# 本機實作驗證紀錄 — 0.3.1
+# 本機實作驗證紀錄 — 0.4.0
 
-本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的兩個獨立 venv 驗證。每個環境 **67 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
+本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個獨立 venv 驗證（含全新離線重建）。每個環境 **95 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
 
 ## 可核對證據
 
 - [開發環境原始輸出](docs/validation/development.json)
 - [第二乾淨環境原始輸出](docs/validation/clean-rebuild.json)
+- [離線重建環境原始輸出](docs/validation/offline-rebuild.json)
 - 證據含 UTC 執行時間、實際直譯器完整路徑、版本、架構、Tk、全部套件、逐項測試及 exit code。
-- 開發直譯器：`github-unit-helper-spec/.venv/Scripts/python.exe`。
-- 重建直譯器：`github-unit-helper-spec/.venv-verify/Scripts/python.exe`。
-- 兩者各自 site-packages，`include-system-site-packages=false`，由同一官方 CPython 3.10.4 建立；沒借用 Conda 或其他專案環境。
+- 開發直譯器：`D:/unit-helper-spec/.venv/Scripts/python.exe`。
+- 重建直譯器：`D:/unit-helper-spec/.venv-verify/Scripts/python.exe`。
+- 離線重建直譯器：`D:/unit-helper-spec/.venv-offline2/Scripts/python.exe`。
+- 三者各自 site-packages，`include-system-site-packages=false`，由同一官方 CPython 3.10.4 建立；沒借用 Conda 或其他專案環境。
 - `scripts/setup.ps1 -PythonExe .runtime/python3104/python.exe -Environment .venv-verify -CaBundle .runtime/windows-ca.pem` 實際成功；公司使用自身核准的直譯器／CA。
 
 重跑並保存證據：
@@ -17,6 +19,7 @@
 ```powershell
 .\.venv\Scripts\python.exe scripts/verify.py development
 .\.venv-verify\Scripts\python.exe scripts/verify.py clean-rebuild
+.\.venv-offline2\Scripts\python.exe scripts/verify.py offline-rebuild
 ```
 
 verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不符。程式不需要真實 API 金鑰即可通過基準。
@@ -25,7 +28,7 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 
 | 項目 | 本次結果 |
 |---|---|
-| 環境／依賴 | local_real_passed：兩環境確切版本、64 位元、真 Tk root、pip check、鎖檔一致 |
+| 環境／依賴 | local_real_passed：三環境確切版本、64 位元、真 Tk root、pip check、鎖檔一致 |
 | SDK | mock_passed：真 OpenAI SDK + httpx.MockTransport；request／headers／assistant ref、session 資料隔離、401、timeout、空白／異常格式／工具回覆、TLS／CA、禁重導與 retry |
 | Plan／任務 | local_real_passed：未批准零 dispatch、修訂／過期／取消、並行重複批准、防重、真 future drain、摘要部分失敗保表格 |
 | typed 選項 | local_real_passed：owner、是非／多選、數量／未知值、過期、取消、持久化及 idempotency |
@@ -43,10 +46,22 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 ## 發現與修正
 
 整合檢查修正跨功能修改錯誤計畫、取消後更換 client、派發前取消界線、背景 IO 計數、Tk after callback 清理、設定驗證先於寫檔等問題。
-初次第二環境完整測試曾因 Tk 物件在背景執行緒釋放出現 `main thread is not in main loop`／`Tcl_AsyncDelete`，該次不算通過。改為背景工作 drain 後由主執行緒清理視窗、選項變數及 singleton lock，新增關閉回歸測試；上方兩份證據是修正後的完整重跑結果。
+初次第二環境完整測試曾因 Tk 物件在背景執行緒釋放出現 `main thread is not in main loop`／`Tcl_AsyncDelete`，該次不算通過。改為背景工作 drain 後由主執行緒清理視窗、選項變數及 singleton lock，新增關閉回歸測試；上方證據是修正後的完整重跑結果。
 
 本機可執行不等於公司 production-ready。未實測項目已在 COMPANY-HANDOFF.md 列具體修改位置、內部資訊、正反驗收與執行命令。
 
 ## 0.3.1 介面更新
 
-加入 theme.py 集中樣式，不增加套件或變更 schema。重新配置側欄、對話、查詢、計畫、表格、排程、回報、設定；修正小視窗動作列被擠出畫面的問題。兩個 venv 的最新完整測試為各 67 項；原始輸出位於上述 JSON，路徑已是 D:\unit-helper-spec。公司 API／AD／Oracle／Excel 的未實測界線不變。
+加入 theme.py 集中樣式，不增加套件或變更 schema。重新配置側欄、對話、查詢、計畫、表格、排程、回報、設定；修正小視窗動作列被擠出畫面的問題。0.3.1 發布時的完整測試為各 67 項；目前上述 JSON 已更新為 0.4.0 的三環境完整證據。公司 API／AD／Oracle／Excel 的未實測界線不變。
+
+## 0.4.0 公司接手準備包
+
+- 動態 catalog：六種欄位、精確小數字串、缺欄／未知欄／錯型別／範圍、非日期與不同日期欄位、Plan 未批准零派發、舊 DEMO 日期映射、失效模板停止並保留歷史。
+- 串接工具：共用 SDK 契約與合成 fixture、查詢結果斷言、明確啟動與能力審查 gate、缺項 not_tested、hook 載入／失敗／輸出抑制、optimized Python 拒絕。公司 runner 測試使用合成 hook，只證明 runner 行為，**不是公司實測**。
+- 診斷：獨立檢查、固定白名單報告、秘密植入不外洩、錯誤設定仍檢查其餘項目；不呼叫公司服務。
+- 離線：由核准鎖檔下載完整 20 個 wheel；缺件、損壞、錯目標、lock 不符、路徑穿越與額外檔案拒絕；全新 .venv-offline2 實際從本機 wheelhouse 無 index 安裝，pip check／freeze／95 tests 全通過。
+- 新表單已檢視 1280×860 與 1050×700 的自身視窗截圖；六欄位表單於小視窗可捲動、送出保持可見。合成圖見 docs/UI-DESIGN.md。
+
+離線首次嘗試 .venv-offline 雖通過功能測試，直接指定 wheel 路徑造成 pip freeze 記成 file URL，未通過嚴格 lock 檢查，因此**不列為合格交付環境**。setup 已改用同一鎖檔在已驗證 wheelhouse 以 --no-index --no-deps 安裝；新建 .venv-offline2 後重驗，證據為修正後結果。沒有刪除舊環境或使用者資料。
+
+以上三份完整驗證各為 95 tests、0 skipped，且執行於最終程式。公司 API／AD／Oracle／Excel 仍為 not_tested，docs/COMPANY-ACCEPTANCE.md 提供現場驗收工作單。

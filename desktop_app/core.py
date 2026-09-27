@@ -17,6 +17,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from .gateways import GatewayError
+from .query_schema import find_template, parameters as validate_parameters, date_mapping, LEGACY_DATE_RANGES
 
 UTC = timezone.utc
 TAIPEI = timezone(timedelta(hours=8))
@@ -219,9 +220,10 @@ class Store:
 class Engine:
     """Single-process local runner. UI polls Store; never receives worker callbacks."""
 
-    def __init__(self, store, query_runner, assistant_runner, query_validator=None):
+    def __init__(self, store, query_runner, assistant_runner, query_validator=None, query_catalog=None):
         self.store, self.query_runner, self.assistant_runner = store, query_runner, assistant_runner
         self.query_validator = query_validator
+        self.query_catalog = query_catalog or getattr(getattr(query_runner, "__self__", None), "catalog", None)
         self._lock = threading.RLock()
         self._closed = False
         self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="unit-helper")
@@ -276,6 +278,8 @@ class Engine:
         if kind in {"query", "query_summarize"}:
             if not isinstance(payload.get("query_id"), str) or not payload["query_id"] or not isinstance(payload.get("parameters"), dict):
                 raise ValueError("請先填妥查詢及條件。")
+            if self.query_catalog is not None:
+                validate_parameters(find_template(self.query_catalog(), payload["query_id"]), payload["parameters"])
             if self.query_validator is not None:
                 self.query_validator(payload["query_id"], payload["parameters"])
         elif not isinstance(payload.get("text"), str) or not payload["text"].strip() or len(payload["text"]) > 50000:
@@ -483,6 +487,7 @@ class Engine:
         t = self.store.task(source_task_id)
         if t["kind"] not in {"query", "query_summarize"} or t["state"] != "succeeded":
             raise ValueError("只能從成功的查詢建立排程。")
+        self._validate(t["kind"], t["payload"])
         try:
             hour, minute = map(int, time_hhmm.split(":"))
             valid_time = 0 <= hour <= 23 and 0 <= minute <= 59 and len(time_hhmm) == 5
@@ -520,6 +525,8 @@ class Engine:
     def set_schedule_enabled(self, schedule_id, enabled, now=None):
         with self._lock:
             s = self.store.schedule(schedule_id)
+            if enabled:
+                self._schedule_parameters(s, now or utcnow())
             # Repeated enabling does not reset the occurrence watermark.
             if bool(s["enabled"]) == bool(enabled):
                 return
@@ -536,17 +543,28 @@ class Engine:
             s = self.store.decode(db.execute("SELECT * FROM schedules WHERE id=?", (schedule_id,)).fetchone())
             if s["enabled"]:
                 raise ValueError("請先停用排程再修改日期模式。")
+            if mode == 'previous_day' and not self.schedule_date_mapping(s['query_id']):
+                raise ValueError("此模板未宣告日期映射，只能使用固定參數排程。")
             parameters = s["parameters"]
             parameters["_date_mode"] = mode
+            self._schedule_parameters(s, utcnow())
             db.execute("UPDATE schedules SET parameters=? WHERE id=?", (dumps(parameters), schedule_id))
 
-    @staticmethod
-    def _schedule_parameters(schedule, occurrence):
+    def schedule_date_mapping(self, query_id, legacy=False):
+        if self.query_catalog is not None:
+            return date_mapping(find_template(self.query_catalog(), query_id), legacy=legacy)
+        return LEGACY_DATE_RANGES.get(query_id) if legacy else None
+
+    def _schedule_parameters(self, schedule, occurrence):
         parameters = dict(schedule["parameters"])
         mode = parameters.pop("_date_mode", "literal")
         if mode == "previous_day":
+            mapping = self.schedule_date_mapping(schedule['query_id'], legacy=True)
+            if not mapping: raise ValueError("此模板未宣告日期映射，只能使用固定參數排程。")
             today = occurrence.astimezone(TAIPEI).date()
-            parameters.update(from_date=str(today - timedelta(days=1)), to_date=str(today))
+            parameters.update({mapping['start']:str(today-timedelta(days=1)), mapping['end']:str(today)})
+        elif mode != 'literal': raise ValueError("排程日期模式無效。")
+        self._validate('query', {'query_id':schedule['query_id'], 'parameters':parameters})
         return parameters
 
     def run_schedule_now(self, schedule_id, request_id=None):
@@ -570,7 +588,14 @@ class Engine:
         if overlap:
             db.execute("INSERT INTO occurrences VALUES(?,?,?,'skipped_overlap',NULL)", (uid(), schedule["id"], key))
             return None
-        params = self._schedule_parameters(schedule, occurrence)
+        try:
+            params = self._schedule_parameters(schedule, occurrence)
+        except ValueError:
+            db.execute("INSERT INTO occurrences VALUES(?,?,?,'failed',NULL)", (uid(), schedule['id'], key))
+            db.execute("INSERT OR IGNORE INTO notifications VALUES(?,?,NULL,?,0,?)",
+                       (uid(), 'invalid-schedule:'+schedule['id']+':'+key,
+                        '排程「'+schedule['name']+'」模板或參數已失效，未執行查詢。請停用並重新設定。', stamp()))
+            return None
         task_id, _ = self._new_task(db, "query", {"query_id": schedule["query_id"], "parameters": params},
                                   request_id="schedule:" + schedule["id"] + ":" + key, schedule_id=schedule["id"])
         db.execute("INSERT INTO occurrences VALUES(?,?,?,'queued',?)", (uid(), schedule["id"], key, task_id))

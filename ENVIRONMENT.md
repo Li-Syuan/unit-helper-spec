@@ -34,7 +34,9 @@ PowerShell 腳本未核准時可改執行以下命令，需逐條確認 exit cod
 ```
 
 doctor 真的建立 Tk root 並檢查確切版本／架構，不只是 import；不印出金鑰或環境變數值。
-離線安裝：公司核准的相同 Windows x64／CPython 3.10 環境可先 `python -m pip download -r requirements.lock -d wheelhouse`，再 `python -m pip install --no-index --find-links wheelhouse -r requirements.lock`；wheelhouse 不進本 repo。
+離線安裝請使用 [OFFLINE-INSTALL.md](docs/OFFLINE-INSTALL.md) 的 prepare-offline 與 setup -OfflineBundle 流程。它會核對鎖檔指紋、wheel 中繼資料與 SHA-256，再以無 index 模式安装；wheelhouse 不進 repo。不要跳過驗證直接安裝任意資料夾。
+
+雙擊 diagnose.bat 會輸出易讀檢查與 artifacts/diagnostics/readiness.json。也可用 `python scripts/doctor.py --human --output artifacts/diagnostics/readiness.json`。分享報告不包含路徑、內部網址、帳號、秘密或原始例外；公司服務保持 not_tested。明確指定的 config／data-dir 可用於檢查公司的預定設定，無需先連網。
 
 ## 本次開發機紀錄
 

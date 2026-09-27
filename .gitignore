@@ -17,3 +17,6 @@ config.local.json
 *.local.json
 .env.*
 wheelhouse/
+
+# Internal integration hooks/configuration and private test evidence
+company_local/

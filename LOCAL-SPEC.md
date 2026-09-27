@@ -1,4 +1,4 @@
-# 本機桌面 0.3.0 範圍與行為契約
+# 本機桌面 0.4.0 範圍與行為契約
 
 此文件優先於 v2.2 中涉及中央後端、遠端更新的假設；其餘完整產品規劃保留作後續路線。
 
@@ -11,6 +11,7 @@
 | desktop_app/choices.py | 持久化 typed 選項、owner／版本／期限／一次提交 |
 | desktop_app/gateways.py | 身分、公司 OpenAI 相容助理、查詢介面與合成實作 |
 | desktop_app/files.py | UTF-8 上傳驗證、CSV／TSV 安全輸出 |
+| desktop_app/query_schema.py | 動態欄位、純型別驗證、顯示與日期映射 |
 | desktop_app/config.py | 本機設定、資料路徑、單一執行個體鎖 |
 
 UI 不直接持有 SQL、密碼或 HTTP 細節。公司差異先集中 gateways.py；未來需要獨立 adapter 檔可在保持介面下拆出，不重寫 UI。
@@ -34,7 +35,7 @@ UI 不直接持有 SQL、密碼或 HTTP 細節。公司差異先集中 gateways.
 
 ## 本機排程
 
-每日／每週、HH:MM、星期 0～6；台北 UTC+8 固定時區。成功查詢才可建立，初始停用；啟用前顯示未來三次 UTC 時間及參數。固定日期或每次前一日，後者依該次預定執行時間解析。
+每日／每週、HH:MM、星期 0～6；台北 UTC+8 固定時區。成功查詢才可建立，初始停用；啟用前顯示未來三次 UTC 時間及參數。固定參數或每次前一日；後者必須由模板宣告 date_range，依該次預定執行時間解析起含迄不含日期。未宣告者不能使用；舊 DEMO 排程僅對 DEMO01～03 保留明確相容映射。
 
 程式每 3 秒檢查，`unique(schedule_id,scheduled_at)` 防重。同排程不重疊。關閉期間最新 24 小時最多補跑一次，較舊紀錄以壓縮略過標記保存。重開未完成工作標失敗、不自動重送。停用期間不追補。這是單機防重，不宣稱跨機 exactly-once 或分散式 lease。
 
@@ -45,3 +46,11 @@ UI 不直接持有 SQL、密碼或 HTTP 細節。公司差異先集中 gateways.
 獨立 `local-v1.sqlite3`、schema user_version=1、WAL；首次建檔，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
 回報 draft 可讀取修改，local_saved 只表示保存在此電腦；編號 LOCAL-*。不自動附加對話、資料或檔案，不冒稱管理者已收到。未實作處理狀態同步／修正版本管理。
 資料移轉、中央 API、AD、Oracle、簽章更新及 EXE 打包均另列交接；禁止將原 v2.2 相關 AT 記成已通過。
+
+## 0.4.0 公司接手準備
+
+catalog 的參數定義支援 text/date/integer/decimal/single_choice/boolean、required/default 與適用範圍。UI、Plan 修改與預覽、結果條件及排程共用定義；decimal 保持文字，未知欄位／模板或不支援定義拒絕。adapter.validate 仍為純驗證且保有查詢商業規則；一般送出／批准與排程服務均檢查。細節見 docs/QUERY-CATALOG.md。
+
+本機診斷不連網、逐项收集結果與白名單分享報告；company_acceptance 不因本機通過而改為通過。離線套件包綁定 requirements.lock 指紋與各 wheel SHA-256，缺失或損壞停止，無連外 fallback。雜湊保護傳輸完整性，不是公司發布簽章。
+
+test_support 包含可重用 adapter 契約，company_templates 提供待填測試骨架，company_check 必須明確啟動且完成公司能力審查才載入可信 hooks。無 hooks 或缺項是 not_tested，不能以 demo／skip 替代公司驗收。不包括正式 AD、Oracle 或舊資料移轉。
