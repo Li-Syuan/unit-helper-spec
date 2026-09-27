@@ -2,11 +2,11 @@
 
 ## 當前範圍
 
-先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.11.0 改為對話內補條件、確認、進度與結果，增加持久化來源連結，延續個人待辦、工作卡片、草稿保存與深淺正式品牌圖示；歷史規格由 Git 查閱，不再作為當前開發需求。
+先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.12.0 增加對話式 Plan、多助理依序協作及流程排程，延續個人待辦、工作卡片、草稿保存與深淺正式品牌圖示；歷史規格由 Git 查閱，不再作為當前開發需求。
 
 沿用 Windows x64、Python **恰好 3.10.4**、Tkinter／ttk、SQLite、OpenAI SDK 與 Windows keyring。公司待辦為 chatbot 契約、AD／名單及 owner 授權、三項 Oracle 查詢、舊資料／排程遷移與現場驗收。不得覆蓋公司原有規則或程式。
 
-中央管理 API、中央 schema／常駐排程、issue 後台、遠端更新、EXE、產品多 agent／持續 Goal、信件、OCR、Office 原檔編輯、多文件及任意 SQL／shell 均不在目前範圍。GPT 6 sol 是開發 agent，不是預設產品模型 ID。
+中央管理 API、中央 schema／常駐排程、issue 後台、遠端更新、EXE、無界限自主多 agent／持續 Goal、信件、OCR、Office 原檔編輯、多文件及任意 SQL／shell 均不在目前範圍。GPT 6 sol 是開發 agent，不是預設產品模型 ID。
 
 ## 架構與安全契約
 
@@ -44,7 +44,7 @@ conversation_actions 與 messages 分開；查詢、排程 task 保持獨立，�
 
 `local_work.py` 為本機 CRUD 與草稿版本防重；`todo_views.py`／`draft_views.py` 為介面，`work_cards.py` 是公司可調整的文字入口。待辦狀態由人確認，不得觸發模型、排程或標記 AI 工作成功；來源只是可失效的連結，刪除對話保留另存待辦副本。
 
-Store 升級至 schema 4，schema 1／2／3 先以 SQLite backup 備份，再同交易遷移；不要直接降低 user_version。草稿按對話保存，背景寫入須檢查 reservation，送出清除／刪除後晚到結果不得復活；Plan 修改不當普通草稿。對話刪除快照和交易包含草稿。附件不跨啟動讀取，重開提示重新選取。
+Store 升級至 schema 5，schema 1／2／3／4 先以 SQLite backup 備份，再同交易遷移；不要直接降低 user_version。草稿按對話保存，背景寫入須檢查 reservation，送出清除／刪除後晚到結果不得復活；Plan 修改不當普通草稿。對話刪除快照和交易包含草稿。附件不跨啟動讀取，重開提示重新選取。
 
 ## 驗證與交付
 
@@ -65,3 +65,16 @@ Store 升級至 schema 4，schema 1／2／3 先以 SQLite backup 備份，再同
 ## 0.11.1 視窗與訊息框
 
 應用 showerror／showwarning／showinfo／askyesno 集中 dialogs.py，保留同步結果語意、取消預設焦點及巢狀grab恢復。不把提示關閉當成重試或批准。theme.Appearance 同步更新既有與後開視窗；window_chrome.py 只呼叫原生DWM著色，失敗不影響功能、不以無框視窗替代。檔案選擇器及外觀尚未建立的啟動錯誤才沿用系統。
+
+
+## 對話式 Plan 與多助理協作
+
+workflows.py 為 WorkflowService，workflow_views.py 為同頁呈現。新「規劃工作」會明示呼叫已驗證 planner 討論需求，與既有零模型呼叫的本機 Plan 預覽分開。規劃輸出是建議，最多六個無循環的依序步驟；規劃期間不能查詢／派發子代理／建排程。preview 純驗證、十分鐘確認、版本綁定與 request ID 由服務層檢查。
+
+schema 5 新增 workflows／workflow_versions／workflow_steps；tasks(kind=workflow) 保存每次真實執行，既有 occurrences／schedules 負責排程，不另建狀態來源。刪對話清未批准草稿與來源連結，已批准流程、工作及排程保留；規劃及執行的真實 future 結束前不能刪除。取消／關閉後晚到回覆不得寫回，失敗不自動重試。
+
+Profiles.workflow_catalog／workflow_binding／validate_workflow／workflow_call 為公司協作邊界。只有經實測的唯讀文字／RAG能力可由公司 hook 使用 set_workflow_capability 啟用；UI 只能保存未驗證角色。不得把填 evidence 或 verified=True 本身當成真實驗收。assistant ID／endpoint 改變會撤銷能力驗證。公司有 session 時依 run_id＋step_id＋助理版本隔離；未知公司格式禁止猜測或 Groq fallback。
+
+子代理只收已批准的指定來源。查詢向下游只送程式合計及 metadata，原始表格本機保留；精確 facts 與來源不符即失敗，但不能宣稱已驗證自由文字全部正確。覆核 needs_attention 停止後續。成功流程才能建立持續授權排程；重用固定版本，App 須開啟。失敗、失效綁定、關閉時未完成流程會暫停相關排程。無自動重規劃、無自動 retry、無生圖或 shell。
+
+Groq 試用使用同模型的 planner／analysis／review／compose 四個隔離角色。scripts/check-workflows.py --live 才啟動最多四次合成請求，僅暫存資料，不動使用者排程。驗證入口：tests.test_workflows、tests.test_workflow_profiles、tests.test_workflow_ui；真公司多ID與使用性另驗收。

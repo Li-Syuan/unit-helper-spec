@@ -23,8 +23,8 @@
 - 如果實際 API 不是上述格式，修改 adapter，不以猜測參數讓 request 勉強通過；不要切到公共 OpenAI 端點。正常公司錯誤不得回退 demo。
 - 舊 config 的 model／assistant_ref 接線可沿用；新助理不自動套用它。公司 session 必須按使用者、助理版本及對話隔離；目前新映射使用 stateless messages，若需要持久化 session 必須擴充契約並加入交叉污染測試。
 - 維護者確認測試助理不會執行副作用後，才配置既有 verified_side_effect_free；測試連線按鈕讀取這個 gate。它不等於資料庫／工具授權。
-- Oracle 仍由核准查詢工具處理，結果經選列／預覽後才交助理。排程不自動呼叫助理。
-- 升級至 schema 3（由 schema 1／2）之前產生 SQLite backup API 備份；舊對話 binding 為 NULL，保留只讀。不要猜舊訊息的助理歸屬。需回復時關閉新程式，由維護者使用備份與舊版配套恢復，不直接降低 user_version。
+- Oracle 仍由核准查詢工具處理，結果經選列／預覽後才交助理。一般查詢排程不自動呼叫助理；新協作排程須經成功試跑與持續傳送授權。
+- 升級至 schema 5（由 schema 1／2／3／4）之前產生 SQLite backup API 備份；舊對話 binding 為 NULL，保留只讀。不要猜舊訊息的助理歸屬。需回復時關閉新程式，由維護者使用備份與舊版配套恢復，不直接降低 user_version。
 
 基準命令：
 
@@ -34,3 +34,12 @@
 ~~~
 
 公司實測仍按 [接手工作單](../COMPANY-HANDOFF.md) 和 [測試契約](ADAPTER-TEST-KIT.md) 明確啟動；先完成 mock 契約，再用公司測試助理執行。完成條件是對話隔離、正確助理 ID、資料送出範圍與失敗狀態皆與公司人工結果一致。未拿到範例前保持 not_tested。
+
+
+## 協作 adapter 契約
+
+公司沿用 `workflow_call(messages, role, binding, context)`，role 為 planner／analysis／review／compose／rag，binding 包含 profile_id、連線 revision、capability_revision；context 包含 run_id、step_id。無狀態 API 可沿用現有 respond；有 session 的平台需依上述識別及助理版本建立獨立上下文，不能挪用個人聊天 session。重試有新的 run_id。
+
+规划 role 回傳 JSON：message、questions、steps。問題支援 text/single/multi/boolean；有問題時 steps 為空。步驟為目錄內 query 或 assistant，inputs 引用前置步驟 ID。分析／彙整／RAG 回傳 JSON：text、facts；覆核另含 verdict=pass 或 needs_attention。facts 的精確預期物件隨每步輸入提供，不推測或轉浮點。回覆格式不符、錯誤數值及工具要求都應失敗，不截斷、不替換成示範答案。
+
+RAG 來源按平台實際格式映射至回覆文字，不能猜引用；assistant metadata verified/read_only 需公司核准測試支持。UI 只可保存角色、會撤銷驗證；啟用由可信公司 hook 完成並記錄本機證據識別。名稱／備註修改不影響連線，ID／endpoint 改變會撤銷能力驗證；流程固定版本，不能暗換目標。參見 [公司工作單](../COMPANY-HANDOFF.md#多助理協作接手工作)。

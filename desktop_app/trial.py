@@ -60,12 +60,13 @@ class GroqAssistant:
         import openai
         if purpose not in PURPOSES:
             raise GatewayError('不支援的助理操作。')
-        clean = validated_messages(messages, 6000)
+        workflow=purpose in {'workflow_plan','workflow_step'}
+        clean = validated_messages(messages, 24000 if workflow else 6000)
         try:
             options={} if response_format is None else {'response_format':response_format}
             response = self.client.chat.completions.create(
                 model=MODEL, messages=[{'role':'system', 'content':PURPOSES[purpose]}, *clean],
-                stream=False, max_completion_tokens=2048, reasoning_effort='low',
+                stream=False, max_completion_tokens=4096 if workflow else 2048, reasoning_effort='low',
                 extra_body={'include_reasoning':False}, **options)
             choice = response.choices[0]
             message = choice.message
@@ -106,6 +107,10 @@ class TrialProfiles(Profiles):
                      'profiles':[{'id':PROFILE_ID, 'revision':1, 'name':'Groq 試用助理',
                      'assistant_id':MODEL, 'enabled':True,
                      'notes':'外部 AI：可整理與改寫測試文字。請勿傳送公司機密或個資。'}]}
+        for role,label in [('planner','主代理／規劃'),('analysis','分析子代理'),('review','覆核子代理'),('compose','日報子代理')]:
+            self.data['profiles'].append({'id':'groq-'+role,'revision':1,'name':label+'（Groq）','assistant_id':MODEL,
+                'enabled':True,'notes':'同一 Groq 模型的隔離角色，非公司 assistant ID；僅供合成資料測試。',
+                'workflow':{'revision':1,'roles':[role],'verified':True,'read_only':True,'evidence':'trial-stateless-no-tools'}})
 
     def key(self):
         return read_key(self.env_path)

@@ -6,6 +6,7 @@ Cancellation fences result writes; it cannot interrupt a remote provider call.
 from __future__ import annotations
 
 import hashlib
+import copy
 import json
 import sqlite3
 import threading
@@ -54,10 +55,10 @@ class Store(LocalWorkStore):
         self._draft_revisions = {}
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version > 4:
+            if version > 5:
                 raise ValueError("資料庫版本較新，請使用相容的應用程式。")
-            if version in (1, 2, 3):
-                backup=self.path.with_name(self.path.name+'.pre-v4-'+uid()+'.bak')
+            if version in (1, 2, 3, 4):
+                backup=self.path.with_name(self.path.name+'.pre-v5-'+uid()+'.bak')
                 with sqlite3.connect(str(backup)) as target: db.backup(target)
             db.executescript("""
                 PRAGMA journal_mode=WAL;
@@ -101,7 +102,9 @@ class Store(LocalWorkStore):
                 db.execute("ALTER TABLE conversations ADD COLUMN source TEXT")
             initialize_work_schema(db)
             initialize_action_schema(db)
-            db.execute("PRAGMA user_version=4")
+            from .workflows import initialize_workflow_schema
+            initialize_workflow_schema(db)
+            db.execute("PRAGMA user_version=5")
             self._draft_revisions = {row['conversation_id']: row['revision'] for row in db.execute('SELECT conversation_id,revision FROM drafts')}
 
     @contextmanager
@@ -259,6 +262,7 @@ class Engine:
         self._assistant_dispatching = set()
         # Only the process holding the app's data-directory lock may create Engine.
         with store.connection() as db:
+            db.execute("UPDATE schedules SET enabled=0 WHERE id IN (SELECT schedule_id FROM tasks WHERE kind='workflow' AND state IN ('queued','running'))")
             db.execute("UPDATE tasks SET state='failed',error=?,finished_at=? WHERE state IN ('queued','running')",
                        ("應用程式已中斷；未自動重送，請確認後重新操作。", stamp()))
             db.execute("UPDATE plans SET state='failed' WHERE state='executing'")
@@ -295,6 +299,9 @@ class Engine:
         actions=[dict(row) for row in db.execute(
             f"SELECT * FROM conversation_actions WHERE conversation_id IN ({placeholders}) ORDER BY id",ids)]
         if actions:data['actions']=actions
+        if hasattr(self,'_workflows'):
+            workflows=self._workflows.deletion_snapshot(db,ids)
+            if workflows:data['workflows']=workflows
         if any(cid in ids for cid in getattr(self,'_action_parsing',{}).values()):
             raise ValueError('選定對話的需求解析尚未結束，請稍後再刪除。')
         linked={a['task_id'] for a in actions if a['task_id']}
@@ -379,6 +386,7 @@ class Engine:
                 marks = ','.join('?' for _ in preview["ids"])
                 db.execute(f"DELETE FROM conversation_actions WHERE conversation_id IN ({marks})",preview['ids'])
                 db.execute(f"UPDATE schedule_sources SET conversation_id=NULL WHERE conversation_id IN ({marks})",preview['ids'])
+                if hasattr(self,'_workflows'):self._workflows.delete_source(db,preview['ids'])
                 for table in ("messages", "plans", "tasks", "drafts"):
                     db.execute(f"DELETE FROM {table} WHERE conversation_id IN ({marks})", preview["ids"])
                 db.execute(f"DELETE FROM conversations WHERE id IN ({marks})", preview["ids"])
@@ -581,8 +589,11 @@ class Engine:
             db.execute("UPDATE tasks SET state='cancelled',finished_at=? WHERE id=? AND state IN ('queued','running')", (stamp(), task_id))
             db.execute("UPDATE plans SET state='cancelled' WHERE task_id=? AND state='executing'", (task_id,))
             db.execute("UPDATE occurrences SET state='cancelled' WHERE task_id=? AND state IN ('queued','running')", (task_id,))
+            if hasattr(self,'_workflows'):self._workflows.cancel_task_tx(db,task_id)
 
     def _work(self, task_id):
+        if hasattr(self,'_workflows') and self.store.task(task_id)['kind']=='workflow':
+            return self._workflows.work(task_id)
         with self._lock, self.store.connection() as db:
             cursor = db.execute("UPDATE tasks SET state='running' WHERE id=? AND state='queued'", (task_id,))
             if not cursor.rowcount:
@@ -656,7 +667,8 @@ class Engine:
                 db.execute("INSERT INTO messages VALUES(?,?,?,?,?)",
                            (uid(), t["conversation_id"], "assistant", result["text"], stamp()))
             if t["schedule_id"]:
-                self._notify_result(db, t, state, result)
+                if t['kind']=='workflow':self._workflows.notify(db,t,state)
+                else:self._notify_result(db, t, state, result)
 
     @staticmethod
     def _next_fire(schedule, after):
@@ -728,6 +740,7 @@ class Engine:
         with self._lock, self.store.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             s = self.store.decode(db.execute("SELECT * FROM schedules WHERE id=?", (schedule_id,)).fetchone())
+            if '_workflow' in s['parameters']:raise ValueError('協作流程日期屬於已批准計畫；請另建流程修改並試跑。')
             if s["enabled"]:
                 raise ValueError("請先停用排程再修改日期模式。")
             if mode == 'previous_day' and not self.schedule_date_mapping(s['query_id']):
@@ -743,6 +756,10 @@ class Engine:
         return LEGACY_DATE_RANGES.get(query_id) if legacy else None
 
     def _schedule_parameters(self, schedule, occurrence):
+        if '_workflow' in schedule['parameters']:
+            if not hasattr(self,'_workflows'):raise ValueError('協作服務尚未初始化。')
+            self._workflows.schedule_spec(schedule,occurrence)
+            return copy.deepcopy(schedule['parameters'])
         parameters = dict(schedule["parameters"])
         mode = parameters.pop("_date_mode", "literal")
         if mode == "previous_day":
@@ -768,6 +785,9 @@ class Engine:
             return task_id
 
     def _claim_occurrence(self, db, schedule, key, occurrence):
+        if '_workflow' in schedule['parameters']:
+            if not hasattr(self,'_workflows'):raise ValueError('協作服務尚未初始化。')
+            return self._workflows.claim(db,schedule,key,occurrence)
         old = db.execute("SELECT task_id FROM occurrences WHERE schedule_id=? AND scheduled_at=?", (schedule["id"], key)).fetchone()
         if old:
             return None
@@ -863,9 +883,13 @@ class Engine:
             if not self._closed:
                 self._closed = True
                 with self.store.connection() as db:
+                    db.execute("UPDATE schedules SET enabled=0 WHERE id IN (SELECT schedule_id FROM tasks WHERE kind='workflow' AND state IN ('queued','running'))")
                     db.execute("UPDATE tasks SET state='cancelled',finished_at=? WHERE state IN ('queued','running')", (stamp(),))
                     db.execute("UPDATE plans SET state='cancelled' WHERE state='executing'")
                     db.execute("UPDATE occurrences SET state='cancelled' WHERE state IN ('queued','running')")
+                    if hasattr(self,'_workflows'):
+                        db.execute("UPDATE workflow_steps SET state='cancelled',error='應用已關閉；未自動重送。' WHERE state IN ('queued','running')")
+                        db.execute("UPDATE workflows SET state='draft',revision=revision+1,error='規劃已中斷，請重新送出。' WHERE state='planning'")
         # Workers and future callbacks need _lock during shutdown.
         self._pool.shutdown(wait=wait, cancel_futures=True)
 

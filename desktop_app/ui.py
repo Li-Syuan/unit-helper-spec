@@ -32,7 +32,7 @@ from .files import load_upload, render_tsv, render_csv
 
 LABELS = {'queued':'等待','running':'執行中','succeeded':'完成','failed':'失敗','cancelled':'取消',
           'draft':'草稿','pending':'待批准','ready':'待批准','executing':'執行中','local_saved':'本機保存（未送出）','skipped_overlap':'略過（前次尚未完成）','skipped_misfire':'略過（超過補跑期限）'}
-KINDS={'query':'查詢','query_summarize':'查詢並整理','chat':'對話','summarize':'整理重點','rewrite':'改寫文字'}
+KINDS={'query':'查詢','query_summarize':'查詢並整理','chat':'對話','summarize':'整理重點','rewrite':'改寫文字','workflow':'多助理流程'}
 ISSUE_NAMES={'answer':'回答問題','query':'查詢問題','app':'操作故障','schedule':'排程問題','update':'更新問題','feature':'新需求'}
 
 def put(widget, text):
@@ -82,9 +82,11 @@ from .todo_views import TodoViews
 from .report_views import ReportViews
 from .action_views import ActionViews, local_time, WEEKDAYS
 from .conversation_actions import ActionService
+from .workflows import WorkflowService
+from .workflow_views import WorkflowViews
 
 
-class App(ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, ConversationViews):
+class App(WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, ConversationViews):
     def __init__(self, root, config=None, directory=None, config_path=None, groq_trial=False):
         self.drafts={}; self.next_binding=None
         self.groq_trial=groq_trial
@@ -117,6 +119,7 @@ class App(ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, Exper
         except BaseException:
             self.lock.close(); raise
         self.actions=ActionService(self.engine)
+        self.workflows=WorkflowService(self.engine,self.profiles)
         self.io=ThreadPoolExecutor(max_workers=1); self.events=queue.Queue(); self.stop=threading.Event()
         self.closed=False; self.pending_io=0; self.io_futures=[]; self.attachment=None; self.result=None; self.result_task=None; self.page=0
         self.editing_plan=None; self.issue_id=None; self.seen={t['id']:t['state'] for t in self.store.tasks()}
@@ -298,7 +301,14 @@ class App(ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, Exper
             tree.item(key,tags=('odd' if idx%2 else 'even',state))
     def build_chat(self):
         self.build_workspace_chat()
+        self.build_workflow_ui()
     def update_composer(self):
+        if hasattr(self,'workflow_mode') and self.workflow_mode.get()=='workflow':
+            record=self.workflow_record or {};task=record.get('task') or {}
+            busy=record.get('state')=='planning' or task.get('state') in ('queued','running')
+            self.send_button.configure(text='主代理規劃中' if busy else '送給主代理討論' if record else '開始規劃工作',state='disabled' if busy else 'normal')
+            self.cancel_button.pack_forget()
+            return
         active=any(t['conversation_id']==self.conversation and t['state'] in ('queued','running') for t in self.store.tasks())
         readonly=False
         if self.conversation:
@@ -328,6 +338,7 @@ class App(ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, Exper
             self.show_chat();self.book.select(self.tabs['chat'])
     def show_chat(self):
         self.render_workspace_chat()
+        self.refresh_workflow_view()
     def text_choices(self):
         form=self.forms.create([{'id':'purpose','title':'這份文字要怎麼處理？','type':'single_choice','options':[{'id':'summarize','label':'整理重點'},{'id':'rewrite','label':'改寫文字'}]},
           {'id':'focus','title':'希望注重哪些方向？（可選 1～3 項）','type':'multi_choice','min':1,'max':3,'options':[{'id':'clear','label':'清楚易讀'},{'id':'brief','label':'精簡內容'},{'id':'formal','label':'正式語氣'}]}])
@@ -361,6 +372,7 @@ class App(ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, Exper
         self.attachment=None; self.attachment_label.configure(text='可先預覽，再送出')
         self.draft_attachment_hints.discard(self.conversation);self.draft_changed()
     def send_chat(self):
+        if self.workflow_mode.get()=='workflow':return self.send_workflow()
         self.profiles.validate(self.store.conversation(self.conversation)['binding'])
         text=self.input.get('1.0','end-1c').strip(); purpose={'一般對話':'chat','整理重點':'summarize','改寫文字':'rewrite'}[self.purpose.get()]
         if not self.editing_plan and not self.attachment and not self.plan_mode.get() and purpose=='chat' and not getattr(self,'action_chat_only',False) and self.route_action(text):return
@@ -585,6 +597,7 @@ class App(ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, Exper
         self.text_copy=self.button(row,'複製文字',lambda:self.clipboard(self.output.get('1.0','end-1c'))); self.text_copy.pack(side='left'); self.text_copy.configure(state='disabled')
         self.text_save=self.button(row,'另存文字',self.save_text); self.text_save.pack(side='left',padx=8); self.text_save.configure(state='disabled')
     def show_result(self,tid):
+        if self.store.task(tid)['kind']=='workflow':return self.show_workflow_result(tid)
         task=self.store.task(tid); result=task['result']; self.result_task=tid; self.result=None; self.page=0
         if result is None: raise ValueError(task['error'] or '工作尚無結果。')
         if isinstance(result,dict) and 'rows' in result:
@@ -682,6 +695,9 @@ class App(ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, Exper
         self.button(body,'保存停用草稿',create).grid(row=8,column=0,columnspan=2)
         self.appearance.apply(window)
     def enable_schedule(self):
+        if self.store.schedule(selected(self.schedules))['query_id']=='WORKFLOW':
+            if messagebox.askyesno('確認啟用流程','將依已批准版本自動執行並傳送指定資料；App 必須保持開啟。確認啟用？',parent=self.root):self.engine.set_schedule_enabled(selected(self.schedules),True)
+            return
         sid=selected(self.schedules); preview=self.engine.schedule_preview(sid)
         record=self.store.schedule(sid)
         lines=[record['name'],'未來三次執行（台北）']
@@ -691,6 +707,12 @@ class App(ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, Exper
     def schedule_details(self):
         if not self.schedules.selection(): return
         sid=selected(self.schedules); record=self.store.schedule(sid)
+        if record['query_id']=='WORKFLOW':
+            put(self.schedule_info,record['name']+'\n多助理已批准流程 · '+record['time_hhmm']+' 台北時間\n只執行固定版本，不重新規劃；程式須保持開啟。\n立即執行不改原定時間。')
+            source=self.store.schedule_source(sid)
+            self.schedule_source_button.configure(state='normal' if source and source.get('conversation_id') else 'disabled')
+            self.sync_tree(self.runs,[(r['id'],[local_time(r['scheduled_at']),LABELS.get(r['state'],r['state'])]) for r in self.store.schedule_runs(sid)])
+            return
         parameters=record['parameters']
         try: preview=self.engine.schedule_preview(sid); preview_error=None
         except ValueError as exc: preview=[]; preview_error='無法預覽／執行：'+str(exc)
@@ -824,6 +846,7 @@ class App(ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, Exper
         self.activity_label.configure(text=f'●  {busy} 項工作進行中' if busy else '●  就緒')
         self.update_composer();self.refresh_workspace();self.refresh_page_hint()
         self.refresh_action_activity()
+        self.refresh_workflow_view()
         plans=self.store.plans(); tasks=self.store.tasks()
         self.work_hint.set(f'{sum(p["state"]=="ready" for p in plans)} 份待確認計畫  ·  {len(tasks)} 項工作紀錄' if plans or tasks else '選擇「先規劃」建立計畫，批准前不會執行。')
     def close(self,force=False):

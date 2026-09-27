@@ -81,6 +81,7 @@ class AssistantViews:
             self.button(row,text,fn).pack(side='left',padx=(0,6))
         self.button(row,'使用說明',lambda:self.show_help('設定公司助理'),'Quiet.TButton').pack(side='right')
         self.profile_connection=self.button(tab,'測試選取助理連線',self.test_profile);self.profile_connection.pack(anchor='w',pady=5)
+        self.button(tab,'設定助理分工角色',self.edit_workflow_capability,'Compact.TButton').pack(anchor='w',pady=4)
         ttk.Label(tab,text='AD／Oracle 尚未接線；測試連線會呼叫公司助理，須先確認其工具副作用。',style='Muted.TLabel',wraplength=750).pack(anchor='w',pady=4)
         self.refresh_profiles()
     def require_profile_edit(self):

@@ -1,0 +1,28 @@
+{
+  "data": "synthetic_only",
+  "company_services": "not_tested",
+  "external_service": "external_real_passed",
+  "requests": 4,
+  "planning": "external_real_passed",
+  "steps": [
+    {
+      "step": "s1",
+      "state": "succeeded"
+    },
+    {
+      "step": "s2",
+      "state": "succeeded"
+    },
+    {
+      "step": "s3",
+      "state": "succeeded"
+    },
+    {
+      "step": "s4",
+      "state": "succeeded"
+    }
+  ],
+  "schedule_creation": "local_real_passed",
+  "user_data_changed": false,
+  "notes": "Earlier live attempts failed strict facts-shape validation; clarified prompt and explicitly reran. No fallback responses."
+}

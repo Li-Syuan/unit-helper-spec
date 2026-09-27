@@ -1,6 +1,6 @@
 # QA agent 公司接手工作單
 
-目前版本 **0.11.1**，已完成本機桌面與接手工具；沿用本機待辦、常用工作與草稿恢復，圖示已隨外觀切換，無須公司重新接線。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。目前沒有公司原始碼、成功 API 樣本或資料庫規格，不能保證只填三個參數就全部接通。
+目前版本 **0.12.0**，已完成本機桌面與接手工具；沿用本機待辦、常用工作與草稿恢復，圖示已隨外觀切換，無須公司重新接線。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。目前沒有公司原始碼、成功 API 樣本或資料庫規格，不能保證只填三個參數就全部接通。
 
 先讀 [開發守則](AGENTS.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md)。已完成多助理、keyring、對話與刪除、Plan／選項、TXT／CSV、三項合成查詢、表格／匯出、本機排程／通知、回報草稿、深淺主題、DPI 與原地提示。沿用現有畫面及 Protocol；GPT 6 sol 是開發 agent，不是產品模型 ID。
 
@@ -46,6 +46,23 @@
 若公司後續要開放日報整理，需另核准助理資料去向、持續傳送授權、模型結構化能力、查詢範圍與每次派發身分檢查，再接公司 adapter；不僅更換 endpoint。公司持續 Goal、Windows 背景排程及自動寄信仍未實作。
 
 公司對話操作接線新增要求：保留 catalog 動態欄位，先以同頁表單完成核准查詢；目前公司解析能力預設關閉。若公司要開放自然語言解析，須提供可信模板目錄、成功結構化回傳與副作用審查結果，新增解析 adapter 後驗證缺條件、未知欄位、錯誤型別、惡意內容及零未批准派發，不能只把 capability 改成 True。測試入口為 `tests.test_conversation_actions` 與 `tests.test_action_ui`，公司 DB 結果仍依下列工作單人工比對。
+
+## 多助理協作接手工作
+
+已完成：對話式主代理需求討論、選項追問、最多六步計畫、批准後依序交子代理、結果與明確重試、成功流程排程。UI 與 WorkflowService 可直接沿用；Groq 四角色真實測試不等於公司四個 assistant ID 驗收。
+
+| 所需內部資訊 | 修改入口／工作 | 完成條件 |
+|---|---|---|
+| 規劃、分析、覆核、彙整、RAG 各助理 ID、用途、實際能力 | 我的助理先登錄；profiles.py 的角色與能力 metadata | 列出可接收資料、輸出及服務端工具，未知／生圖不加入自動流程 |
+| 成功 API 與 session 契約 | Profiles.workflow_call(messages, role, binding, context)，沿用 respond／CompanyAssistant | ID 路由正確；run_id、step_id、助理版本隔離；沒有隱含寫入或寄信 |
+| 規劃／覆核結構化回覆樣本 | adapter 回傳文字 JSON；workflows.py 做應用端驗證 | 追問、最多六步、未知工具拒絕、未批准零業務派發；不支援時明確失敗 |
+| RAG 文字及真實引用格式 | 公司 adapter 保留實際來源於回覆文字 | 無來源明示，不能由 UI 推測或新增引用；生圖保持不支援 |
+| 能力測試證據識別（不是秘密） | 實測通過後由可信公司 hook 呼叫 set_workflow_capability(profile_id, roles, verified=True, evidence=本機證據識別) | verified 只記錄真實驗收結果，不以填旗標代替測試；改 ID／endpoint 後重新驗證 |
+| 查詢模板及數據比對 | 沿用下方 Oracle 工作單 | 相同條件的精確合計與人工一致；首版只轉交 metadata／合計，原始表格本機保存 |
+
+本機命令：`.venv/Scripts/python.exe -m unittest tests.test_workflows tests.test_workflow_profiles tests.test_workflow_ui -v`。另以核准的內部合成資料驗證兩個以上真實 ID 及不同 run/step 的 session 隔離，保存 company_real_passed 證據後才開放日常排程。公司版不讀 Groq .env。
+
+接手順序：先跑基準 → 接通一般 API → 驗證唯讀規劃與子代理能力／隔離 → 登錄並啟用角色 → 用內部合成文字試跑 → 接核准數據 → 人工對照成果 → 啟用流程排程。不必重寫畫面或引擎；但不能只換 ID、跳過能力及 API 契約驗證。
 
 ## 六項接線工作
 
@@ -125,7 +142,7 @@
 ## 可直接貼給 GPT 6 sol
 
 ~~~text
-請接手 QA agent 0.11.1 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或產品多代理。
+請接手 QA agent 0.12.0 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或無界限自主代理。
 
 先盤點公司已有程式、成功 API 範例及環境，依 COMPANY-HANDOFF 的資訊表確認缺項；找得到就沿用，缺少時一次問最少必要問題並繼續獨立可做工作。不要猜 URL、assistant ID 傳送位置、session、AD／SQL 欄位或秘密；秘密不貼對話、不進 repo／log。
 

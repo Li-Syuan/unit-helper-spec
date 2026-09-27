@@ -139,14 +139,14 @@ class LocalWorkTests(TestCase):
         self.store.add_message(self.cid, 'user', 'history')
         self.make_v2()
         migrated = Store(self.path)
-        backups = list(self.path.parent.glob('*.pre-v4-*.bak'))
+        backups = list(self.path.parent.glob('*.pre-v5-*.bak'))
         self.assertEqual(len(backups), 1)
         with sqlite3.connect(backups[0]) as db:
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 2)
             self.assertEqual(db.execute('SELECT text FROM messages').fetchone()[0], 'history')
         self.assertEqual(migrated.messages(self.cid)[0]['text'], 'history')
         Store(self.path)
-        self.assertEqual(len(list(self.path.parent.glob('*.pre-v4-*.bak'))), 1)
+        self.assertEqual(len(list(self.path.parent.glob('*.pre-v5-*.bak'))), 1)
 
     def test_migration_failure_rolls_back_new_tables_and_version(self):
         self.make_v2()

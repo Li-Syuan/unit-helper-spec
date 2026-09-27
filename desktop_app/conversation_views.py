@@ -81,7 +81,7 @@ class ConversationViews:
         scroll=ttk.Scrollbar(holder,command=names.yview);scroll.pack(side='right',fill='y');names.configure(yscrollcommand=scroll.set)
         horizontal=ttk.Scrollbar(body,orient='horizontal',command=names.xview)
         horizontal.pack(fill='x');names.configure(xscrollcommand=horizontal.set)
-        boundary=ttk.Label(body,text='原始附件、匯出、既有備份、獨立查詢與排程保留。\n其他對話的轉交副本與公司端歷史不會刪除。',wraplength=460,style='Muted.TLabel',justify='left')
+        boundary=ttk.Label(body,text='原始附件、匯出、備份、獨立查詢與排程保留。\n已批准協作流程與成果保留，未批准流程草稿移除。\n其他對話的轉交副本與公司端歷史不會刪除。',wraplength=460,style='Muted.TLabel',justify='left')
         boundary.pack(anchor='w',pady=10)
         body.bind('<Configure>',lambda e:boundary.configure(wraplength=max(100,e.width-self.display.px(40))),add='+')
         row=ttk.Frame(body);row.pack(fill='x')

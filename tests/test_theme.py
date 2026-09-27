@@ -140,6 +140,7 @@ class ThemeTests(TestCase):
                         if page is a.tabs['chat'] and not widget.winfo_ismapped() and (str(widget).startswith(str(a.action_panel))
                                 or str(widget).startswith(str(a.more_options)) or str(widget).startswith(str(a.task_card))
                                 or str(widget).startswith(str(a.work_toolbar))
+                                or str(widget).startswith(str(a.workflow_panel))
                                 or widget in (a.selection_todo,a.selection_handoff,a.cancel_button,a.remove_upload_button)):
                             continue  # Explicitly conditional controls have focused action-journey coverage.
                         self.assertTrue(widget.winfo_ismapped())

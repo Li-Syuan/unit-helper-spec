@@ -104,5 +104,145 @@
       },
       "close_visible": true
     }
+  ],
+  "workflow_0_12_0": [
+    {
+      "theme": "dark",
+      "size": [
+        1050,
+        700
+      ],
+      "controls": [
+        {
+          "text": "送給主代理討論",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "批准並試跑",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "修改步驟",
+          "visible": true,
+          "inside": true
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "size": [
+        1280,
+        860
+      ],
+      "controls": [
+        {
+          "text": "送給主代理討論",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "批准並試跑",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "修改步驟",
+          "visible": true,
+          "inside": true
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "size": "maximized",
+      "controls": [
+        {
+          "text": "送給主代理討論",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "批准並試跑",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "修改步驟",
+          "visible": true,
+          "inside": true
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "size": [
+        1050,
+        700
+      ],
+      "controls": [
+        {
+          "text": "送給主代理討論",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "批准並試跑",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "修改步驟",
+          "visible": true,
+          "inside": true
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "size": [
+        1280,
+        860
+      ],
+      "controls": [
+        {
+          "text": "送給主代理討論",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "批准並試跑",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "修改步驟",
+          "visible": true,
+          "inside": true
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "size": "maximized",
+      "controls": [
+        {
+          "text": "送給主代理討論",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "批准並試跑",
+          "visible": true,
+          "inside": true
+        },
+        {
+          "text": "修改步驟",
+          "visible": true,
+          "inside": true
+        }
+      ]
+    }
   ]
 }

@@ -131,6 +131,7 @@ class DesktopTests(unittest.TestCase):
                     if widget is a.draft_retry or (key=='todo' and not widget.winfo_ismapped()):
                         continue  # Retry is conditional; narrow todo pages hide inactive columns.
                     if key=='chat' and not widget.winfo_ismapped() and (str(widget).startswith(str(a.action_panel))
+                            or str(widget).startswith(str(a.workflow_panel))
                             or str(widget).startswith(str(a.more_options)) or str(widget).startswith(str(a.task_card))
                             or str(widget).startswith(str(a.work_toolbar))
                             or widget in (a.selection_todo,a.selection_handoff,a.cancel_button,a.remove_upload_button)):

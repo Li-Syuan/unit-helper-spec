@@ -60,6 +60,14 @@ class Profiles:
             if not isinstance(p['revision'],int) or p['revision']<1 or type(p['enabled']) is not bool: raise GatewayError('助理版本或狀態不正確。')
             for key in ('id','name','assistant_id','notes'):
                 if not isinstance(p[key],str): raise GatewayError('助理欄位格式不正確。')
+            if 'workflow' in p:
+                cap=p['workflow']
+                if (not isinstance(cap,dict) or type(cap.get('revision')) is not int or cap['revision']<1
+                        or not isinstance(cap.get('roles'),list) or not cap['roles']
+                        or any(not isinstance(r,str) or r not in {'planner','analysis','review','compose','rag'} for r in cap['roles'])
+                        or type(cap.get('verified')) is not bool or type(cap.get('read_only')) is not bool
+                        or not isinstance(cap.get('evidence'),str) or (cap['verified'] and not cap['evidence'].strip())):
+                    raise GatewayError('助理協作能力設定格式不正確；保留原檔，請由公司維護者核對。')
     def _write(self,data):
         self.path.parent.mkdir(parents=True,exist_ok=True)
         temp=self.path.with_suffix('.tmp')
@@ -105,6 +113,7 @@ class Profiles:
             elif p['assistant_id']!=assistant_id.strip():
                 d.setdefault('history',[]).append(dict(p,endpoint=d['endpoint']))
                 p['revision']+=1; p.pop('legacy',None)
+                if 'workflow' in p:p['workflow']['verified']=False
             p.update(name=name.strip(),assistant_id=assistant_id.strip(),notes=notes.strip(),enabled=bool(enabled))
             self._write(d); return p['id']
     def set_default(self,profile_id):
@@ -127,6 +136,7 @@ class Profiles:
                 for p in d['profiles']:
                     d.setdefault('history',[]).append(dict(p,endpoint=self.data['endpoint']))
                     p['revision']+=1; p.pop('legacy',None)
+                    if 'workflow' in p:p['workflow']['verified']=False
             self._write(d)
     def save_key(self,key):
         with self.lock:
@@ -173,4 +183,44 @@ class Profiles:
         client=CompanyAssistant(config,api_key=key)
         try: return client.respond(messages,purpose)
         finally: client.close()
+
+    def workflow_catalog(self):
+        """Only explicitly verified read-only capabilities may be orchestrated."""
+        return [p for p in self.items(True) if p.get('workflow',{}).get('verified') is True
+                and p['workflow'].get('roles') and p['workflow'].get('read_only') is True]
+
+    def workflow_binding(self,profile_id):
+        p=next((p for p in self.workflow_catalog() if p['id']==profile_id),None)
+        if p is None: raise GatewayError('此助理尚未完成自動協作能力驗證。')
+        return dict(self.snapshot(profile_id),capability_revision=p['workflow']['revision'])
+
+    def validate_workflow(self,binding,role):
+        p=self.validate(binding)
+        capability=p.get('workflow',{})
+        if (capability.get('verified') is not True or capability.get('read_only') is not True
+                or capability.get('revision')!=binding.get('capability_revision')
+                or role not in capability.get('roles',[])):
+            raise GatewayError('助理的協作能力未驗證、已改變或不支援此角色。請重新確認計畫。')
+        return p
+
+    def set_workflow_capability(self,profile_id,roles,verified=False,evidence=''):
+        """Company setup hook, not proof of verification: evidence must reference actual local tests."""
+        if not isinstance(roles,list) or not roles or any(r not in {'planner','analysis','review','compose','rag'} for r in roles):
+            raise GatewayError('請設定支援的協作角色。')
+        if type(verified) is not bool or not isinstance(evidence,str) or len(evidence)>300:
+            raise GatewayError('能力驗證紀錄格式無效。')
+        if verified and not evidence.strip(): raise GatewayError('啟用協作前需先完成公司能力與隔離測試，並提供本機證據識別。')
+        with self.lock:
+            d=copy.deepcopy(self.data);p=next((p for p in d['profiles'] if p['id']==profile_id),None)
+            if p is None: raise GatewayError('找不到助理。')
+            p['workflow']={'revision':p.get('workflow',{}).get('revision',0)+1,'roles':sorted(set(roles)),
+                           'verified':verified,'read_only':True,'evidence':evidence.strip()}
+            self._write(d)
+
+    def workflow_call(self,messages,role,binding,context):
+        """Stateless adapter. Stateful company providers must map context to isolated sessions here."""
+        self.validate_workflow(binding,role)
+        if not isinstance(context,dict) or not all(context.get(k) for k in ('run_id','step_id')):
+            raise GatewayError('協作呼叫缺少隔離識別。')
+        return self.respond(messages,'workflow_plan' if role=='planner' else 'workflow_step',binding)
 

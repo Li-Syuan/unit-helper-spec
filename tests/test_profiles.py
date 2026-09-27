@@ -134,9 +134,9 @@ class RoutingTests(unittest.TestCase):
         with sqlite3.connect(path) as db:
             db.executescript("CREATE TABLE conversations(id TEXT PRIMARY KEY,title TEXT,created_at TEXT); INSERT INTO conversations VALUES('old','歷史','time'); PRAGMA user_version=1;")
         migrated=Store(path);self.assertIsNone(migrated.conversation('old')['binding'])
-        backups=list(self.root.glob('old.sqlite.pre-v4-*.bak'));self.assertEqual(len(backups),1)
+        backups=list(self.root.glob('old.sqlite.pre-v5-*.bak'));self.assertEqual(len(backups),1)
         with sqlite3.connect(backups[0]) as db:
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],1)
             self.assertEqual(db.execute('SELECT title FROM conversations').fetchone()[0],'歷史')
-        Store(path);self.assertEqual(len(list(self.root.glob('old.sqlite.pre-v4-*.bak'))),1)
+        Store(path);self.assertEqual(len(list(self.root.glob('old.sqlite.pre-v5-*.bak'))),1)
 

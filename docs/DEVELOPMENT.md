@@ -1,6 +1,6 @@
 # 開發與部署指南
 
-QA agent 0.11.1。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
+QA agent 0.12.0。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
 
 ## 個人 Groq 試用
 
@@ -123,3 +123,8 @@ powershell.exe -NoProfile -File scripts/export-icon.ps1 -Source desktop_app/asse
 ```
 
 重建素材後檢查真實小尺寸與 DPI 画面，再更新 manifest。素材載入依程式位置，不依工作目錄；缺圖片仍需能操作。應用內與 Windows 工作列的實際外觀分開驗收。
+
+
+## 多助理合成驗證
+
+`.venv/Scripts/python.exe -m unittest tests.test_workflows tests.test_workflow_profiles tests.test_workflow_ui -v` 不使用真實 API。`.venv/Scripts/python.exe scripts/check-workflows.py` 預設 not_tested、零請求；加 `--live` 才對 Groq 發出最多四次合成請求（規劃、分析、覆核、彙整），暫存資料庫結束即清除，不啟用使用者排程。可加 `--output artifacts/workflow-live.json` 保存白名單結果。公司驗收必須獨立完成，不能把此結果改名當公司證據。

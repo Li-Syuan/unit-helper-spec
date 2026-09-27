@@ -1,10 +1,10 @@
-# QA agent 0.11.1：產品與架構
+# QA agent 0.12.0：產品與架構
 
 本文件是現行行為契約。程式與 UI 已完成本機功能；公司接線見 [工作單](../COMPANY-HANDOFF.md)，實測與未測項目見 [驗證摘要](VALIDATION.md)。
 
 ## 分層
 
-新增選用的 Groq 個人試用入口 start-trial.bat。trial.py 管固定端點／模型、有限 .env 讀取與唯讀助理清單；--groq-trial 與 --config 互斥。App 使用獨立 groq-trial 子目錄及預設合成查詢／身分，不讀公司 config 或 profiles。原入口與 adapter 契約保持不變，無新套件；本機升級 schema 4 保存對話來源。不是恢復舊導覽流程。
+新增選用的 Groq 個人試用入口 start-trial.bat。trial.py 管固定端點／模型、有限 .env 讀取與唯讀助理清單；--groq-trial 與 --config 互斥。App 使用獨立 groq-trial 子目錄及預設合成查詢／身分，不讀公司 config 或 profiles。原入口與 adapter 契約保持不變，無新套件；本機 schema 5 保存對話來源及協作流程。不是恢復舊導覽流程。
 
 | 模組 | 責任 |
 |---|---|
@@ -44,7 +44,7 @@ Text 時間線以穩定事件及 marks 增量更新，原生同頁操作區可�
 選項有 yes_no／single_choice／multi_choice；最多 3 題，每題 2～6 選項。未選不當同意，未知值與數量不符拒絕；owner、version、expiry、request ID 由本機服務檢查。取消後不可提交。選項答案不等於任意工具授權。「是，設排程」只開設定，仍建立停用草稿並另確認啟用。重開待答表單可保存答案，**不重播先前 UI callback**，使用者回原工作繼續。
 
 取消在派發界線前阻止新助理呼叫；界線後可能已送出至公司，不能保證遠端撤回。晚到結果不寫回已取消工作。已完成查詢表格可保留，摘要失敗不重跑查詢。未結束的真實 future 會阻擋切換設定，即使工作已標取消。關閉等待遠端 drain 後才釋放資料目錄鎖。
-沒有持續自主 Goal、通用 shell／任意 SQL、產品 runtime 多 agent。
+支援經批准的有界限多助理依序協作；沒有持續自主 Goal、通用 shell／任意 SQL或執行時動態增派代理。
 
 ## 對話刪除
 
@@ -91,7 +91,7 @@ ActionService 的 report 確認強制每日前一日、三項合成模板及 Gro
 
 ## 資料與回報
 
-獨立 `local-v1.sqlite3`、schema user_version=4、WAL；本應用 schema 1／2／3 升級前以 SQLite backup 備份，再以交易遷移。無可靠助理歸屬的舊對話保留閱讀／轉交，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
+獨立 `local-v1.sqlite3`、schema user_version=5、WAL；本應用 schema 1／2／3／4 升級前以 SQLite backup 備份，再以交易遷移。無可靠助理歸屬的舊對話保留閱讀／轉交，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
 回報 draft 可讀取修改，local_saved 只表示保存在此電腦；編號 LOCAL-*。不自動附加對話、資料或檔案，不冒稱管理者已收到。未實作處理狀態同步／修正版本管理。
 公司舊資料移轉、中央 API、AD、Oracle、簽章更新及 EXE 打包均另列交接；未接線或未實測項目不得記成已通過。
 
@@ -133,6 +133,19 @@ test_support 包含可重用 adapter 契約，company_templates 提供待填測�
 | 本機已實作 | 四主要入口與更多工具 UI、助理管理、Plan、選項、TXT／CSV、合成查詢、轉交、排程／通知、回報、刪除、深淺與 DPI |
 | 工具已準備，待公司接線 | chatbot API 契約、AD／名單與 owner 授權、Oracle 三查詢、公司資料移轉 |
 | 仍待真實驗收 | 公司服務、Excel、中文 IME、公司設備倍率與跨螢幕；詳見驗證摘要 |
-| 後續才做 | 中央管理／協作、遠端更新、EXE、持續 Goal、多 agent 自主分工、信件／OCR、多文件與 Office 原檔編修 |
+| 後續才做 | 中央管理／協作、遠端更新、EXE、持續 Goal、無界限多 agent 自主分工、信件／OCR、多文件與 Office 原檔編修 |
 
-Python 3.10.4 與 29 個鎖定套件維持不變。schema 4 加入 conversation_actions／schedule_sources，沿用 todos／drafts，無中央同步。歷史規劃由 Git 保存，不當成目前交付能力。
+Python 3.10.4 與 29 個鎖定套件維持不變。schema 5 加入 workflows／workflow_versions／workflow_steps，沿用 conversation_actions／schedule_sources／todos／drafts，無中央同步。歷史規劃由 Git 保存，不當成目前交付能力。
+
+
+## 主代理規劃與子代理協作
+
+WorkflowService 使用 create/discuss/get/list 管需求討論；discuss 是明確的模型呼叫，questions 支援文字、單選、多選及是非，模型輸出通過格式與目錄驗證後才成為 ready 計畫。update 產生新修訂；preview 不呼叫外部；confirm 需明示資料傳送授權，交易保存不可變版本及工作，提交後才派發。已批准計畫修改以另開計畫處理，不更換正在執行的目標。
+
+步驟限 query 或 assistant，最多六步，inputs 只能引用前面步驟。workflow_call(messages, role, binding, context) 的 context 包含 run_id、step_id；現行公司相容 adapter 為無狀態請求，公司若有 session 必須在此處映射隔離。各助理 roles、verified、read_only 及能力 revision 保存在既有 profiles metadata；不是模型自行宣告的能力。
+
+一個工作背景執行全部步驟，不向同一工作池提交再等待子工作。各步驟輸入／輸出獨立保存。查詢原始表格留本機，只轉交 report_input 的精確合計與 metadata；資料上限超過即停止。分析／彙整回覆 text、facts；覆核多 verdict(pass/needs_attention)。facts 必須等於程式從核准來源建立的精確物件，不接受錯誤數值；自由文字仍需核對。同欄名的不同數值來源衝突時停止，需拆成不同流程。
+
+任一步驟失敗保留成果，下游 blocked；重試明確建立新工作，只沿用連續成功前置結果，不重查已取得數據。取消停止後续派發並阻擋晚到結果。排程 query_id=WORKFLOW，parameters 的 _workflow 綁定流程版本；沿用現有 occurrence、防重、漏跑及通知，成功後才允許建立。排程失敗或能力失效暫停，人工處理後重啟；程式重新啟動不自動續接中斷工作。
+
+workflow_views 為同頁可選取文字、步驟編輯及進度，模式依對話保存個人偏好。規劃討論不送聊天歷史或附件，使用者需明確貼入允許的文字。UI 不保管或直接派發工具。
