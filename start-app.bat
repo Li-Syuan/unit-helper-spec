@@ -17,7 +17,7 @@ echo Please follow ENVIRONMENT.md to run scripts\setup.ps1 first.
 goto failed
 
 :failed
-echo Unable to start Unit Helper. See the error above.
+echo Unable to start QA agent. See the error above.
 echo For diagnostics, run: .venv\Scripts\python.exe -m desktop_app
 if /i "%~1"=="--check" exit /b 1
 pause

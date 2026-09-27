@@ -1,6 +1,6 @@
 # 開始這裡
 
-本次交付已從 spec 前進到 **0.4.0 本機桌面與公司接手準備包**。
+本次交付已從 spec 前進到 **QA agent 0.4.1 本機桌面與公司接手準備包**。
 
 依序讀 README.md → LOCAL-SPEC.md → VALIDATION-LOCAL.md → COMPANY-HANDOFF.md。
 GPT 6 sol 的起始工作指令在 GPT6-SOL-HANDOFF.md。開發守則在 AGENTS.md。

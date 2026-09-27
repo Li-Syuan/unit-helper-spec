@@ -2,7 +2,7 @@
 
 ## 優先範圍
 
-本次使用者核准的是 **0.4.0 本機桌面與公司接手準備包**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
+本次使用者核准的是 **QA agent 0.4.1 本機桌面與公司接手準備包**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
 
 ## 已完成，請延續
 
@@ -49,3 +49,7 @@
 - company_local 與 artifacts 被忽略；內部樣本、帳號、網址及原始錯誤不得加入分享報告或 Git。公司 hook 回傳 True 前須真的斷言公司結果，不能用 canned True 或 demo 填滿項目。
 - 診斷與離線安裝見 docs/OFFLINE-INSTALL.md；offline 安裝缺件／雜湊／lock 不符必須停止，不得改成連外補件。
 - 公司資訊清單見 docs/COMPANY-INPUTS.md。舊資料盤點／移轉、正式登入授權、Oracle 接線、EXE 與中央更新仍未實作。
+
+## QA agent 品牌
+
+產品名稱固定為 QA agent（保留大小寫），集中於 desktop_app/branding.py。PNG／ICO 是本機打包資源，不能在執行期下載或呼叫生圖服務。Windows AppUserModelID 在建立 Tk 前設定；主視窗保存 PhotoImage 引用，附屬視窗套用相同品牌。不得為更名而改資料路徑、SQLite、環境變數或舊規格。捷徑只更新本工具所建立的項目，不能覆蓋其他程式。

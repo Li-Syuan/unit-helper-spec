@@ -2,7 +2,7 @@
 
 | 工作 | 狀態與界線 | 主要檔案 |
 |---|---|---|
-| Python／鎖版／第二環境 | 三環境各 95 tests 通過，含全新離線重建；見 VALIDATION-LOCAL | scripts、requirements.lock |
+| Python／鎖版／第二環境 | 三環境各 103 tests 通過，含全新離線重建；見 VALIDATION-LOCAL | scripts、requirements.lock |
 | 對話／歷史／背景／取消 | 本機已完成；0.3.1 新增側欄、視覺層級、Ctrl+Enter 與按鈕狀態 | ui、theme、core |
 | OpenAI 相容 SDK | adapter + MockTransport 通過；公司實測未做 | gateways |
 | Plan／是非／單選／多選 | 本機固定流程、服務 gate、修訂／期限／防重 | core、choices、ui |
@@ -25,7 +25,11 @@
 | 動態表單／Plan／排程 | 六種型別，模板失效拒絕、舊 DEMO 相容、不同日期映射；本機合成測試通過 | query_schema、QUERY-CATALOG |
 | 串接工具包 | 可重用 SDK／查詢契約與待填公司 hook，正式服務仍未測試 | ADAPTER-TEST-KIT |
 | 一鍵診斷 | 真環境檢查與分享白名單報告，沒有公司連線 | diagnose.bat、doctor |
-| 離線安裝 | 20-wheel 包驗證，.venv-offline2 真重建、95 tests、lock 一致 | OFFLINE-INSTALL |
+| 離線安裝 | 20-wheel 包驗證，.venv-offline2 真重建、103 tests、lock 一致 | OFFLINE-INSTALL |
 | 公司接手工作單 | 必要輸入、六項接線與現場驗收；未填不視為完成 | COMPANY-INPUTS、COMPANY-HANDOFF、COMPANY-ACCEPTANCE |
 
 最終完整證據：docs/validation/development.json、clean-rebuild.json、offline-rebuild.json。依賴無新增；不把骨架、合成測試或本機通過當真實公司通過。
+
+## QA agent 0.4.1
+
+圖示生成、七尺寸 ICO、主／附屬視窗、側欄、對話署名與啟動名稱已更新；捷徑建立工具通過 5 項真 COM 測試，使用者桌面已建立 QA agent 捷徑。資料目錄／schema／依賴未變，原始圖及提示詞已進 repo。三環境最終各 103 項測試。Windows 工作列／桌面外觀及公司服務仍依 BRANDING.md／VALIDATION-LOCAL.md 分開記錄未實測部分。

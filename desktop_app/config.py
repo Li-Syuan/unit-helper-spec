@@ -68,7 +68,7 @@ class InstanceLock:
             msvcrt.locking(self.handle.fileno(), msvcrt.LK_NBLCK, 1)
         except OSError:
             self.handle.close()
-            raise ValueError("同一資料目錄已有小幫手執行中，請使用原視窗。") from None
+            raise ValueError("同一資料目錄已有 QA agent 執行中，請使用原視窗。") from None
     def close(self):
         if not self.handle.closed:
             import msvcrt

@@ -1,6 +1,6 @@
-# 本機實作驗證紀錄 — 0.4.0
+# 本機實作驗證紀錄 — QA agent 0.4.1
 
-本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個獨立 venv 驗證（含全新離線重建）。每個環境 **95 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
+本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個獨立 venv 驗證（含全新離線重建）。每個環境 **103 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
 
 ## 可核對證據
 
@@ -64,4 +64,17 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 
 離線首次嘗試 .venv-offline 雖通過功能測試，直接指定 wheel 路徑造成 pip freeze 記成 file URL，未通過嚴格 lock 檢查，因此**不列為合格交付環境**。setup 已改用同一鎖檔在已驗證 wheelhouse 以 --no-index --no-deps 安裝；新建 .venv-offline2 後重驗，證據為修正後結果。沒有刪除舊環境或使用者資料。
 
-以上三份完整驗證各為 95 tests、0 skipped，且執行於最終程式。公司 API／AD／Oracle／Excel 仍為 not_tested，docs/COMPANY-ACCEPTANCE.md 提供現場驗收工作單。
+以上三份完整驗證各為 103 tests、0 skipped，且執行於最終程式。公司 API／AD／Oracle／Excel 仍為 not_tested，docs/COMPANY-ACCEPTANCE.md 提供現場驗收工作單。
+
+## 0.4.1 QA agent 圖示與命名
+
+最終三份證據已更新為 **各 103 tests、0 skipped**，pip check／freeze lock 一致，runtime 依賴不變。新增 3 項品牌測試、5 項 Windows COM 捷徑測試。
+
+- 本機實測：透明 PNG 角落、ICO 16／24／32／48／64／128／256 尺寸；主視窗與附屬視窗 WM_GETICON；從不同工作目錄載入資源；缺圖片時仍正常建立 App 並顯示提示；對話署名 QA agent。
+- 實際圖像檢視：16／32／48px 及 1280×860、1050×700 的 QA agent 視窗，截圖僅限本應用的合成測試資料。
+- 真 Windows COM：暫存資料夾建立／重跑、路徑含空白／單引號／中文搬移更新、缺資源保留原捷徑、其他應用同名保留、無效目錄拒絕。
+- 使用者桌面：已依核准方案建立 QA agent.lnk（Windows 回報的 OneDrive Desktop），使用專案 pythonw、工作目錄及新 ICO；不改其他桌面項目。
+- 啟動器 --check 通過。已更新目前文件與圖示生成提示詞；舊資料、設定與歷史 spec 保持相容。
+- 工作列／真實桌面的 OS 最終外觀未人工檢視；不能以自身視窗內容截圖或 COM 屬性檢查冒稱通過。公司 API／AD／Oracle／Excel 仍 not_tested。
+
+曾發現 Tk Windows iconbitmap getter 對載入的 ICO 回傳空字串；改用實際 wrapper HWND 的 WM_GETICON 檢查小／大圖示非空，並對附屬視窗顯式套用。上方最終證據為修正後驗證。

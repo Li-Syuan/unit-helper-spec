@@ -1,7 +1,13 @@
-# 單位桌面小幫手 — 本機可執行版 0.4.0
+# QA agent — 本機可執行版 0.4.1
 
 Windows x64 / **Python 3.10.4** / Tkinter / SQLite / OpenAI SDK。
 這個 repo 現在包含可執行程式，不只是 spec。預設示範身分、示範助理與合成資料，**沒有連到公司服務**。
+
+## QA agent 圖示與捷徑
+
+0.4.1 統一名稱為 **QA agent**，視窗、側欄及對話署名已更新。圖示採 Q 形對話夥伴與確認勾；資料與設定位置保持相容。
+
+雙擊 **create-shortcut.bat** 可建立帶新圖示的 **QA agent** 桌面捷徑；以後直接從捷徑開啟。既有 start-app.bat 仍可使用。見 [捷徑說明](docs/SHORTCUT.md) 與 [圖示來源、生成提示詞及驗證](docs/BRANDING.md)。
 
 ## 桌面介面
 

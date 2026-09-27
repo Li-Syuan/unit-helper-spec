@@ -12,6 +12,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from . import __version__
 from . import theme
+from .branding import APP_NAME, apply_icons, apply_child_icons, set_windows_identity
 from .query_schema import find_template, validate_template, parameters as query_parameters, initial_values, describe
 from .config import load_config, save_config, data_directory, InstanceLock
 from .core import Store, Engine
@@ -34,7 +35,7 @@ def selected(tree):
 
 class ChoiceDialog(tk.Toplevel):
     def __init__(self, app, form, callback):
-        super().__init__(app.root); self.title('請確認選項'); self.transient(app.root); self.grab_set()
+        super().__init__(app.root); apply_child_icons(self); self.title('請確認選項'); self.transient(app.root); self.grab_set()
         self.app,self.form,self.callback=app,form,callback; self.variables={}; self.request_id=uuid.uuid4().hex
         self.configure(background=theme.BG); self.minsize(520,300)
         body=ttk.Frame(self,padding=24); body.pack(fill='both',expand=True)
@@ -83,7 +84,8 @@ class App:
         self.closed=False; self.pending_io=0; self.io_futures=[]; self.attachment=None; self.result=None; self.result_task=None; self.page=0
         self.editing_plan=None; self.issue_id=None; self.seen={t['id']:t['state'] for t in self.store.tasks()}
         self.conversation=None; self.conversation_ids=[]; self.preview_plan=None
-        root.title('單位小幫手 · 本機版 '+__version__)
+        root.title(APP_NAME+' · 本機版 '+__version__)
+        self.brand_icon,self.brand_warning=apply_icons(root)
         root.geometry(f'{min(1280,root.winfo_screenwidth()-60)}x{min(860,root.winfo_screenheight()-100)}')
         root.minsize(1050,700)
         self.style=theme.configure(root)
@@ -107,7 +109,12 @@ class App:
         tk.Button(side,text='待回答的選項  →',anchor='w',font=(theme.FONT,9),bg=theme.SIDEBAR,fg='#ADBCB4',
                   activebackground=theme.SIDEBAR_HOVER,activeforeground='white',relief='flat',bd=0,pady=10,
                   command=lambda:self.safe(self.resume_form)).pack(side='bottom',fill='x',padx=20)
-        tk.Label(side,text='單位小幫手',font=(theme.FONT,18,'bold'),bg=theme.SIDEBAR,fg='white',anchor='w').pack(fill='x',padx=22,pady=(25,3))
+        brand=tk.Frame(side,bg=theme.SIDEBAR); brand.pack(fill='x',padx=18,pady=(25,3))
+        if self.brand_icon:
+            tk.Label(brand,image=self.brand_icon,bg=theme.SIDEBAR).pack(side='left',padx=(0,8))
+        tk.Label(brand,text=APP_NAME,font=(theme.FONT,17,'bold'),bg=theme.SIDEBAR,fg='white',anchor='w').pack(side='left')
+        if self.brand_warning:
+            tk.Label(side,text=self.brand_warning,font=(theme.FONT,8),wraplength=185,bg=theme.SIDEBAR,fg='#E9C58B',justify='left').pack(fill='x',padx=18)
         tk.Label(side,text='讓日常工作，簡單一點。',font=(theme.FONT,9),bg=theme.SIDEBAR,fg='#ADBCB4',anchor='w').pack(fill='x',padx=22,pady=(0,22))
         tk.Button(side,text='＋  開始新對話',font=(theme.FONT,10,'bold'),bg='#DCEDE2',fg=theme.SIDEBAR,
                   activebackground='#C4DECE',relief='flat',bd=0,pady=10,cursor='hand2',command=lambda:self.safe(self.new_chat)).pack(fill='x',padx=16,pady=(0,18))
@@ -117,7 +124,7 @@ class App:
                      ('result','查詢結果','檢視結果、複製資料，或安排下次查詢。'),
                      ('schedule','我的排程','把固定查詢交給排程，專注需要你決定的事。'),
                      ('notice','通知','在這裡查看新結果與執行狀態。'),
-                     ('issue','問題回報','留下問題或想法，讓小幫手逐步變好。'),
+                     ('issue','問題回報','留下問題或想法，讓 QA agent 逐步變好。'),
                      ('settings','設定','管理助理連線與本機環境。')]
         self.nav_buttons={}
         for key,title,_ in self.routes:
@@ -280,7 +287,7 @@ class App:
         else:
             for message in messages:
                 role='user' if message['role']=='user' else 'assistant'
-                self.transcript.insert('end',('你' if role=='user' else '小幫手')+'\n','speaker_'+role)
+                self.transcript.insert('end',('你' if role=='user' else APP_NAME)+'\n','speaker_'+role)
                 self.transcript.insert('end',message['text']+'\n','body_'+role)
         self.transcript.configure(state='disabled'); self.transcript.see('end' if messages else '1.0')
         self.update_composer()
@@ -299,7 +306,7 @@ class App:
         path=filedialog.askopenfilename(filetypes=[('文字或 CSV','*.txt *.csv')])
         if path: self.background(lambda:load_upload(path),self.preview_upload)
     def preview_upload(self,data):
-        window=tk.Toplevel(self.root); window.title('送出前預覽 · '+data['name']); window.geometry('740x520'); window.transient(self.root)
+        window=tk.Toplevel(self.root); apply_child_icons(window); window.title('送出前預覽 · '+data['name']); window.geometry('740x520'); window.transient(self.root)
         text=tk.Text(window,wrap='none'); text.pack(fill='both',expand=True,padx=10,pady=10); put(text,data['preview'])
         ttk.Label(window,text='預覽前 2,000 字／CSV 前 20 列；送出會使用完整內容（超限則拒絕）。\n此步驟只在本機預覽；按送出後才傳給已設定助理。').pack()
         def accept(): self.attachment=data; self.attachment_label.configure(text=data['name']+' · 已附加（保留原檔）'); window.destroy()
@@ -573,7 +580,7 @@ class App:
         query_id=self.store.task(source)['payload']['query_id']
         rolling=self.engine.schedule_date_mapping(query_id) is not None
         date_options=['每次前一日','固定原參數'] if rolling else ['固定原參數']
-        window=tk.Toplevel(self.root); window.title('新增停用中的排程'); window.transient(self.root); window.grab_set()
+        window=tk.Toplevel(self.root); apply_child_icons(window); window.title('新增停用中的排程'); window.transient(self.root); window.grab_set()
         body=ttk.Frame(window,padding=20); body.pack(); variables={}
         fields=[('name','名稱','每日查詢',None),('frequency','頻率','每日',['每日','每週']),('time','台北 HH:MM','09:00',None),('weekday','星期（0=一、6=日）','0',[str(x) for x in range(7)]),('dates','參數模式',date_options[0],date_options),('rule','通知','非空且內容改變',['非空且內容改變','數值由未達標轉達標']),('threshold','門檻（單一數值 >=）','10',None)]
         for i,(key,label,value,options) in enumerate(fields):
@@ -724,6 +731,7 @@ class App:
 
 
 def launch(config_path=None):
+    set_windows_identity()
     root=tk.Tk()
     try: app=App(root,config_path=config_path)
     except Exception as exc:

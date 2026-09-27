@@ -2,7 +2,7 @@ import argparse
 import sys
 
 def main():
-    parser = argparse.ArgumentParser(description="單位小幫手本機版")
+    parser = argparse.ArgumentParser(description="QA agent 本機版")
     parser.add_argument("--config", help="本機 JSON 設定路徑")
     args = parser.parse_args()
     if sys.version_info[:3] != (3, 10, 4):
