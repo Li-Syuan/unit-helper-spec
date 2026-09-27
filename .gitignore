@@ -20,3 +20,6 @@ wheelhouse/
 
 # Internal integration hooks/configuration and private test evidence
 company_local/
+
+# Appearance is personal local data
+ui-preferences.json

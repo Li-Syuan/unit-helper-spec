@@ -1,4 +1,4 @@
-# QA agent — 本機可執行版 0.4.1
+# QA agent — 本機可執行版 0.5.0
 
 Windows x64 / **Python 3.10.4** / Tkinter / SQLite / OpenAI SDK。
 這個 repo 現在包含可執行程式，不只是 spec。預設示範身分、示範助理與合成資料，**沒有連到公司服務**。
@@ -11,11 +11,11 @@ Windows x64 / **Python 3.10.4** / Tkinter / SQLite / OpenAI SDK。
 
 ## 桌面介面
 
-0.3.1 已重新整理 Tkinter 介面：側邊導覽、常用工作入口、查詢入口、清楚的計畫步驟與表格操作；無新增 GUI 套件。
+0.5.0 提供石墨深色／霧白淺色工作區，首次預設深色。到「設定 → 外觀」立即切換並記住選擇；草稿、Plan 與工作保留。沒有新增 GUI 套件。
 
-![對話工作區](docs/images/ui-chat.png)
+![對話工作區](docs/images/ui-dark-chat.png)
 
-[更多介面與驗證說明](docs/UI-DESIGN.md)
+[更多介面與驗證說明](docs/UI-DESIGN.md) · [A～D 候選圖示比較](docs/ICON-CANDIDATES.md)（待選，現有正式圖示保留）
 
 ## Clone 後開始
 

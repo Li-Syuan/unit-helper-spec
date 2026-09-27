@@ -1,6 +1,6 @@
 # 公司接手工作包 — GPT 6 sol
 
-**先保留本機可用功能，再逐一接公司服務。** 目前程式為 0.4.1，已完成桌面介面與公司接手準備包。 本次沒有公司原始碼、成功 API 樣本、AD 配置、Oracle schema 或真實 Excel。不能把下列事項描述成只填密碼就保證完成。
+**先保留本機可用功能，再逐一接公司服務。** 目前程式為 0.5.0，已完成桌面介面與公司接手準備包。 本次沒有公司原始碼、成功 API 樣本、AD 配置、Oracle schema 或真實 Excel。不能把下列事項描述成只填密碼就保證完成。
 
 ## 0. 已完成與不可重做
 
@@ -74,3 +74,12 @@
 ## 後續中央管理（本次未實作）
 
 AD 中央化權限、可信後端 Oracle schema、常駐中央排程／lease、issue 工作台、跨人協作、簽章完整包更新／rollback 都屬後續另立工作。不要讓公司 agent 因讀到舊 UPDATES.md 就誤以為本地已有更新器。
+
+## 0.5.0 深淺主題與候選圖示
+
+- 首次預設深色；設定 → 外觀可立即切換深色／淺色。
+- 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
+- 主題原地更新現有控制項及已開啟的應用內對話框；保留草稿、附件、選取、游標、捲動、Plan 修訂與背景工作。Windows 原生檔案／訊息框遵循系統外觀。
+- Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
+- A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
+- 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。

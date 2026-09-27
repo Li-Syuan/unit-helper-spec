@@ -2,7 +2,7 @@
 
 ## 優先範圍
 
-本次使用者核准的是 **QA agent 0.4.1 本機桌面與公司接手準備包**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
+本次使用者核准的是 **QA agent 0.5.0 本機桌面與公司接手準備包**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
 
 ## 已完成，請延續
 
@@ -53,3 +53,12 @@
 ## QA agent 品牌
 
 產品名稱固定為 QA agent（保留大小寫），集中於 desktop_app/branding.py。PNG／ICO 是本機打包資源，不能在執行期下載或呼叫生圖服務。Windows AppUserModelID 在建立 Tk 前設定；主視窗保存 PhotoImage 引用，附屬視窗套用相同品牌。不得為更名而改資料路徑、SQLite、環境變數或舊規格。捷徑只更新本工具所建立的項目，不能覆蓋其他程式。
+
+## 0.5.0 深淺主題與候選圖示
+
+- 首次預設深色；設定 → 外觀可立即切換深色／淺色。
+- 外觀獨立存於使用者資料目錄的 ui-preferences.json，不修改公司連線 config。缺失／損壞回復深色，寫入失敗提示後仍保留當次選擇。
+- 主題原地更新現有控制項及已開啟的應用內對話框；保留草稿、附件、選取、游標、捲動、Plan 修訂與背景工作。Windows 原生檔案／訊息框遵循系統外觀。
+- Appearance、preferences.py、ui.py 是修改入口。公司 agent 沿用現有 UI，不重做基礎架構；服務 API、SQLite schema、查詢／排程及 runtime 依賴不變。
+- A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
+- 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。

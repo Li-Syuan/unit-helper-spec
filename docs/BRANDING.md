@@ -29,3 +29,7 @@ branding.py 集中名稱、Windows AppUserModelID 與資源載入。資源從模
 捷徑測試以 Windows COM 在暫存位置驗證目標、參數、工作目錄、圖示、搬移更新与其他程式同名保留。工作列與真實桌面圖示的 OS 外觀尚未透過人工點選或螢幕檢視驗收；視窗內容截圖及圖示 handle 檢查不冒稱完成該項。
 
 最終三個 Python 3.10.4 環境各 103 項測試通過。使用者桌面已建立 QA agent 捷徑；建立成功與 COM 驗證不代表 OS 最終外觀已人工驗收。完整測試證據見 VALIDATION-LOCAL.md。公司 API、AD、Oracle、Excel 的未實測界線不變。
+
+## 0.5.0 候選階段
+
+正式圖示沿用本頁的 0.4.1 資源。新的 A～D 石墨／米白／青藍候選見 [ICON-CANDIDATES.md](ICON-CANDIDATES.md)，等待使用者選定後才套用。

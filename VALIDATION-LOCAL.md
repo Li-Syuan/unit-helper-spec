@@ -1,6 +1,6 @@
-# 本機實作驗證紀錄 — QA agent 0.4.1
+# 本機實作驗證紀錄 — QA agent 0.5.0
 
-本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個獨立 venv 驗證（含全新離線重建）。每個環境 **103 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
+本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個既有獨立 venv 重驗（其中一個先前由離線包建立）。每個環境 **111 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
 
 ## 可核對證據
 
@@ -52,7 +52,7 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 
 ## 0.3.1 介面更新
 
-加入 theme.py 集中樣式，不增加套件或變更 schema。重新配置側欄、對話、查詢、計畫、表格、排程、回報、設定；修正小視窗動作列被擠出畫面的問題。0.3.1 發布時的完整測試為各 67 項；目前上述 JSON 已更新為 0.4.0 的三環境完整證據。公司 API／AD／Oracle／Excel 的未實測界線不變。
+加入 theme.py 集中樣式，不增加套件或變更 schema。重新配置側欄、對話、查詢、計畫、表格、排程、回報、設定；修正小視窗動作列被擠出畫面的問題。0.3.1 發布時的完整測試為各 67 項；目前上述 JSON 已更新為 0.5.0 的三環境完整證據。公司 API／AD／Oracle／Excel 的未實測界線不變。
 
 ## 0.4.0 公司接手準備包
 
@@ -64,11 +64,11 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 
 離線首次嘗試 .venv-offline 雖通過功能測試，直接指定 wheel 路徑造成 pip freeze 記成 file URL，未通過嚴格 lock 檢查，因此**不列為合格交付環境**。setup 已改用同一鎖檔在已驗證 wheelhouse 以 --no-index --no-deps 安裝；新建 .venv-offline2 後重驗，證據為修正後結果。沒有刪除舊環境或使用者資料。
 
-以上三份完整驗證各為 103 tests、0 skipped，且執行於最終程式。公司 API／AD／Oracle／Excel 仍為 not_tested，docs/COMPANY-ACCEPTANCE.md 提供現場驗收工作單。
+0.4.1 發布時三份完整驗證各為 103 tests、0 skipped。公司 API／AD／Oracle／Excel 仍為 not_tested，docs/COMPANY-ACCEPTANCE.md 提供現場驗收工作單。
 
 ## 0.4.1 QA agent 圖示與命名
 
-最終三份證據已更新為 **各 103 tests、0 skipped**，pip check／freeze lock 一致，runtime 依賴不變。新增 3 項品牌測試、5 項 Windows COM 捷徑測試。
+0.4.1 發布時三份證據為 **各 103 tests、0 skipped**，pip check／freeze lock 一致，runtime 依賴不變。新增 3 項品牌測試、5 項 Windows COM 捷徑測試。
 
 - 本機實測：透明 PNG 角落、ICO 16／24／32／48／64／128／256 尺寸；主視窗與附屬視窗 WM_GETICON；從不同工作目錄載入資源；缺圖片時仍正常建立 App 並顯示提示；對話署名 QA agent。
 - 實際圖像檢視：16／32／48px 及 1280×860、1050×700 的 QA agent 視窗，截圖僅限本應用的合成測試資料。
@@ -78,3 +78,17 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 - 工作列／真實桌面的 OS 最終外觀未人工檢視；不能以自身視窗內容截圖或 COM 屬性檢查冒稱通過。公司 API／AD／Oracle／Excel 仍 not_tested。
 
 曾發現 Tk Windows iconbitmap getter 對載入的 ICO 回傳空字串；改用實際 wrapper HWND 的 WM_GETICON 檢查小／大圖示非空，並對附屬視窗顯式套用。上方最終證據為修正後驗證。
+
+## 0.5.0 深淺工作區與候選圖示
+
+2026-09-27 於三個既有合格 Python 3.10.4 環境各完成 **111 tests、0 skipped**，pip check／freeze lock 一致；本輪沒有新增依賴或重建環境。三份 JSON 是本版本最終結果。
+
+新增 8 項偏好／主題測試：缺失、損壞、未知值、原子保存失敗保留舊檔；App 重開讀取偏好；保存失敗仍套用；草稿、附件、游標、選取、捲動與待批准 Plan 保留；背景工作不中斷不多派發；已開啟／新開選項及檔案預覽同步；下拉清單及捲軸配色；八頁最小尺寸按鈕；不同 Tk interpreter 主題隔離。
+
+首次完整回歸發現品牌測試的舊 SimpleNamespace fixture 缺少新 Appearance，修正測試 fixture 後重跑三環境全部通過；正式品牌載入及缺資源測試仍保留。
+
+實際捕捉 38 個本應用隔離視窗畫面，涵蓋雙主題、八頁、兩尺寸、動態表單與選項。檢視代表畫面後補齊 clam 捲軸的明暗邊線配色，重新截圖與驗證。精選 PNG 見 docs/UI-DESIGN.md；完整本機證據在忽略目錄 artifacts/theme-preview。
+
+四款候選各有高解析透明 PNG、16／32／48 px 預覽及深淺比較圖。原始正式圖示 SHA-256 保持 29cd697887263a1bb195b1e06d6be19a466a40353e678d6a4a74620cd411bf69，沒有更換候選 ICO 或捷徑。啟動器 --check 通過。
+
+以上屬本機真 Tk 程式操作與畫面檢視；公司 API／AD／Oracle／Excel 與 OS 人工全流程維持 not_tested。
