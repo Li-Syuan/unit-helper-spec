@@ -1,6 +1,6 @@
-# 本機實作驗證紀錄 — 0.3.0
+# 本機實作驗證紀錄 — 0.3.1
 
-本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的兩個獨立 venv 驗證。每個環境 **65 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
+本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的兩個獨立 venv 驗證。每個環境 **67 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
 
 ## 可核對證據
 
@@ -32,7 +32,8 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 | TXT／CSV／輸出 | local_real_passed：大小／UTF-8 BOM／錯編碼／欄數、精確字串、公式防護、CSV quoting、全部／選取／跨頁、snapshot 不變 |
 | 排程／通知 | local_real_passed：可控制時鐘測每日／每週、前一日解析、漏跑、重啟、防重、停用、非空改變／門檻、失敗通知，不等待隔天 |
 | Tkinter 桌面 | local_real_passed（程式操作）：真 Tk widgets，對話→Plan 修改批准→查詢→分頁→Windows 剪貼簿、回報草稿、排程與通知、選項對話框、可見八頁、關閉等待／重開保存 |
-| 人工滑鼠／鍵盤 GUI 與外觀 | not_tested：Computer Use helper 啟動失敗 `apply deny-read ACLs`，未完成 OS 層操作與截圖人工檢視；不能以程式控制項測試冒充人工驗收 |
+| UI 外觀／最小視窗 | local_real_passed：檢視應用自身合成資料畫面截圖，涵蓋 1280×860 與 1050×700；新增導覽、主要按鈕可見與快捷送出 gate 測試。截圖見 docs/UI-DESIGN.md |
+| OS 滑鼠／鍵盤人工流程 | not_tested：Computer Use helper 仍因 `apply deny-read ACLs` 無法啟動；本次透過真 Tk 控制項操作與自身視窗截圖檢視，不冒稱 OS 滑鼠全流程通過 |
 | 公司 chatbot | not_tested：沒有公司端點／成功樣本／金鑰；示範文字不是 AI 生成 |
 | AD／員工名單 | not_tested：只验证 demo 明示及正式未配置拒絕；非真 AD 登入 |
 | Oracle | not_tested：三個合成查詢／參數驗證通過，未執行公司 SQL |
@@ -45,3 +46,7 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 初次第二環境完整測試曾因 Tk 物件在背景執行緒釋放出現 `main thread is not in main loop`／`Tcl_AsyncDelete`，該次不算通過。改為背景工作 drain 後由主執行緒清理視窗、選項變數及 singleton lock，新增關閉回歸測試；上方兩份證據是修正後的完整重跑結果。
 
 本機可執行不等於公司 production-ready。未實測項目已在 COMPANY-HANDOFF.md 列具體修改位置、內部資訊、正反驗收與執行命令。
+
+## 0.3.1 介面更新
+
+加入 theme.py 集中樣式，不增加套件或變更 schema。重新配置側欄、對話、查詢、計畫、表格、排程、回報、設定；修正小視窗動作列被擠出畫面的問題。兩個 venv 的最新完整測試為各 67 項；原始輸出位於上述 JSON，路徑已是 D:\unit-helper-spec。公司 API／AD／Oracle／Excel 的未實測界線不變。

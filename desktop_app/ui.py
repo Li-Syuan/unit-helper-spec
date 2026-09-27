@@ -11,6 +11,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from . import __version__
+from . import theme
 from .config import load_config, save_config, data_directory, InstanceLock
 from .core import Store, Engine
 from .choices import ChoiceForms
@@ -34,7 +35,10 @@ class ChoiceDialog(tk.Toplevel):
     def __init__(self, app, form, callback):
         super().__init__(app.root); self.title('請確認選項'); self.transient(app.root); self.grab_set()
         self.app,self.form,self.callback=app,form,callback; self.variables={}; self.request_id=uuid.uuid4().hex
-        body=ttk.Frame(self,padding=20); body.pack(fill='both',expand=True)
+        self.configure(background=theme.BG); self.minsize(520,300)
+        body=ttk.Frame(self,padding=24); body.pack(fill='both',expand=True)
+        ttk.Label(body,text='確認一下你的需求',style='Section.TLabel').pack(anchor='w',pady=(0,8))
+        ttk.Label(body,text='選好後確認；這一步不會直接執行工作。',style='Muted.TLabel').pack(anchor='w',pady=(0,8))
         for q in form['questions']:
             ttk.Label(body,text=q['title'],wraplength=500).pack(anchor='w',pady=(10,5))
             if q['type']=='multi_choice':
@@ -46,7 +50,7 @@ class ChoiceDialog(tk.Toplevel):
             else:
                 v=tk.StringVar(value=''); self.variables[q['id']]=v
                 for o in q['options']: ttk.Radiobutton(body,text=o['label'],variable=v,value=o['id']).pack(anchor='w')
-        ttk.Button(body,text='確認選項',command=lambda:app.safe(self.submit)).pack(side='left',pady=15)
+        ttk.Button(body,text='確認選項',style='Primary.TButton',command=lambda:app.safe(self.submit)).pack(side='left',pady=15)
         ttk.Button(body,text='稍後回答',command=self.destroy).pack(side='right',pady=15)
         ttk.Button(body,text='取消此表單',command=lambda:app.safe(self.cancel)).pack(side='left',padx=10)
     def destroy(self):
@@ -78,30 +82,86 @@ class App:
         self.closed=False; self.pending_io=0; self.io_futures=[]; self.attachment=None; self.result=None; self.result_task=None; self.page=0
         self.editing_plan=None; self.issue_id=None; self.seen={t['id']:t['state'] for t in self.store.tasks()}
         self.conversation=None; self.conversation_ids=[]; self.preview_plan=None
-        root.title('單位小幫手 · 本機版 '+__version__); root.geometry('1230x830'); root.minsize(1000,720)
-        style=ttk.Style(root); style.theme_use('clam'); style.configure('.',font=('Microsoft JhengHei',10))
-        style.configure('Title.TLabel',font=('Microsoft JhengHei',18,'bold'))
-        self.status=tk.StringVar(value='本機模式：資料留在此電腦；排程只在程式開啟時運作。')
-        header=ttk.Frame(root,padding=(18,12)); header.pack(fill='x')
-        ttk.Label(header,text='單位小幫手',style='Title.TLabel').pack(side='left')
-        self.mode_label=ttk.Label(header); self.mode_label.pack(side='right'); self.update_mode()
-        shell=ttk.Frame(root,padding=(12,0)); shell.pack(fill='both',expand=True)
-        side=ttk.Frame(shell,width=200); side.pack(side='left',fill='y',padx=(0,12))
-        self.button(side,'＋ 新對話',self.new_chat).pack(fill='x',pady=5)
-        self.history=tk.Listbox(side,width=23,exportselection=False); self.history.pack(fill='both',expand=True)
-        self.history.bind('<<ListboxSelect>>',lambda e:self.safe(self.choose_chat))
-        self.button(side,'待回答選項',self.resume_form).pack(fill='x',pady=5)
-        self.book=ttk.Notebook(shell); self.book.pack(fill='both',expand=True); self.tabs={}
-        for key,title in [('chat','對話'),('query','查資料'),('work','計畫與任務'),('result','結果'),('schedule','我的排程'),('notice','通知'),('issue','問題回報'),('settings','設定')]:
-            tab=ttk.Frame(self.book,padding=12); self.book.add(tab,text=title); self.tabs[key]=tab
-        self.build_chat(); self.build_query(); self.build_work(); self.build_result(); self.build_schedule(); self.build_notice(); self.build_issue(); self.build_settings()
-        ttk.Label(root,textvariable=self.status,wraplength=1160,padding=(15,8)).pack(fill='x')
+        root.title('單位小幫手 · 本機版 '+__version__)
+        root.geometry(f'{min(1280,root.winfo_screenwidth()-60)}x{min(860,root.winfo_screenheight()-100)}')
+        root.minsize(1050,700)
+        self.style=theme.configure(root)
+        self.status=tk.StringVar(value='準備就緒。排程只在此程式開啟時執行。')
+        self.build_shell()
+        self.build_chat(); self.build_query(); self.build_work(); self.build_result()
+        self.build_schedule(); self.build_notice(); self.build_issue(); self.build_settings()
+        self.book.bind('<<NotebookTabChanged>>',self.route_changed)
+        self.root.bind('<Control-n>',lambda e:self.new_chat())
+        self.input.bind('<Control-Return>',self.send_shortcut)
+        self.route_changed()
         self.refresh_history(); self.refresh_lists()
         if self.conversation_ids: self.conversation=self.conversation_ids[0]; self.history.selection_set(0); self.show_chat()
         else: self.new_chat()
         root.protocol('WM_DELETE_WINDOW',self.close); self.poll_id=root.after(150,self.poll)
         self.scheduler=threading.Thread(target=self.scheduler_loop,daemon=True); self.scheduler.start()
-    def button(self,parent,text,action): return ttk.Button(parent,text=text,command=lambda:self.safe(action))
+    def build_shell(self):
+        side=tk.Frame(self.root,bg=theme.SIDEBAR,width=224)
+        side.pack(side='left',fill='y'); side.pack_propagate(False)
+        tk.Label(side,text='本機示範身分 · 非 AD\n版本 '+__version__,font=(theme.FONT,8),bg=theme.SIDEBAR,fg='#8EA69A',anchor='w').pack(side='bottom',fill='x',padx=22,pady=(5,18))
+        tk.Button(side,text='待回答的選項  →',anchor='w',font=(theme.FONT,9),bg=theme.SIDEBAR,fg='#ADBCB4',
+                  activebackground=theme.SIDEBAR_HOVER,activeforeground='white',relief='flat',bd=0,pady=10,
+                  command=lambda:self.safe(self.resume_form)).pack(side='bottom',fill='x',padx=20)
+        tk.Label(side,text='單位小幫手',font=(theme.FONT,18,'bold'),bg=theme.SIDEBAR,fg='white',anchor='w').pack(fill='x',padx=22,pady=(25,3))
+        tk.Label(side,text='讓日常工作，簡單一點。',font=(theme.FONT,9),bg=theme.SIDEBAR,fg='#ADBCB4',anchor='w').pack(fill='x',padx=22,pady=(0,22))
+        tk.Button(side,text='＋  開始新對話',font=(theme.FONT,10,'bold'),bg='#DCEDE2',fg=theme.SIDEBAR,
+                  activebackground='#C4DECE',relief='flat',bd=0,pady=10,cursor='hand2',command=lambda:self.safe(self.new_chat)).pack(fill='x',padx=16,pady=(0,18))
+        self.routes=[('chat','對話','把需求說出來，一起完成手邊的工作。'),
+                     ('query','查資料','選擇常用查詢，快速取得需要的資料。'),
+                     ('work','計畫與任務','先確認步驟，再放心執行。'),
+                     ('result','查詢結果','檢視結果、複製資料，或安排下次查詢。'),
+                     ('schedule','我的排程','把固定查詢交給排程，專注需要你決定的事。'),
+                     ('notice','通知','在這裡查看新結果與執行狀態。'),
+                     ('issue','問題回報','留下問題或想法，讓小幫手逐步變好。'),
+                     ('settings','設定','管理助理連線與本機環境。')]
+        self.nav_buttons={}
+        for key,title,_ in self.routes:
+            button=tk.Button(side,text='  '+title,anchor='w',font=(theme.FONT,10),bg=theme.SIDEBAR,fg='#CAD7CF',
+                             activebackground=theme.SIDEBAR_HOVER,activeforeground='white',relief='flat',bd=0,padx=14,pady=8,
+                             cursor='hand2',command=lambda key=key:self.book.select(self.tabs[key]))
+            button.pack(fill='x',padx=12,pady=1); self.nav_buttons[key]=button
+        tk.Frame(side,height=1,bg='#355046').pack(fill='x',padx=20,pady=(15,10))
+        tk.Label(side,text='最近的對話',font=(theme.FONT,9),bg=theme.SIDEBAR,fg='#ADBCB4',anchor='w').pack(fill='x',padx=22)
+        self.history=tk.Listbox(side,height=4,width=20,exportselection=False,bg=theme.SIDEBAR,fg='#C8D6CE',
+                                selectbackground=theme.SIDEBAR_HOVER,selectforeground='white',relief='flat',bd=0,
+                                highlightthickness=0,font=(theme.FONT,9),activestyle='none')
+        self.history.pack(fill='both',expand=True,padx=20,pady=8)
+        self.history.bind('<<ListboxSelect>>',lambda e:self.safe(self.choose_chat))
+        main=ttk.Frame(self.root); main.pack(side='left',fill='both',expand=True)
+        header=ttk.Frame(main,padding=(28,22,28,16)); header.pack(fill='x')
+        line=ttk.Frame(header); line.pack(fill='x')
+        self.page_title=ttk.Label(line,text='對話',style='Title.TLabel'); self.page_title.pack(side='left')
+        self.mode_label=ttk.Label(line,style='Chip.TLabel'); self.mode_label.pack(side='right'); self.update_mode()
+        self.page_hint=ttk.Label(header,style='Muted.TLabel'); self.page_hint.pack(anchor='w',pady=(5,0))
+        footer=ttk.Frame(main,style='Surface.TFrame'); footer.pack(side='bottom',fill='x')
+        self.activity_label=ttk.Label(footer,text='●  就緒',style='Status.TLabel'); self.activity_label.pack(side='right')
+        self.status_label=ttk.Label(footer,textvariable=self.status,style='Status.TLabel',wraplength=720); self.status_label.pack(side='left',fill='x',expand=True)
+        self.status_label.bind('<Configure>',lambda e:self.status_label.configure(wraplength=max(100,e.width-36)))
+        self.book=ttk.Notebook(main,style='Workspace.TNotebook',takefocus=False); self.book.pack(fill='both',expand=True,padx=26,pady=(0,16)); self.tabs={}
+        for key,title,_ in self.routes:
+            tab=ttk.Frame(self.book,padding=(2,6,2,2)); self.book.add(tab,text=title); self.tabs[key]=tab
+    def route_changed(self,event=None):
+        current=self.book.select()
+        for key,title,hint in self.routes:
+            active=str(self.tabs[key])==current
+            self.nav_buttons[key].configure(bg=theme.SIDEBAR_HOVER if active else theme.SIDEBAR,
+                                             fg='white' if active else '#CAD7CF',font=(theme.FONT,10,'bold' if active else 'normal'))
+            if active: self.page_title.configure(text=title); self.page_hint.configure(text=hint)
+    def button(self,parent,text,action,style=None):
+        primary={'送出需求','開始查詢','批准此修訂','查看結果','保存草稿','驗證並保存設定','確認選項','預覽並啟用'}
+        if style is None: style='Primary.TButton' if text in primary else ('Danger.TButton' if text.startswith('取消') else 'TButton')
+        return ttk.Button(parent,text=text,style=style,command=lambda:self.safe(action))
+    def section(self,parent,title,description=None):
+        row=ttk.Frame(parent); row.pack(fill='x',pady=(8,6))
+        ttk.Label(row,text=title,style='Section.TLabel').pack(side='left')
+        if description: ttk.Label(row,text=description,style='Muted.TLabel').pack(side='right')
+        return row
+    def send_shortcut(self,event=None):
+        self.safe(self.send_chat); return 'break'
     def safe(self,action):
         try: return action()
         except (ValueError,OSError,tk.TclError) as exc:
@@ -121,7 +181,7 @@ class App:
         return self.assistant.respond(messages,purpose)
     def update_mode(self):
         mode='示範助理' if self.config['assistant']['mode']=='demo' else '公司助理'
-        self.mode_label.configure(text=self.identity['name']+' ｜ '+mode+' ｜ '+('合成查詢' if self.config['query_mode']=='demo' else 'Oracle 未接線'))
+        self.mode_label.configure(text='●  '+mode+'  ·  '+('合成資料' if self.config['query_mode']=='demo' else 'Oracle 未接線'))
     def scheduler_loop(self):
         while not self.stop.wait(3):
             try: self.engine.tick()
@@ -141,9 +201,15 @@ class App:
                     if task['conversation_id']==self.conversation: self.show_chat()
         self.refresh_lists(); self.poll_id=self.root.after(350,self.poll)
     def tree(self,parent,columns,height=7):
-        tree=ttk.Treeview(parent,columns=[c[0] for c in columns],show='headings',height=height,selectmode='browse')
-        for key,title in columns: tree.heading(key,text=title); tree.column(key,width=150)
-        tree.pack(fill='both',expand=True,pady=5); return tree
+        frame=ttk.Frame(parent); frame.pack(fill='both',expand=True,pady=5)
+        tree=ttk.Treeview(frame,columns=[c[0] for c in columns],show='headings',height=height,selectmode='browse')
+        for key,title in columns:
+            tree.heading(key,text=title,anchor='w'); tree.column(key,width=150,minwidth=65,anchor='w')
+        tree.pack(side='left',fill='both',expand=True)
+        scrollbar=ttk.Scrollbar(frame,command=tree.yview); scrollbar.pack(side='right',fill='y'); tree.configure(yscrollcommand=scrollbar.set)
+        tree.tag_configure('even',background=theme.SURFACE); tree.tag_configure('odd',background='#F8FAF8')
+        tree.tag_configure('failure',foreground='#AC4034'); tree.tag_configure('success',foreground=theme.ACCENT)
+        return tree
     def sync_tree(self,tree,rows):
         desired=[r[0] for r in rows]
         for item in tree.get_children():
@@ -153,32 +219,70 @@ class App:
                 if tuple(map(str,tree.item(key,'values')))!=tuple(map(str,values)): tree.item(key,values=values)
                 tree.move(key,'',idx)
             else: tree.insert('',idx,iid=key,values=values)
+            state='failure' if any('失敗' in str(v) for v in values) else ('success' if '完成' in values else '')
+            tree.item(key,tags=('odd' if idx%2 else 'even',state))
     def build_chat(self):
-        tab=self.tabs['chat']; row=ttk.Frame(tab); row.pack(fill='x')
-        self.button(row,'查詢單位資料',lambda:self.book.select(self.tabs['query'])).pack(side='left')
-        self.button(row,'整理／改寫引導',self.text_choices).pack(side='left',padx=5)
-        self.transcript=tk.Text(tab,height=15,wrap='word',state='disabled'); self.transcript.pack(fill='both',expand=True,pady=8)
-        options=ttk.Frame(tab); options.pack(fill='x')
-        self.purpose=tk.StringVar(value='一般對話'); ttk.Combobox(options,textvariable=self.purpose,values=['一般對話','整理重點','改寫文字'],state='readonly',width=12).pack(side='left')
-        self.plan_mode=tk.BooleanVar(); ttk.Checkbutton(options,text='先規劃，確認後才執行',variable=self.plan_mode).pack(side='left',padx=10)
-        self.button(options,'選擇 TXT／CSV',self.upload).pack(side='left'); self.button(options,'移除附件',self.clear_upload).pack(side='left',padx=5)
-        self.attachment_label=ttk.Label(tab,text='尚未附加檔案'); self.attachment_label.pack(anchor='w')
-        self.input=tk.Text(tab,height=5,wrap='word'); self.input.pack(fill='x',pady=5)
-        row=ttk.Frame(tab); row.pack(fill='x'); self.button(row,'送出／建立計畫',self.send_chat).pack(side='left')
-        self.button(row,'取消最近工作',self.cancel_latest).pack(side='left',padx=8)
-        self.button(row,'回報回答問題',lambda:self.quick_issue('answer')).pack(side='right')
+        tab=self.tabs['chat']
+        quick=ttk.Frame(tab); quick.pack(fill='x',pady=(0,12))
+        actions=[('查找資料  →',lambda:self.book.select(self.tabs['query'])),
+                 ('整理／改寫文字  →',self.text_choices),('我的排程  →',lambda:self.book.select(self.tabs['schedule']))]
+        for index,(title,action) in enumerate(actions):
+            quick.columnconfigure(index,weight=1,uniform='quick')
+            self.button(quick,title,action,'Quick.TButton').grid(row=0,column=index,sticky='ew',padx=(0,8 if index<2 else 0))
+        conversation=ttk.Frame(tab); conversation.pack(fill='both',expand=True)
+        self.transcript=tk.Text(conversation,height=8,wrap='word',state='disabled',highlightthickness=0,padx=24,pady=18)
+        self.transcript.pack(side='left',fill='both',expand=True)
+        scrollbar=ttk.Scrollbar(conversation,command=self.transcript.yview); scrollbar.pack(side='right',fill='y'); self.transcript.configure(yscrollcommand=scrollbar.set)
+        for name,settings in {
+            'welcome_title':{'font':(theme.FONT,22,'bold'),'foreground':theme.INK,'justify':'center','spacing1':40,'spacing3':14},
+            'welcome_body':{'foreground':theme.MUTED,'justify':'center','spacing3':12},
+            'speaker_user':{'font':(theme.FONT,9,'bold'),'foreground':theme.ACCENT,'spacing1':16,'spacing3':4},
+            'speaker_assistant':{'font':(theme.FONT,9,'bold'),'foreground':theme.MUTED,'spacing1':20,'spacing3':4},
+            'body_user':{'background':theme.TINT,'lmargin1':12,'lmargin2':12,'rmargin':14,'spacing1':8,'spacing3':10},
+            'body_assistant':{'lmargin1':2,'lmargin2':2,'spacing3':12}}.items(): self.transcript.tag_configure(name,**settings)
+        self.section(tab,'你的需求','Ctrl + Enter 送出  ·  Enter 換行')
+        self.input=tk.Text(tab,height=3,wrap='word',padx=16,pady=12); self.input.pack(fill='x')
+        options=ttk.Frame(tab); options.pack(fill='x',pady=(10,6))
+        self.purpose=tk.StringVar(value='一般對話'); ttk.Combobox(options,textvariable=self.purpose,values=['一般對話','整理重點','改寫文字'],state='readonly',width=11).pack(side='left')
+        self.plan_mode=tk.BooleanVar(); ttk.Checkbutton(options,text='先規劃，再執行',variable=self.plan_mode).pack(side='left',padx=12)
+        self.send_button=self.button(options,'送出需求',self.send_chat); self.send_button.pack(side='right')
+        self.cancel_button=self.button(options,'取消工作',self.cancel_latest); self.cancel_button.pack(side='right',padx=8)
+        self.plan_mode.trace_add('write',lambda *args:self.update_composer())
+        attachments=ttk.Frame(tab); attachments.pack(fill='x')
+        self.button(attachments,'＋ TXT / CSV',self.upload,'Quiet.TButton').pack(side='left')
+        self.attachment_label=ttk.Label(attachments,text='可先預覽，再送出',style='Muted.TLabel'); self.attachment_label.pack(side='left',padx=8)
+        self.button(attachments,'移除',self.clear_upload,'Quiet.TButton').pack(side='left')
+        self.button(attachments,'回報問題',lambda:self.quick_issue('answer'),'Quiet.TButton').pack(side='right')
+    def update_composer(self):
+        active=any(t['conversation_id']==self.conversation and t['state'] in ('queued','running') for t in self.store.tasks())
+        self.send_button.configure(text='建立計畫' if self.plan_mode.get() else '送出需求',state='disabled' if active else 'normal')
+        self.cancel_button.configure(state='normal' if active else 'disabled')
     def new_chat(self):
         self.editing_plan=None
         from datetime import datetime
-        self.conversation=self.store.create_conversation('對話 '+datetime.now().strftime('%m/%d %H:%M:%S')); self.refresh_history(); self.history.selection_clear(0,'end'); self.history.selection_set(0); self.show_chat()
+        self.conversation=self.store.create_conversation('對話 '+datetime.now().strftime('%m/%d %H:%M:%S')); self.refresh_history(); self.history.selection_clear(0,'end'); self.history.selection_set(0); self.show_chat(); self.book.select(self.tabs['chat']); self.input.focus_set()
     def refresh_history(self):
         records=self.store.conversations(); self.conversation_ids=[r['id'] for r in records]; self.history.delete(0,'end')
         for r in records: self.history.insert('end',r['title'])
     def choose_chat(self):
         self.editing_plan=None
-        if self.history.curselection(): self.conversation=self.conversation_ids[self.history.curselection()[0]]; self.show_chat()
+        if self.history.curselection(): self.conversation=self.conversation_ids[self.history.curselection()[0]]; self.show_chat(); self.book.select(self.tabs['chat'])
     def show_chat(self):
-        put(self.transcript,'\n\n'.join(('你' if m['role']=='user' else '助理')+'\n'+m['text'] for m in self.store.messages(self.conversation))); self.transcript.see('end')
+        messages=self.store.messages(self.conversation)
+        self.transcript.configure(state='normal'); self.transcript.delete('1.0','end')
+        if not messages:
+            self.transcript.insert('end','今天，想先完成哪件事？\n','welcome_title')
+            self.transcript.insert('end','查找資料、整理重點，或把文字改得更清楚。\n','welcome_body')
+            self.transcript.insert('end','選擇上方的常用工作，或在下方寫下你的需求。\n','welcome_body')
+            if self.config['assistant']['mode']=='demo':
+                self.transcript.insert('end','目前為示範模式，尚未連接公司助理與資料。','welcome_body')
+        else:
+            for message in messages:
+                role='user' if message['role']=='user' else 'assistant'
+                self.transcript.insert('end',('你' if role=='user' else '小幫手')+'\n','speaker_'+role)
+                self.transcript.insert('end',message['text']+'\n','body_'+role)
+        self.transcript.configure(state='disabled'); self.transcript.see('end' if messages else '1.0')
+        self.update_composer()
     def text_choices(self):
         form=self.forms.create([{'id':'purpose','title':'這份文字要怎麼處理？','type':'single_choice','options':[{'id':'summarize','label':'整理重點'},{'id':'rewrite','label':'改寫文字'}]},
           {'id':'focus','title':'希望注重哪些方向？（可選 1～3 項）','type':'multi_choice','min':1,'max':3,'options':[{'id':'clear','label':'清楚易讀'},{'id':'brief','label':'精簡內容'},{'id':'formal','label':'正式語氣'}]}])
@@ -199,7 +303,7 @@ class App:
         ttk.Label(window,text='預覽前 2,000 字／CSV 前 20 列；送出會使用完整內容（超限則拒絕）。\n此步驟只在本機預覽；按送出後才傳給已設定助理。').pack()
         def accept(): self.attachment=data; self.attachment_label.configure(text=data['name']+' · 已附加（保留原檔）'); window.destroy()
         self.button(window,'使用此檔案',accept).pack(pady=10)
-    def clear_upload(self): self.attachment=None; self.attachment_label.configure(text='尚未附加檔案')
+    def clear_upload(self): self.attachment=None; self.attachment_label.configure(text='可先預覽，再送出')
     def send_chat(self):
         text=self.input.get('1.0','end-1c').strip(); purpose={'一般對話':'chat','整理重點':'summarize','改寫文字':'rewrite'}[self.purpose.get()]
         if self.attachment:
@@ -217,21 +321,33 @@ class App:
         if tasks: self.engine.cancel_task(tasks[0]['id']); self.status.set('已取消本機後續處理；已送出的遠端請求可能仍在完成。')
         else: raise ValueError('沒有可取消的對話工作。')
     def build_query(self):
-        tab=self.tabs['query']; ttk.Label(tab,text=('三項合成資料示範 · 不連公司 Oracle' if self.config['query_mode']=='demo' else 'Oracle 尚未接線，正式查詢停用'),style='Title.TLabel').pack(anchor='w',pady=8)
-        self.query_id=tk.StringVar(value='DEMO01')
-        for item in self.queries.catalog():
-            ttk.Radiobutton(tab,text=item['name']+' — '+item['description'],variable=self.query_id,value=item['id']).pack(anchor='w',pady=8)
-        row=ttk.Frame(tab); row.pack(fill='x',pady=15)
+        tab=self.tabs['query']; self.section(tab,'01  選擇查詢','目前使用合成示範資料')
+        self.query_id=tk.StringVar(value='DEMO01'); cards=ttk.Frame(tab); cards.pack(fill='x',pady=(2,18))
+        for idx,item in enumerate(self.queries.catalog()):
+            cards.columnconfigure(idx,weight=1,uniform='querycards')
+            descriptions=['查看每日庫存異動\n依分類篩選料號與數量','查看訂單與精確金額\n保留完整訂單編號','計算庫存異動總量\n可用來設定門檻通知']
+            ttk.Radiobutton(cards,text=item['name']+'\n\n'+descriptions[idx],variable=self.query_id,
+                            value=item['id'],style='Card.TRadiobutton').grid(row=0,column=idx,sticky='nsew',padx=(0,10 if idx<2 else 0))
+        if not self.queries.catalog(): ttk.Label(cards,text='Oracle 尚未接線，正式查詢停用。',style='Muted.TLabel').pack(anchor='w')
+        self.section(tab,'02  設定範圍','起日含當天，迄日不含當天')
+        row=ttk.Frame(tab); row.pack(fill='x',pady=(2,18))
         self.from_date=tk.StringVar(value=(date.today()-timedelta(days=1)).isoformat()); self.to_date=tk.StringVar(value=date.today().isoformat()); self.category=tk.StringVar(value='all')
-        for label,var in [('開始日（含）',self.from_date),('結束日（不含）',self.to_date)]:
-            ttk.Label(row,text=label).pack(side='left'); ttk.Entry(row,textvariable=var,width=13).pack(side='left',padx=6)
-        ttk.Label(row,text='分類').pack(side='left'); ttk.Combobox(row,textvariable=self.category,values=['all','A','B'],state='readonly',width=6).pack(side='left')
+        for col,(label,var) in enumerate([('開始日期',self.from_date),('結束日期',self.to_date)]):
+            field=ttk.Frame(row); field.grid(row=0,column=col,sticky='ew',padx=(0,16)); row.columnconfigure(col,weight=1)
+            ttk.Label(field,text=label,style='Muted.TLabel').pack(anchor='w',pady=(0,6)); ttk.Entry(field,textvariable=var,width=15).pack(fill='x')
+        field=ttk.Frame(row); field.grid(row=0,column=2,sticky='ew'); row.columnconfigure(2,weight=1)
+        ttk.Label(field,text='資料分類（all = 全部）',style='Muted.TLabel').pack(anchor='w',pady=(0,6))
+        ttk.Combobox(field,textvariable=self.category,values=['all','A','B'],state='readonly',width=12).pack(fill='x')
+        self.section(tab,'03  選擇處理方式')
         self.query_plan=tk.BooleanVar(); self.query_summary=tk.BooleanVar()
-        ttk.Checkbutton(tab,text='先規劃，確認後才執行',variable=self.query_plan).pack(anchor='w',pady=5)
-        ttk.Checkbutton(tab,text='查完後交給助理整理（結果會送至已設定端點）',variable=self.query_summary).pack(anchor='w',pady=5)
-        ttk.Label(tab,text='YYYY-MM-DD；最多 90 日／1,000 列。all＝全部，A／B＝合成分類。\n三項查詢各自獨立；正式模板須由公司核准後接線。').pack(anchor='w',pady=15)
-        self.button(tab,'查詢／儲存計畫修改',self.submit_query).pack(anchor='w')
-        self.button(tab,'回報查詢問題',lambda:self.quick_issue('query')).pack(anchor='w',pady=15)
+        ttk.Checkbutton(tab,text='先規劃，確認條件後再執行',variable=self.query_plan).pack(anchor='w',pady=3)
+        ttk.Checkbutton(tab,text='取得結果後，請助理幫我整理重點',variable=self.query_summary).pack(anchor='w',pady=3)
+        ttk.Label(tab,text='勾選整理會將查詢結果送至已設定的助理。',style='Muted.TLabel').pack(anchor='w',padx=22,pady=(0,15))
+        row=ttk.Frame(tab); row.pack(fill='x',pady=12)
+        self.query_submit=self.button(row,'開始查詢',self.submit_query); self.query_submit.pack(side='left')
+        self.button(row,'回報查詢問題',lambda:self.quick_issue('query'),'Quiet.TButton').pack(side='right')
+        self.query_plan.trace_add('write',lambda *args:self.query_submit.configure(text='建立查詢計畫' if self.query_plan.get() else '開始查詢'))
+        ttk.Label(tab,text='日期格式 YYYY-MM-DD  ·  最多 90 日 / 1,000 列  ·  結果可複製到 Excel 或匯出 CSV',style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=8)
     def submit_query(self):
         payload={'query_id':self.query_id.get(),'parameters':{'from_date':self.from_date.get(),'to_date':self.to_date.get(),'category':self.category.get()}}
         kind='query_summarize' if self.query_summary.get() else 'query'
@@ -250,24 +366,46 @@ class App:
             self.engine.edit_plan(pid,revision,kind,payload); self.editing_plan=None
         else: pid=self.engine.create_plan(kind,payload,conversation_id=conversation)
         self.refresh_lists(); self.plans.selection_set(pid); self.preview_selected_plan(); self.book.select(self.tabs['work'])
+        self.query_submit.configure(text='建立查詢計畫' if self.query_plan.get() else '開始查詢')
     def build_work(self):
-        tab=self.tabs['work']; ttk.Label(tab,text='固定步驟計畫：預覽不呼叫助理或業務工具；批准才執行。').pack(anchor='w')
-        self.plans=self.tree(tab,[('kind','計畫'),('state','狀態'),('rev','修訂'),('time','建立 UTC')],4)
+        tab=self.tabs['work']; tab.columnconfigure(0,weight=1); tab.rowconfigure(2,weight=3); tab.rowconfigure(5,weight=2)
+        self.work_hint=tk.StringVar(value='選擇「先規劃」建立計畫，批准前不會執行。')
+        ttk.Label(tab,textvariable=self.work_hint,style='Muted.TLabel').grid(row=0,column=0,sticky='w',pady=(0,12))
+        ttk.Label(tab,text='待確認的計畫',style='Section.TLabel').grid(row=1,column=0,sticky='w')
+        panel=ttk.Frame(tab); panel.grid(row=2,column=0,sticky='nsew',pady=6); panel.columnconfigure(0,weight=1); panel.columnconfigure(1,weight=1); panel.rowconfigure(0,weight=1)
+        left=ttk.Frame(panel); left.grid(row=0,column=0,sticky='nsew',padx=(0,12))
+        self.plans=self.tree(left,[('kind','計畫'),('state','狀態'),('rev','修訂'),('time','建立 UTC')],3)
+        self.plans.column('rev',width=60,stretch=False); self.plans.column('time',width=100)
         self.plans.bind('<<TreeviewSelect>>',lambda e:self.safe(self.preview_selected_plan))
-        self.plan_preview=tk.Text(tab,height=7,wrap='word',state='disabled'); self.plan_preview.pack(fill='x')
-        row=ttk.Frame(tab); row.pack(fill='x',pady=5)
-        for text,fn in [('批准此修訂',self.approve_plan),('修改',self.edit_plan),('取消計畫',lambda:self.engine.cancel_plan(selected(self.plans)))]: self.button(row,text,fn).pack(side='left',padx=3)
-        self.tasks=self.tree(tab,[('kind','工作'),('state','狀態'),('time','建立 UTC'),('error','錯誤')],6)
-        row=ttk.Frame(tab); row.pack(fill='x')
+        self.plan_preview=tk.Text(panel,height=5,width=30,wrap='word',state='disabled'); self.plan_preview.grid(row=0,column=1,sticky='nsew',pady=5)
+        put(self.plan_preview,'先選擇左側的計畫。\n\n在這裡確認條件與執行步驟，再決定批准、修改或取消。')
+        row=ttk.Frame(tab); row.grid(row=3,column=0,sticky='ew',pady=(2,14))
+        for text,fn in [('批准此修訂',self.approve_plan),('修改',self.edit_plan),('取消計畫',lambda:self.engine.cancel_plan(selected(self.plans)))]: self.button(row,text,fn).pack(side='left',padx=(0,8))
+        self.button(row,'退出修改',self.discard_edit,'Quiet.TButton').pack(side='right')
+        ttk.Label(tab,text='工作紀錄',style='Section.TLabel').grid(row=4,column=0,sticky='w')
+        holder=ttk.Frame(tab); holder.grid(row=5,column=0,sticky='nsew')
+        self.tasks=self.tree(holder,[('kind','工作'),('state','狀態'),('time','建立 UTC'),('error','說明')],3)
+        self.tasks.bind('<Double-1>',lambda e:self.safe(lambda:self.show_result(selected(self.tasks))))
+        row=ttk.Frame(tab); row.grid(row=6,column=0,sticky='ew',pady=(8,0))
         self.button(row,'查看結果',lambda:self.show_result(selected(self.tasks))).pack(side='left')
         self.button(row,'取消工作',lambda:self.engine.cancel_task(selected(self.tasks))).pack(side='left',padx=8)
-        self.button(row,'退出計畫修改',self.discard_edit).pack(side='left')
     def discard_edit(self):
-        self.editing_plan=None; self.status.set("已退出修改；原計畫維持未批准狀態。")
+        self.editing_plan=None; self.query_submit.configure(text='建立查詢計畫' if self.query_plan.get() else '開始查詢'); self.status.set("已退出修改；原計畫維持未批准狀態。")
     def preview_selected_plan(self):
         if not self.plans.selection(): return
         plan=self.store.plan(selected(self.plans)); self.preview_plan=(plan['id'],plan['revision'])
-        put(self.plan_preview,'操作：'+KINDS[plan['kind']]+'\n修訂 '+str(plan['revision'])+'；到期 UTC '+plan['expires_at']+'\n'+json.dumps(plan['payload'],ensure_ascii=False,indent=2))
+        payload=plan['payload']
+        lines=[KINDS[plan['kind']]+'  ·  第 '+str(plan['revision'])+' 版', '']
+        if plan['kind'] in ('query','query_summarize'):
+            catalog={q['id']:q['name'] for q in self.queries.catalog()}; parameters=payload['parameters']
+            lines += ['查詢：'+catalog.get(payload['query_id'],payload['query_id']),
+                      '期間：'+parameters['from_date']+' → '+parameters['to_date']+'（迄日不含）',
+                      '分類：'+{'all':'全部','A':'A 類','B':'B 類'}.get(parameters['category'],parameters['category']),
+                      '', '批准後的步驟', '1. 依照上述條件執行唯讀查詢。', '2. 保存查詢結果，供檢視與匯出。']
+            if plan['kind']=='query_summarize': lines.append('3. 將結果交給已設定助理整理重點。')
+        else: lines += ['批准後，將以下內容交給已設定助理處理。','原文會保留，不覆蓋任何檔案。','','提供的內容',payload['text']]
+        lines += ['', '確認期限（UTC）：'+plan['expires_at'][:19].replace('T',' ')]
+        put(self.plan_preview,'\n'.join(lines))
     def approve_plan(self):
         if not self.preview_plan or selected(self.plans)!=self.preview_plan[0]: raise ValueError('請先預覽計畫。')
         pid,revision=self.preview_plan; tid=self.engine.confirm_plan(pid,revision,'plan:'+pid+':'+str(revision)); self.status.set('已批准此修訂，工作 '+tid[:8])
@@ -282,41 +420,64 @@ class App:
             self.conversation=plan['conversation_id']; self.show_chat(); self.input.delete('1.0','end'); self.input.insert('end',payload['text']); self.plan_mode.set(True)
             self.purpose.set({'chat':'一般對話','summarize':'整理重點','rewrite':'改寫文字'}[plan['kind']]); self.book.select(self.tabs['chat'])
         self.status.set('正在修改計畫；送出後需重新批准。')
+        if plan['kind'] in ('query','query_summarize'): self.query_submit.configure(text='儲存計畫修改')
     def build_result(self):
-        tab=self.tabs['result']; self.result_meta=tk.StringVar(value='請在任務中選擇「查看結果」。'); ttk.Label(tab,textvariable=self.result_meta,wraplength=930).pack(anchor='w')
-        frame=ttk.Frame(tab); frame.pack(fill='both',expand=True,pady=8)
-        self.table=ttk.Treeview(frame,show='headings',selectmode='extended',height=10); self.table.grid(row=0,column=0,sticky='nsew')
+        tab=self.tabs['result']; tab.columnconfigure(0,weight=1); tab.rowconfigure(1,weight=3); tab.rowconfigure(5,weight=1)
+        self.result_meta=tk.StringVar(value='查詢結果保留原始條件與資料時間，方便核對。')
+        ttk.Label(tab,textvariable=self.result_meta,wraplength=720,style='Muted.TLabel').grid(row=0,column=0,sticky='ew',pady=(0,8))
+        frame=ttk.Frame(tab,style='Surface.TFrame'); frame.grid(row=1,column=0,sticky='nsew',pady=(0,8))
+        self.table=ttk.Treeview(frame,show='headings',selectmode='extended',height=5); self.table.grid(row=0,column=0,sticky='nsew')
+        self.table.bind('<Configure>',self.fit_result_columns)
+        self.table.tag_configure('even',background=theme.SURFACE); self.table.tag_configure('odd',background='#F7FAF8')
         y=ttk.Scrollbar(frame,orient='vertical',command=self.table.yview); y.grid(row=0,column=1,sticky='ns')
         x=ttk.Scrollbar(frame,orient='horizontal',command=self.table.xview); x.grid(row=1,column=0,sticky='ew'); self.table.configure(yscrollcommand=y.set,xscrollcommand=x.set)
         frame.columnconfigure(0,weight=1); frame.rowconfigure(0,weight=1)
-        row=ttk.Frame(tab); row.pack(fill='x'); self.page_label=ttk.Label(row)
-        self.button(row,'上一頁',lambda:self.change_page(-1)).pack(side='left'); self.page_label.pack(side='left',padx=8); self.button(row,'下一頁',lambda:self.change_page(1)).pack(side='left')
-        self.headers=tk.BooleanVar(value=True); ttk.Checkbutton(row,text='含欄名',variable=self.headers).pack(side='left',padx=8)
-        row=ttk.Frame(tab); row.pack(fill='x',pady=5)
-        self.button(row,'複製全部列',lambda:self.copy_table(False)).pack(side='left'); self.button(row,'複製選取列',lambda:self.copy_table(True)).pack(side='left',padx=5)
+        self.result_empty=ttk.Label(frame,text='還沒有查詢結果\n\n從「查資料」開始，或到「計畫與任務」選擇已完成的工作。',style='Surface.TLabel',justify='center',foreground=theme.MUTED)
+        self.result_empty.place(relx=.5,rely=.45,anchor='center')
+        row=ttk.Frame(tab); row.grid(row=2,column=0,sticky='ew'); self.page_label=ttk.Label(row,text='第 1 / 1 頁',style='Muted.TLabel')
+        self.button(row,'上一頁',lambda:self.change_page(-1)).pack(side='left'); self.page_label.pack(side='left',padx=12); self.button(row,'下一頁',lambda:self.change_page(1)).pack(side='left')
+        self.headers=tk.BooleanVar(value=True); ttk.Checkbutton(row,text='包含欄名',variable=self.headers).pack(side='left',padx=16)
+        row=ttk.Frame(tab); row.grid(row=3,column=0,sticky='ew',pady=8)
+        self.button(row,'複製全部列',lambda:self.copy_table(False),'Primary.TButton').pack(side='left')
+        self.button(row,'複製選取列',lambda:self.copy_table(True)).pack(side='left',padx=8)
         self.button(row,'匯出 CSV',self.export_csv).pack(side='left'); self.button(row,'設為排程',self.offer_schedule).pack(side='right')
-        ttk.Label(tab,text='複製全部包含所有頁；選取列限當頁。代碼／長整數貼到 Excel 前請將目的欄設為文字。').pack(anchor='w',pady=5)
-        self.output=tk.Text(tab,height=9,wrap='word',state='disabled'); self.output.pack(fill='both',expand=True)
-        row=ttk.Frame(tab); row.pack(fill='x',pady=5); self.button(row,'複製文字',lambda:self.clipboard(self.output.get('1.0','end-1c'))).pack(side='left'); self.button(row,'另存文字',self.save_text).pack(side='left',padx=8)
+        ttk.Label(tab,text='全部複製包含所有頁。代碼、長整數貼到 Excel 前，請將目的欄設為文字。',style='Muted.TLabel',wraplength=730).grid(row=4,column=0,sticky='w',pady=(0,8))
+        self.output=tk.Text(tab,height=3,wrap='word',state='disabled'); self.output.grid(row=5,column=0,sticky='nsew')
+        put(self.output,'助理整理與文字結果會顯示在這裡。')
+        row=ttk.Frame(tab); row.grid(row=6,column=0,sticky='ew',pady=(8,0))
+        self.text_copy=self.button(row,'複製文字',lambda:self.clipboard(self.output.get('1.0','end-1c'))); self.text_copy.pack(side='left'); self.text_copy.configure(state='disabled')
+        self.text_save=self.button(row,'另存文字',self.save_text); self.text_save.pack(side='left',padx=8); self.text_save.configure(state='disabled')
     def show_result(self,tid):
         task=self.store.task(tid); result=task['result']; self.result_task=tid; self.result=None; self.page=0
         if result is None: raise ValueError(task['error'] or '工作尚無結果。')
         if isinstance(result,dict) and 'rows' in result:
             self.result=result
-            self.result_meta.set(result['source_label']+'\n條件 '+json.dumps(result['parameters'],ensure_ascii=False)+' · 資料時間 UTC '+result['fetched_at_utc']+' · '+str(result['row_count'])+' 列'+('（結果已截斷）' if result['truncated'] else ''))
+            labels={'from_date':'起日','to_date':'迄日（不含）','category':'分類'}
+            conditions='  ·  '.join(labels.get(k,k)+'：'+({'all':'全部'}.get(str(v),str(v))) for k,v in result['parameters'].items())
+            self.result_meta.set(result['source_label']+'  ·  '+str(result['row_count'])+' 列'+('（已達上限，結果截斷）' if result['truncated'] else '')+'\n'+conditions+'\n資料時間：'+result['fetched_at_utc'][:19].replace('T',' ')+' UTC')
+
             put(self.output,result.get('summary') or result.get('summary_error') or '表格是固定快照；複製與匯出不會重新查詢。')
         else:
             self.result_meta.set('文字結果預覽 · 原文保留於對話歷史'); put(self.output,result.get('text',str(result)) if isinstance(result,dict) else str(result))
+        self.text_copy.configure(state='normal'); self.text_save.configure(state='normal')
         self.render_page(); self.book.select(self.tabs['result'])
     def render_page(self):
+        self.result_empty.place_forget()
+        if not self.result: self.result_empty.configure(text='目前為文字結果，請閱讀下方內容。'); self.result_empty.place(relx=.5,rely=.45,anchor='center')
         self.table.delete(*self.table.get_children()); columns=self.result['columns'] if self.result else []
         self.table.configure(columns=[c['name'] for c in columns])
-        for c in columns: self.table.heading(c['name'],text=c['label']); self.table.column(c['name'],width=150,stretch=False)
+        for c in columns: self.table.heading(c['name'],text=c['label'],anchor='w'); self.table.column(c['name'],width=170,minwidth=120,stretch=True,anchor='e' if c.get('type') in ('integer','decimal') else 'w')
         rows=self.result['rows'] if self.result else []; start=self.page*100
         for idx,row in enumerate(rows[start:start+100],start):
             values=[row[c['name']] for c in columns] if isinstance(row,dict) else row
-            self.table.insert('','end',iid=str(idx),values=['' if x is None else str(x) for x in values])
-        self.page_label.configure(text=f'{self.page+1} / {max(1,(len(rows)+99)//100)}')
+            self.table.insert('','end',iid=str(idx),values=['' if x is None else str(x) for x in values],tags=('odd' if idx%2 else 'even',))
+        self.fit_result_columns()
+        self.page_label.configure(text=f'第 {self.page+1} / {max(1,(len(rows)+99)//100)} 頁  ·  {len(rows)} 列')
+    def fit_result_columns(self,event=None):
+        columns=self.table['columns']
+        if columns:
+            width=max(120,(self.table.winfo_width()-4)//len(columns))
+            for name in columns: self.table.column(name,width=width)
     def change_page(self,offset):
         if self.result:
             self.page=max(0,min(self.page+offset,max(0,(len(self.result['rows'])-1)//100))); self.render_page()
@@ -340,15 +501,23 @@ class App:
         path=filedialog.asksaveasfilename(defaultextension='.txt',filetypes=[('文字','*.txt')])
         if path: self.background(lambda:Path(path).write_text(text,encoding='utf-8'),lambda _:self.status.set('文字已另存；原文保留。'))
     def build_schedule(self):
-        tab=self.tabs['schedule']; ttk.Label(tab,text='本機排程只在程式開啟時運作 · 時區 Asia/Taipei（UTC+8）',wraplength=900).pack(anchor='w')
-        ttk.Label(tab,text='關閉期間：最近 24 小時最多補跑一次，較舊次數略過；啟用不追補停用期間。').pack(anchor='w',pady=5)
-        self.schedules=self.tree(tab,[('name','名稱'),('freq','頻率／時間'),('state','狀態'),('next','下次 UTC')],7)
+        tab=self.tabs['schedule']; tab.columnconfigure(0,weight=1); tab.rowconfigure(2,weight=2); tab.rowconfigure(4,weight=3)
+        ttk.Label(tab,text='程式開啟時才會執行  ·  時區：台北（UTC+8）',style='Chip.TLabel').grid(row=0,column=0,sticky='w',pady=(0,10))
+        ttk.Label(tab,text='先完成一次查詢，在結果頁選「設為排程」。建立後先預覽，再確認啟用。',style='Muted.TLabel',wraplength=740).grid(row=1,column=0,sticky='w',pady=(0,6))
+        holder=ttk.Frame(tab); holder.grid(row=2,column=0,sticky='nsew')
+        self.schedules=self.tree(holder,[('name','排程名稱'),('freq','頻率／時間'),('state','狀態'),('next','下次 UTC')],4)
         self.schedules.bind('<<TreeviewSelect>>',lambda e:self.safe(self.schedule_details))
-        row=ttk.Frame(tab); row.pack(fill='x')
-        for text,action in [('預覽並啟用',self.enable_schedule),('停用',lambda:self.engine.set_schedule_enabled(selected(self.schedules),False)),('立即執行',lambda:self.engine.run_schedule_now(selected(self.schedules),uuid.uuid4().hex))]: self.button(row,text,action).pack(side='left',padx=4)
-        self.schedule_info=tk.Text(tab,height=10,state='disabled'); self.schedule_info.pack(fill='both',expand=True,pady=8)
-        self.runs=self.tree(tab,[('time','執行／略過 UTC'),('state','狀態')],5)
-        self.button(tab,'查看歷史結果',self.show_run).pack(anchor='w')
+        row=ttk.Frame(tab); row.grid(row=3,column=0,sticky='ew',pady=8)
+        for text,action in [('預覽並啟用',self.enable_schedule),('停用',lambda:self.engine.set_schedule_enabled(selected(self.schedules),False)),('立即執行',lambda:self.engine.run_schedule_now(selected(self.schedules),uuid.uuid4().hex))]: self.button(row,text,action).pack(side='left',padx=(0,8))
+        lower=ttk.Frame(tab); lower.grid(row=4,column=0,sticky='nsew'); lower.columnconfigure(0,weight=1); lower.columnconfigure(1,weight=1); lower.rowconfigure(0,weight=1)
+        left=ttk.Frame(lower); left.grid(row=0,column=0,sticky='nsew',padx=(0,12))
+        ttk.Label(left,text='排程預覽',style='Section.TLabel').pack(anchor='w',pady=6)
+        self.schedule_info=tk.Text(left,height=5,width=30,state='disabled',wrap='word'); self.schedule_info.pack(fill='both',expand=True)
+        put(self.schedule_info,'選擇上方的排程，查看條件與未來三次執行時間。\n\n若程式關閉，最近 24 小時最多補跑一次；停用期間不追補。')
+        right=ttk.Frame(lower); right.grid(row=0,column=1,sticky='nsew')
+        ttk.Label(right,text='執行紀錄',style='Section.TLabel').pack(anchor='w',pady=6)
+        self.button(right,'查看歷史結果',self.show_run).pack(side='bottom',anchor='w',pady=(8,0))
+        self.runs=self.tree(right,[('time','執行／略過 UTC'),('state','狀態')],4)
     def offer_schedule(self):
         if not self.result_task or not self.result: raise ValueError('請先查看成功的查詢結果。')
         source=self.result_task
@@ -376,29 +545,45 @@ class App:
     def schedule_details(self):
         if not self.schedules.selection(): return
         sid=selected(self.schedules); record=self.store.schedule(sid)
-        put(self.schedule_info,json.dumps({'name':record['name'],'parameters':record['parameters'],'notify_rule':record['notify_rule'],'threshold':record['threshold'],'next_3_utc':self.engine.schedule_preview(sid)},ensure_ascii=False,indent=2))
+        parameters=record['parameters']; preview=self.engine.schedule_preview(sid)
+        mode='每次查詢前一日' if parameters.get('_date_mode')=='previous_day' else '固定日期區間'
+        rule='非空且內容改變才通知' if record['notify_rule']=='nonempty_on_change' else '數值達到門檻時通知'
+        lines=[record['name'],mode+'  ·  '+rule,'分類：'+{'all':'全部','A':'A 類','B':'B 類'}.get(parameters.get('category'),''),'','未來三次執行（UTC）']
+        for item in preview: lines.extend([item['scheduled_at'][:19].replace('T',' '),'查詢 '+item['parameters']['from_date']+' → '+item['parameters']['to_date']])
+        if record['threshold']: lines.extend(['','門檻：'+str(record['threshold']['operator'])+' '+str(record['threshold']['value'])])
+        put(self.schedule_info,'\n'.join(lines))
         self.sync_tree(self.runs,[(r['id'],[r['scheduled_at'],LABELS.get(r['state'],r['state'])]) for r in self.store.schedule_runs(sid)])
     def show_run(self):
         rid=selected(self.runs); run=next(r for r in self.store.schedule_runs(selected(self.schedules)) if r['id']==rid)
         if not run['task_id']: raise ValueError('此時段略過，沒有查詢結果。')
         self.show_result(run['task_id'])
     def build_notice(self):
-        tab=self.tabs['notice']; ttk.Label(tab,text='站內通知 · 成功且符合條件／失敗才提醒；不寄信、不傳送其他人。').pack(anchor='w')
-        self.notices=self.tree(tab,[('read','狀態'),('text','通知'),('time','UTC 時間')],14)
-        self.button(tab,'已讀並查看結果',self.read_notice).pack(anchor='w')
+        tab=self.tabs['notice']; tab.columnconfigure(0,weight=1); tab.rowconfigure(1,weight=1)
+        self.notice_hint=tk.StringVar(value='目前沒有新通知。符合條件的排程結果與執行失敗會顯示在這裡。')
+        ttk.Label(tab,textvariable=self.notice_hint,style='Muted.TLabel',wraplength=740).grid(row=0,column=0,sticky='w',pady=(0,10))
+        holder=ttk.Frame(tab); holder.grid(row=1,column=0,sticky='nsew')
+        self.notices=self.tree(holder,[('read','狀態'),('text','通知內容'),('time','UTC 時間')],5)
+        self.notices.column('read',width=85,stretch=False); self.notices.column('text',width=400)
+        self.button(tab,'已讀並查看結果',self.read_notice,'Primary.TButton').grid(row=2,column=0,sticky='w',pady=(10,0))
     def read_notice(self):
         nid=selected(self.notices); notice=next(x for x in self.store.notifications() if x['id']==nid); self.store.mark_read(nid); self.show_result(notice['task_id'])
     def build_issue(self):
-        tab=self.tabs['issue']; ttk.Label(tab,text='回報只存本機，尚未送至管理平台。請勿填入密碼或不必要的個資。').pack(anchor='w')
-        self.issue_type=tk.StringVar(value='新需求'); ttk.Combobox(tab,textvariable=self.issue_type,values=[ISSUE_NAMES[k] for k in ['answer','query','app','schedule','feature']],state='readonly').pack(anchor='w',pady=5)
-        ttk.Label(tab,text='請選擇類型並填寫標題。').pack(anchor='w')
-        self.issue_title=tk.StringVar(); ttk.Entry(tab,textvariable=self.issue_title).pack(fill='x',pady=6)
-        ttk.Label(tab,text='問題描述（不會自動附加對話、檔案或查詢資料）').pack(anchor='w'); self.issue_description=tk.Text(tab,height=4); self.issue_description.pack(fill='x')
-        ttk.Label(tab,text='預期結果').pack(anchor='w'); self.issue_expected=tk.Text(tab,height=3); self.issue_expected.pack(fill='x')
-        row=ttk.Frame(tab); row.pack(fill='x',pady=6)
-        self.button(row,'保存草稿',lambda:self.save_issue(False)).pack(side='left'); self.button(row,'完成本機回報',lambda:self.save_issue(True)).pack(side='left',padx=8); self.button(row,'清空新增',self.clear_issue).pack(side='left')
-        self.issues=self.tree(tab,[('id','本機編號'),('title','標題'),('state','本機狀態')],6)
-        self.button(tab,'讀取回報／編輯草稿',self.load_issue).pack(anchor='w')
+        tab=self.tabs['issue']; tab.columnconfigure(0,weight=1); tab.rowconfigure(8,weight=1)
+        ttk.Label(tab,text='回報保存在此電腦，尚未送至管理平台。不會自動附加對話或檔案。',style='Muted.TLabel',wraplength=750).grid(row=0,column=0,sticky='w',pady=(0,12))
+        fields=ttk.Frame(tab); fields.grid(row=1,column=0,sticky='ew',pady=(0,8)); fields.columnconfigure(1,weight=1)
+        self.issue_type=tk.StringVar(value='新需求'); ttk.Combobox(fields,textvariable=self.issue_type,values=[ISSUE_NAMES[k] for k in ['answer','query','app','schedule','feature']],state='readonly',width=13).grid(row=0,column=0,sticky='w',padx=(0,12))
+        self.issue_title=tk.StringVar(); ttk.Entry(fields,textvariable=self.issue_title).grid(row=0,column=1,sticky='ew')
+        ttk.Label(tab,text='標題請寫在類型右側，例如：希望每天提醒庫存異常。',style='Muted.TLabel').grid(row=2,column=0,sticky='w',pady=(0,8))
+        ttk.Label(tab,text='發生了什麼事？',style='Section.TLabel').grid(row=3,column=0,sticky='w')
+        self.issue_description=tk.Text(tab,height=2,wrap='word'); self.issue_description.grid(row=4,column=0,sticky='ew',pady=(6,10))
+        expected=ttk.Frame(tab); expected.grid(row=5,column=0,sticky='ew'); ttk.Label(expected,text='你希望得到什麼結果？',style='Section.TLabel').pack(anchor='w')
+        self.issue_expected=tk.Text(expected,height=2,wrap='word'); self.issue_expected.pack(fill='x',pady=(6,0))
+        row=ttk.Frame(tab); row.grid(row=6,column=0,sticky='ew',pady=10)
+        self.button(row,'保存草稿',lambda:self.save_issue(False)).pack(side='left'); self.button(row,'完成本機回報',lambda:self.save_issue(True)).pack(side='left',padx=8); self.button(row,'清空新增',self.clear_issue,'Quiet.TButton').pack(side='right')
+        ttk.Label(tab,text='我的回報',style='Section.TLabel').grid(row=7,column=0,sticky='w')
+        holder=ttk.Frame(tab); holder.grid(row=8,column=0,sticky='nsew')
+        self.issues=self.tree(holder,[('id','本機編號'),('title','標題'),('state','狀態')],3)
+        self.button(tab,'讀取回報／編輯草稿',self.load_issue).grid(row=9,column=0,sticky='w',pady=(6,0))
     def clear_issue(self):
         self.issue_id=None; self.issue_title.set(''); self.issue_description.delete('1.0','end'); self.issue_expected.delete('1.0','end')
     def quick_issue(self,kind): self.clear_issue(); self.issue_type.set(ISSUE_NAMES[kind]); self.book.select(self.tabs['issue'])
@@ -414,15 +599,21 @@ class App:
         self.issue_id=item['id'] if item['status']=='draft' else None
         self.status.set(item['id']+' · '+LABELS[item['status']]+('；另存會建立新編號。' if item['status']!='draft' else ''))
     def build_settings(self):
-        tab=self.tabs['settings']; ttk.Label(tab,text='公司連接設定',style='Title.TLabel').pack(anchor='w',pady=5)
-        ttk.Label(tab,text='金鑰只讀取環境變數；切換公司模式失敗不會改用示範答案。\n測試連線會真的呼叫公司助理。若 bot 有原生工具，請先由公司確認此測試的副作用。',wraplength=900).pack(anchor='w',pady=10)
+        tab=self.tabs['settings']; self.section(tab,'助理連線','設定僅保存在此電腦')
+        ttk.Label(tab,text='金鑰透過環境變數讀取。公司連線失敗時，會顯示錯誤，不會改用示範答案。',style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=(0,16))
         self.setting_vars={}
-        for key,label in [('mode','助理模式 demo／company'),('base_url','公司相容端點 base_url'),('model','模型／部署識別'),('api_key_env','金鑰環境變數名稱'),('timeout_seconds','Timeout 秒')]:
-            row=ttk.Frame(tab); row.pack(fill='x',pady=6); ttk.Label(row,text=label,width=27).pack(side='left'); var=tk.StringVar(value=str(self.config['assistant'][key])); self.setting_vars[key]=var
-            if key=='mode': ttk.Combobox(row,textvariable=var,values=['demo','company'],state='readonly').pack(side='left')
-            else: ttk.Entry(row,textvariable=var,width=55).pack(side='left',fill='x',expand=True)
-        self.button(tab,'驗證並保存設定',self.apply_settings).pack(anchor='w',pady=10); self.button(tab,'測試已保存的連線',self.test_connection).pack(anchor='w')
-        ttk.Label(tab,text='AD：未接線，正式模式拒絕啟用。Oracle：未接線，正式模板停用。\n本機資料目錄：'+str(self.directory)+'\n進階 headers／assistant_ref／CA：參考 COMPANY-HANDOFF.md。\n本次不含中央管理、遠端更新或 EXE 打包。',wraplength=900).pack(anchor='w',pady=20)
+        for key,label in [('mode','連線模式 demo / company'),('base_url','公司助理端點網址'),('model','模型／部署識別'),('api_key_env','金鑰環境變數名稱'),('timeout_seconds','回覆等候時間（秒）')]:
+            row=ttk.Frame(tab); row.pack(fill='x',pady=5); ttk.Label(row,text=label,width=25).pack(side='left'); var=tk.StringVar(value=str(self.config['assistant'][key])); self.setting_vars[key]=var
+            if key=='mode': ttk.Combobox(row,textvariable=var,values=['demo','company'],state='readonly',width=18).pack(side='left')
+            else: ttk.Entry(row,textvariable=var,width=35).pack(side='left',fill='x',expand=True)
+        row=ttk.Frame(tab); row.pack(fill='x',pady=(16,12))
+        self.button(row,'驗證並保存設定',self.apply_settings).pack(side='left')
+        self.button(row,'測試已保存的連線',self.test_connection).pack(side='left',padx=10)
+        ttk.Label(tab,text='連線測試會真的呼叫助理；請先由公司確認原生工具是否有副作用。',style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=(0,16))
+        self.section(tab,'本機環境')
+        ttk.Label(tab,text='AD 與 Oracle 尚未接線，正式身分與正式查詢保持停用。',style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=4)
+        ttk.Label(tab,text='資料目錄：'+str(self.directory),style='Muted.TLabel',wraplength=720).pack(anchor='w',pady=4)
+        ttk.Label(tab,text='進階連接設定請參考 COMPANY-HANDOFF.md。',style='Muted.TLabel').pack(anchor='w',pady=4)
     def apply_settings(self):
         if self.pending_io or self.engine.has_inflight(): raise ValueError('請等待工作完成再修改設定。')
         if any(p['state']=='ready' for p in self.store.plans()): raise ValueError('請先完成或取消待批准計畫，再更換助理設定。')
@@ -444,10 +635,16 @@ class App:
         self.sync_tree(self.plans,[(p['id'],[KINDS[p['kind']],LABELS.get(p['state'],p['state']),p['revision'],p['created_at'][:19]]) for p in self.store.plans()])
         self.sync_tree(self.tasks,[(t['id'],[KINDS[t['kind']],LABELS.get(t['state'],t['state']),t['created_at'][:19],t['error'] or '']) for t in self.store.tasks()])
         self.sync_tree(self.schedules,[(s['id'],[s['name'],{'daily':'每日','weekly':'每週'}[s['frequency']]+' '+s['time_hhmm'],'啟用' if s['enabled'] else '停用',s['next_fire'] or '']) for s in self.store.schedules()])
-        notices=self.store.notifications(); unread=sum(not n['is_read'] for n in notices); self.book.tab(self.tabs['notice'],text=f'通知 ({unread})')
+        notices=self.store.notifications(); unread=sum(not n['is_read'] for n in notices); self.nav_buttons['notice'].configure(text='  通知'+(f'   {unread}' if unread else ''))
+        self.notice_hint.set(f'{unread} 則未讀  ·  共 {len(notices)} 則通知' if notices else '目前沒有新通知。符合條件的排程結果與執行失敗會顯示在這裡。')
         self.sync_tree(self.notices,[(n['id'],['已讀' if n['is_read'] else '未讀',n['text'],n['created_at'][:19]]) for n in notices])
         self.sync_tree(self.issues,[(i['id'],[i['id'],i['title'],LABELS[i['status']]]) for i in self.store.issues()])
         if self.schedules.selection(): self.schedule_details()
+        busy=sum(t['state'] in ('queued','running') for t in self.store.tasks())
+        self.activity_label.configure(text=f'●  {busy} 項工作進行中' if busy else '●  就緒')
+        self.update_composer()
+        plans=self.store.plans(); tasks=self.store.tasks()
+        self.work_hint.set(f'{sum(p["state"]=="ready" for p in plans)} 份待確認計畫  ·  {len(tasks)} 項工作紀錄' if plans or tasks else '選擇「先規劃」建立計畫，批准前不會執行。')
     def close(self,force=False):
         if self.closed: return
         active=self.pending_io or self.engine.has_inflight()

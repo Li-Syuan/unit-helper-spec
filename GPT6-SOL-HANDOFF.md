@@ -1,4 +1,4 @@
-請接手這個 repo 的單位桌面小幫手 0.3.0。你是 GPT 6 sol 開發 agent，請實際做接線與驗證，不重做 GUI 或另開平台。
+請接手這個 repo 的單位桌面小幫手 0.3.1。你是 GPT 6 sol 開發 agent，請實際做接線與驗證，不重做 GUI 或另開平台。
 
 先讀 AGENTS.md、README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md、docs/current-state.md。保留 Windows x64、Python 恰好 3.10.4、Tkinter、現有 SQLite 與 OpenAI SDK 邊界。舊完整 spec 是後續路線；當前不做中央管理、遠端更新、產品 multi agents。
 

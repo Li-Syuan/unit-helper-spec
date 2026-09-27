@@ -7,7 +7,7 @@
 ## 已完成，請延續
 
 - Windows x64、Python 恰好 3.10.4、Tkinter、OpenAI SDK 及 SQLite。
-- desktop_app/ui.py 畫面，core.py 的 Store／服務流程／本機排程，choices.py 表單，files.py 輸出，config.py 設定及單例鎖。
+- desktop_app/ui.py 畫面、theme.py 統一樣式（0.3.1），core.py 的 Store／服務流程／本機排程，choices.py 表單，files.py 輸出，config.py 設定及單例鎖。
 - 本機示範與公司 adapter 明確分離；真實模式失敗不 fallback demo。
 - Plan／選項、對話、TXT／CSV、三項合成查詢、通知與本機回報。
 - 可重建 .venv、requirements.lock、scripts、測試與驗證紀錄。
@@ -37,3 +37,7 @@
 使用者允許開發 subagents。Coordinator 可把互斥工作包交 Desktop、Adapters、QA，**最多兩個執行工作包同時進行**；列明可寫檔案、契約、輸入、驗收。根設定、鎖檔、遷移與整合由 Coordinator 管。沒有工具就順序開發，不以角色文字冒充並行。沿用使用者指定開發模型，不猜公司模型 ID。
 
 完成後更新 docs/current-state.md、docs/implementation-status.md、VALIDATION-LOCAL.md（或另建公司實測檔），維持 manifest 一致。既有 spec ZIP 不重包成看似含原始碼的發布；Git history 保留規格。
+
+## 介面維護
+
+0.3.1 以原生 Tkinter/ttk 改善介面，無新 GUI 依賴。調整佈局後檢查 1050×700 與一般尺寸的按鈕可見性，保留 sidebar 導覽／既有 Notebook 服務介面、Plan gate、原文與資料匯出行為；歡迎文案不得當成使用者訊息保存或傳給助理。UI 證據見 docs/UI-DESIGN.md。

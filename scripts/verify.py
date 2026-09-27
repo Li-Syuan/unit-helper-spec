@@ -27,5 +27,5 @@ if sorted(lock)!=sorted(installed): raise SystemExit('Installed packages differ 
 label=sys.argv[1] if len(sys.argv)>1 else 'local'
 if not re.fullmatch('[a-z-]+',label): raise SystemExit('Invalid evidence label')
 folder=project/'docs'/'validation'; folder.mkdir(exist_ok=True)
-(folder/(label+'.json')).write_text(json.dumps({'recorded_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'environment':sys.executable,'commands':records},ensure_ascii=False,indent=2),encoding='utf-8')
+(folder/(label+'.json')).write_text(json.dumps({'recorded_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'environment':sys.executable,'commands':records},ensure_ascii=False,indent=2),encoding='utf-8',newline='\n')
 print('Evidence saved: docs/validation/'+label+'.json')

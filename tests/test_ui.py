@@ -110,3 +110,33 @@ class DesktopTests(unittest.TestCase):
         while not a.lock.handle.closed and time.monotonic()<deadline:
             self.root.update(); time.sleep(.01)
         self.assertTrue(a.lock.handle.closed)
+
+    def test_navigation_and_minimum_size_keep_actions_visible(self):
+        from tkinter import ttk
+        a=self.app; self.root.deiconify(); self.root.geometry('1050x700'); self.root.update()
+        for key,title,_ in a.routes:
+            a.nav_buttons[key].invoke(); self.root.update()
+            self.assertEqual(a.book.select(),str(a.tabs[key]))
+            self.assertEqual(a.page_title.cget('text'),title)
+            def children(widget):
+                for child in widget.winfo_children():
+                    yield child
+                    yield from children(child)
+            page=a.tabs[key]; bottom=page.winfo_rooty()+page.winfo_height(); right=page.winfo_rootx()+page.winfo_width()
+            for widget in children(page):
+                if isinstance(widget,ttk.Button):
+                    self.assertTrue(widget.winfo_ismapped(),(key,widget.cget('text')))
+                    self.assertLessEqual(widget.winfo_rooty()+widget.winfo_height(),bottom+2,(key,widget.cget('text')))
+                    self.assertLessEqual(widget.winfo_rootx()+widget.winfo_width(),right+2,(key,widget.cget('text')))
+
+    def test_welcome_shortcut_and_readable_plan_are_not_data_mutations(self):
+        a=self.app
+        self.assertEqual(a.store.messages(a.conversation),[])
+        self.assertIn('今天，想先完成哪件事',a.transcript.get('1.0','end'))
+        a.input.insert('end','需要確認的文字'); a.plan_mode.set(True)
+        self.assertEqual(a.send_button.cget('text'),'建立計畫')
+        a.send_shortcut(); self.assertEqual(a.store.tasks(),[])
+        self.assertIn('需要確認的文字',a.plan_preview.get('1.0','end'))
+        self.assertNotIn('conversation_id',a.plan_preview.get('1.0','end'))
+        a.approve_plan(); self.wait_task()
+        self.assertEqual(a.store.messages(a.conversation)[0]['text'],'需要確認的文字')
