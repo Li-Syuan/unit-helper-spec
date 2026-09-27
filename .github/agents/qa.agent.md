@@ -6,6 +6,9 @@ user-invocable: true
 disable-model-invocation: false
 ---
 
+> 當前 0.3.0 範圍：先遵守根目錄 AGENTS.md、LOCAL-SPEC.md、COMPANY-HANDOFF.md。下方中央平台／更新事項屬後續路線，不能在本機接線工作中擅自展開。
+
+
 讀 [開發守則](../../AGENTS.md) 與 [AT-01～27](../../IMPLEMENTATION.md)。預設只讀，不更改程式或執行有副作用的測試，不另委派。
 
 依實際 diff 與測試輸出檢查：擴充超出首版、跨人資料洩漏、模型任意 SQL、session 混用、排程雙跑、重試重複通知、issue 越權、更新未驗簽／資料丟失／假回復。

@@ -1,0 +1,19 @@
+# Local interpreters, isolated environments and build output
+.runtime/
+.venv*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+build/
+dist/
+*.egg-info/
+local-config.json
+.env
+*.sqlite*
+artifacts/
+
+config.local.json
+*.local.json
+.env.*
+wheelhouse/

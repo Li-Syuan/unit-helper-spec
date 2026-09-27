@@ -6,6 +6,9 @@ user-invocable: false
 disable-model-invocation: false
 ---
 
+> 當前 0.3.0 範圍：先遵守根目錄 AGENTS.md、LOCAL-SPEC.md、COMPANY-HANDOFF.md。下方中央平台／更新事項屬後續路線，不能在本機接線工作中擅自展開。
+
+
 讀 [開發守則](../../AGENTS.md)、[後端](../../BACKEND.md)、[運作](../../OPERATIONS.md)、[Oracle](../../database/ORACLE.md)。只做指派子範圍，不一次重建所有服務，不另委派。
 
 身份由公司已驗證 session 取得，白名單／單位／查詢範圍服務端驗證。Oracle 參數 bind、唯讀 View、scope 注入；model 回 raw SQL 必須拒絕。openai adapter 沿用公司成功方法，未知 capability 先 disabled。

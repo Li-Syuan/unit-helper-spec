@@ -1,0 +1,13 @@
+{
+  "identity_mode": "demo",
+  "query_mode": "demo",
+  "assistant": {
+    "mode": "demo",
+    "base_url": "",
+    "model": "",
+    "api_key_env": "UNITHELPER_API_KEY",
+    "timeout_seconds": 30,
+    "max_context_chars": 50000,
+    "verified_side_effect_free": false
+  }
+}

@@ -1,53 +1,39 @@
-# 單位桌面小幫手 v2.2：公司端開發守則
+# 本機實作與公司接手守則
 
-本檔與 GUIDED-QUERIES.md、PLAN-AND-CHOICES.md、SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md 是本版規範。若與舊 Multi-Agent v1 規格不同，以使用者核准的精簡版為準。公司原有規則與原始碼不可被本包直接覆蓋。
+## 優先範圍
 
-## 必須保留
+本次使用者核准的是 **0.3.0 本機桌面**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
 
-- Windows／Python／Tkinter，不換 GUI 框架。
-- 舊版公司智能助理 API、聊天、排程、網路蒐集與 SQLite 資料。
-- 公司已存在的後端框架與 AD 登入，不重做身份平台。
-- OpenAI 套件連公司端點；GPT 6 sol 是開發模型，不能硬接公共模型 API。
+## 已完成，請延續
 
-## 第一版只做
+- Windows x64、Python 恰好 3.10.4、Tkinter、OpenAI SDK 及 SQLite。
+- desktop_app/ui.py 畫面，core.py 的 Store／服務流程／本機排程，choices.py 表單，files.py 輸出，config.py 設定及單例鎖。
+- 本機示範與公司 adapter 明確分離；真實模式失敗不 fallback demo。
+- Plan／選項、對話、TXT／CSV、三項合成查詢、通知與本機回報。
+- 可重建 .venv、requirements.lock、scripts、測試與驗證紀錄。
 
-一般／Plan 模式＋是非／單選／多選確認＋一個通用助理＋三項核准 Oracle 查詢＋文字/TXT/CSV 整理＋文字改寫＋中央查詢排程/通知＋issue＋使用者點擊更新。不要加入產品 runtime 多 agent、Skill 市集、OCR、信件、Office 原檔編輯、任意 SQL/shell 或跨人 agent 通訊。
+## 待公司接線
 
-## 開始與分工
+依 COMPANY-HANDOFF.md：成功 chatbot API 契約、AD／名單／owner 授權、Oracle 三模板、舊資料移轉防雙跑、公司 GUI／Excel 真實驗收。保持 Protocol 和服務邊界，必要時只擴充 query UI 的真實參數表單；不要重做整套程式。
 
-先讀 START-HERE.md 與 IMPLEMENTATION.md。盤點公司程式後建立 docs/current-state.md、docs/implementation-status.md；缺原碼時明確記錄，不虛構已完成整合。
+## 後續才做
 
-使用者允許公司 Copilot 以 subagents 分工實作。Coordinator 可將互斥工作包交 Desktop、Backend、QA，最多兩個執行工作包同時進行；契約、根設定、鎖檔、migration 由 Coordinator 統一整合。每個包列需求 ID、可寫路徑、依賴、輸入與驗收；有依賴必須先完成契約。
+共用管理 API、中央 Oracle schema、中央常駐排程、issue 後台、簽章遠端更新與回復、EXE 打包。產品 runtime 多 agent、持續 Goal、信件擷取、OCR、Office 原檔編輯、多文件、任意 SQL/shell 均未授權加入本機版本。
 
-無 subagent 工具就順序開發，明確說明，不以角色文字假裝並行。沿用使用者選擇的 GPT 6 sol，不猜模型選單 ID 或自行换模型。開發分工不等於產品需多代理。
+## 開發規則
 
-## 技術與安全界線
+- 所有正式測試用 `.venv/Scripts/python.exe` 3.10.4；`scripts/test.ps1` 為完整檢查。改依賴後於第二乾淨 venv 重建，不借別人的 site-packages。
+- `.venv*`、`.runtime`、本機 config、.env、sqlite 與使用者資料不進 Git。金鑰從環境變數讀取；不記錄 HTTP response body 或密碼。
+- UI thread 只操作 widget；HTTP／檔案使用背景工作。取消後的晚到結果不能覆寫狀態；真實 future 尚未結束時禁止更換 client；關閉後才釋放 singleton lock。
+- Plan 預覽不呼叫 bot；純參數驗證不能跑查詢。批准、修訂、期限、idempotency 在服務層檢查，不能以 prompt／disabled button 代替。
+- 選項資料只視為候選答案，不等於工具授權。公司原生 bot 工具的副作用需查證，不能假設 SDK 呼叫是純文字。
+- Oracle 使用核准模板、bind、驗證身份注入範圍及唯讀有限結果；不把 DB 共享密碼放桌面／模型。
+- 不改寫使用者原文或原檔；精度不用 float；Excel 公式防護與真實貼上需分別驗證。
+- SQLite 本機 schema 與舊公司 DB 分離；移轉先備份、dry-run、防重、可回復。舊 runner 未停用前不啟動對應新排程。
+- 實測結果分為 mock_passed、local_real_passed、company_real_passed、not_tested。GUI 字串測試不等於人工 GUI／Excel 驗收。
 
-- UI thread 只更新 Tk widget；背景執行 HTTP／檔案工作。
-- Oracle credentials 僅 server 持有；查詢参数用 bind，scope 由經驗證身份注入。模型回覆不能直接當 SQL 執行。
-- AD 帳密不得進應用資料表、prompt、log 或排程；沿用平台授權，查詢每次重驗。
-- 首版單一 TXT/CSV 有大小/編碼限制；超限不假裝已完整處理。文字改寫保留原文。
-- 排程獨立於 desktop，unique occurrence＋lease 防重；舊 runner 切換須有 watermark 與停用證據。
-- Issue 預設私有；附加對話／資料須使用者選取；管理 issue 不等於可讀所有對話。
-- 更新必須驗發布簽章與 hash，保留 last_good，程式與資料分離；不能只下載 EXE 覆蓋正在執行的程式。
-- 公司 schema、API、AD 授權、套件版本、更新來源未知就做 adapter/Mock；禁止猜成功。
+## 分工
 
-## 品質與自主性
+使用者允許開發 subagents。Coordinator 可把互斥工作包交 Desktop、Adapters、QA，**最多兩個執行工作包同時進行**；列明可寫檔案、契約、輸入、驗收。根設定、鎖檔、遷移與整合由 Coordinator 管。沒有工具就順序開發，不以角色文字冒充並行。沿用使用者指定開發模型，不猜公司模型 ID。
 
-沿用 repo 的測試／格式／build 指令。沒有時先建立最小可執行檢查與鎖版依賴；按 AT-01～AT-27 測試行為，不堆鏡像實作的無價值測試。修錯誤不降低規格或跳過失敗。
-
-每階段報完成內容、真實執行檢查、未通過／阻擋及下一步，區分 mock_passed/real_passed。GUI、Oracle、AD、更新須各有實測，不因檔案存在就宣稱 production ready。
-
-一般實作、Mock、測試、修正與可逆重構自主完成。發布、正式資料庫修改與不可逆動作依公司既有規範；沒有相依證據時只阻擋該部分，繼續其他授權工作。保留使用者修改，不以重寫刪掉初版功能。
-
-## Plan／選項實作守則
-
-- 先讀 PLAN-AND-CHOICES.md，實作 UH-11、UH-12。一般模式保留快查，Plan 在後端完成確認前禁止業務工具 dispatch；prompt 與 disabled button 不能代替 gate。
-- 達哥沒有原生 Plan／JSON 也能用固定表單；若 bot 原生工具副作用不能關閉或驗證，Plan 不呼叫它。
-- schema 僅表示候選；owner、批准、期限、修訂、form ID 和選項 typed value 由 server 掌管。選項答案不等於任意動作授權。
-- 修改使原批准失效；版本／hash／idempotency 防止舊卡片和雙擊重複執行。「是，設成排程」只建 disabled 草稿，仍需原有啟用確認。
-- 首版只用固定短流程；不要藉此建立持續自主 Goal、多 agent 或通用任務引擎。依 AT-16～AT-21 提供實測證據。
-
-## 引導查詢與 Excel 複製
-
-讀 GUIDED-QUERIES.md，完成 UH-13／UH-14／AT-22～AT-27。常用工作共用原工具，不新增引擎。一般模式一次送出，Plan 不跳過批准。複製只讀同一快照，不能另跑 SQL；欄序／精度／公式防護／跨頁與真 Excel 貼上需驗證。快速回報只開既有草稿。不得增加收藏、Excel 自動操控、固定範本產檔或評分表。
+完成後更新 docs/current-state.md、docs/implementation-status.md、VALIDATION-LOCAL.md（或另建公司實測檔），維持 manifest 一致。既有 spec ZIP 不重包成看似含原始碼的發布；Git history 保留規格。

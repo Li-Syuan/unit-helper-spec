@@ -7,6 +7,9 @@ user-invocable: true
 disable-model-invocation: true
 ---
 
+> 當前 0.3.0 範圍：先遵守根目錄 AGENTS.md、LOCAL-SPEC.md、COMPANY-HANDOFF.md。下方中央平台／更新事項屬後續路線，不能在本機接線工作中擅自展開。
+
+
 讀 [AGENTS.md](../../AGENTS.md)、[實作驗收](../../IMPLEMENTATION.md)、[啟動指令](../../START-HERE.md)。你是唯一整合者，先盤點現有 Tkinter、公司助理、後端／AD、Oracle、SQLite、排程。
 
 建立 current-state 與 implementation-status，先固定 DTO／接口再指派互斥工作包；最多兩個子工作包並行。共享 contract、migration、鎖檔及根設定由你整合。若沒有 subagent 工具，順序完成並說明，不能假装已委派。

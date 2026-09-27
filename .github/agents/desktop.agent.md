@@ -6,6 +6,9 @@ user-invocable: false
 disable-model-invocation: false
 ---
 
+> 當前 0.3.0 範圍：先遵守根目錄 AGENTS.md、LOCAL-SPEC.md、COMPANY-HANDOFF.md。下方中央平台／更新事項屬後續路線，不能在本機接線工作中擅自展開。
+
+
 讀 [開發守則](../../AGENTS.md)、[產品](../../SPEC.md)、[更新](../../UPDATES.md)。只修改 Coordinator 指派的桌面或 updater 範圍，不另委派、不改公司 auth／API 契約。
 
 保留 Tkinter，UI thread 更新 widget，背景做 I/O。單 TXT/CSV 先預覽；文字改寫保留原文。對話、數據、排程、我的回報要有明確狀態。無 streaming 時不假装逐字輸出。
