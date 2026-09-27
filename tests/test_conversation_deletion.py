@@ -53,7 +53,7 @@ class ConversationDeletionTests(unittest.TestCase):
             db.execute('INSERT INTO notifications VALUES(?,?,?,?,0,?)',
                        (uid(), 'test-key', task, '通知', stamp()))
         preview = self.preview(first, second, first)
-        self.assertEqual(preview['counts'], dict(conversations=2, messages=4, plans=1, tasks=2, notifications=1))
+        self.assertEqual(preview['counts'], dict(conversations=2, messages=4, plans=1, tasks=2, notifications=1, drafts=0))
         self.assertEqual(set(preview['task_ids']), {task, other_task})
         self.assertEqual(preview['plan_ids'], [plan])
         self.assertEqual(len(self.store.messages(first)), 2)  # Preview is read-only.
@@ -245,7 +245,7 @@ class ConversationDeletionTests(unittest.TestCase):
         task = self.engine.confirm_plan(plan, 1, 'approved')
         self.wait_idle()
         preview = self.preview(cid)
-        self.assertEqual(preview['counts'], dict(conversations=1, messages=2, tasks=1, plans=1, notifications=0))
+        self.assertEqual(preview['counts'], dict(conversations=1, messages=2, tasks=1, plans=1, notifications=0, drafts=0))
         self.engine.delete_conversations(preview['token'])
         with self.assertRaises(ValueError):
             self.store.task(task)

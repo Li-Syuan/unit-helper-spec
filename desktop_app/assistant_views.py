@@ -11,15 +11,18 @@ class AssistantViews:
     def build_assistant_bar(self,parent):
         bar=ttk.Frame(parent); bar.pack(fill='x',pady=(0,6))
         ttk.Label(bar,text='對話助理').pack(side='left')
-        self.profile_picker=ttk.Combobox(bar,state='readonly',width=28)
+        self.profile_picker=ttk.Combobox(bar,state='readonly',width=22)
         self.profile_picker.pack(side='left',padx=8)
         self.profile_picker.bind('<<ComboboxSelected>>',self.switch_assistant)
         self.button(bar,'助理資訊',self.assistant_info,'Quiet.TButton').pack(side='left')
-        self.button(bar,'轉交選取文字',self.open_chat_handoff,'Quiet.TButton').pack(side='right')
+        self.assistant_usage=ttk.Label(parent,text='',style='Muted.TLabel',wraplength=650)
+        self.assistant_usage.pack(fill='x',pady=(0,4))
+        self.assistant_usage.bind('<Configure>',lambda e:self.assistant_usage.configure(wraplength=max(100,e.width-10)))
         self.refresh_profile_picker()
     def refresh_profile_picker(self):
         self.profile_options=self.profiles.items(True)
-        self.profile_picker.configure(values=[p['name']+' · '+p['assistant_id'] for p in self.profile_options])
+        counts={p['name']:sum(q['name']==p['name'] for q in self.profile_options) for p in self.profile_options}
+        self.profile_picker.configure(values=[p['name']+(' · '+p['id'][-8:] if counts[p['name']]>1 else '') for p in self.profile_options])
         binding=self.store.conversation(self.conversation)['binding'] if self.conversation else self.profiles.default_binding()
         i=next((i for i,p in enumerate(self.profile_options) if p['id']==(binding or {}).get('profile_id')),None)
         if i is None: self.profile_picker.set('舊版／停用助理（唯讀）')
@@ -27,6 +30,12 @@ class AssistantViews:
             self.profile_picker.current(i)
             if self.profile_options[i]['revision']!=(binding or {}).get('revision'):
                 self.profile_picker.set(self.profile_options[i]['name']+'（舊版唯讀）')
+        p=self.profiles.information(binding) if binding else None
+        notes=(p or {}).get('notes','') or '用途尚未填寫'
+        label='用途（自填）：'+(notes[:80]+'…' if len(notes)>80 else notes)
+        if p and p['id']!='demo' and not p.get('legacy') and self.profiles.data['wire_mode']=='unconfigured':
+            label+=' · API 格式待公司確認'
+        self.assistant_usage.configure(text=label)
     def switch_assistant(self,event=None):
         index=self.profile_picker.current()
         if index>=0:

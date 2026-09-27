@@ -1,0 +1,139 @@
+{
+  "startup": {
+    "before": "unaware",
+    "after": "system",
+    "changed": true
+  },
+  "windows": [
+    {
+      "theme": "dark",
+      "mode": "normal",
+      "page": "chat",
+      "size": [
+        1920,
+        1290
+      ],
+      "send_visible": 1
+    },
+    {
+      "theme": "dark",
+      "mode": "normal",
+      "page": "todo",
+      "wide": true,
+      "size": [
+        1920,
+        1290
+      ],
+      "send_visible": null
+    },
+    {
+      "theme": "dark",
+      "mode": "small",
+      "page": "chat",
+      "size": [
+        1575,
+        1050
+      ],
+      "send_visible": 1
+    },
+    {
+      "theme": "dark",
+      "mode": "small",
+      "page": "todo",
+      "wide": false,
+      "size": [
+        1575,
+        1050
+      ],
+      "send_visible": null
+    },
+    {
+      "theme": "dark",
+      "mode": "maximized",
+      "page": "chat",
+      "size": [
+        2560,
+        1494
+      ],
+      "send_visible": 1
+    },
+    {
+      "theme": "dark",
+      "mode": "maximized",
+      "page": "todo",
+      "wide": true,
+      "size": [
+        2560,
+        1494
+      ],
+      "send_visible": null
+    },
+    {
+      "theme": "light",
+      "mode": "normal",
+      "page": "chat",
+      "size": [
+        1920,
+        1290
+      ],
+      "send_visible": 1
+    },
+    {
+      "theme": "light",
+      "mode": "normal",
+      "page": "todo",
+      "wide": true,
+      "size": [
+        1920,
+        1290
+      ],
+      "send_visible": null
+    },
+    {
+      "theme": "light",
+      "mode": "small",
+      "page": "chat",
+      "size": [
+        1575,
+        1050
+      ],
+      "send_visible": 1
+    },
+    {
+      "theme": "light",
+      "mode": "small",
+      "page": "todo",
+      "wide": false,
+      "size": [
+        1575,
+        1050
+      ],
+      "send_visible": null
+    },
+    {
+      "theme": "light",
+      "mode": "maximized",
+      "page": "chat",
+      "size": [
+        2560,
+        1494
+      ],
+      "send_visible": 1
+    },
+    {
+      "theme": "light",
+      "mode": "maximized",
+      "page": "todo",
+      "wide": true,
+      "size": [
+        2560,
+        1494
+      ],
+      "send_visible": null
+    }
+  ],
+  "version": "0.9.0",
+  "evidence": "local_real_passed_programmatic_tk",
+  "data": "synthetic_temporary_directory",
+  "human_ime": "not_tested"
+}

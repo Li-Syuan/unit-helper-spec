@@ -1,4 +1,4 @@
-# QA agent 0.8.1：產品與架構
+# QA agent 0.9.0：產品與架構
 
 本文件是現行行為契約。程式與 UI 已完成本機功能；公司接線見 [工作單](../COMPANY-HANDOFF.md)，實測與未測項目見 [驗證摘要](VALIDATION.md)。
 
@@ -7,9 +7,13 @@
 | 模組 | 責任 |
 |---|---|
 | desktop_app/ui.py | Tk 畫面、主執行緒事件、背景 IO 回傳、表格／預覽 |
-| desktop_app/guidance.py | 八頁原地提示、狀態說明及對應手冊入口；只讀取 UI 現況 |
+| desktop_app/guidance.py | 九頁原地提示、狀態說明及對應手冊入口；只讀取 UI 現況 |
 | desktop_app/experience.py | 離線手冊、關於與環境診斷入口；不再啟動獨立體驗 |
 | desktop_app/core.py | Store、任務／Plan gate、受限工作流程、本機排程與通知 |
+| desktop_app/local_work.py | schema 3 待辦、版本化草稿及本機保存契約 |
+| desktop_app/todo_views.py | 待辦看板、窄版分頁、編輯與來源入口 |
+| desktop_app/draft_views.py | 延遲保存、失敗重試、恢復與關閉補存 |
+| desktop_app/work_cards.py | 公司可調整的三張文字工作卡片 |
 | desktop_app/choices.py | 持久化 typed 選項、owner／版本／期限／一次提交 |
 | desktop_app/gateways.py | 身分、公司 OpenAI 相容助理、查詢介面與合成實作 |
 | desktop_app/files.py | UTF-8 上傳驗證、CSV／TSV 安全輸出 |
@@ -22,7 +26,7 @@ UI 不直接持有 SQL、密碼或 HTTP 細節。公司請求映射與憑證集�
 
 啟動直接進入正常工作區；不再建立歡迎視窗、獨立體驗程序、暫存體驗工作區或五步控制器。一般示範助理及 DEMO 合成查詢繼續保留，操作會保存在目前個人歷史，所有示範標示保持明確。
 
-對話、查資料、計畫與任務、查詢結果、我的排程、通知、設定、問題回報共八頁，在既有頁首說明區呈現簡短提示，說明目前狀態、下一步或阻擋原因；旁邊提供收合／展開及對應手冊章節。側欄「操作提示」切換目前頁面。提示不另外占用大型面板，也不需照固定導覽順序完成。
+對話、我的待辦、查資料、計畫與任務、查詢結果、我的排程、通知、設定、問題回報共九頁，在既有頁首說明區呈現簡短提示，說明目前狀態、下一步或阻擋原因；旁邊提供收合／展開及對應手冊章節。側欄「操作提示」切換目前頁面。提示不另外占用大型面板，也不需照固定導覽順序完成。
 
 提示只讀取目前選定的對話／工作／資料狀態，不會建立對話、填入草稿、執行查詢、批准 Plan、發送資料或呼叫公司服務。更新或切換提示不得重建工作區或清除草稿、附件、文字／表格選取、游標、捲動及 Plan 修訂。必要身分與示範標示、錯誤、批准與轉交確認不受收合影響。
 
@@ -44,7 +48,7 @@ UI 不直接持有 SQL、密碼或 HTTP 細節。公司請求映射與憑證集�
 
 Engine.preview_conversation_deletion(ids) 回傳 token、conversations、counts、task_ids、plan_ids；Engine.delete_conversations(token) 回傳同摘要及 deleted_ids。token 在服務端保存選定 ID 與完整資料快照指紋，10 分鐘有效，成功後失效；過期、重複或資料變更須重新預覽。確認時在引擎鎖內重新檢查，以單一 BEGIN IMMEDIATE 交易完成整批刪除；失敗全部回復，不改 schema。
 
-範圍限選定對話、訊息、專屬 Plan、工作輸入／結果及其通知，以及該對話記憶體草稿／附件引用；待批准 Plan 一併刪除而不執行。排隊、執行中或取消後仍有未結束 future 的選定對話會阻擋整批刪除，不能只檢查畫面狀態，不能自動取消。其他對話的工作可以繼續；不正常的跨工作、Plan 或排程關聯拒絕刪除，不擴大範圍。
+範圍限選定對話、訊息、專屬 Plan、工作輸入／結果及其通知，以及該對話的持久化草稿、記憶體草稿／附件引用；待批准 Plan 一併刪除而不執行。另存待辦保留，來源入口顯示「來源對話已刪除」。排隊、執行中或取消後仍有未結束 future 的選定對話會阻擋整批刪除，不能只檢查畫面狀態，不能自動取消。其他對話的工作可以繼續；不正常的跨工作、Plan 或排程關聯拒絕刪除，不擴大範圍。
 
 原始檔、匯出檔、既有備份、獨立查詢／排程、問題回報、選項表單、其他對話及轉交副本保留。轉交副本的來源不存在時顯示「來源對話已刪除」。公司端歷史不在範圍內；此操作不是安全抹除，也不自動新建含原內容的備份。
 
@@ -75,7 +79,7 @@ Engine.preview_conversation_deletion(ids) 回傳 token、conversations、counts�
 
 ## 資料與回報
 
-獨立 `local-v1.sqlite3`、schema user_version=2、WAL；本應用 schema 1 升級前以 SQLite backup 備份，再以交易遷移。無可靠助理歸屬的舊對話保留閱讀／轉交，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
+獨立 `local-v1.sqlite3`、schema user_version=3、WAL；本應用 schema 1／2 升級前以 SQLite backup 備份，再以交易遷移。無可靠助理歸屬的舊對話保留閱讀／轉交，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
 回報 draft 可讀取修改，local_saved 只表示保存在此電腦；編號 LOCAL-*。不自動附加對話、資料或檔案，不冒稱管理者已收到。未實作處理狀態同步／修正版本管理。
 公司舊資料移轉、中央 API、AD、Oracle、簽章更新及 EXE 打包均另列交接；未接線或未實測項目不得記成已通過。
 
@@ -87,6 +91,14 @@ catalog 的參數定義支援 text/date/integer/decimal/single_choice/boolean、
 
 test_support 包含可重用 adapter 契約，company_templates 提供待填測試骨架，company_check 必須明確啟動且完成公司能力審查才載入可信 hooks。無 hooks 或缺項是 not_tested，不能以 demo／skip 替代公司驗收。不包括正式 AD、Oracle 或舊資料移轉。
 
+
+## 個人工作流程
+
+我的待辦與 Engine 的 tasks 分離。todos 保存標題（1～120 字）、說明（最多 50,000 字）、todo／ongoing／done、選填 YYYY-MM-DD、來源對話 ID、建立／更新／完成時間與保存防重 ID。來源不使用連動刪除；對話刪除後待辦保留，來源失效明示。狀態不觸發模型、查詢或排程，台北日期只作到期標記。
+
+`todo_views.py` 在可用寬 900 邏輯像素以上用三欄，以下用狀態分頁。標題搜尋、顯示已完成及三欄排序沿用使用者選擇，重複刷新不重建未變卡片。常用文字卡片定義於 `work_cards.py`，只填入可修改草稿，既有草稿／附件存在時開同一助理的新對話。
+
+`draft_views.py` 約一秒 debounce，依對話記錄文字、用途、先規劃及是否曾有附件，不保存檔案路徑或內容。Store reservation 使舊寫入失效；接受工作／Plan 後清除，刪除草稿包含於原刪除快照和同一交易。正常關閉補存，失敗須提示；Plan 修訂仍明確保存。重開舊綁定只能閱讀，不改送目標。
 
 ## 助理連線與資料轉交
 
@@ -104,9 +116,9 @@ test_support 包含可重用 adapter 契約，company_templates 提供待填測�
 
 | 狀態 | 能力 |
 |---|---|
-| 本機已實作 | 八頁 UI、助理管理、Plan、選項、TXT／CSV、合成查詢、轉交、排程／通知、回報、刪除、深淺與 DPI |
+| 本機已實作 | 九頁 UI、助理管理、Plan、選項、TXT／CSV、合成查詢、轉交、排程／通知、回報、刪除、深淺與 DPI |
 | 工具已準備，待公司接線 | chatbot API 契約、AD／名單與 owner 授權、Oracle 三查詢、公司資料移轉 |
 | 仍待真實驗收 | 公司服務、Excel、中文 IME、公司設備倍率與跨螢幕；詳見驗證摘要 |
 | 後續才做 | 中央管理／協作、遠端更新、EXE、持續 Goal、多 agent 自主分工、信件／OCR、多文件與 Office 原檔編修 |
 
-Python 3.10.4、29 個鎖定套件與 schema 2 維持不變。0.8.1 僅整理倉庫、文件及入口引用，不新增產品功能。歷史規劃由 Git 保存，不當成目前交付能力。
+Python 3.10.4 與 29 個鎖定套件維持不變。schema 3 加入 todos／drafts，無中央同步。歷史規劃由 Git 保存，不當成目前交付能力。

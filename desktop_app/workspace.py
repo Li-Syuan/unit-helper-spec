@@ -3,6 +3,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk
 from .branding import APP_NAME, apply_child_icons
+from .work_cards import CARDS
 
 STATES={'queued':'排隊中','running':'執行中','succeeded':'已完成','failed':'執行失敗','cancelled':'已取消','ready':'待批准','executing':'已批准・執行中','expired':'已過期'}
 KINDS={'chat':'對話','query':'查詢資料','summarize':'整理重點','rewrite':'改寫文字','query_summarize':'查詢整理'}
@@ -49,14 +50,19 @@ class WorkspaceViews:
         self.task_card_action.pack(side='right')
         self.task_progress=ttk.Progressbar(self.task_card,mode='indeterminate',length=64,style='Workspace.Horizontal.TProgressbar')
         self.task_progress_running=False
-        quick=ttk.Frame(tab);quick.pack(fill='x',pady=(0,8))
-        for index,(title,kind,icon) in enumerate((('查詢資料','query','query'),('整理文字','summarize','result'),('改寫內容','rewrite','chat'))):
-            quick.columnconfigure(index,weight=1,uniform='quick')
-            self.icon_button(quick,title,lambda k=kind:self.quick_work(k),icon,'Quick.TButton').grid(row=0,column=index,sticky='ew',padx=(0,8 if index<2 else 0))
+        self.work_toolbar=ttk.Frame(tab);self.work_toolbar.pack(fill='x',pady=(0,6))
+        self.button(self.work_toolbar,'常用工作',self.open_work_cards,'Compact.TButton').pack(side='left')
+        self.button(self.work_toolbar,'查詢資料',lambda:self.book.select(self.tabs['query']),'Quiet.TButton').pack(side='left',padx=4)
+        self.button(self.work_toolbar,'加入待辦',self.add_selected_todo,'Compact.TButton').pack(side='right')
+        self.button(self.work_toolbar,'轉交選取文字',self.open_chat_handoff,'Quiet.TButton').pack(side='right',padx=4)
+        self.work_cards_box=ttk.Frame(tab)
+        self.work_cards_box.pack(fill='x',pady=(0,8))
+        self.build_work_card_tiles(self.work_cards_box)
         conversation=ttk.Frame(tab);conversation.pack(fill='both',expand=True)
         self.transcript=tk.Text(conversation,height=1,wrap='word',state='disabled',highlightthickness=0,padx=24,pady=16,exportselection=False)
         self.transcript._theme_role='transcript'
         self.transcript.pack(side='left',fill='both',expand=True)
+        self.transcript.bind('<Button-3>',self.transcript_context)
         scrollbar=ttk.Scrollbar(conversation,command=self.transcript.yview)
         scrollbar.pack(side='right',fill='y');self.transcript.configure(yscrollcommand=scrollbar.set)
         for name,settings in {
@@ -69,7 +75,7 @@ class WorkspaceViews:
             'separator':{'foreground':self.palette.BORDER,'spacing1':4,'spacing3':8}
         }.items():self.transcript.tag_configure(name,**settings)
         self.composer=ttk.Frame(tab,style='Card.TFrame',padding=8)
-        self.composer.pack(fill='x',pady=(8,0))
+        self.composer.pack(side='bottom',fill='x',pady=(8,0),before=conversation)
         self.input=tk.Text(self.composer,height=3,wrap='word',padx=12,pady=8,exportselection=False,undo=True)
         self.input.pack(fill='x')
         self.input.bind('<<Modified>>',self.resize_composer)
@@ -90,6 +96,62 @@ class WorkspaceViews:
         ttk.Label(attachments,text='Enter 送出 · Shift+Enter 換行',style='CardMuted.TLabel').pack(side='right')
         self._rendered_conversation=None;self._rendered_messages=None
 
+    def build_work_card_tiles(self, parent):
+        for index, card in enumerate(CARDS):
+            parent.columnconfigure(index, weight=1, uniform='work-cards')
+            box=ttk.Frame(parent, style='Card.TFrame', padding=8)
+            box.grid(row=0,column=index,sticky='nsew',padx=(0,6 if index<2 else 0))
+            self.button(box,card['title'],lambda key=card['id']:self.use_work_card(key),'Compact.TButton').pack(fill='x')
+            label=ttk.Label(box,text=card['description'],style='CardMuted.TLabel',wraplength=140,justify='left')
+            label.pack(fill='x',pady=(6,0))
+            box.bind('<Configure>',lambda e,label=label:label.configure(wraplength=max(80,e.width-20)))
+
+    def open_work_cards(self):
+        w=tk.Toplevel(self.root);apply_child_icons(w);w.title('常用工作');w.transient(self.root)
+        self.display.size_window(w,760,300,(620,270))
+        body=ttk.Frame(w,padding=16);body.pack(fill='both',expand=True)
+        ttk.Label(body,text='選擇工作先填入草稿；不會自動送出。').pack(anchor='w',pady=(0,10))
+        cards=ttk.Frame(body);cards.pack(fill='x');self.build_work_card_tiles(cards)
+        self.button(body,'關閉',w.destroy,'Quiet.TButton').pack(anchor='e',pady=12)
+        self.appearance.apply(w)
+
+    def use_work_card(self, key, tone=None):
+        if self.editing_plan:
+            raise ValueError('請先保存或退出目前的 Plan 修改，再使用常用工作。')
+        card=next(c for c in CARDS if c['id']==key)
+        binding=self.store.conversation(self.conversation)['binding']
+        self.profiles.validate(binding)
+        if key=='rewrite' and tone is None:
+            w=tk.Toplevel(self.root);apply_child_icons(w);w.title('改寫信件與說明');w.transient(self.root)
+            self.display.size_window(w,540,300,(440,260))
+            box=ttk.Frame(w,padding=20);box.pack(fill='both',expand=True)
+            ttk.Label(box,text='保留原意，選擇這次要使用的語氣。').pack(anchor='w',pady=8)
+            choice=tk.StringVar(master=w,value='正式')
+            for value in ('正式','精簡'):
+                ttk.Radiobutton(box,text=value,variable=choice,value=value).pack(anchor='w',pady=4)
+            source=self.conversation
+            def apply():
+                if self.conversation!=source:
+                    raise ValueError('目前對話已切換，請重新選擇常用工作。')
+                self.use_work_card(key,choice.get());w.destroy()
+            self.button(box,'填入草稿',apply,'Primary.TButton').pack(side='right',pady=12)
+            self.button(box,'取消',w.destroy,'Quiet.TButton').pack(side='right',padx=8)
+            self.appearance.apply(w);return w
+        if self.input.get('1.0','end-1c').strip() or self.attachment:
+            planned=self.plan_mode.get()
+            self.next_binding=binding;self.new_chat();self.plan_mode.set(planned)
+        self.purpose.set(card['purpose'])
+        self.input.delete('1.0','end');self.input.insert('1.0',card['prompt'].format(tone=tone or '正式'))
+        self.book.select(self.tabs['chat']);self.input.focus_set();self.draft_changed()
+        self.status.set('已填入「'+card['title']+'」草稿，補上原始內容後再送出。')
+
+    def transcript_context(self, event):
+        menu=tk.Menu(self.root,tearoff=False)
+        menu.add_command(label='加入待辦',command=lambda:self.safe(self.add_selected_todo))
+        menu.add_command(label='轉交選取文字',command=lambda:self.safe(self.open_chat_handoff))
+        try:menu.tk_popup(event.x_root,event.y_root)
+        finally:menu.grab_release()
+
     def resize_composer(self,event=None,force=False):
         if not force and not self.input.edit_modified():return
         self.input.edit_modified(False)
@@ -97,6 +159,14 @@ class WorkspaceViews:
         lines=self.input.count('1.0','end','displaylines')
         wanted=max(3,min(6,(lines[0] if lines else 1)))
         if int(self.input.cget('height'))!=wanted:self.input.configure(height=wanted)
+        if hasattr(self,'_rendered_messages'):
+            self.update_work_card_visibility()
+
+    def update_work_card_visibility(self):
+        hide=bool(self._rendered_messages or self.input.get('1.0','end-1c').strip())
+        if hide:self.work_cards_box.pack_forget()
+        elif not self.work_cards_box.winfo_manager():
+            self.work_cards_box.pack(fill='x',pady=(0,8),after=self.work_toolbar)
 
     def quick_work(self,kind):
         if kind=='query':self.book.select(self.tabs['query']);return
@@ -108,6 +178,7 @@ class WorkspaceViews:
     def render_workspace_chat(self):
         self.refresh_profile_picker();self.update_mode()
         messages=self.store.messages(self.conversation)
+        if messages:self.work_cards_box.pack_forget()
         key=[(m['role'],m['text']) for m in messages]
         same=self._rendered_conversation==self.conversation
         if same and self._rendered_messages==key:
@@ -133,6 +204,7 @@ class WorkspaceViews:
         if same and not bottom:self.transcript.yview(top_index)
         else:self.transcript.see('end' if messages else '1.0')
         self._rendered_conversation=self.conversation;self._rendered_messages=key
+        self.update_work_card_visibility()
         self.update_composer();self.refresh_workspace()
 
     def chat_work(self):

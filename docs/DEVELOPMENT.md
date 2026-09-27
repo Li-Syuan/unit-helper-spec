@@ -1,6 +1,6 @@
 # 開發與部署指南
 
-QA agent 0.8.1。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
+QA agent 0.9.0。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
 
 ## 環境與啟動
 

@@ -6,7 +6,7 @@ from .core import stamp
 from .preferences import load_page_hints, save_page_hint
 
 CHAPTERS = {
-    'chat': '對話與鍵盤', 'query': '查資料與匯出', 'work': 'Plan 與選項確認',
+    'todo': '我的待辦', 'chat': '對話與鍵盤', 'query': '查資料與匯出', 'work': 'Plan 與選項確認',
     'result': '將資料交給助理', 'schedule': '我的排程與通知',
     'notice': '我的排程與通知', 'settings': '設定公司助理', 'issue': '問題回報',
 }
@@ -88,6 +88,8 @@ class GuidanceViews:
         self.hint_toggle.configure(text='收合提示' if visible else '展開提示')
 
     def page_hint_content(self, page):
+        if page == 'todo':
+            return '新增待辦，或從對話選取文字加入。\n開始處理按「開始」，完成後按「完成」；只保存在本機，不會自動執行。'
         if page in ('chat', 'query') and self.editing_plan:
             plan = self.store.plan(self.editing_plan[0])
             if plan['state'] != 'ready' or plan['expires_at'] <= stamp() or plan['revision'] != self.editing_plan[1]:
@@ -97,7 +99,7 @@ class GuidanceViews:
                 return '正在修改另一項計畫。\n請返回原操作頁，或到計畫頁退出修改。'
             if is_query:
                 return '正在修改查詢計畫。\n核對條件後保存修改，再重新批准。'
-            return '正在修改此對話的計畫。\n核對草稿後按「建立計畫」，再重新批准。'
+            return '正在修改此對話的計畫。\n核對草稿後按「保存計畫修改」，再重新批准。'
         if page == 'chat':
             if self.conversation:
                 binding = self.store.conversation(self.conversation)['binding']

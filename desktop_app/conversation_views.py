@@ -64,13 +64,14 @@ class ConversationViews:
         self.conversation_manager=w;self.appearance.apply(w);entry.focus_set();return w
 
     def confirm_conversation_deletion(self, ids):
+        self.flush_deletion_drafts(ids)
         preview=self.engine.preview_conversation_deletion(ids)
         w=tk.Toplevel(self.root);apply_child_icons(w);w.title('永久刪除本機對話');w.transient(self.root)
         self.display.size_window(w,660,480,(520,360))
         body=ttk.Frame(w,padding=20);body.pack(fill='both',expand=True)
-        ttk.Label(body,text='永久刪除後，無法由應用復原。',style='CardError.TLabel').pack(anchor='w')
+        ttk.Label(body,text='永久刪除後，無法由應用復原。已另存的待辦會保留。',style='CardError.TLabel').pack(anchor='w')
         counts=preview['counts']
-        ttk.Label(body,text=f"{counts['conversations']} 段對話 · {counts['messages']} 則訊息 · {counts['plans']} 份計畫\n{counts['tasks']} 項工作（含輸入／結果）· {counts['notifications']} 則通知",justify='left').pack(anchor='w',pady=10)
+        ttk.Label(body,text=f"{counts['conversations']} 段對話 · {counts['messages']} 則訊息 · {counts['plans']} 份計畫\n{counts['tasks']} 項工作（含輸入／結果）· {counts['notifications']} 則通知 · {counts['drafts']} 份草稿",justify='left').pack(anchor='w',pady=10)
         holder=ttk.Frame(body);holder.pack(fill='both',expand=True)
         names=tk.Listbox(holder,height=4,exportselection=False)
         for c in preview['conversations']:names.insert('end',c['title'])
@@ -94,7 +95,9 @@ class ConversationViews:
 
     def conversations_deleted(self, result):
         deleted=set(result['deleted_ids']);task_ids=set(result['task_ids']);plan_ids=set(result['plan_ids'])
+        self.drafts_deleted(deleted)
         for cid in deleted:self.drafts.pop(cid,None)
+        self.refresh_todos()
         for tid in task_ids:self.seen.pop(tid,None)
         if self.editing_plan and self.editing_plan[0] in plan_ids:self.discard_edit()
         if self.preview_plan and self.preview_plan[0] in plan_ids:

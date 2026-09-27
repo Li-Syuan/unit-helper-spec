@@ -4,7 +4,7 @@ import os
 import tempfile
 from pathlib import Path
 
-HINT_PAGES = ('chat', 'query', 'work', 'result', 'schedule', 'notice', 'settings', 'issue')
+HINT_PAGES = ('todo', 'chat', 'query', 'work', 'result', 'schedule', 'notice', 'settings', 'issue')
 
 
 def load_preferences(path):

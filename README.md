@@ -1,10 +1,10 @@
 # QA agent
 
-**0.8.1 · Windows x64 · Python 3.10.4 · Tkinter 桌面工作區**
+**0.9.0 · Windows x64 · Python 3.10.4 · Tkinter 桌面工作區**
 
 用一個桌面入口與公司助理對話、整理文字、查詢資料及安排本機排程。UI 與本機流程已完成；預設使用明確標示的合成資料，公司 chatbot、AD 與 Oracle 接線仍需公司資訊及實測。
 
-![QA agent 深色工作區](docs/images/v080-dark-normal.png)
+![QA agent 深色工作區](docs/images/workspace-dark.png)
 
 ## 開始使用
 
@@ -20,6 +20,8 @@ Clone 後，在專案根目錄指定公司核准的 Python **3.10.4** 完整安�
 
 ## 目前可以做什麼
 
+- 個人待辦看板：選取對話文字加入、開始／完成、到期日及來源對話。
+- 三張常用工作卡片，文字草稿自動保存並可於重開後恢復。
 - 多助理對話、歷史與搜尋批次刪除；Enter 送出、Shift+Enter 換行。
 - Plan 預覽、修改、批准及選項確認；未批准不執行。
 - 單一 TXT／CSV 預覽、文字摘要／改寫、選定資料預覽後轉交。

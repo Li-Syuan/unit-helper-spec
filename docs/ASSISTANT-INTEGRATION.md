@@ -24,7 +24,7 @@
 - 舊 config 的 model／assistant_ref 接線可沿用；新助理不自動套用它。公司 session 必須按使用者、助理版本及對話隔離；目前新映射使用 stateless messages，若需要持久化 session 必須擴充契約並加入交叉污染測試。
 - 維護者確認測試助理不會執行副作用後，才配置既有 verified_side_effect_free；測試連線按鈕讀取這個 gate。它不等於資料庫／工具授權。
 - Oracle 仍由核准查詢工具處理，結果經選列／預覽後才交助理。排程不自動呼叫助理。
-- 升級 schema 2 之前產生 SQLite backup API 備份；舊對話 binding 為 NULL，保留只讀。不要猜舊訊息的助理歸屬。需回復時關閉新程式，由維護者使用備份與舊版配套恢復，不直接降低 user_version。
+- 升級至 schema 3（由 schema 1／2）之前產生 SQLite backup API 備份；舊對話 binding 為 NULL，保留只讀。不要猜舊訊息的助理歸屬。需回復時關閉新程式，由維護者使用備份與舊版配套恢復，不直接降低 user_version。
 
 基準命令：
 

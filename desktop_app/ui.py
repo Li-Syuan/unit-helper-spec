@@ -76,7 +76,11 @@ class ChoiceDialog(tk.Toplevel):
         self.app.forms.submit(self.form['id'],self.form['version'],answers,self.request_id)
         self.destroy(); self.callback(answers)
 
-class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, ConversationViews):
+from .draft_views import DraftViews
+from .todo_views import TodoViews
+
+
+class App(DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, ConversationViews):
     def __init__(self, root, config=None, directory=None, config_path=None):
         self.drafts={}; self.next_binding=None
         self.root=root; self.directory=Path(directory or data_directory()); self.config_path=config_path or self.directory/'config.json'
@@ -107,7 +111,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         self.status=tk.StringVar(value='準備就緒。排程只在此程式開啟時執行。')
         self.init_workspace()
         self.build_shell()
-        self.build_chat(); self.build_query(); self.build_work(); self.build_result()
+        self.build_chat(); self.init_draft_saving(); self.build_todos(); self.build_query(); self.build_work(); self.build_result()
         self.build_schedule(); self.build_notice(); self.build_issue(); self.build_settings()
         self.book.bind('<<NotebookTabChanged>>',self.route_changed)
         self.appearance.apply(root)
@@ -115,7 +119,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         self.chat_keyboard=install_chat_keyboard(self.input,lambda:self.safe(self.send_chat))
         self.route_changed()
         self.refresh_history(); self.refresh_lists()
-        if self.conversation_ids: self.conversation=self.conversation_ids[0]; self.history.selection_set(0); self.show_chat()
+        if self.conversation_ids: self.conversation=self.conversation_ids[0]; self.history.selection_set(0); self.restore_draft(); self.show_chat()
         else: self.new_chat()
         root.protocol('WM_DELETE_WINDOW',self.close); self.poll_id=root.after(150,self.poll)
         self.scheduler=threading.Thread(target=self.scheduler_loop,daemon=True); self.scheduler.start()
@@ -142,6 +146,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         new_button=tk.Button(side,text='＋  開始新對話',font=(self.palette.FONT,10,'bold'),bg=self.palette.TINT,fg=self.palette.SIDEBAR,
                   activebackground=self.palette.SIDEBAR_HOVER,relief='flat',bd=0,pady=6,cursor='hand2',command=lambda:self.safe(self.new_chat)); new_button._theme_role='new_chat'; new_button.pack(fill='x',padx=12,pady=(0,4))
         self.routes=[('chat','對話','把需求說出來，一起完成手邊的工作。'),
+                     ('todo','我的待辦','把要做的事留下來，按開始、完成追蹤進度。'),
                      ('query','查資料','選擇常用查詢，快速取得需要的資料。'),
                      ('work','計畫與任務','先確認步驟，再放心執行。'),
                      ('result','查詢結果','檢視結果、複製資料，或安排下次查詢。'),
@@ -158,7 +163,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
                              activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,padx=10,pady=2,
                              cursor='hand2',command=lambda key=key:self.book.select(self.tabs[key]))
             button._workspace_icon=key
-            image=self.ui_images.get((key,self.appearance.name))
+            image=self.ui_images.get(('work' if key=='todo' else key,self.appearance.name))
             if image:button.configure(image=image,compound='left')
             button.pack(fill='x',padx=12,pady=1); self.nav_buttons[key]=button
         divider=tk.Frame(side,height=1); divider._theme_role='divider'; divider.pack(fill='x',padx=20,pady=(8,6))
@@ -197,6 +202,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
                                              fg=self.palette.INK if active else self.palette.MUTED,font=(self.palette.FONT,11,'bold' if active else 'normal'))
             if active: self.page_title.configure(text=title)
         self.refresh_page_hint()
+        if hasattr(self,'todo_board') and current==str(self.tabs['todo']):self.refresh_todos()
     def button(self,parent,text,action,style=None):
         primary={'送出需求','開始查詢','批准此修訂','查看結果','保存草稿','驗證並保存設定','確認選項','預覽並啟用'}
         if style is None: style='Primary.TButton' if text in primary else ('Danger.TButton' if text.startswith('取消') else 'TButton')
@@ -276,12 +282,12 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         if self.conversation:
             try:self.profiles.validate(self.store.conversation(self.conversation)['binding'])
             except GatewayError:readonly=True
-        self.send_button.configure(text='舊版／停用對話（唯讀）' if readonly else '建立計畫' if self.plan_mode.get() else '送出需求',state='disabled' if active or readonly else 'normal')
+        self.send_button.configure(text='舊版／停用對話（唯讀）' if readonly else '保存計畫修改' if self.editing_plan and self.plan_mode.get() else '建立計畫' if self.plan_mode.get() else '送出需求',state='disabled' if active or readonly else 'normal')
         self.cancel_button.configure(state='normal' if active else 'disabled')
     def new_chat(self):
-        self.editing_plan=None
         from datetime import datetime
         self.stash_draft()
+        self.editing_plan=None
         binding=self.next_binding or self.profiles.default_binding();self.next_binding=None
         self.conversation=self.store.create_conversation('對話 '+datetime.now().strftime('%m/%d %H:%M:%S'),binding)
         self.restore_draft();self.refresh_history();self.history.selection_clear(0,'end');self.history.selection_set(0);self.show_chat();self.book.select(self.tabs['chat']);self.input.focus_set()
@@ -289,9 +295,8 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         records=self.store.conversations(); self.conversation_ids=[r['id'] for r in records]; self.history.delete(0,'end')
         for r in records: self.history.insert('end',r['title'])
     def choose_chat(self):
-        self.editing_plan=None
         if self.history.curselection():
-            index=self.history.curselection()[0];self.stash_draft();self.conversation=self.conversation_ids[index];self.restore_draft()
+            index=self.history.curselection()[0];self.stash_draft();self.editing_plan=None;self.conversation=self.conversation_ids[index];self.restore_draft()
             self.show_chat();self.book.select(self.tabs['chat'])
     def show_chat(self):
         self.render_workspace_chat()
@@ -321,10 +326,12 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         def accept():
             self.store.conversation(cid)
             if cid!=self.conversation:raise ValueError('請回到原對話附加此檔案。')
-            self.attachment=data;self.attachment_label.configure(text=data['name']+' · 已附加（保留原檔）');window.destroy()
+            self.attachment=data;self.draft_attachment_hints.discard(cid);self.draft_changed();self.attachment_label.configure(text=data['name']+' · 已附加（保留原檔）');window.destroy()
         self.button(window,'使用此檔案',accept).pack(pady=10)
         self.appearance.apply(window)
-    def clear_upload(self): self.attachment=None; self.attachment_label.configure(text='可先預覽，再送出')
+    def clear_upload(self):
+        self.attachment=None; self.attachment_label.configure(text='可先預覽，再送出')
+        self.draft_attachment_hints.discard(self.conversation);self.draft_changed()
     def send_chat(self):
         self.profiles.validate(self.store.conversation(self.conversation)['binding'])
         text=self.input.get('1.0','end-1c').strip(); purpose={'一般對話':'chat','整理重點':'summarize','改寫文字':'rewrite'}[self.purpose.get()]
@@ -334,10 +341,24 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         if not text.strip(): raise ValueError('請先輸入文字或提供檔案。')
         if len(text)>50000: raise ValueError('內容超過 50,000 字，請縮小資料；未截斷送出。')
         payload={'text':text,'conversation_id':self.conversation}
-        if self.plan_mode.get(): self.save_plan(purpose,payload,self.conversation)
+        was_editing = bool(self.editing_plan)
+        if was_editing and not self.plan_mode.get():
+            raise ValueError('正在修改 Plan，請保存計畫修改或退出修改。')
+        revision=None if was_editing else self.store.reserve_draft(self.conversation)
+        try:
+            if self.plan_mode.get(): self.save_plan(purpose,payload,self.conversation,draft_revision=revision)
+            else:
+                tid=self.engine.run_chat(self.conversation,text,purpose=purpose,request_id=uuid.uuid4().hex,draft_revision=revision)
+        except Exception:
+            if not was_editing and self.store._draft_revisions.get(self.conversation)==revision:
+                self.queue_draft(force=True)  # Re-arm any earlier autosave invalidated by this send attempt.
+            raise
+        if not self.plan_mode.get():self.status.set('已送出 '+tid[:8]);self.show_chat()
+        if was_editing:
+            self.restore_draft()
         else:
-            tid=self.engine.run_chat(self.conversation,text,purpose=purpose,request_id=uuid.uuid4().hex); self.status.set('已送出 '+tid[:8]); self.show_chat()
-        self.input.delete('1.0','end'); self.clear_upload();self.drafts.pop(self.conversation,None)
+            self.clear_saved_draft(self.conversation, consumed=True)
+            self.input.delete('1.0','end'); self.clear_upload();self.drafts.pop(self.conversation,None)
     def cancel_latest(self):
         tasks=[t for t in self.store.tasks() if t['conversation_id']==self.conversation and t['state'] in ('queued','running')]
         if tasks: self.engine.cancel_task(tasks[0]['id']); self.status.set('已取消本機後續處理；已送出的遠端請求可能仍在完成。')
@@ -420,7 +441,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         else:
             fn=self.engine.run_query
             tid=fn(payload['query_id'],payload['parameters'],request_id=uuid.uuid4().hex); self.status.set('查詢已排入 '+tid[:8]); self.book.select(self.tabs['work'])
-    def save_plan(self,kind,payload,conversation=None):
+    def save_plan(self,kind,payload,conversation=None,draft_revision=None):
         if self.editing_plan:
             pid,revision=self.editing_plan
             old=self.store.plan(pid)
@@ -429,7 +450,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
             if old['conversation_id'] and old['conversation_id'] != conversation:
                 raise ValueError('請回到原對話修改，或取消修改。')
             self.engine.edit_plan(pid,revision,kind,payload); self.editing_plan=None
-        else: pid=self.engine.create_plan(kind,payload,conversation_id=conversation)
+        else: pid=self.engine.create_plan(kind,payload,conversation_id=conversation,draft_revision=draft_revision)
         self.refresh_lists(); self.plans.selection_set(pid); self.preview_selected_plan(); self.book.select(self.tabs['work'])
         self.query_submit.configure(text='建立查詢計畫' if self.query_plan.get() else '開始查詢')
     def build_work(self):
@@ -459,6 +480,11 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         self.button(row,'工作詳情',lambda:self.open_work_detail('task',selected(self.tasks)),'Compact.TButton').pack(side='right')
         self.button(row,'取消工作',lambda:self.engine.cancel_task(selected(self.tasks))).pack(side='left',padx=8)
     def discard_edit(self):
+        if self.editing_plan:
+            try: old=self.store.plan(self.editing_plan[0])
+            except ValueError: old=None  # A confirmed conversation deletion may already have removed it.
+            if old and old['conversation_id']==self.conversation and old['kind'] not in ('query','query_summarize'):
+                self.editing_plan=None;self.restore_draft()
         self.editing_plan=None; self.query_submit.configure(text='建立查詢計畫' if self.query_plan.get() else '開始查詢'); self.status.set("已退出修改；原計畫維持未批准狀態。")
     def preview_selected_plan(self):
         if not self.plans.selection(): return
@@ -486,6 +512,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         if plan['state']!='ready': raise ValueError('只有未批准的草稿可修改。')
         payload=plan['payload']
         if plan['kind'] in ('query','query_summarize'): find_template(self.queries.catalog(),payload['query_id'])
+        self.stash_draft()
         self.editing_plan=(plan['id'],plan['revision'])
         if plan['kind'] in ('query','query_summarize'):
             find_template(self.queries.catalog(),payload['query_id'])
@@ -741,10 +768,11 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
         if self.closed: return
         active=self.pending_io or self.engine.has_inflight()
         if active and not force and not messagebox.askyesno('關閉程式','仍有工作進行中。關閉會取消本機後續處理；遠端請求可能持續至 timeout。確定關閉？',parent=self.root): return
+        if not self.flush_drafts_for_close(force): return
         self.closed=True; self.stop.set(); self.engine.close(); self.io.shutdown(wait=False,cancel_futures=True)
         self.root.after_cancel(self.poll_id)
         if force:
-            self.scheduler.join(); self.engine.close(wait=True); self.io.shutdown(wait=True)
+            self.scheduler.join(); self.engine.close(wait=True); self.io.shutdown(wait=True);self.draft_pool.shutdown(wait=True)
             self.finish_close()
         else:
             self.status.set('正在關閉：等待已送出的請求結束，期間不再接收新工作。')
@@ -752,9 +780,10 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, Conver
             self.finish_close()
     def finish_close(self):
         # Tk objects must be released on their creating thread, after workers drain.
-        if self.scheduler.is_alive() or self.engine.has_inflight() or any(not f.done() for f in self.io_futures):
+        if self.scheduler.is_alive() or self.engine.has_inflight() or any(not f.done() for f in self.io_futures+self.draft_futures):
             self.root.after(50,self.finish_close); return
-        self.engine.close(wait=True); self.io.shutdown(wait=True)
+        self.engine.close(wait=True); self.io.shutdown(wait=True); self.draft_pool.shutdown(wait=True)
+        self.draft_futures.clear()
         self.chat_keyboard.close();self.close_detail();self.task_progress.stop()
         if hasattr(self.assistant,'close'): self.assistant.close()
         self.io_futures.clear()

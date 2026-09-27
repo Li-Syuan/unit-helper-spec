@@ -2,7 +2,7 @@
 
 ## 當前範圍
 
-先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.8.1 精簡倉庫與交接文件，保留現有 UI、功能、資料及測試；歷史規格由 Git 查閱，不再作為當前開發需求。
+先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.9.0 新增個人待辦、常用工作卡片與文字草稿保存；歷史規格由 Git 查閱，不再作為當前開發需求。
 
 沿用 Windows x64、Python **恰好 3.10.4**、Tkinter／ttk、SQLite、OpenAI SDK 與 Windows keyring。公司待辦為 chatbot 契約、AD／名單及 owner 授權、三項 Oracle 查詢、舊資料／排程遷移與現場驗收。不得覆蓋公司原有規則或程式。
 
@@ -29,6 +29,12 @@
 - `experience.py` 提供離線手冊／關於／診斷；[使用手冊](docs/USER-GUIDE.md) 章節標題是 UI 入口契約，包括「管理對話」。修改章節須同步檢查入口。
 - 永久刪除使用 10 分鐘一次性預覽 token、完整資料快照、Engine 鎖及單一交易；queued/running/executing 或未結束真實 future（含已取消）拒絕整批。不自動取消或擴大刪除，未批准 Plan 可刪但不得派發。
 - 刪除保留獨立查詢／排程、回報／表單、原檔／匯出／備份、公司端及其他轉交副本；異常跨資料關聯拒絕。清除對應草稿與過期詳情／轉交預覽，保留其他對話草稿；不宣稱安全抹除。
+
+## 個人待辦與草稿
+
+`local_work.py` 為本機 CRUD 與草稿版本防重；`todo_views.py`／`draft_views.py` 為介面，`work_cards.py` 是公司可調整的文字入口。待辦狀態由人確認，不得觸發模型、排程或標記 AI 工作成功；來源只是可失效的連結，刪除對話保留另存待辦副本。
+
+Store 升級至 schema 3，schema 1／2 先以 SQLite backup 備份，再同交易遷移；不要直接降低 user_version。草稿按對話保存，背景寫入須檢查 reservation，送出清除／刪除後晚到結果不得復活；Plan 修改不當普通草稿。對話刪除快照和交易包含草稿。附件不跨啟動讀取，重開提示重新選取。
 
 ## 驗證與交付
 

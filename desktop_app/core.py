@@ -18,6 +18,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from .gateways import GatewayError
+from .local_work import LocalWorkStore, initialize_work_schema
 from .query_schema import find_template, parameters as validate_parameters, date_mapping, LEGACY_DATE_RANGES
 
 UTC = timezone.utc
@@ -42,21 +43,24 @@ def dumps(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-class Store:
+class Store(LocalWorkStore):
     """All data is for the explicitly labelled single local demonstration profile."""
 
     def __init__(self, path: Path):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._draft_lock = threading.RLock()
+        self._draft_revisions = {}
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version > 2:
+            if version > 3:
                 raise ValueError("資料庫版本較新，請使用相容的應用程式。")
-            if version == 1:
-                backup=self.path.with_name(self.path.name+'.pre-v2-'+uid()+'.bak')
+            if version in (1, 2):
+                backup=self.path.with_name(self.path.name+'.pre-v3-'+uid()+'.bak')
                 with sqlite3.connect(str(backup)) as target: db.backup(target)
             db.executescript("""
                 PRAGMA journal_mode=WAL;
+                BEGIN IMMEDIATE;
                 CREATE TABLE IF NOT EXISTS conversations(
                     id TEXT PRIMARY KEY,title TEXT NOT NULL,created_at TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS messages(
@@ -92,10 +96,11 @@ class Store:
 
             """)
             if version < 2:
-                db.execute("BEGIN IMMEDIATE")
                 db.execute("ALTER TABLE conversations ADD COLUMN binding TEXT")
                 db.execute("ALTER TABLE conversations ADD COLUMN source TEXT")
-                db.execute("PRAGMA user_version=2")
+            initialize_work_schema(db)
+            db.execute("PRAGMA user_version=3")
+            self._draft_revisions = {row['conversation_id']: row['revision'] for row in db.execute('SELECT conversation_id,revision FROM drafts')}
 
     @contextmanager
     def connection(self):
@@ -278,6 +283,8 @@ class Engine:
                 f"SELECT * FROM {table} WHERE {column} IN ({placeholders}) ORDER BY id", ids)]
         if len(data["conversations"]) != len(ids):
             raise ValueError("選定對話已不存在，請重新整理後選擇。")
+        data['drafts'] = [dict(row) for row in db.execute(
+            f"SELECT * FROM drafts WHERE conversation_id IN ({placeholders}) ORDER BY conversation_id", ids)]
         task_ids = {row["id"] for row in data["tasks"]}
         plan_ids = {row["id"] for row in data["plans"]}
         if (any(row["state"] in {"queued", "running", "executing"} for row in data["tasks"])
@@ -352,7 +359,7 @@ class Engine:
                     marks = ','.join('?' for _ in summary["task_ids"])
                     db.execute(f"DELETE FROM notifications WHERE task_id IN ({marks})", summary["task_ids"])
                 marks = ','.join('?' for _ in preview["ids"])
-                for table in ("messages", "plans", "tasks"):
+                for table in ("messages", "plans", "tasks", "drafts"):
                     db.execute(f"DELETE FROM {table} WHERE conversation_id IN ({marks})", preview["ids"])
                 db.execute(f"DELETE FROM conversations WHERE id IN ({marks})", preview["ids"])
             self._deletion_previews.pop(token, None)
@@ -436,13 +443,22 @@ class Engine:
                        (uid(), conversation_id, "user", payload["text"], stamp()))
         return record_id, True
 
-    def _queue(self, kind, payload, conversation_id=None, request_id=None):
+    def _consume_draft(self, db, cid, revision):
+        if revision is not None:
+            if not cid or self.store._draft_revisions.get(cid) != revision:
+                raise ValueError('草稿內容已變更，請重新送出。')
+            db.execute('DELETE FROM drafts WHERE conversation_id=?', (cid,))
+
+    def _queue(self, kind, payload, conversation_id=None, request_id=None, draft_revision=None):
         self._validate(kind, payload)
-        with self._lock:
+        with self._lock, self.store._draft_lock:
             self._ensure_open()
             with self.store.connection() as db:
                 db.execute("BEGIN IMMEDIATE")
                 task_id, created = self._new_task(db, kind, payload, conversation_id, request_id)
+                self._consume_draft(db, conversation_id, draft_revision)
+            if draft_revision is not None:
+                self.store.reserve_draft(conversation_id)
             if created:
                 self._submit(task_id)
             return task_id
@@ -454,10 +470,10 @@ class Engine:
         """General-mode explicit submission; shares the same validated bounded flow."""
         return self._queue("query_summarize", {"query_id": query_id, "parameters": parameters}, request_id=request_id)
 
-    def run_chat(self, conversation_id, text, purpose="chat", request_id=None):
+    def run_chat(self, conversation_id, text, purpose="chat", request_id=None, draft_revision=None):
         if purpose not in {"chat", "summarize", "rewrite"}:
             raise ValueError("文字操作類型無效。")
-        return self._queue(purpose, {"text": text, "conversation_id": conversation_id}, conversation_id, request_id)
+        return self._queue(purpose, {"text": text, "conversation_id": conversation_id}, conversation_id, request_id, draft_revision)
 
     def _plan_binding(self,kind,payload,conversation_id=None):
         if self.assistant_router is None or kind in {"query","query_summarize"}: return payload
@@ -465,10 +481,10 @@ class Engine:
         self.binding_validator(binding)
         return dict(payload,_binding=binding)
 
-    def create_plan(self, kind, payload, conversation_id=None):
+    def create_plan(self, kind, payload, conversation_id=None, draft_revision=None):
         payload=self._plan_binding(kind,payload,conversation_id)
         self._validate(kind, payload)
-        with self._lock:
+        with self._lock, self.store._draft_lock:
             self._ensure_open()
             record_id = uid()
             with self.store.connection() as db:
@@ -480,6 +496,9 @@ class Engine:
                 db.execute("INSERT INTO plans VALUES(?,?,?,?,1,'ready',NULL,?,?)",
                            (record_id, kind, dumps(payload), conversation_id or payload.get("conversation_id"),
                             stamp(), stamp(utcnow() + timedelta(hours=24))))
+                self._consume_draft(db, target_id, draft_revision)
+            if draft_revision is not None:
+                self.store.reserve_draft(target_id)
             return record_id
 
     def edit_plan(self, plan_id, expected_revision, kind, payload):
