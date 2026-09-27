@@ -17,6 +17,7 @@ from .profiles import Profiles
 from .assistant_views import AssistantViews
 from .experience import ExperienceMixin
 from .workspace import WorkspaceViews
+from .guidance import GuidanceViews
 from .keyboard import install_chat_keyboard
 from .branding import APP_NAME, apply_icons, apply_child_icons, set_windows_identity
 from .query_schema import find_template, validate_template, parameters as query_parameters, initial_values, describe
@@ -73,14 +74,11 @@ class ChoiceDialog(tk.Toplevel):
         self.app.forms.submit(self.form['id'],self.form['version'],answers,self.request_id)
         self.destroy(); self.callback(answers)
 
-class App(AssistantViews, ExperienceMixin, WorkspaceViews):
-    def __init__(self, root, config=None, directory=None, config_path=None, tutorial=False, show_welcome=False):
-        self.tutorial=tutorial; self.drafts={}; self.next_binding=None
+class App(AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews):
+    def __init__(self, root, config=None, directory=None, config_path=None):
+        self.drafts={}; self.next_binding=None
         self.root=root; self.directory=Path(directory or data_directory()); self.config_path=config_path or self.directory/'config.json'
         self.config=config or load_config(self.config_path);
-        if tutorial:
-            from .config import DEFAULT
-            self.config=copy.deepcopy(DEFAULT)
         self.lock=InstanceLock(self.directory)
         try:
             self.identity=(DemoIdentity() if self.config['identity_mode']=='demo' else CompanyIdentity()).current()
@@ -119,7 +117,6 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
         else: self.new_chat()
         root.protocol('WM_DELETE_WINDOW',self.close); self.poll_id=root.after(150,self.poll)
         self.scheduler=threading.Thread(target=self.scheduler_loop,daemon=True); self.scheduler.start()
-        self.setup_experience(show_welcome=show_welcome)
     def build_shell(self):
         side=tk.Frame(self.root,bg=self.palette.SIDEBAR,width=208)
         side._theme_role='sidebar'; side.pack(side='left',fill='y'); side.pack_propagate(False)
@@ -128,7 +125,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
                   activebackground=self.palette.SIDEBAR_HOVER,activeforeground=self.palette.INK,relief='flat',bd=0,pady=10,
                   command=lambda:self.safe(self.resume_form)).pack(side='bottom',fill='x',padx=20)
         help_bar=tk.Frame(side);help_bar.pack(side='bottom',fill='x',padx=12,pady=3)
-        tk.Button(help_bar,text='快速體驗',relief='flat',command=lambda:self.safe(self.start_tutorial)).pack(side='left')
+        tk.Button(help_bar,text='操作提示',relief='flat',command=self.toggle_page_hint).pack(side='left')
         tk.Button(help_bar,text='說明與關於',relief='flat',command=lambda:self.show_help('快速開始')).pack(side='right')
         brand=tk.Frame(side,bg=self.palette.SIDEBAR); brand.pack(fill='x',padx=18,pady=(16,3))
         if self.brand_icon:
@@ -176,7 +173,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
         line=ttk.Frame(header); line.pack(fill='x')
         self.page_title=ttk.Label(line,text='對話',style='Title.TLabel'); self.page_title.pack(side='left')
         self.mode_label=ttk.Label(line,style='Chip.TLabel'); self.mode_label.pack(side='right'); self.update_mode()
-        self.page_hint=ttk.Label(header,style='Muted.TLabel'); self.page_hint.pack(anchor='w',pady=(5,0))
+        self.build_page_guidance(header)
         footer=ttk.Frame(main,style='Surface.TFrame'); footer.pack(side='bottom',fill='x')
         self.activity_label=ttk.Label(footer,text='●  就緒',style='Status.TLabel'); self.activity_label.pack(side='right')
         self.status_label=ttk.Label(footer,textvariable=self.status,style='Status.TLabel',wraplength=720); self.status_label.pack(side='left',fill='x',expand=True)
@@ -190,7 +187,8 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
             active=str(self.tabs[key])==current
             self.nav_buttons[key].configure(bg=self.palette.SIDEBAR_HOVER if active else self.palette.SIDEBAR,
                                              fg=self.palette.INK if active else self.palette.MUTED,font=(self.palette.FONT,10,'bold' if active else 'normal'))
-            if active: self.page_title.configure(text=title); self.page_hint.configure(text=hint)
+            if active: self.page_title.configure(text=title)
+        self.refresh_page_hint()
     def button(self,parent,text,action,style=None):
         primary={'送出需求','開始查詢','批准此修訂','查看結果','保存草稿','驗證並保存設定','確認選項','預覽並啟用'}
         if style is None: style='Primary.TButton' if text in primary else ('Danger.TButton' if text.startswith('取消') else 'TButton')
@@ -427,6 +425,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
         self.plans=self.tree(left,[('kind','計畫'),('state','狀態'),('rev','修訂'),('time','建立 UTC')],3)
         self.plans.column('rev',width=60,stretch=False); self.plans.column('time',width=100)
         self.plans.bind('<<TreeviewSelect>>',lambda e:self.safe(self.preview_selected_plan))
+        self.plans.bind('<<TreeviewSelect>>',lambda e:self.select_hint_work('plan'),add='+')
         self.plan_preview=tk.Text(panel,height=5,width=30,wrap='word',state='disabled'); self.plan_preview.grid(row=0,column=1,sticky='nsew',pady=5)
         put(self.plan_preview,'先選擇左側的計畫。\n\n在這裡確認條件與執行步驟，再決定批准、修改或取消。')
         row=ttk.Frame(tab); row.grid(row=3,column=0,sticky='ew',pady=(2,14))
@@ -436,6 +435,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
         ttk.Label(tab,text='工作紀錄',style='Section.TLabel').grid(row=4,column=0,sticky='w')
         holder=ttk.Frame(tab); holder.grid(row=5,column=0,sticky='nsew')
         self.tasks=self.tree(holder,[('kind','工作'),('state','狀態'),('time','建立 UTC'),('error','說明')],3)
+        self.tasks.bind('<<TreeviewSelect>>',lambda e:self.select_hint_work('task'))
         self.tasks.bind('<Double-1>',lambda e:self.safe(lambda:self.show_result(selected(self.tasks))))
         row=ttk.Frame(tab); row.grid(row=6,column=0,sticky='ew',pady=(8,0))
         self.button(row,'查看結果',lambda:self.show_result(selected(self.tasks))).pack(side='left')
@@ -690,7 +690,6 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
             self.status.set('外觀已套用，但無法保存偏好；下次開啟可能恢復原設定。')
             messagebox.showwarning('外觀未保存','本次切換仍有效，但無法保存偏好。請確認資料目錄可寫入。',parent=self.root)
     def apply_settings(self):
-        if self.tutorial: raise GatewayError("體驗工作區不可修改公司連線。")
         if self.pending_io or self.engine.has_inflight(): raise ValueError('請等待工作完成再修改設定。')
         if any(p['state']=='ready' for p in self.store.plans()): raise ValueError('請先完成或取消待批准計畫，再更換助理設定。')
         config=copy.deepcopy(self.config)
@@ -705,7 +704,6 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
         if hasattr(old,'close'): old.close()
         self.status.set('設定已保存；尚未測試真實 API。')
     def test_connection(self):
-        if self.tutorial: raise GatewayError("體驗工作區不可測試公司連線。")
         if self.pending_io: raise ValueError('已有背景作業，請稍候。')
         self.background(lambda:self.respond([{'role':'user','content':'連線測試，請只回覆連線成功，不執行任何工具。'}],'chat'),lambda text:messagebox.showinfo('連線回覆',text[:1000],parent=self.root))
     def refresh_lists(self):
@@ -719,7 +717,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
         if self.schedules.selection(): self.schedule_details()
         busy=sum(t['state'] in ('queued','running') for t in self.store.tasks())
         self.activity_label.configure(text=f'●  {busy} 項工作進行中' if busy else '●  就緒')
-        self.update_composer();self.refresh_workspace()
+        self.update_composer();self.refresh_workspace();self.refresh_page_hint()
         plans=self.store.plans(); tasks=self.store.tasks()
         self.work_hint.set(f'{sum(p["state"]=="ready" for p in plans)} 份待確認計畫  ·  {len(tasks)} 項工作紀錄' if plans or tasks else '選擇「先規劃」建立計畫，批准前不會執行。')
     def close(self,force=False):
@@ -740,7 +738,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
         if self.scheduler.is_alive() or self.engine.has_inflight() or any(not f.done() for f in self.io_futures):
             self.root.after(50,self.finish_close); return
         self.engine.close(wait=True); self.io.shutdown(wait=True)
-        self.close_experience();self.chat_keyboard.close();self.close_detail();self.task_progress.stop()
+        self.chat_keyboard.close();self.close_detail();self.task_progress.stop()
         if hasattr(self.assistant,'close'): self.assistant.close()
         self.io_futures.clear()
         while not self.events.empty(): self.events.get_nowait()
@@ -750,7 +748,7 @@ class App(AssistantViews, ExperienceMixin, WorkspaceViews):
 def launch(config_path=None):
     set_windows_identity()
     root=tk.Tk()
-    try: app=App(root,config_path=config_path,show_welcome=True)
+    try: app=App(root,config_path=config_path)
     except Exception as exc:
         messagebox.showerror('無法啟動',str(exc) if isinstance(exc,(ValueError,OSError)) else '本機初始化失敗。',parent=root); root.destroy(); return False
     root.mainloop()

@@ -47,7 +47,7 @@ class AssistantViews:
         ttk.Entry(row,textvariable=self.endpoint_var).pack(side='left',fill='x',expand=True)
         self.button(row,'保存',self.save_endpoint).pack(side='left',padx=6)
         row=ttk.Frame(tab);row.pack(fill='x',pady=4)
-        self.key_label=ttk.Label(row,text='API key：'+('體驗模式，不讀取金鑰' if self.tutorial else self.profiles.key_status())); self.key_label.pack(side='left')
+        self.key_label=ttk.Label(row,text='API key：'+self.profiles.key_status()); self.key_label.pack(side='left')
         self.button(row,'設定／更換',self.edit_key).pack(side='right')
         self.button(row,'移除',self.remove_key,'Quiet.TButton').pack(side='right',padx=6)
         ttk.Label(tab,text='金鑰存 Windows 認證管理員；公司 API 格式確認前不會呼叫。',style='Muted.TLabel').pack(anchor='w',pady=4)
@@ -62,7 +62,6 @@ class AssistantViews:
         ttk.Label(tab,text='AD／Oracle 尚未接線；測試連線會呼叫公司助理，須先確認其工具副作用。',style='Muted.TLabel',wraplength=750).pack(anchor='w',pady=4)
         self.refresh_profiles()
     def require_profile_edit(self):
-        if self.tutorial: raise GatewayError('體驗工作區只使用本機示範，不可修改公司連線。')
         if self.engine.has_inflight() or self.pending_io: raise GatewayError('請等待目前工作結束再修改連線。')
     def refresh_profiles(self):
         if hasattr(self,'profile_table'):
@@ -118,7 +117,6 @@ class AssistantViews:
         p=next(p for p in self.profiles.items() if p['id']==pid)
         self.profiles.save(p['name'],p['assistant_id'],p['notes'],pid,not p['enabled']);self.refresh_profiles()
     def test_profile(self):
-        if self.tutorial: raise GatewayError('體驗工作區不測試公司連線。')
         binding=self.profiles.snapshot(self.selected_profile())
         if binding['profile_id']!='demo' and not self.config['assistant'].get('verified_side_effect_free',False):
             raise GatewayError('公司尚未確認助理副作用能力；請先由維護者完成確認。')
@@ -183,7 +181,7 @@ class AssistantViews:
         self.button(footer,'取消',w.destroy,'Quiet.TButton').pack(side='right',padx=8)
         scope.trace_add('write',invalidate);prompt.trace_add('write',invalidate);pick.bind('<<ComboboxSelected>>',invalidate)
         self.appearance.apply(w)
-        # Keep explicit UI handles for tutorial highlighting and integration verification.
+        # Keep explicit UI handles for preview controls and integration verification.
         w.transfer_prepare=prepare;w.transfer_submit=submit;w.transfer_confirm=confirm
         self.handoff_window=w;self.safe(prepare)
 

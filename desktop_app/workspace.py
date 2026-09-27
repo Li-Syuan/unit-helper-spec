@@ -114,7 +114,7 @@ class WorkspaceViews:
         if not messages:
             self.transcript.insert('end','今天，想先完成哪件事？\n','welcome_title')
             self.transcript.insert('end','從一個小任務開始。\n查找資料、整理重點，或讓文字更清楚。\n','welcome_body')
-            self.transcript.insert('end','初次使用？側欄「快速體驗」帶你完成第一件事。\n','welcome_body')
+            self.transcript.insert('end','不知道下一步？查看頁首提示，或開啟「本頁手冊」。\n','welcome_body')
             if (self.store.conversation(self.conversation)['binding'] or {}).get('profile_id')=='demo':
                 self.transcript.insert('end','示範模式 · 合成資料 · 不會呼叫公司服務','welcome_body')
         else:

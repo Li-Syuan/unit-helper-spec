@@ -2,7 +2,7 @@
 
 ## 優先範圍
 
-本次使用者核准的是 **QA agent 0.7.0 本機桌面與公司接手準備包**。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
+本次使用者核准的是 **QA agent 0.7.1 本機桌面與原地操作提示**，沿用既有公司接手準備包。先讀 README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md。較早 SPEC.md、BACKEND.md、OPERATIONS.md、UPDATES.md、IMPLEMENTATION.md／完整 ZIP 保留規格歷史，其中中央功能不是本次交付需求。公司原有規則與程式不可直接覆蓋。
 
 ## 已完成，請延續
 
@@ -40,6 +40,10 @@
 
 ## 介面維護
 
+0.7.1 移除歡迎彈窗、獨立五步體驗與「快速體驗」入口。八頁在原頁首提供可收合、依目前狀態變更的操作提示與手冊章節入口；側欄「操作提示」切換目前頁面。正常示範助理與合成查詢保留，資料存於目前工作區，不能再宣稱示範操作使用獨立暫存資料。
+
+提示僅讀取狀態，不填草稿、不建立工作、不呼叫服務、不批准或轉交。切換不得清除草稿、附件、選取、游標、捲動或 Plan 修訂；收合不得隱藏示範標示、錯誤與必要確認。各頁 `page_hints` 布林偏好保存於 ui-preferences.json，預設展開；寫入失敗保留本次 UI 選擇並提示。舊 `onboarding` 值只保留，不再讀寫或觸發導覽。手冊章節標題是 UI 連結契約，修改時同步檢查入口。呈現入口 guidance.py／ui.py，偏好入口 preferences.py；experience.py 僅保留手冊、關於與診斷。
+
 0.3.1 以原生 Tkinter/ttk 改善介面，無新 GUI 依賴。調整佈局後檢查 1050×700 與一般尺寸的按鈕可見性，保留 sidebar 導覽／既有 Notebook 服務介面、Plan gate、原文與資料匯出行為；歡迎文案不得當成使用者訊息保存或傳給助理。UI 證據見 docs/UI-DESIGN.md。
 
 ## 0.4.0 接手工具
@@ -63,7 +67,7 @@
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
 
-## 0.6.0 接手重點
+## 0.6.0 接手重點（歷史；獨立體驗已於 0.7.1 移除）
 
 已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
 
@@ -73,7 +77,7 @@
 
 完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。
 
-## 0.7.0 工作區改版（目前版本）
+## 0.7.0 工作區改版（沿用）
 
 - 原生 Tkinter／ttk，未新增 runtime 套件。HTML／CSS 只是可離線開啟的視覺稿，入口 docs/design/workspace.html，不嵌入正式應用。
 - 工作／管理／協助分組、原創線條 PNG、820px 聊天閱讀寬度、可選取的訊息卡片樣式、3～6 行整合輸入框及真實任務狀態。

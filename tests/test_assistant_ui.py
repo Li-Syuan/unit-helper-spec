@@ -22,12 +22,13 @@ class AssistantUITests(unittest.TestCase):
             if t['state'] in ('succeeded','failed','cancelled'):return t
             time.sleep(.01)
         self.fail('timeout')
-    def test_tutorial_initialization_does_not_read_ambient_credentials(self):
-        self.a.close(force=True);self.a=None;self.root=None;gc.collect()
-        self.root=tk.Tk();self.root.withdraw()
+    def test_demo_response_does_not_read_company_credentials(self):
+        a=self.a
         with patch('desktop_app.profiles.Profiles.key',side_effect=AssertionError('must not read key')):
-            self.a=App(self.root,config=copy.deepcopy(DEFAULT),directory=Path(self.temp.name)/'practice',tutorial=True)
-        self.assertIn('不讀取',self.a.key_label.cget('text'))
+            a.input.insert('end','整理這段合成文字');a.send_chat()
+            task=a.store.tasks()[0]
+            self.assertEqual(self.wait(task['id'])['state'],'succeeded')
+        self.assertIn('示範',a.store.messages(a.conversation)[-1]['text'])
     def test_switch_new_conversation_preserves_private_draft_and_attachment(self):
         a=self.a;old=a.conversation;a.input.insert('end','private draft')
         a.attachment={'name':'original.txt','text':'private attachment','kind':'txt'}

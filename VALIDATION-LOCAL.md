@@ -1,6 +1,6 @@
-# 本機實作驗證紀錄 — QA agent 0.7.0
+# 本機實作驗證紀錄 — QA agent 0.7.1
 
-本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個既有獨立 venv 重驗（開發環境、0.6.0 線上／離線重建環境）。每個環境 **150 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
+本次完成 Windows x64／CPython **3.10.4**／Tk **8.6.12** 的三個既有獨立 venv 重驗（開發環境、0.6.0 線上／離線重建環境）。每個環境 **155 項測試通過，0 skipped**；pip check 成功，pip freeze --all 與 requirements.lock 完全一致。
 
 ## 可核對證據
 
@@ -35,7 +35,7 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 | TXT／CSV／輸出 | local_real_passed：大小／UTF-8 BOM／錯編碼／欄數、精確字串、公式防護、CSV quoting、全部／選取／跨頁、snapshot 不變 |
 | 排程／通知 | local_real_passed：可控制時鐘測每日／每週、前一日解析、漏跑、重啟、防重、停用、非空改變／門檻、失敗通知，不等待隔天 |
 | Tkinter 桌面 | local_real_passed（程式操作）：真 Tk widgets，對話→Plan 修改批准→查詢→分頁→Windows 剪貼簿、回報草稿、排程與通知、選項對話框、可見八頁、關閉等待／重開保存 |
-| UI 外觀／最小視窗 | local_real_passed：檢視應用自身合成資料畫面截圖，涵蓋 1280×860 與 1050×700；新增導覽、主要按鈕可見與快捷送出 gate 測試。截圖見 docs/UI-DESIGN.md |
+| UI 外觀／最小視窗 | local_real_passed：檢視應用自身合成資料畫面截圖，涵蓋 1280×860 與 1050×700；原地提示、主要按鈕可見與快捷送出 gate 測試。截圖見 docs/UI-DESIGN.md |
 | OS 滑鼠／鍵盤人工流程 | not_tested：Computer Use helper 仍因 `apply deny-read ACLs` 無法啟動；本次透過真 Tk 控制項操作與自身視窗截圖檢視，不冒稱 OS 滑鼠全流程通過 |
 | 公司 chatbot | not_tested：沒有公司端點／成功樣本／金鑰；示範文字不是 AI 生成 |
 | AD／員工名單 | not_tested：只验证 demo 明示及正式未配置拒絕；非真 AD 登入 |
@@ -93,7 +93,7 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 
 以上屬本機真 Tk 程式操作與畫面檢視；公司 API／AD／Oracle／Excel 與 OS 人工全流程維持 not_tested。
 
-## 0.6.0 多助理與新手體驗（目前交付）
+## 0.6.0 多助理與新手體驗（歷史）
 
 2026-09-27，三環境各 **139 tests、0 skipped**，doctor／pip check／freeze lock 完全通過。新增 keyring==25.7.0，鎖定共 29 個套件；全新 .venv-verify060 由線上鎖檔建立，全新 .venv-offline060 由 wheelhouse-v060 無 index 安裝建立。舊環境保留，不列為本版基準。
 
@@ -109,7 +109,7 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 
 新公司 assistant ID 映射保持 unconfigured，須公司成功範例確認；公司 API／AD／Oracle／Excel 不以本機通過代替驗收。原始完整輸出見上方三份 JSON，畫面見 docs/UI-DESIGN.md。
 
-## 0.7.0 工作區與固定腳本（目前交付）
+## 0.7.0 工作區與固定腳本（歷史）
 
 三份 docs/validation JSON 已更新為本版，各 **150 tests、0 skipped**，doctor、pip check、pip freeze／lock 一致。29 個依賴未變，未重建離線包。0.6.0 段落中的 139 tests 與全新環境是歷史紀錄。
 
@@ -120,3 +120,16 @@ verify 會拒絕 0 tests、任何 skip、非零 exit code 或套件與 lock 不�
 - 固定脚本：新增 4 項啟動檢查正反案例；原 5 項 Windows COM 捷徑案例全保留，含中文、空白及單引號的搬移路徑。沒有 EncodedCommand、明文密鑰或執行政策繞過。
 - **Norton 成效未能確認（not_tested）**：未取得可核對的防毒事件紀錄。測試 exit 0 不代表沒有 Norton 通知，固定腳本也不是完全避免偵測的保證。核對步驟見 docs/NORTON-DEVELOPMENT.md。
 - 公司 API／AD／Oracle／Excel、真實中文 IME／OS 滑鼠鍵盤流程與工作列最終外觀仍 not_tested；合成截圖不取代公司驗收。
+
+
+## 0.7.1 原地操作提示（目前交付）
+
+2026-09-27 三個既有 Python 3.10.4 環境完整回歸各 **155 tests、0 skipped**，doctor／pip check／freeze lock 一致。完整輸出保存在三份 docs/validation JSON。沿用 29 套件及既有離線包；資料庫 schema 和服務 API 未變。
+
+- 移除歡迎視窗、獨立體驗子程序、五步控制器及其入口；原本 6 項導覽／手冊測試改為 11 項原地提示／手冊測試。保留真實本機示範查詢 → 未批准零工作 → 批准 → 選取列 → 預覽零派發 → 整理結果與來源關聯的驗證。正常示範紀錄保存於個人歷史，不再宣称臨時體驗隔離。
+- 驗證八頁提示與正確手冊章節、無歡迎／子程序／公司呼叫、每頁收合重開持久化、損壞預設、保存失敗維持當次選擇；舊 onboarding 及未知偏好保留。
+- 真 Tk 測試確認收合／主題切換不改草稿、附件、游標、選取、長對話頂部文字位置、待批准 Plan、表格選取或執行中工作。提示不增加對話、訊息、任務或批准。
+- 狀態檢查包含當前對話隔離、公司映射未配置、跨頁編輯、真 expires_at 過期、Plan 成功終態、工作失敗／取消、停用與啟用排程、無結果通知及本機回報；提示只讀取狀態。
+- 第一輪新增完整回歸發現 UI 測試在清單刷新前選取資料列的時序問題；改為明確刷新後選取，最終依序重跑三環境。未以失敗結果充當通過證據。
+- 真 Tk 合成視窗擷取 20 張，檢視深淺、1050×700／1280×860／1450×860 的聊天、查詢、Plan、設定、回報及收合畫面。HTML／CSS 深色版用本機 Chrome headless 渲染後檢視。精選圖见 docs/UI-DESIGN.md；未宣稱 OS 滑鼠／鍵盤人工全流程。
+- 啟動器 --check 通過。Norton 成效仍為 **未能確認（not_tested）**；公司 API／AD／Oracle／Excel、真實中文 IME 與工作列外觀仍 not_tested。沒有變更防毒例外或執行政策。

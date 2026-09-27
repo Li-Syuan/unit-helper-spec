@@ -1,12 +1,22 @@
 # 公司接手工作包 — GPT 6 sol
 
-**先保留本機可用功能，再逐一接公司服務。** 目前程式為 0.7.0，已完成桌面介面與公司接手準備包。 本次沒有公司原始碼、成功 API 樣本、AD 配置、Oracle schema 或真實 Excel。不能把下列事項描述成只填密碼就保證完成。
+**先保留本機可用功能，再逐一接公司服務。** 目前交付目標為 0.7.1，包含原地操作提示與公司接手準備包；實際驗證結果見 VALIDATION-LOCAL.md。 本次沒有公司原始碼、成功 API 樣本、AD 配置、Oracle schema 或真實 Excel。不能把下列事項描述成只填密碼就保證完成。
 
 ## 0. 已完成與不可重做
 
 已完成：Python 3.10.4 獨立環境／鎖版、Tkinter、SQLite、固定 Plan gate、選項、三項合成查詢、文字／檔案、OpenAI SDK adapter、本機排程、通知、回報草稿。詳細證據見 VALIDATION-LOCAL.md。
 
 程式入口 `python -m desktop_app`；介面見 `desktop_app/gateways.py` 的 Protocol；業務流程 `core.py`；UI `ui.py`。不能換框架、把真實模式失敗變成 demo、把測試跳過當通過、把舊 SQLite 刪除或覆蓋。GPT 6 sol 是開發 agent，不是這個產品必須呼叫的模型識別。
+
+### 0.7.1 操作提示接手要求
+
+獨立五步體驗、歡迎彈窗與「快速體驗」入口已移除。開啟直接進入工作區，八頁頁首提供可收合提示與手冊入口；示範助理與合成查詢照常可用，紀錄保存在目前個人歷史。不要重新加入另一套體驗資料庫或流程。
+
+- 已準備：頁面提示呈現、各頁展開偏好、離線手冊；目前執行證據以 VALIDATION-LOCAL.md 為準。
+- 公司需提供：實際服務的可用條件與核准錯誤說明，供接線後校對提示；不把內部網址、金鑰或業務內容寫進提示。
+- 修改入口：`desktop_app/guidance.py`、`ui.py`、`preferences.py`；完整步驟單一來源為 `docs/USER-GUIDE.md`，離線手冊入口在 `experience.py`。公司服務契約仍在原 adapter 邊界。
+- 驗證命令：`./scripts/test.ps1`；另以公司設定手動核對八頁提示與章節入口。
+- 完成條件：提示符合目前選定內容，不自動送出／批准；收合不遮蔽必要警告，切換後草稿與選取仍在。`page_hints` 偏好可重開保留，舊 `onboarding` 不再觸發畫面且保持原值。
 
 ## 已準備好的公司接手工具
 
@@ -84,7 +94,7 @@ AD 中央化權限、可信後端 Oracle schema、常駐中央排程／lease、i
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
 
-## 0.6.0 接手重點
+## 0.6.0 接手重點（歷史；獨立體驗已於 0.7.1 移除）
 
 已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
 
@@ -94,7 +104,7 @@ AD 中央化權限、可信後端 Oracle schema、常駐中央排程／lease、i
 
 完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。
 
-## 0.7.0 工作區改版（目前版本）
+## 0.7.0 工作區改版（沿用）
 
 - 原生 Tkinter／ttk，未新增 runtime 套件。HTML／CSS 只是可離線開啟的視覺稿，入口 docs/design/workspace.html，不嵌入正式應用。
 - 工作／管理／協助分組、原創線條 PNG、820px 聊天閱讀寬度、可選取的訊息卡片樣式、3～6 行整合輸入框及真實任務狀態。

@@ -1,4 +1,4 @@
-# QA agent 本機桌面 0.7.0 範圍與行為契約
+# QA agent 本機桌面 0.7.1 範圍與行為契約
 
 此文件優先於 v2.2 中涉及中央後端、遠端更新的假設；其餘完整產品規劃保留作後續路線。
 
@@ -7,6 +7,8 @@
 | 模組 | 責任 |
 |---|---|
 | desktop_app/ui.py | Tk 畫面、主執行緒事件、背景 IO 回傳、表格／預覽 |
+| desktop_app/guidance.py | 八頁原地提示、狀態說明及對應手冊入口；只讀取 UI 現況 |
+| desktop_app/experience.py | 離線手冊、關於與環境診斷入口；不再啟動獨立體驗 |
 | desktop_app/core.py | Store、任務／Plan gate、受限工作流程、本機排程與通知 |
 | desktop_app/choices.py | 持久化 typed 選項、owner／版本／期限／一次提交 |
 | desktop_app/gateways.py | 身分、公司 OpenAI 相容助理、查詢介面與合成實作 |
@@ -15,6 +17,16 @@
 | desktop_app/config.py | 本機設定、資料路徑、單一執行個體鎖 |
 
 UI 不直接持有 SQL、密碼或 HTTP 細節。公司請求映射與憑證集中 profiles.py，SDK 傳输維持 gateways.py；未來需要獨立 adapter 檔可在保持介面下拆出，不重寫 UI。
+
+## 0.7.1 原地操作提示
+
+啟動直接進入正常工作區；不再建立歡迎視窗、獨立體驗程序、暫存體驗工作區或五步控制器。一般示範助理及 DEMO 合成查詢繼續保留，操作會保存在目前個人歷史，所有示範標示保持明確。
+
+對話、查資料、計畫與任務、查詢結果、我的排程、通知、設定、問題回報共八頁，在既有頁首說明區呈現簡短提示，說明目前狀態、下一步或阻擋原因；旁邊提供收合／展開及對應手冊章節。側欄「操作提示」切換目前頁面。提示不另外占用大型面板，也不需照固定導覽順序完成。
+
+提示只讀取目前選定的對話／工作／資料狀態，不會建立對話、填入草稿、執行查詢、批准 Plan、發送資料或呼叫公司服務。更新或切換提示不得重建工作區或清除草稿、附件、文字／表格選取、游標、捲動及 Plan 修訂。必要身分與示範標示、錯誤、批准與轉交確認不受收合影響。
+
+各頁偏好以 `ui-preferences.json` 的 `page_hints` 物件保存，頁面鍵對應布林值，true 表示展開；缺少或無效值預設展開。保存失敗保留當次選擇並顯示提示。舊 `onboarding` 欄位保留原值，但不再讀取或更新。不更動連線設定、服務契約、SQLite schema 或依賴。
 
 ## 對話、Plan 與選項
 
@@ -64,7 +76,7 @@ test_support 包含可重用 adapter 契約，company_templates 提供待填測�
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
 
-## 0.6.0 接手重點
+## 0.6.0 接手重點（歷史；獨立體驗已於 0.7.1 移除）
 
 已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
 
@@ -74,7 +86,7 @@ test_support 包含可重用 adapter 契約，company_templates 提供待填測�
 
 完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。
 
-## 0.7.0 工作區改版（目前版本）
+## 0.7.0 工作區改版（沿用）
 
 - 原生 Tkinter／ttk，未新增 runtime 套件。HTML／CSS 只是可離線開啟的視覺稿，入口 docs/design/workspace.html，不嵌入正式應用。
 - 工作／管理／協助分組、原創線條 PNG、820px 聊天閱讀寬度、可選取的訊息卡片樣式、3～6 行整合輸入框及真實任務狀態。

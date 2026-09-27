@@ -4,7 +4,7 @@ import os
 import tempfile
 from pathlib import Path
 
-ONBOARDING_VERSION = 1
+HINT_PAGES = ('chat', 'query', 'work', 'result', 'schedule', 'notice', 'settings', 'issue')
 
 
 def load_preferences(path):
@@ -45,15 +45,17 @@ def save_theme(path, name):
     update_preferences(path, {'theme': name})
 
 
-def load_onboarding(path):
-    data = load_preferences(path).get('onboarding', {})
-    if not isinstance(data, dict) or data.get('version') != ONBOARDING_VERSION:
-        return 'new'
-    status = data.get('status')
-    return status if status in ('invited', 'skipped', 'completed') else 'new'
+def load_page_hints(path):
+    data = load_preferences(path).get('page_hints', {})
+    if not isinstance(data, dict):
+        data = {}
+    return {page: data[page] if type(data.get(page)) is bool else True for page in HINT_PAGES}
 
 
-def save_onboarding(path, status):
-    if status not in ('invited', 'skipped', 'completed'):
-        raise ValueError('不支援的導覽狀態。')
-    update_preferences(path, {'onboarding': {'version': ONBOARDING_VERSION, 'status': status}})
+def save_page_hint(path, page, visible):
+    if page not in HINT_PAGES or type(visible) is not bool:
+        raise ValueError('不支援的操作提示偏好。')
+    data = load_preferences(path).get('page_hints', {})
+    data = dict(data) if isinstance(data, dict) else {}
+    data[page] = visible
+    update_preferences(path, {'page_hints': data})

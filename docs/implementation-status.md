@@ -1,8 +1,9 @@
-# 實作狀態 — QA agent 0.7.0
+# 實作狀態 — QA agent 0.7.1
 
 | 工作 | 狀態與界線 | 主要檔案 |
 |---|---|---|
-| Python／鎖版／第二環境 | 三個既有獨立環境各 150 tests 通過；線上／離線重建於 0.6.0 完成；見 VALIDATION-LOCAL | scripts、requirements.lock |
+| Python／鎖版／第二環境 | 0.7.1 三環境各 155 tests／0 skipped，doctor／pip check／freeze lock 通過；依賴未變 | scripts、requirements.lock |
+| 原地操作提示 | 八頁頁首提示、收合偏好與對應手冊；取代歡迎與獨立體驗，提示不派發工作；真 Tk 回歸與自身畫面已驗，見 VALIDATION-LOCAL | guidance、ui、preferences、USER-GUIDE |
 | 對話／歷史／背景／取消 | 本機已完成；Enter 送出／Shift+Enter 換行／Ctrl+Enter，IME 人工驗收待完成 | ui、theme、core |
 | OpenAI 相容 SDK | adapter + MockTransport 通過；公司實測未做 | gateways |
 | Plan／是非／單選／多選 | 本機固定流程、服務 gate、修訂／期限／防重 | core、choices、ui |
@@ -28,7 +29,7 @@
 | 離線安裝 | 20-wheel 包驗證，.venv-offline2 已由包重建；當時重驗 111 tests、lock 一致 | OFFLINE-INSTALL |
 | 公司接手工作單 | 必要輸入、六項接線與現場驗收；未填不視為完成 | COMPANY-INPUTS、COMPANY-HANDOFF、COMPANY-ACCEPTANCE |
 
-目前完整證據：docs/validation/development.json、clean-rebuild.json、offline-rebuild.json（已更新為 0.6.0）。0.4.0 當時依賴無新增；不把骨架、合成測試或本機通過當真實公司通過。
+完整證據入口：docs/validation/development.json、clean-rebuild.json、offline-rebuild.json；請核對報告內版本，不以較早版本結果代表本輪驗證。0.4.0 當時依賴無新增；不把骨架、合成測試或本機通過當真實公司通過。
 
 ## QA agent 0.4.1
 
@@ -43,14 +44,14 @@
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
 
-## 0.6.0 目前完成
+## 0.6.0 完成紀錄（歷史）
 
 | 工作 | 完成與界線 | 修改入口 |
 |---|---|---|
 | 多助理／憑證 | 清單、預設、停用、連線版本、Windows keyring；新公司映射待成功樣本 | profiles、assistant_views、ASSISTANT-INTEGRATION |
 | 固定對話／Plan | binding/source、改連線舊 Plan 拒絕、背景派發固定目標、草稿隔離 | core、ui |
 | 結果／對話轉交 | 選取→指定助理→完整預覽→確認→新對話，超限拒絕、失敗保留來源 | assistant_views |
-| 歡迎與五步體驗 | 獨立程序／臨時資料、真操作進度、退出／重試／偏好保存 | experience、preferences |
+| 歡迎與五步體驗 | 當時使用獨立程序／臨時資料；0.7.1 已移除，改為正常工作區提示 | experience、preferences |
 | 手冊／資料说明／授權 | 應用內離線章節、完整 29 個套件授權文字、關於與回報入口 | USER-GUIDE、DATA-USAGE、THIRD-PARTY-NOTICES、licenses |
 | 鍵盤 | Enter／Shift+Enter／Ctrl+Enter、防重、IME guard；原生中文 IME 待人工 | keyboard |
 | 依賴／資料升級 | 29-wheel 新包與兩個全新 venv 重建；schema 2 升級前備份 | requirements.lock、core、setup |
@@ -58,7 +59,7 @@
 
 本版三環境各 139 tests、0 skipped。公司 API／AD／Oracle／Excel、原生中文輸入法與 OS 最終外觀不冒稱通過；人工清單见 COMPANY-ACCEPTANCE。
 
-## 0.7.0 工作區改版（目前版本）
+## 0.7.0 工作區改版（沿用）
 
 - 原生 Tkinter／ttk，未新增 runtime 套件。HTML／CSS 只是可離線開啟的視覺稿，入口 docs/design/workspace.html，不嵌入正式應用。
 - 工作／管理／協助分組、原創線條 PNG、820px 聊天閱讀寬度、可選取的訊息卡片樣式、3～6 行整合輸入框及真實任務狀態。

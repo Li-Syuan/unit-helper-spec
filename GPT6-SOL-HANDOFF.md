@@ -1,6 +1,8 @@
-請接手這個 repo 的QA agent 0.7.0。你是 GPT 6 sol 開發 agent，請實際做接線與驗證，不重做 GUI 或另開平台。
+請接手這個 repo 的 QA agent 0.7.1。你是 GPT 6 sol 開發 agent，請實際做接線與驗證，不重做 GUI 或另開平台。
 
 先讀 AGENTS.md、README.md、LOCAL-SPEC.md、VALIDATION-LOCAL.md、COMPANY-HANDOFF.md、docs/current-state.md。保留 Windows x64、Python 恰好 3.10.4、Tkinter、現有 SQLite 與 OpenAI SDK 邊界。舊完整 spec 是後續路線；當前不做中央管理、遠端更新、產品 multi agents。
+
+現在開啟直接進入正常工作區；八頁已有可收合操作提示與對應手冊，側欄「操作提示」切換當頁。獨立五步體驗與歡迎彈窗已移除，不要依歷史文件恢復。示範助理和合成查詢保留，產生的資料存於目前個人歷史。提示只說明狀態，不能自動填稿、執行、批准或送出。頁面提示由 guidance.py／ui.py 呈現，偏好由 preferences.py 保存至 page_hints；保留舊 onboarding 原值但不再使用。手冊章節標題是連結契約。
 
 先讀 docs/COMPANY-INPUTS.md，取得 API／AD／Oracle 的最少必要資訊。可直接沿用 docs/QUERY-CATALOG.md 的動態欄位、docs/ADAPTER-TEST-KIT.md 的測試骨架與 docs/OFFLINE-INSTALL.md 的安裝工具；不用重做查詢 UI、測試 runner 或環境诊斷。
 
@@ -29,7 +31,7 @@
 - A～D 候選圖示獨立保存於 desktop_app/assets/candidates，尚未套用；正式 PNG／ICO 與桌面捷徑保持 0.4.1 圖示。選定後才輸出正式多尺寸 ICO。
 - 操作及畫面見 docs/UI-DESIGN.md；圖示比較與生成紀錄見 docs/ICON-CANDIDATES.md。基準命令：.venv/Scripts/python.exe -m unittest discover -v。
 
-## 0.6.0 接手重點
+## 0.6.0 接手重點（歷史；獨立體驗已於 0.7.1 移除）
 
 已完成：A 正式圖示、使用者自管多助理、keyring、固定對話／Plan 路由、資料預覽轉交、Enter／Shift+Enter、獨立五步體驗、離線手冊及聲明。共用 endpoint／API key；名稱、assistant ID、備註由使用者管理。
 
@@ -39,7 +41,7 @@
 
 完成條件：公司 API 對話隔離與回傳結果實測、AD／Oracle 核准接線、Excel／Windows 中文輸入法與縮放人工驗收。未實測項目仍保持 not_tested，不能以合成測試替代。中央協作、遠端更新、EXE、任意 SQL 及助理自動分工不在本版。
 
-## 0.7.0 工作區改版（目前版本）
+## 0.7.0 工作區改版（沿用）
 
 - 原生 Tkinter／ttk，未新增 runtime 套件。HTML／CSS 只是可離線開啟的視覺稿，入口 docs/design/workspace.html，不嵌入正式應用。
 - 工作／管理／協助分組、原創線條 PNG、820px 聊天閱讀寬度、可選取的訊息卡片樣式、3～6 行整合輸入框及真實任務狀態。

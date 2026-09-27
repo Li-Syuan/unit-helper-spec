@@ -48,3 +48,5 @@ doctor 真的建立 Tk root 並檢查確切版本／架構，不只是 import；
 0.6.0 本機正式基準為 .venv、全新 .venv-verify060 與全新 .venv-offline060，各 139 tests 通過。新離線包 wheelhouse-v060 共 29 個 wheel；不得重用舊版套件包。
 
 0.7.0 沿用上述三個環境，各 150 tests 通過。requirements.lock 與 0.6.0 相同，不新增套件或重建離線包。
+
+0.7.1 沿用上述三個環境，各 155 tests 通過；沒有新依賴或重建離線包。
