@@ -8,6 +8,8 @@
 
 後續獨立重測仍失敗；完全不啟動 App 的唯讀 API 檢查顯示 window station 可見、input desktop 可讀，但 OpenClipboard 仍回傳 5。因此不將原因直接歸為鎖定畫面、程式占用或 Norton；未讀取剪貼簿內容或改系統政策。精確重測命令見 [開發指南](DEVELOPMENT.md#測試與交付)。
 
+再次重測後，測試讀回工具改為保留 Win32 last-error，實際訊息為 `OpenClipboard failed (Windows error 5); clipboard readback not verified`，exit 1。原先的 `clipboard busy` 只是不精確的統一錯誤文字；此修改未碰產品程式、測試斷言或驗收標準。完整基準數量不變，尚不能視為通過。
+
 以 `.venv/Scripts/python.exe scripts/verify.py development` 執行環境診斷、pip check、鎖檔比對及完整 unittest；前三項通過，完整測試 exit 1，直譯器、時間、命令與輸出见 [development.json](validation/development.json)。驗證腳本現在失敗也保存證據，退出碼仍為非零。保留前版 347 項，新增 17 項涵蓋側欄／團隊、分工呈現、一次確認及圖形資源釋放。
 
 新增驗證涵蓋側欄收合偏好、保存失敗、草稿／附件／選取保留、缺圖示退回文字、助理搜尋與真實能力狀態、既有助理編輯入口、規劃入口零派發、響應欄數、完整成果、失敗／取消狀態、雙擊只執行一次及小視窗操作可達。

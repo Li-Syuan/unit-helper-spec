@@ -108,7 +108,7 @@ doctor 檢查 Windows、Python、Tk、依賴／lock、設定、必要變數是�
 
 verify 拒絕 0 tests、skip、非零 exit code 或 freeze 與 lock 不符。證據存 docs/validation，需保留版本／時間並區分 mock、本機真實與公司真實驗證。更新後維護 [驗證摘要](VALIDATION.md)、[產品狀態](PROJECT.md) 與接手文件；不要逐版複製整段歷史到每份文件。
 
-若 Windows 剪貼簿實測出現 `clipboard busy`，先在互動桌面確認一般應用可複製／貼上，關閉正在占用剪貼簿的操作，再執行下列單項。這個訊息也可能是存取遭拒，不能只靠錯誤文字判定占用或防毒誤報。不讀取／分享現有剪貼簿私有內容，不改防毒或存取政策。
+若 Windows 剪貼簿實測出現 `OpenClipboard failed`（舊版統一顯示 `clipboard busy`），保留 Windows 錯誤碼。先在互動桌面確認一般應用可複製／貼上，關閉正在占用剪貼簿的操作，再執行下列單項。錯誤碼 5 表示存取遭拒，不能因此直接判定占用、鎖屏或防毒誤報。不讀取／分享現有剪貼簿私有內容，不改防毒或存取政策。
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest tests.test_dialogs.DialogTests.test_long_message_theme_copy_and_close_without_mutation -v

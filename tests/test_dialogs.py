@@ -12,11 +12,14 @@ from desktop_app.window_chrome import apply_titlebar,colorref
 def windows_clipboard_text():
     # Tk 8.6 clipboard_get can split long UTF-8 chunks incorrectly on Windows.
     # Verify what Windows consumers actually receive, not that Tcl readback path.
-    user=ctypes.WinDLL('user32');kernel=ctypes.WinDLL('kernel32')
+    user=ctypes.WinDLL('user32',use_last_error=True);kernel=ctypes.WinDLL('kernel32')
+    user.OpenClipboard.argtypes=[ctypes.c_void_p];user.OpenClipboard.restype=ctypes.c_bool
     user.GetClipboardData.restype=ctypes.c_void_p
     kernel.GlobalLock.argtypes=[ctypes.c_void_p];kernel.GlobalLock.restype=ctypes.c_void_p
     kernel.GlobalUnlock.argtypes=[ctypes.c_void_p]
-    if not user.OpenClipboard(None):raise RuntimeError('clipboard busy')
+    ctypes.set_last_error(0)
+    if not user.OpenClipboard(None):
+        raise RuntimeError(f'OpenClipboard failed (Windows error {ctypes.get_last_error()}); clipboard readback not verified')
     try:
         handle=user.GetClipboardData(13);pointer=kernel.GlobalLock(handle)
         try:return ctypes.wstring_at(pointer).replace('\r\n','\n')
