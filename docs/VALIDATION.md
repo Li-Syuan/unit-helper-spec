@@ -1,16 +1,16 @@
 # QA agent 0.13.0 驗證摘要
 
-目前保留對話式 Plan、多助理協作、固定流程排程、通知及 schema 5；本版新增可收合圖示側欄、助理團隊及分工進度，改為一次明確「確認執行」。沿用 Python 恰好 3.10.4、Windows x64、唯一 .venv 與原有鎖定套件，沒有新增依賴、schema 或驗證環境。
+目前保留對話式 Plan、多助理協作、固定流程排程、通知及 schema 5；本版新增可收合圖示側欄、助理團隊及分工進度，改為一次明確「確認執行」。沿用 Python 恰好 3.10.4、Windows x64、唯一 .venv 與原有鎖定套件，沒有新增依賴或 schema；離線交付另建臨時乾淨環境實測。
 
 ## 本機回歸
 
-完整執行 **364 項：363 通過、1 error、0 skipped**，不能宣稱全綠。唯一未通過為 `test_long_message_theme_copy_and_close_without_mutation` 的 Windows 剪貼簿讀回；獨立重現 `OpenClipboard` 回傳錯誤碼 5（拒絕存取），暫列環境受阻，尚未確認根因。需在可存取剪貼簿的互動工作階段重跑，不能以 Tcl 快取或 mock 代替。
+離線交付的全新 Python **3.10.4 x64** 環境完成 **364 項全數通過、0 skipped**。29 個鎖定套件由本地 wheelhouse 安裝（--no-index、--no-deps、--no-cache-dir），安裝前包雜湊與 lock 指紋檢查通過；doctor、pip check、freeze 與 lock 比對均通過。實際直譯器、時間、命令與完整輸出見 [offline-rebuild.json](validation/offline-rebuild.json)。沒有重用日常 .venv 的 site-packages。
 
-後續獨立重測仍失敗；完全不啟動 App 的唯讀 API 檢查顯示 window station 可見、input desktop 可讀，但 OpenClipboard 仍回傳 5。因此不將原因直接歸為鎖定畫面、程式占用或 Norton；未讀取剪貼簿內容或改系統政策。精確重測命令見 [開發指南](DEVELOPMENT.md#測試與交付)。
+離線環境也實際開啟 Tk 桌面，以暫存資料完成「合成查詢草稿 → 預覽零派發 → 確認 → 一筆成功查詢」，無公司／外部 AI 請求。安裝包排除 Python 直譯器、.venv、.env、金鑰與使用者資料；Python 完整安裝程式仍由公司提供。公司 API／AD／Oracle 的真實驗收保持 not_tested。
 
-再次重測後，測試讀回工具改為保留 Win32 last-error，實際訊息為 `OpenClipboard failed (Windows error 5); clipboard readback not verified`，exit 1。原先的 `clipboard busy` 只是不精確的統一錯誤文字；此修改未碰產品程式、測試斷言或驗收標準。完整基準數量不變，尚不能視為通過。
+先前日常環境曾有一項 Windows 剪貼簿讀回 error 5，紀錄仍保留於 [development.json](validation/development.json)。本次在新離線環境原樣重跑該測試已通過；未 mock、skip 或放寬斷言，亦未修改 Windows／防毒政策。先前拒絕存取的根因尚未確認，不能歸因為更換套件或保證不再出現。重測入口見 [開發指南](DEVELOPMENT.md#測試與交付)。
 
-以 `.venv/Scripts/python.exe scripts/verify.py development` 執行環境診斷、pip check、鎖檔比對及完整 unittest；前三項通過，完整測試 exit 1，直譯器、時間、命令與輸出见 [development.json](validation/development.json)。驗證腳本現在失敗也保存證據，退出碼仍為非零。保留前版 347 項，新增 17 項涵蓋側欄／團隊、分工呈現、一次確認及圖形資源釋放。
+保留前版 347 項，新增 17 項涵蓋側欄／團隊、分工呈現、一次確認及圖形資源釋放。驗證腳本失敗時也保存證據並回傳非零退出碼。
 
 新增驗證涵蓋側欄收合偏好、保存失敗、草稿／附件／選取保留、缺圖示退回文字、助理搜尋與真實能力狀態、既有助理編輯入口、規劃入口零派發、響應欄數、完整成果、失敗／取消狀態、雙擊只執行一次及小視窗操作可達。
 
@@ -40,13 +40,13 @@
 
 ## 介面與相容
 
-收合側欄的品牌圖示已修正為置中，展開時恢復圖示＋文字排列。以真 Tk、深淺主題、1050×700 及目前 150% 倍率確認：修正前品牌中心偏左 14 實體像素，修正後與側欄及功能按鈕中心一致。`tests.test_team_navigation` 10 項通過；本次為排版修正，未重跑完整回歸，前述剪貼簿限制仍保留。
+收合側欄的品牌圖示已修正為置中，展開時恢復圖示＋文字排列。以真 Tk、深淺主題、1050×700 及目前 150% 倍率確認：修正前品牌中心偏左 14 實體像素，修正後與側欄及功能按鈕中心一致。`tests.test_team_navigation` 10 項通過；離線交付時另完成上述 364 項完整回歸。
 
 本機真 Windows／Tk 的深淺通知畫面已實際檢視：1050×700 邏輯視窗、150% 顯示下，徽章可見、彈窗位於工作區右下角且按鈕可達；新通知前後輸入焦點一致、無模態 grab，主視窗最小化時彈窗仍可見且主視窗保持最小化。數據見 [display-current.json](validation/display-current.json) 的 notifications_0_12_1。這是合成資料與程式操作證據，不代替公司實測或同仁人工可用性驗收。
 
 用暫存資料開啟真 Tk，已檢視深淺主題、1050×700、1280×860及最大化；送出、修改和確認按鈕可達，另檢視步驟編輯及助理詳情視窗。助理團隊小視窗單欄、一般視窗雙欄；窄圖示側欄與未讀徽章可見。量測見 [display-current.json](validation/display-current.json) 的 workspace_0_13_0。只保留四張當前精選圖：深淺 Plan、助理團隊及窄側欄；舊圖由 Git 歷史查看。未宣稱已完成所有實際 Windows 倍率或跨螢幕重排驗收。
 
-schema 1～4 先備份、再交易升級為 5；舊公司資料庫不在本次操作範圍。若需降版，須停用新版並由維護者回復一致性備份，不直接降低 user_version。原有 [乾淨重建](validation/clean-rebuild.json) 與 [離線重建](validation/offline-rebuild.json) 為先前環境證據，這次依賴未變、未重建環境。
+schema 1～4 先備份、再交易升級為 5；舊公司資料庫不在本次操作範圍。若需降版，須停用新版並由維護者回復一致性備份，不直接降低 user_version。[乾淨重建](validation/clean-rebuild.json) 為先前環境證據；[離線重建](validation/offline-rebuild.json) 已更新為本次交付實測，依賴沒有變更。
 
 ## 人工走查
 

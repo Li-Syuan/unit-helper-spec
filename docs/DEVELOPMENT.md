@@ -1,6 +1,6 @@
 # 開發與部署指南
 
-QA agent 0.12.0。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
+QA agent 0.13.0。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
 
 ## 個人 Groq 試用
 
@@ -26,7 +26,7 @@ Windows x64、**Python 恰好 3.10.4** 完整安裝版，保留 Tcl/Tk 與 pip�
 .\scripts\run.ps1
 ```
 
-setup 建立專屬 `.venv`，拒絕覆寫既有環境，不借用其他專案的 site-packages。鎖檔含直接／間接依賴及 pip、setuptools，共 29 個套件；用 requirements.lock 安裝，requirements.in 只是主要套件清單。更動依賴須更新 lock 並另建乾淨環境驗證；本次整理沒有更動依賴或重建環境。
+setup 建立專屬 `.venv`，拒絕覆寫既有環境，不借用其他專案的 site-packages。鎖檔含直接／間接依賴及 pip、setuptools，共 29 個套件；用 requirements.lock 安裝，requirements.in 只是主要套件清單。更動依賴須更新 lock 並另建乾淨環境驗證；本次離線交付未改依賴，已另建臨時環境驗證完整套件包。
 
 ```powershell
 # 額外乾淨環境，名稱須尚不存在
