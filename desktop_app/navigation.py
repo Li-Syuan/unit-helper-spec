@@ -101,9 +101,12 @@ class Navigation:
             if self.collapsed:opts['padx']=a.display.px(7)
             w.pack(**opts)
         if more_open and not self.collapsed:a.more_tools.pack(fill='x',after=self.more)
-        if self.collapsed:self.brand_title.pack_forget();a.brand_image_label.pack_configure(padx=0)
+        if self.collapsed:
+            self.brand_title.pack_forget()
+            a.brand_image_label.pack_configure(side='top',anchor='center',padx=0)
         else:
-            self.brand_title.pack(side='left');a.brand_image_label.pack_configure(padx=(0,a.display.px(8)))
+            self.brand_title.pack(side='left')
+            a.brand_image_label.pack_configure(side='left',anchor='center',padx=(0,a.display.px(8)))
         self.toggle._nav_title='展開側欄' if self.collapsed else '收合側欄'
         for b in self.buttons:
             has_icon=(b._workspace_icon,a.appearance.name) in a.ui_images

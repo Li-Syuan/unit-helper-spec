@@ -537,5 +537,31 @@
     ],
     "manual_colleague_usability": "not_tested",
     "company_services": "not_tested"
+  },
+  "sidebar_alignment": {
+    "kind": "programmatic_real_Tk_synthetic_data",
+    "logical_size": [
+      1050,
+      700
+    ],
+    "brand_offset_before_px": [
+      -14.0,
+      -14.0
+    ],
+    "brand_offset_after_px": [
+      0.0,
+      0.0
+    ],
+    "themes": [
+      "dark",
+      "light"
+    ],
+    "expanded": {
+      "expanded_brand_side": "left",
+      "expanded_brand_title_visible": true
+    },
+    "test_command": ".venv/Scripts/python.exe -m unittest tests.test_team_navigation -v",
+    "tests": 10,
+    "exit_code": 0
   }
 }
