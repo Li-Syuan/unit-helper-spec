@@ -2,7 +2,7 @@
 
 ## 當前範圍
 
-先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.13.0 完成可收合圖示側欄、助理團隊與分工進度，沿用對話式 Plan、多助理依序協作及流程排程，延續個人待辦、工作卡片、草稿保存與深淺正式品牌圖示；歷史規格由 Git 查閱，不再作為當前開發需求。
+先讀 [README](README.md)、[產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) 與 [公司接手工作單](COMPANY-HANDOFF.md)。0.14.0 新增成果優先、精確數值比較、本機回饋與公司助理Instruction；沿用可收合圖示側欄、助理團隊與分工進度，沿用對話式 Plan、多助理依序協作及流程排程，延續個人待辦、工作卡片、草稿保存與深淺正式品牌圖示；歷史規格由 Git 查閱，不再作為當前開發需求。
 
 沿用 Windows x64、Python **恰好 3.10.4**、Tkinter／ttk、SQLite、OpenAI SDK 與 Windows keyring。公司待辦為 chatbot 契約、AD／名單及 owner 授權、三項 Oracle 查詢、舊資料／排程遷移與現場驗收。不得覆蓋公司原有規則或程式。
 
@@ -48,7 +48,7 @@ conversation_actions 與 messages 分開；查詢、排程 task 保持獨立，�
 
 `local_work.py` 為本機 CRUD 與草稿版本防重；`todo_views.py`／`draft_views.py` 為介面，`work_cards.py` 是公司可調整的文字入口。待辦狀態由人確認，不得觸發模型、排程或標記 AI 工作成功；來源只是可失效的連結，刪除對話保留另存待辦副本。
 
-Store 升級至 schema 5，schema 1／2／3／4 先以 SQLite backup 備份，再同交易遷移；不要直接降低 user_version。草稿按對話保存，背景寫入須檢查 reservation，送出清除／刪除後晚到結果不得復活；Plan 修改不當普通草稿。對話刪除快照和交易包含草稿。附件不跨啟動讀取，重開提示重新選取。
+Store 升級至 schema 6，schema 1／2／3／4／5 先以 SQLite backup 備份，再同交易遷移；不要直接降低 user_version。草稿按對話保存，背景寫入須檢查 reservation，送出清除／刪除後晚到結果不得復活；Plan 修改不當普通草稿。對話刪除快照和交易包含草稿。附件不跨啟動讀取，重開提示重新選取。
 
 ## 驗證與交付
 

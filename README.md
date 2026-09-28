@@ -4,7 +4,7 @@
 
 用一個桌面入口與公司助理對話、整理文字、查詢資料及安排本機排程。UI 與本機流程已完成；預設使用明確標示的合成資料，公司 chatbot、AD 與 Oracle 接線仍需公司資訊及實測。
 
-目前驗證：以完整離線套件包建立全新 Python 3.10.4 環境，364 項完整回歸全部通過，包含 Windows 剪貼簿讀回。詳見 [驗證紀錄](docs/VALIDATION.md)。
+目前驗證：以完整離線套件包建立全新 Python 3.10.4 環境，385 項完整回歸全部通過，包含 Windows 剪貼簿讀回。詳見 [驗證紀錄](docs/VALIDATION.md)。
 
 ![QA agent 深色工作區](docs/images/workspace-dark.png)
 
