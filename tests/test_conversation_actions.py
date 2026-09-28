@@ -183,8 +183,8 @@ class ActionTests(unittest.TestCase):
             self.assertFalse(db.execute("SELECT name FROM sqlite_master WHERE name='conversation_actions'").fetchall())
         migrated=Store(self.path)
         self.assertEqual(migrated.conversation(self.cid)['title'],'測試')
-        with migrated.connection() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],5)
-        backups=list(self.path.parent.glob('*.pre-v5-*.bak'));self.assertEqual(len(backups),2)
+        with migrated.connection() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],6)
+        backups=list(self.path.parent.glob('*.pre-v6-*.bak'));self.assertEqual(len(backups),2)
         with sqlite3.connect(backups[-1]) as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],3)
 
 

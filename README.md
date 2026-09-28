@@ -1,6 +1,6 @@
 # QA agent
 
-**0.13.0 · Windows x64 · Python 3.10.4 · Tkinter 桌面工作區**
+**0.14.0 · Windows x64 · Python 3.10.4 · Tkinter 桌面工作區**
 
 用一個桌面入口與公司助理對話、整理文字、查詢資料及安排本機排程。UI 與本機流程已完成；預設使用明確標示的合成資料，公司 chatbot、AD 與 Oracle 接線仍需公司資訊及實測。
 
@@ -65,3 +65,9 @@ Groq 是同一測試模型的四個隔離角色，並非公司真實多 assistan
 | 看架構、功能界線與驗證狀態 | [產品與架構](docs/PROJECT.md)、[驗證紀錄](docs/VALIDATION.md) |
 
 舊規格、候選圖示及視覺稿保存在 [清理前版本 c13e583](https://github.com/Li-Syuan/unit-helper-spec/tree/c13e583)，不再混入目前工作目錄。Git 歷史未改寫；整理減少的是目前檔案，完整 clone 仍包含歷史。
+
+## 成果與公司助理 Instruction
+
+0.14.0 結果預設先顯示成果、來源與覆核；「與上次比較」呈現同流程版本的可核對合計與筆數差值，並可留下可採用／需修改／無幫助的本機評價。比較不呼叫模型，空資料不當零，數值增減不等於改善或異常。
+
+公司建立四位助理，請從 [Instruction 建立指南](docs/assistant-instructions/README.md) 開始，內含四份可完整貼入的 Markdown 與試跑案例。尚未以公司 Luna／多 ID 實測，不保證零幻覺。

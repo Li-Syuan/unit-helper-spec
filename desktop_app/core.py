@@ -55,10 +55,10 @@ class Store(LocalWorkStore):
         self._draft_revisions = {}
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version > 5:
+            if version > 6:
                 raise ValueError("資料庫版本較新，請使用相容的應用程式。")
-            if version in (1, 2, 3, 4):
-                backup=self.path.with_name(self.path.name+'.pre-v5-'+uid()+'.bak')
+            if version in (1, 2, 3, 4, 5):
+                backup=self.path.with_name(self.path.name+'.pre-v6-'+uid()+'.bak')
                 with sqlite3.connect(str(backup)) as target: db.backup(target)
             db.executescript("""
                 PRAGMA journal_mode=WAL;
@@ -104,7 +104,9 @@ class Store(LocalWorkStore):
             initialize_action_schema(db)
             from .workflows import initialize_workflow_schema
             initialize_workflow_schema(db)
-            db.execute("PRAGMA user_version=5")
+            from .outcomes import initialize_outcome_schema
+            initialize_outcome_schema(db)
+            db.execute("PRAGMA user_version=6")
             self._draft_revisions = {row['conversation_id']: row['revision'] for row in db.execute('SELECT conversation_id,revision FROM drafts')}
 
     @contextmanager

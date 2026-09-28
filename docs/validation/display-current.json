@@ -563,5 +563,229 @@
     "test_command": ".venv/Scripts/python.exe -m unittest tests.test_team_navigation -v",
     "tests": 10,
     "exit_code": 0
-  }
+  },
+  "outcomes_0_14_0": [
+    {
+      "theme": "dark",
+      "requested_size": "1050x700",
+      "actual_size": [
+        1050,
+        720
+      ],
+      "controls": [
+        {
+          "label": "可採用",
+          "inside": true
+        },
+        {
+          "label": "需修改",
+          "inside": true
+        },
+        {
+          "label": "無幫助",
+          "inside": true
+        },
+        {
+          "label": "清除",
+          "inside": true
+        },
+        {
+          "label": "保存備註／重試保存",
+          "inside": true
+        },
+        {
+          "label": "複製成果",
+          "inside": true
+        }
+      ],
+      "missing_controls": [],
+      "result_scrollbar_visible": true,
+      "draft_preserved": true
+    },
+    {
+      "theme": "dark",
+      "requested_size": "1280x860",
+      "actual_size": [
+        1280,
+        860
+      ],
+      "controls": [
+        {
+          "label": "可採用",
+          "inside": true
+        },
+        {
+          "label": "需修改",
+          "inside": true
+        },
+        {
+          "label": "無幫助",
+          "inside": true
+        },
+        {
+          "label": "清除",
+          "inside": true
+        },
+        {
+          "label": "保存備註／重試保存",
+          "inside": true
+        },
+        {
+          "label": "複製成果",
+          "inside": true
+        }
+      ],
+      "missing_controls": [],
+      "result_scrollbar_visible": true,
+      "draft_preserved": true
+    },
+    {
+      "theme": "dark",
+      "requested_size": "maximized",
+      "actual_size": [
+        1350,
+        1050
+      ],
+      "controls": [
+        {
+          "label": "可採用",
+          "inside": true
+        },
+        {
+          "label": "需修改",
+          "inside": true
+        },
+        {
+          "label": "無幫助",
+          "inside": true
+        },
+        {
+          "label": "清除",
+          "inside": true
+        },
+        {
+          "label": "保存備註／重試保存",
+          "inside": true
+        },
+        {
+          "label": "複製成果",
+          "inside": true
+        }
+      ],
+      "missing_controls": [],
+      "result_scrollbar_visible": true,
+      "draft_preserved": true
+    },
+    {
+      "theme": "light",
+      "requested_size": "1050x700",
+      "actual_size": [
+        1050,
+        720
+      ],
+      "controls": [
+        {
+          "label": "可採用",
+          "inside": true
+        },
+        {
+          "label": "需修改",
+          "inside": true
+        },
+        {
+          "label": "無幫助",
+          "inside": true
+        },
+        {
+          "label": "清除",
+          "inside": true
+        },
+        {
+          "label": "保存備註／重試保存",
+          "inside": true
+        },
+        {
+          "label": "複製成果",
+          "inside": true
+        }
+      ],
+      "missing_controls": [],
+      "result_scrollbar_visible": true,
+      "draft_preserved": true
+    },
+    {
+      "theme": "light",
+      "requested_size": "1280x860",
+      "actual_size": [
+        1280,
+        860
+      ],
+      "controls": [
+        {
+          "label": "可採用",
+          "inside": true
+        },
+        {
+          "label": "需修改",
+          "inside": true
+        },
+        {
+          "label": "無幫助",
+          "inside": true
+        },
+        {
+          "label": "清除",
+          "inside": true
+        },
+        {
+          "label": "保存備註／重試保存",
+          "inside": true
+        },
+        {
+          "label": "複製成果",
+          "inside": true
+        }
+      ],
+      "missing_controls": [],
+      "result_scrollbar_visible": true,
+      "draft_preserved": true
+    },
+    {
+      "theme": "light",
+      "requested_size": "maximized",
+      "actual_size": [
+        1350,
+        1050
+      ],
+      "controls": [
+        {
+          "label": "可採用",
+          "inside": true
+        },
+        {
+          "label": "需修改",
+          "inside": true
+        },
+        {
+          "label": "無幫助",
+          "inside": true
+        },
+        {
+          "label": "清除",
+          "inside": true
+        },
+        {
+          "label": "保存備註／重試保存",
+          "inside": true
+        },
+        {
+          "label": "複製成果",
+          "inside": true
+        }
+      ],
+      "missing_controls": [],
+      "result_scrollbar_visible": true,
+      "draft_preserved": true
+    }
+  ]
 }

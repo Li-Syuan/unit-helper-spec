@@ -95,6 +95,14 @@ class WorkflowViews:
 
     def workflow_content(self,record):
         lines=['目標：'+record['goal'],'']
+        task=record.get('task') or {}
+        if task:
+            from .outcomes import OutcomeService
+            outcome=OutcomeService(self.workflows).read(task['id'])
+            lines.extend(['成果摘要 · '+STATES.get(task['state'],task['state']),
+                          'AI 整理，請核對來源 · '+outcome['review'],
+                          ('部分成果（未完成）\n' if outcome['partial'] else '')+outcome['text'],
+                          '使用「查看結果」開啟數值比較、品質回饋及分工紀錄。',''])
         for index,step in enumerate(record.get('steps',[]),1):
             target='核准查詢 '+step.get('query_id','') if step['kind']=='query' else self.workflow_target(step.get('binding'))
             lines.extend([f'{index}. {step["title"]} → {target}',step.get('instruction',''),
@@ -395,11 +403,18 @@ class WorkflowViews:
         if window:window.destroy()
 
     def show_workflow_result(self,tid):
-        task=self.store.task(tid);w,body=self.workflow_window('多助理執行結果')
+        from .outcome_views import build_outcome
+        task=self.store.task(tid)
+        w=tk.Toplevel(self.root);apply_child_icons(w);w.title('多助理執行結果');w.transient(self.root)
+        self.display.size_window(w,900,700,(600,480));w.conversation_source=self.conversation
+        body=ttk.Frame(w,padding=8);body.pack(fill='both',expand=True)
+        footer=ttk.Frame(w,padding=6);footer.pack(side='bottom',fill='x',before=body)
         steps=self.workflows.get_task_steps(tid)
         notebook=ttk.Notebook(body);notebook.pack(fill='both',expand=True)
+        outcome=build_outcome(notebook,self,tid);notebook.add(outcome,text='成果')
+        w.outcome_view=outcome
         presenter=WorkflowPresenter(notebook,self,self.show_workflow_step)
-        notebook.add(presenter,text='分工與成果')
+        notebook.add(presenter,text='分工紀錄')
         spec=task['payload']['workflow']
         presenter.update_record(dict(spec,task=task,steps_status=steps))
         full=ttk.Frame(notebook);notebook.add(full,text='完整成果文字')
@@ -407,14 +422,17 @@ class WorkflowViews:
         scrollbar=ttk.Scrollbar(full,command=text.yview);scrollbar.pack(side='right',fill='y')
         text.configure(yscrollcommand=scrollbar.set)
         lines=[STATES.get(task['state'],task['state']),task.get('error') or '',(task.get('result') or {}).get('report','')]
+        source_button=ttk.Menubutton(footer,text='查看原始表格 ▾')
+        source_menu=tk.Menu(source_button,tearoff=False);source_button.configure(menu=source_menu)
         for step in steps:
             lines.extend(['\n步驟 '+step['step_id']+' · '+STATES.get(step['state'],step['state']),
                           (step.get('output') or {}).get('text',''),step.get('error') or '',
                           '本步輸入：'+self.workflow_output(step.get('input'))])
             if (step.get('output') or {}).get('query_result'):
-                self.button(w,'查看 '+step['step_id']+' 原始表格',lambda s=step:self.show_workflow_table(s['output']['query_result']),'Compact.TButton').pack(side='bottom',pady=3)
+                source_menu.add_command(label='查看 '+step['step_id']+' 原始表格',command=lambda s=step:self.show_workflow_table(s['output']['query_result']))
+        if source_menu.index('end') is not None:source_button.pack(side='left',padx=3)
         text.insert('1.0','\n'.join(lines))
-        self.button(w,'複製成果',lambda:self.clipboard((task.get('result') or {}).get('report') or text.get('1.0','end-1c')),'Compact.TButton').pack(side='bottom',pady=3)
+        self.button(footer,'複製成果',lambda:self.clipboard((task.get('result') or {}).get('report') or text.get('1.0','end-1c')),'Compact.TButton').pack(side='right',padx=3)
         text.configure(state='disabled');self.appearance.apply(w);w.workflow_steps_view=presenter
         return w
 

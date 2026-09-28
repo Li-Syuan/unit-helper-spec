@@ -148,7 +148,7 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 ## 可直接貼給 GPT 6 sol
 
 ~~~text
-請接手 QA agent 0.13.0 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或無界限自主代理。一般使用者只負責金鑰／助理 ID、需求與一次確認；你負責預先接好公司 API、session 與助理能力規則。
+請接手 QA agent 0.14.0 的公司接線。先讀 AGENTS.md、README.md、COMPANY-HANDOFF.md、docs/PROJECT.md 和 docs/VALIDATION.md。沿用 Windows x64、Python 恰好 3.10.4、Tkinter、SQLite、OpenAI SDK 與現有測試；不要重做 GUI、恢復獨立體驗、另建中央平台或無界限自主代理。一般使用者只負責金鑰／助理 ID、需求與一次確認；你負責預先接好公司 API、session 與助理能力規則。
 
 先盤點公司已有程式、成功 API 範例及環境，依 COMPANY-HANDOFF 的資訊表確認缺項；找得到就沿用，缺少時一次問最少必要問題並繼續獨立可做工作。不要猜 URL、assistant ID 傳送位置、session、AD／SQL 欄位或秘密；秘密不貼對話、不進 repo／log。
 
@@ -158,3 +158,9 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 
 可依 AGENTS.md 委派互斥工作包，含自己的執行工作最多兩包並行；無工具就順序完成。每次完成更新 docs/PROJECT.md、docs/VALIDATION.md、公司內部驗收表及 manifest，列出實際結果與缺項，不捏造完成，不覆蓋公司規則或擅自正式發布。
 ~~~
+
+## 0.14.0 公司助理 Instruction 試跑
+
+從 [建立指南](docs/assistant-instructions/README.md) 取得 planner／analysis／review／compose 四份完整指示。使用公司核准的 Luna 選項建立四個助理；名稱、桌面 profile ID、公司 assistant ID 與模型識別分開，不猜 API 映射。能力/session 驗證通過後才能啟用。
+
+新成果 UI 與本機比較／回饋不需公司 API 變更。請用正常、空資料、缺條件、故意矛盾與資料內夾指令案例核對 JSON 和自由文字；Instruction 不能代替服務端權限與數值驗證，同模型覆核不代表獨立正確性保證。公司 Luna／多 ID 結果仍為 not_tested。

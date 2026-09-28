@@ -1,4 +1,4 @@
-# QA agent 0.13.0：產品與架構
+# QA agent 0.14.0：產品與架構
 
 本文件是現行行為契約。程式與 UI 已完成本機功能；公司接線見 [工作單](../COMPANY-HANDOFF.md)，實測與未測項目見 [驗證摘要](VALIDATION.md)。
 
@@ -155,3 +155,11 @@ WorkflowService 使用 create/discuss/get/list 管需求討論；discuss 是明�
 任一步驟失敗保留成果，下游 blocked；重試明確建立新工作，只沿用連續成功前置結果，不重查已取得數據。取消停止後续派發並阻擋晚到結果。排程 query_id=WORKFLOW，parameters 的 _workflow 綁定流程版本；沿用現有 occurrence、防重、漏跑及通知，成功後才允許建立。排程失敗或能力失效暫停，人工處理後重啟；程式重新啟動不自動續接中斷工作。
 
 workflow_views 為同頁可選取文字、步驟編輯及進度，模式依對話保存個人偏好。規劃討論不送聊天歷史或附件，使用者需明確貼入允許的文字。UI 不保管或直接派發工具。
+
+## 0.14.0 成果與品質回饋
+
+OutcomeService（outcomes.py）只讀既有 task／workflow_steps，提供 read、compare、feedback、save_feedback、clear_feedback；outcome_views.py 呈現成果優先頁面與背景保存回饋。不改模型派發與公司 adapter。schema 6 的 outcome_feedback 按 task_id 唯一保存 rating、note（最多2000字）、建立及更新時間；外鍵隨工作刪除。schema 1～5 先一致性備份，再交易升級。來源對話刪除保留獨立流程與回饋。
+
+比較選此前完成且較早建立的成功工作，嚴格同流程／修訂／planner及子助理綁定／步驟與非日期條件；排程僅同 schedule_id，手動僅手動。前一日使用 catalog 日期映射忽略變動日期，固定日期全比對。各步從快照重新取得精確合計與筆數；不混來源、不比較自由文字、不送模型、不產生異常恢復判斷。截斷、空結果、來源欄位不符或無效數值明示不可比較。
+
+成果文字保留完整原文，Instruction 使用結論／需要注意／待確認與決策標題；不依任意模型文字推定結構。覆核顯示「流程覆核通過」仍需核對來源。部分成果和成功分開，僅已結束且有文字的工作可評價。

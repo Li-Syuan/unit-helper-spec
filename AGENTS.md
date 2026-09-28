@@ -82,3 +82,7 @@ Profiles.workflow_catalog／workflow_binding／validate_workflow／workflow_call
 子代理只收已批准的指定來源。查詢向下游只送程式合計及 metadata，原始表格本機保留；精確 facts 與來源不符即失敗，但不能宣稱已驗證自由文字全部正確。覆核 needs_attention 停止後續。成功流程才能建立持續授權排程；重用固定版本，App 須開啟。失敗、失效綁定、關閉時未完成流程會暫停相關排程。無自動重規劃、無自動 retry、無生圖或 shell。
 
 Groq 試用使用同模型的 planner／analysis／review／compose 四個隔離角色。scripts/check-workflows.py --live 才啟動最多四次合成請求，僅暫存資料，不動使用者排程。驗證入口：tests.test_workflows、tests.test_workflow_profiles、tests.test_workflow_ui；真公司多ID與使用性另驗收。
+
+## 0.14.0 成果契約
+
+當前版本0.14.0/schema6，outcomes.py 只讀快照及保存本機品質回饋；outcome_views.py 成果優先，背景寫回饋不派發工作。compare 嚴格同流程修訂／綁定／排程／非日期條件，前一日僅忽略宣告日期映射；Decimal 保留精度，空資料不推零，數值差異不代表異常。歷史 schema 1～5 升級前備份且交易遷移。docs/assistant-instructions 四角色指示沿用 JSON 契約，不能因 prompt 而跳過公司能力驗收或宣稱零幻覺。
