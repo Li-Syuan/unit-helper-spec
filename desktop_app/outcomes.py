@@ -74,6 +74,23 @@ class OutcomeService:
                     step['parameters'].pop(key, None)
         return spec
 
+    def _schedule_scope(self, task):
+        # Older workflow retries retain the parent request ID, not schedule_id.
+        # Follow that immutable lineage rather than classifying a retry as manual.
+        seen = set()
+        while True:
+            if task['id'] in seen:
+                raise ValueError('重試來源無法驗證。')
+            seen.add(task['id'])
+            if task.get('schedule_id'):
+                return task['schedule_id']
+            request = task.get('request_id') or ''
+            if not request.startswith('workflow-retry:'):
+                return None
+            task = self.store.task(request[len('workflow-retry:'):])
+            if not task or task['kind'] != 'workflow':
+                raise ValueError('重試來源無法驗證。')
+
     def compare(self, tid):
         current = self.read(tid)
         task = current['task']
@@ -83,13 +100,14 @@ class OutcomeService:
             return result
         try:
             signature = self._signature(task)
+            scope = self._schedule_scope(task)
             with self.store.connection() as db:
                 candidates = db.execute("SELECT * FROM tasks WHERE kind='workflow' AND state='succeeded' AND id<>? AND finished_at<=? AND created_at<? ORDER BY finished_at DESC,created_at DESC,id DESC",
                     (tid, task['finished_at'], task['created_at'])).fetchall()
             baseline = None
             for row in candidates:
                 previous = self.store.task(row['id'])
-                if previous.get('schedule_id') != task.get('schedule_id'):
+                if self._schedule_scope(previous) != scope:
                     continue
                 if self._signature(previous) == signature:
                     baseline = self.read(previous['id'])

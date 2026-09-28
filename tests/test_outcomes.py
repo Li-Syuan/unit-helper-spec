@@ -132,3 +132,10 @@ class OutcomeTests(unittest.TestCase):
             db.execute('DELETE FROM occurrences WHERE task_id=?',(b,))
             db.execute('DELETE FROM tasks WHERE id=?',(b,))
             self.assertEqual(db.execute('SELECT count(*) FROM outcome_feedback WHERE task_id=?',(b,)).fetchone()[0],0)
+
+    def test_schedule_retry_keeps_comparison_scope(self):
+        service,a,b=self.run_pair();sid=self.store.task(b)['schedule_id']
+        self.fail_role='review';failed=self.engine.run_schedule_now(sid,'failed');self.wait(failed)
+        self.fail_role=None;retry=self.service.retry(failed,'retry');self.wait(retry)
+        self.assertIsNone(self.store.task(retry)['schedule_id'])
+        self.assertEqual(service.compare(retry)['baseline_id'],b)
