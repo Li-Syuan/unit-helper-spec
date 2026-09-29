@@ -39,7 +39,13 @@ def read_key(path=None):
     if len(values) != 1 or not values[0] or len(values[0]) > 4096 or any(
             not (33 <= ord(c) <= 126) or c in "\"'`$" for c in values[0]):
         raise GatewayError('請在專案 .env 填一筆 GROQ_API_KEY；不能空白、重複或使用變數展開。')
-    return values[0]
+    # Use the approved parser without interpolation or os.environ mutation.
+    from dotenv import dotenv_values
+    from io import StringIO
+    parsed=dotenv_values(stream=StringIO(text),interpolate=False).get('GROQ_API_KEY')
+    if parsed != values[0]:
+        raise GatewayError('.env 的 GROQ_API_KEY 需為單一明確字面值。')
+    return parsed
 
 
 class GroqAssistant:

@@ -1,5 +1,8 @@
 # Runtime dependencies; exact tested transitive versions are in requirements.lock.
-openai==2.54.0
-httpx==0.28.1
-
-keyring==25.7.0
+openai>=1.40,<3
+httpx>=0.27,<1
+python-dotenv>=1,<2
+keyring>=25,<27
+pywebview>=6,<7
+markdown-it-py>=4,<5
+bleach>=6,<7

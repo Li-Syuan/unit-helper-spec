@@ -1,10 +1,20 @@
-# QA agent 0.14.0：產品與架構
+# 0.15.0 當前介面與離線對話
+
+主入口是 pywebview + WebView2，HTML/CSS/JS 全部隨專案提供，無 CDN／遠端字型／遠端頁面。`web_app.py` 管宿主，`web_bridge.py` 僅允許列舉命令，`web_session.py` 組合既有 Engine／Profiles／Store。`web_render.py` 使用 markdown-it-py 與 bleach，回覆移除腳本、屬性、圖片及連結，不執行模型 HTML。Tkinter 保留 `--ui tk`／start-tk.bat。
+
+新主畫面是無附件、完全離線的兩模式對話。`dialogue_provider.py` 是服務 Protocol、本機示範與明確拒絕連線的公司 provider；`dialogue_contracts.py` 驗證助理、草稿和每日／每週／指定日期格式；`dialogue_service.py` 管多輪、修訂、十分鐘預覽及明確確認；`dialogue_store.py` 保存獨立 `dialogue-v1.sqlite3`（schema1）。公司端點、認證、ID及格式未確認前不建立真實 client，失敗不自動換示範。
+
+新任務的 enabled 固定0且有資料庫 CHECK，既有 Engine／排程器不讀這個資料庫，因此『儲存』不代表能執行。正文中的檔案路徑或命令只是文字，不觸發檔案讀取或 shell。改模式／助理開始新thread，不永久刪歷史。錯誤不寫入半套訊息、草稿或任務；確認失敗可重試，同修訂只存一次。
+
+既有主要資料庫仍 schema6，多助理、Plan、防重、取消、排程及公司 adapter 契約不變，位於進階工作區。下方原生 Tk 功能說明同時作為備用介面的契約。
+
+# 既有進階功能與 Tkinter 備用架構
 
 本文件是現行行為契約。程式與 UI 已完成本機功能；公司接線見 [工作單](../COMPANY-HANDOFF.md)，實測與未測項目見 [驗證摘要](VALIDATION.md)。
 
 ## 分層
 
-0.13.0 新增 `navigation.py` 原地收合側欄、`team_views.py` 助理卡片與既有管理入口、`workflow_presenter.py` 純讀取分工清單。頁面仍為原生 Tkinter，沒有 WebView、套件或 schema 變更。團隊狀態依 Profiles 真實設定顯示；UI 不建立能力驗證紀錄，不因進入團隊或選步而呼叫模型。
+Tkinter 備用介面的 `navigation.py` 管理原地收合側欄，`team_views.py` 管理助理卡片與既有管理入口，`workflow_presenter.py` 純讀取分工清單。新版 WebView 透過橋接沿用相同服務。團隊狀態依 Profiles 真實設定顯示；UI 不建立能力驗證紀錄，不因進入團隊或選步而呼叫模型。
 
 一般使用者路徑是「說需求 → 核對分工 → 一次確認執行」。主要按鈕旁明示此版本資料傳送，點擊後才提交 consent；服務層修訂、綁定、防重不变，未來修訂不沿用授權。公司 API 與能力啟用仍由公司接線者負責，不承諾任意 assistant ID 都可直接自動協作。
 

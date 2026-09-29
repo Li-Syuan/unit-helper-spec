@@ -3,7 +3,7 @@ $ErrorActionPreference='Stop'
 $Project=Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $Project
 $PythonPath=(Resolve-Path -LiteralPath $PythonExe).Path
-& $PythonPath -c "import sys,struct,tkinter; assert sys.platform=='win32'; assert sys.version_info[:3]==(3,10,4),sys.version; assert struct.calcsize('P')*8==64; print(sys.executable); print(sys.version); print('Tk',tkinter.TkVersion)"
+& $PythonPath scripts/check-python.py
 if ($LASTEXITCODE -ne 0) { throw 'Requires Windows x64 Python exactly 3.10.4 with Tcl/Tk.' }
 if ($Environment -notmatch '^\.venv(?:-[a-zA-Z0-9]+)?$') { throw 'Environment must be .venv or .venv-name inside this project.' }
 $EnvPath=Join-Path $Project $Environment

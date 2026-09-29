@@ -63,6 +63,8 @@ def inspect_environment(project=PROJECT, config_path=None, data_path=None, envir
         finally:
             root.destroy()
     check("tk", "tk_unavailable", tk_available)
+    from desktop_app.web_environment import runtime_available
+    check('webview2','webview2_or_dotnet_missing',runtime_available)
     def dependencies():
         installed = {canonical(d.metadata["Name"]): d.version for d in importlib.metadata.distributions()}
         locked = locked_packages(Path(project) / "requirements.lock")
@@ -181,7 +183,7 @@ def main(argv=None):
             print("report_write_failed", file=sys.stderr)
             return 2
     if args.human:
-        labels = {"python":"Python 3.10.4", "architecture":"64 位元架構", "platform":"Windows 平台", "tk":"Tk 視窗元件",
+        labels = {"python":"Python 3.10.4", "architecture":"64 位元架構", "platform":"Windows 平台", "tk":"Tk 視窗元件",'webview2':'WebView2 與 .NET Framework',
                   "dependencies":"套件與鎖檔", "configuration":"設定格式", "credential_presence":"必要環境變數",
                   "assistant_profiles":"助理清單", "profile_credential":"助理金鑰", "assistant_mapping":"公司請求格式",
                   "ca_bundle":"CA 憑證", "data_directory":"資料目錄", "company_chatbot":"公司助理", "company_identity":"AD 與名單",

@@ -101,9 +101,18 @@ def build_bundle(folder, lock):
     if folder.exists():
         raise BundleError("bundle_destination_exists")
     folder.mkdir(parents=True)
+    # pywebview's tiny pure-Python proxy_tools dependency only publishes an sdist.
+    # Build that one pinned dependency on this verified Windows/Python host; all
+    # other packages must still have compatible binary wheels. Install remains
+    # offline-only and verifies the resulting wheel's manifest hash.
+    packages=locked_packages(lock)
+    if 'proxy-tools' in packages:
+        command=[sys.executable,'-m','pip','wheel','--no-deps','--wheel-dir',str(folder),
+                 'proxy_tools=='+packages['proxy-tools']]
+        if subprocess.run(command).returncode:raise BundleError('proxy_wheel_build_failed')
     command = [sys.executable, "-m", "pip", "download", "--disable-pip-version-check", "--only-binary=:all:",
                "--no-deps", "--platform", "win_amd64", "--python-version", "3.10.4", "--implementation", "cp",
-               "--abi", "cp310", "--dest", str(folder), "--requirement", str(lock)]
+               "--abi", "cp310", "--find-links",str(folder),"--dest", str(folder), "--requirement", str(lock)]
     if subprocess.run(command).returncode:
         raise BundleError("wheel_download_failed")
     manifest = manifest_for(folder, lock)

@@ -1,3 +1,15 @@
+# 0.15.0 WebView 開發與部署
+
+使用七個公司核准直接依賴，精確版本與41個套件以requirements.lock為準。主入口 `python -m desktop_app`；備用 `python -m desktop_app --ui tk`。新主畫面是完全離線示範兩模式，舊進階介面沿用原服務。
+
+Windows需 WebView2 Runtime、.NET Framework 4.6.2以上，依公司流程提供；wheels不包含Windows元件。doctor新增唯讀偵測。缺元件時明示錯誤並提供Tk入口，不降回IE、不改TLS或防毒設定。
+
+已有本機環境更新：`.venv/Scripts/python.exe -m pip install -r requirements.lock`；有核准CA依下方既有方式設定。離線先執行 `scripts/offline_bundle.py verify --directory wheelhouse`，通過後以 `--no-index --no-deps --find-links wheelhouse -r requirements.lock` 安裝。新機仍用setup.ps1建乾淨環境，不能覆寫既有venv。
+
+prepare-offline現只對沒有wheel發行的固定proxy_tools==0.1.0建立純Python wheel，其餘使用Windows相容binary wheels；全部納入manifest及lock指紋，安裝不編譯、不連外補件。
+
+驗證：`python -m unittest tests.test_dialogue tests.test_web -v`；`python scripts/web-smoke.py`用暫存合成資料及明示mock回覆操作真正WebView2，透過CapturePreview存畫面，**不呼叫模型、不讀使用者資料**。完整回歸仍執行scripts/test.ps1。真IME、人工使用性與公司多ID另驗收。
+
 # 開發與部署指南
 
 QA agent 0.13.0。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。

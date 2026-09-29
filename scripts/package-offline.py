@@ -1,0 +1,73 @@
+"""Package committed source and verified wheels; exclude all local credentials/data."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import zipfile
+
+root=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(root))
+from desktop_app import __version__
+from offline_bundle import verify_bundle
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--wheels',type=Path,required=True)
+    args=parser.parse_args()
+    verified=verify_bundle(args.wheels,root/'requirements.lock')
+    if subprocess.check_output(['git','status','--porcelain'],cwd=root).strip():
+        raise SystemExit('Commit reviewed source before creating the delivery package.')
+    commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+    names=filter(None,subprocess.check_output(['git','ls-files','-z'],cwd=root).decode('utf-8').split('\0'))
+    output=root/'artifacts'/'offline'
+    name=f'QA-agent-{__version__}-win64-py3104-offline'
+    package=output/name
+    archive=output/(name+'.zip')
+    if package.exists() or archive.exists():raise SystemExit('Delivery already exists; do not overwrite it.')
+    package.mkdir(parents=True)
+    for name in names:
+        path=Path(name)
+        if path.is_absolute() or '..' in path.parts or path.parts[0].startswith(('.env','.venv','.runtime','artifacts','company_local')):
+            raise SystemExit('Unexpected private path in tracked delivery')
+        source=root/path
+        if source.is_symlink():raise SystemExit('Linked source not allowed')
+        target=package/path;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(source,target)
+    shutil.copytree(args.wheels,package/'wheelhouse')
+    verify_bundle(package/'wheelhouse',package/'requirements.lock')
+    installer='''param([string]$PythonExe='')
+$ErrorActionPreference='Stop'
+Set-Location -LiteralPath $PSScriptRoot
+if (-not $PythonExe) { $PythonExe=(Read-Host 'Python 3.10.4 x64 python.exe path').Trim().Trim('"') }
+if (-not $PythonExe) { throw 'Python path required.' }
+& (Join-Path $PSScriptRoot 'scripts/setup.ps1') -PythonExe $PythonExe -OfflineBundle (Join-Path $PSScriptRoot 'wheelhouse')
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+'''
+    (package/'install-offline.ps1').write_text(installer,encoding='utf-8-sig')
+    (package/'install-offline.bat').write_text('@echo off\npowershell.exe -NoProfile -File "%~dp0install-offline.ps1"\nset "QA_INSTALL_RESULT=%ERRORLEVEL%"\npause\nexit /b %QA_INSTALL_RESULT%\n',encoding='ascii')
+    (package/'OFFLINE-START-HERE.txt').write_text(
+        f'QA agent {__version__}\n來源提交：{commit}\n\n'
+        '1. 解壓縮完整資料夾，不要直接在ZIP中執行。\n'
+        '2. 公司提供Python恰好3.10.4 x64完整安裝（含Tk）、WebView2 Runtime與.NET Framework 4.6.2以上。\n'
+        '3. 雙擊install-offline.bat，輸入python.exe完整路徑。已有.venv時拒絕覆寫。\n'
+        '4. 雙擊start-app.bat；WebView2尚未安裝時使用start-tk.bat備用。\n'
+        '5. 新主畫面完全離線示範，確認儲存的任務保持未啟用，不能自動執行。公司接線見COMPANY-HANDOFF.md。\n\n'
+        '含完整已提交原始碼、文件、測試及41個鎖定wheels。沒有Python／WebView2／.NET安裝程式、API key、.env、.venv、對話或SQLite。\n'
+        '套件缺件、雜湊或lock不符立即停止，不連外補件。不更改執行政策、防毒或TLS。\n'
+        '本機／公司與未測限制見docs/VALIDATION.md；目前剪貼簿讀回尚未通過，不宣稱全項通過。\n'
+        'MANIFEST.sha256驗證原始碼；wheelhouse/manifest.json驗證wheels；PACKAGE-CONTENTS.sha256驗證整包。雜湊不是數位簽章。\n',encoding='utf-8-sig')
+    metadata={'version':__version__,'source_commit':commit,'wheels':len(verified['files']),'lock_sha256':verified['lock_sha256']}
+    (package/'PACKAGE-METADATA.json').write_text(json.dumps(metadata,indent=2),encoding='utf-8')
+    contents=''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.relative_to(package).as_posix()+'\n' for p in sorted(package.rglob('*')) if p.is_file())
+    (package/'PACKAGE-CONTENTS.sha256').write_text(contents,encoding='utf-8')
+    with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as target:
+        for path in sorted(package.rglob('*')):
+            if path.is_file():target.write(path,path.relative_to(package))
+    metadata.update(bytes=archive.stat().st_size,sha256=hashlib.sha256(archive.read_bytes()).hexdigest())
+    archive.with_suffix('.json').write_text(json.dumps(metadata,indent=2),encoding='utf-8')
+    print(json.dumps(metadata))
+
+if __name__=='__main__':main()

@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "checks": [
+    "bridge_ready",
+    "provider_failure_preserves_input_and_messages_no_fallback",
+    "offline_multiturn_mode_reset_questions_preview_cancel_and_disabled_save",
+    "assistant_switch_starts_empty_view",
+    "chat_sent_from_dom",
+    "three_click_query_zero_dispatch_before_confirm",
+    "workflow_explicit_approval_and_outcome_feedback_mock",
+    "untrusted_navigation_blocked"
+  ],
+  "viewport": {
+    "width": 1552,
+    "height": 906,
+    "devicePixelRatio": 1.6500000953674316
+  },
+  "capture_method": "WebView2 CapturePreview (application content only)",
+  "company_services": "not_tested",
+  "ime": "not_tested",
+  "manual_usability": "not_tested",
+  "clipboard": "failed: Windows error 5"
+}

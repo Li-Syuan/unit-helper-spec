@@ -1,3 +1,11 @@
+# 0.15.0 新增規則（優先於下方舊版介面限制）
+
+使用者已允許pywebview>=6,<7、markdown-it-py>=4,<5、bleach>=6,<7、python-dotenv>=1,<2。WebView2為主介面、Tkinter保留--ui tk備用。宿主／bridge／session／render與web_assets分層，不從模型載入HTML或外部URL，禁止任意bridge方法、檔案路径或eval命令。
+
+新主畫面無附件、一般聊天／建立任務兩模式，始終明示離線示範。dialogue_provider/company provider未完成正式契約保持停用、不fallback；dialogue_contracts嚴格驗證助理、欄位與schedule。dialogue_store獨立schema1（主Store仍schema6），task_drafts.enabled CHECK=0，不能接到原scheduler。只有dialogue_service.confirm可儲存完整且預覽未過期的草稿。切模式或助理開新thread，不永久刪歷史。既有多助理与排程保留進階入口。
+
+真WebView視覺驗證使用scripts/web-smoke.py合成資料及mock回覆，CapturePreview只擷取App內容；GUI執行不代表人工直觀性、IME、Clipboard或公司實測通過。只在明確驗證後發布，保留失敗紀錄。
+
 # QA agent 開發與公司接手守則
 
 ## 當前範圍

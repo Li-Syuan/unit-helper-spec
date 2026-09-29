@@ -1,3 +1,15 @@
+# QA agent 0.15.0 最新驗證
+
+日常 `.venv` 與純離線重建 `.venv-offlineverify` 均使用 **Python恰好3.10.4 x64**，完整回歸各 **409項：408通過、1錯誤、0跳過**。唯一錯誤是既有Windows剪貼簿讀回 `OpenClipboard failed (Windows error 5)`，未修改測試／加skip／冒稱通過。當時桌面處於鎖定狀態；這是觀察條件，沒有宣稱已證明根因。解鎖後仍需重測。紀錄：[日常](validation/web-development.json)、[離線](validation/web-offline.json)。
+
+doctor的Python／Tk／WebView2／.NET／41個鎖定套件及pip check通過；離線安裝使用--no-index、--no-deps、--no-cache-dir，沒有借用外部site-packages。鎖檔最後只統一LF換行，版本未再改變；wheel manifest已依最終指紋重算並驗證。已確認兩個暫存驗證環境沒有執行程序或連結跳轉並清除，只留日常.venv與其基礎直譯器.runtime/python3104。
+
+新兩模式11個服務案例通過：多輪、切模式／助理隔離、四階追問、預覽零存檔、確認固定不啟用、取消、改稿失效、防重、儲存失敗、正式provider停用無fallback、不可信欄位與排程格式拒絕。Web橋接13項涵蓋既有Plan、查詢、轉交、草稿、防重與純文字Markdown。
+
+以日常環境真正啟動WebView2並操作DOM，驗證：新主畫面多輪→切模式清畫面→四項追問→預覽→取消零任務→確認後只保存enabled=0；進階三次查詢旅程在批准前零派發；明示合成mock子代理的分工批准→成果→回饋。沒有外部模型／公司呼叫。畫面用WebView2 CapturePreview擷取，已檢視深／淺、一般1280×860、小尺寸1050×700與最大化內容。這不是Windows框線外觀、真IME、人工使用性或公司服務驗收。證據：[介面摘要](validation/web-display.json)。
+
+公司API／AD／Oracle／多assistant ID、真人IME／Excel、人工走查及Norton成效維持 **not_tested／未能確認**。不能由本機示範通過推定正式服務可使用。下面保留上一個發布版的基準證據；本次以此節為準。
+
 # QA agent 0.14.0 驗證摘要
 
 ## 0.14.0 最新驗證
