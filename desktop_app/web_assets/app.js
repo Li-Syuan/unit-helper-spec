@@ -55,11 +55,13 @@ async function showBriefing(existingTaskId=null){
  }
  function ended(status){
   body.replaceChildren(badge(status.state));
+  const searches=status.search_activity||[];
+  body.append(el('p','muted',searches.length?'本次搜尋紀錄：'+searches.map(c=>c.name+' · '+(c.state==='completed'?(c.submitted?'結果已交回助理':'已取得結果，尚未確認提交'):c.state==='unknown'?'結果未明，不自動重送':'尚未派發')).join('；'):'本次沒有本機搜尋執行收據；不能據此認定已取得即時資料。'));
   if(status.error)body.append(el('p','error',status.error));
   const text=typeof status.result?.text==='string'?status.result.text:'';
   if(text)body.append(el('div','plain-text',text));
   if(status.state!=='succeeded'||!text){
-   body.append(el('p','notice',status.state==='cancelled'?'已取消；不會啟用每日工作。取消不保證遠端立即停止。':'本次日報未完成，沒有啟用每日工作。若助理要求 pluginapi，現階段會停止，不會自行執行工具。'));
+   body.append(el('p','notice',status.state==='cancelled'?'已取消；不會啟用每日工作。取消不保證遠端立即停止。':'本次日報未完成，沒有啟用每日工作。只有核准的唯讀搜尋工具可執行；未知工具或參數不符時會停止，請查看原因後再處理。'));
    modalButtons(close(),button('公司啟用檢查',showCompanyReadiness));return;
   }
   body.append(el('p','notice','AI 日報內容與來源需要核對。產生文字不代表搜尋能力已獨立驗收，請確認資料日期、來源及台股／美股／總經內容。'));
@@ -111,6 +113,8 @@ async function showBriefing(existingTaskId=null){
    const draft=await call('briefing_preview',{profile_id:profile.value,prompt:prompt.value,time_hhmm:when.value});if(!active())return;
    clock=draft.time_hhmm;
    previewArea.replaceChildren(el('h3','','尚未執行'),el('p','plain-text','目的助理：'+draft.assistant_name+'\n每日時間：'+draft.time_hhmm+'（台北）'),el('div','plain-text',draft.prompt),el('p','notice',draft.message||'按「現在試跑」才會將上述需求傳送給公司助理；不會自動啟用排程。'));
+   previewArea.append(el('p','plain-text',Array.isArray(draft.search_tools)&&draft.search_tools.length?'本次允許的搜尋工具：'+draft.search_tools.join('、'):'本次未開放搜尋工具；只取得文字回覆，不能視為已查到即時資料。'));
+   if(draft.search_tools?.length)previewArea.append(el('p','muted','搜尋上限：每批4個工具、最多3批、總等待600秒；单次工具回覆超128KiB即停止，不截斷。'));
    modalButtons(close(),button('修改需求',()=>{lock(false);previewArea.replaceChildren();modalButtons(close(),previewButton());}),button('現在試跑',async()=>{
     modalButtons(close());previewArea.append(el('p','muted','正在提交試跑…'));
     try{const result=await call('briefing_run',{token:draft.token});if(!active())return;taskId=result.task_id;await poll();await refresh();}
@@ -131,11 +135,62 @@ function companyProbeSection(body,version){
  body.append(section);
  if(!profiles.length){section.append(el('p','notice','尚無已啟用的公司助理。請先新增公司的搜尋 Assistant ID。'),button('新增公司助理',()=>readinessDestination('team')));return;}
  const select=field(section,'選擇公司搜尋助理',profiles[0].id,'text',profiles.map(p=>({value:p.id,label:(p.name||'公司助理')+' · '+p.assistant_id})));
+ const current=el('div');section.append(current);
  const output=el('div');output.setAttribute('aria-live','polite');
+ const active=()=>!S.closing&&version===S.modalVersion&&$('modal').open;
+ const savedPolicies=new Map();
+ let busy=false,clearButton=null;
+ function setBusy(value){busy=value;select.disabled=value;run.disabled=value;if(clearButton)clearButton.disabled=value;}
+ function currentPolicy(){
+  const profile=(S.state?.profiles||[]).find(p=>p.id===select.value),names=savedPolicies.has(select.value)?savedPolicies.get(select.value):(profile?.search_policy?.tools||[]).map(t=>t.name);
+  current.replaceChildren(el('p','plain-text',names.length?'目前核准的搜尋工具：'+names.join('、'):'尚未核准搜尋工具。'));
+  clearButton=null;if(!names.length)return;
+  current.append(el('p','muted','核准只限定可使用範圍，不代表搜尋實測通過。普通聊天與主代理規劃仍不執行搜尋工具。'));
+  clearButton=button('移除搜尋核准',()=>{
+   if(busy)return;
+   const profileId=select.value;
+   current.replaceChildren(el('p','notice','移除後，此助理的新搜尋工作將無法使用這些工具。連線版本會更新，舊 Plan 與排程綁定將失效，需要重新確認；不會刪除既有成果。'));
+   const cancel=button('保留核准',currentPolicy),remove=button('確認移除核准',async()=>{
+    if(busy)return;setBusy(true);cancel.disabled=true;output.replaceChildren();
+    try{await call('search_policy_clear',{profile_id:profileId});savedPolicies.set(profileId,[]);await refresh();if(active()){currentPolicy();output.replaceChildren(el('p','notice','已移除搜尋核准。舊 Plan 需重建；未派發模型或搜尋。'));}}
+    catch(error){if(active()){output.replaceChildren(el('p','error',error.message||'移除失敗，設定未確認變更。請重新檢查。'));cancel.disabled=false;}}
+    finally{if(active())setBusy(false);}
+   });
+   const actions=el('div','card-actions');actions.append(cancel,remove);current.append(actions);cancel.focus();
+  });current.append(clearButton);clearButton.disabled=busy;
+ }
+ function policyChoices(result,profileId){
+  const candidates=Array.isArray(result.search_candidates)?result.search_candidates:[],unsupported=Array.isArray(result.unsupported_tools)?result.unsupported_tools:[];
+  if(unsupported.length){const list=el('ul');unsupported.forEach(tool=>list.append(el('li','plain-text',(tool.name||'未提供名稱')+'：'+(tool.reason||'目前不支援此工具定義'))));output.append(el('h4','','目前不可核准的工具'),list);}
+  if(!candidates.length||typeof result.policy_token!=='string'||!result.policy_token){output.append(el('p','notice','目前沒有可選擇的搜尋工具。請公司確認工具宣告及參數格式；不會自動執行其他工具。'));return;}
+  output.append(el('h4','','選擇公司核准的唯讀搜尋'),el('p','notice','以下僅表示參數格式可驗證，不代表工具用途或能力已經核准。只勾選你確認是唯讀搜尋的工具；不確定時請關閉，向公司確認後再設定。'));
+  const choices=[];
+  for(const tool of candidates){
+   const box=el('div','field'),label=el('label','check-field'),check=el('input');check.type='checkbox';check.dataset.searchTool=tool.name;
+   label.append(check,document.createTextNode(tool.name));box.append(label);
+   if(typeof tool.description==='string')box.append(el('p','plain-text',tool.description));
+   const details=el('details');details.append(el('summary','','查看宣告參數（唯讀）'),el('pre','plain-text',plain(tool.parameters||{})));box.append(details);output.append(box);choices.push([tool.name,check]);
+  }
+  const label=el('label','check-field'),consent=el('input');consent.type='checkbox';consent.dataset.searchConsent='true';label.append(consent,document.createTextNode('我確認所選工具是公司核准的唯讀搜尋，允許在確認的搜尋工作中執行'));output.append(label);
+  output.append(el('p','muted','保存會更新助理連線版本、撤銷既有分工能力驗證，舊 Plan 需重建。保存本身不會呼叫模型、搜尋或啟用排程；此預覽十分鐘內有效。'));
+  const save=button('核准所選搜尋工具',async()=>{
+   if(busy)return;const names=choices.filter(([,check])=>check.checked).map(([name])=>name);
+   if(!consent.checked||!names.length)throw Error('請選擇搜尋工具並確認唯讀搜尋授權。');
+   setBusy(true);consent.disabled=true;choices.forEach(([,check])=>check.disabled=true);
+   try{
+    const saved=await call('search_policy_save',{token:result.policy_token,names,consent:true});savedPolicies.set(profileId,saved.names||names);await refresh();if(!active())return;
+    currentPolicy();output.replaceChildren(el('p','notice','已保存搜尋核准：'+(saved.names||names).join('、')+'。搜尋仍尚未實測，舊 Plan 需重建。'),el('p','muted','下一步試跑財經日報，核對來源與日期，再決定是否建立每日工作。'),button('試跑財經日報',()=>showBriefing(),'button primary'));
+   }catch(error){if(active()){consent.disabled=false;choices.forEach(([,check])=>check.disabled=false);notify(error.message||'核准保存失敗，請重新檢查後重試。',true);}}
+   finally{if(active())setBusy(false);}
+  },'button primary');save.dataset.searchSave='true';save.disabled=true;
+  const update=()=>save.disabled=!consent.checked||!choices.some(([,check])=>check.checked);consent.addEventListener('change',update);choices.forEach(([,check])=>check.addEventListener('change',update));
+  const actions=el('div','card-actions');actions.append(save);output.append(actions);
+ }
  const run=button('檢查搜尋助理連線',async()=>{
+  if(busy)return;
   const profileId=select.value;
   if(!(S.state?.profiles||[]).some(p=>p.id===profileId&&p.id!=='demo'&&p.enabled!==false))throw Error('這位助理已停用或不存在，請關閉後重新檢查。');
-  select.disabled=true;output.replaceChildren(el('p','muted','正在讀取公司助理設定，可能需要約 30 秒。關閉視窗只停止顯示，不能保證中止遠端請求。'));
+  setBusy(true);output.replaceChildren(el('p','muted','正在讀取公司助理設定，可能需要約 30 秒。關閉視窗只停止顯示，不能保證中止遠端請求。'));
   try{
    const result=await call('company_probe',{profile_id:profileId});
    if(S.closing||version!==S.modalVersion||!$('modal').open)return;
@@ -144,14 +199,15 @@ function companyProbeSection(body,version){
    const list=el('ul');
    for(const tool of result.tools){const type=typeof tool.type==='string'?tool.type:'未提供類型',name=typeof tool.name==='string'?tool.name:'';list.append(el('li','plain-text',type+(name?' · '+name:'')));}
    output.append(el('h4','','公司助理宣告的工具'),result.tools.length?list:el('p','muted','未宣告工具；這不代表搜尋能力已驗證。'));
-   if(result.requires_plugin_review||result.tools.some(t=>t.type==='function'))output.append(el('p','notice','搜尋可能需要 pluginapi，尚未授權執行；檢查成功不代表日報成功。工具名稱不代表已核准使用。'));
-   else output.append(el('p','notice','檢查成功不代表搜尋或日報成功；後續仍需確認資料來源與執行結果。'));
+   output.append(el('p','notice','檢查成功不代表搜尋或日報成功。只有另行核准的搜尋工具可在已確認工作中執行；工具名稱不代表已核准使用。'));
+   policyChoices(result,profileId);
   }catch(error){
    if(S.closing||version!==S.modalVersion||!$('modal').open)return;
    output.replaceChildren(el('p','error',error.message||'連線檢查未完成，請檢查設定後重試。'));
-  }finally{if(version===S.modalVersion&&$('modal').open)select.disabled=false;}
+  }finally{if(active())setBusy(false);}
  });
  const tools=el('div','card-actions');tools.append(run);section.append(tools,output);
+ select.addEventListener('change',()=>{output.replaceChildren();currentPolicy();});currentPolicy();
 }
 async function showCompanyReadiness(){
  const body=modal('公司啟用檢查'),version=S.modalVersion;
@@ -178,7 +234,7 @@ async function showCompanyReadiness(){
    if(Object.hasOwn(destinations,check.action))row.append(button(destinations[check.action],()=>readinessDestination(check.action)));
    body.append(row);
   }
-  body.append(el('h3','','下一步'),el('p','plain-text',result.next_step||'請先補齊設定，再由公司完成實際試跑。'),el('p','notice','儲存設定不代表實測通過。公司 API、角色能力與資料查詢仍須實測；pluginapi 尚未開放，這份檢查不代表已可查詢公司資料。'));
+  body.append(el('h3','','下一步'),el('p','plain-text',result.next_step||'請先補齊設定，再由公司完成實際試跑。'),el('p','notice','儲存設定或核准搜尋不代表實測通過。公司 API、角色能力與資料查詢仍須實測；只有核准搜尋可在確認的工作中執行，這份檢查不代表已可查詢公司資料。'));
   modalButtons(button('關閉',closeModal),button('重新檢查',showCompanyReadiness));
  }catch(error){
   if(S.closing||version!==S.modalVersion||!$('modal').open)return;
@@ -221,7 +277,7 @@ async function send(){
  }catch(e){notify(e.message,true);}finally{S.sending=false;if(!S.closing)$('send').disabled=false;}
 }
 function renderWorkflows(data){const panel=$('workflow-panel');panel.replaceChildren();(data.workflows||[]).forEach(w=>{const card=el('div','workflow-card');const top=el('div','card-top');top.append(el('h3','',w.goal||'規劃工作'),badge(w.task?.state||w.state));card.append(top);if(w.error)card.append(el('p','error',w.error));const discussion=w.discussion||[];const latest=discussion.filter(m=>m.role==='assistant').slice(-1)[0];if(latest)card.append(el('div','plain-text',latest.content));if(discussion.length){const history=el('details');history.append(el('summary','','需求討論'));discussion.forEach(m=>history.append(el('p','plain-text',(m.role==='user'?'你：':'規劃助理：')+m.content)));card.append(history);}renderQuestions(card,w.questions);(w.steps||[]).forEach((step,i)=>{const r=el('div','workflow-step');const c=el('div');c.append(el('strong','',step.title),el('p','',step.instruction||'核准查詢'));r.append(el('span','step-number',i+1),c);const actual=(w.steps_status||[]).find(s=>s.step_id===step.id);if(actual)r.append(badge(actual.state));card.append(r);});const tools=el('div','card-actions');if(w.state==='ready'){tools.append(button('檢視並確認',()=>previewWorkflow(w),'button primary'),button('修改步驟',()=>editWorkflow(w)));}if(w.state==='planning'||['queued','running'].includes(w.task?.state))tools.append(button('取消工作',()=>action('workflow_cancel',{wid:w.id})));if(w.task&&['succeeded','failed','cancelled'].includes(w.task.state)){tools.append(button('查看成果',()=>showOutcome(w.task.id),'button primary'));if(w.recovery?.eligible){tools.append(button('檢查遠端狀態',async()=>{const r=await call('workflow_inspect',{task_id:w.task.id});notify(r.message);}),button('繼續工作',()=>confirm('恢復工作','只接續核准版本；結果不明時停止，不自動重送。','確認繼續',()=>action('workflow_resume',{task_id:w.task.id}))),button('放棄恢復',()=>confirm('放棄恢復','保留已有成果，將此工作標示取消。','放棄恢復',()=>action('workflow_abandon',{task_id:w.task.id}))));}else if(w.task.state==='failed')tools.append(button('重試未完成步驟',()=>confirm('重試工作','只重試尚未完成的步驟，已取得資料會保留。','確認重試',()=>action('workflow_retry',{task_id:w.task.id,request_id:rid()}))));if(w.task.state==='succeeded')tools.append(button('設為自動工作',()=>scheduleWorkflow(w)));}card.append(tools);panel.append(card);});(data.actions||[]).filter(a=>a.state!=='cancelled').forEach(a=>panel.append(actionCard(a)));(data.plans||[]).filter(p=>p.conversation_id===S.cid&&['draft','ready','pending'].includes(p.state)).forEach(p=>{const card=el('div','workflow-card');card.append(el('h3','','待確認計畫'),button('檢視計畫',()=>previewPlan(p)));panel.append(card);});}
-async function previewWorkflow(w){const p=await call('workflow_preview',{wid:w.id,revision:w.revision});const body=modal('確認分工與資料範圍');body.append(el('p','notice','尚未執行。確認後，只有核准步驟的指定資料會傳給對應助理。'));body.append(el('div','plain-text',plain(p.steps)));if(p.error)body.append(el('p','error',p.error));modalButtons(button('返回修改',closeModal),...(p.ready===false?[]:[button('確認執行',async()=>{await action('workflow_confirm',{wid:w.id,revision:p.revision});closeModal();},'button primary')]));}
+async function previewWorkflow(w){const p=await call('workflow_preview',{wid:w.id,revision:w.revision});const body=modal('確認分工與資料範圍');body.append(el('p','notice','尚未執行。確認後，只有核准步驟的指定資料會傳給對應助理。'));(p.search_tools||[]).forEach(s=>body.append(el('p','notice',s.step_id+' · '+(s.tools.length?'本步可呼叫核准搜尋：'+s.tools.join('、'):'本步沒有核准搜尋工具，僅取得助理文字。'))));body.append(el('div','plain-text',plain(p.steps)));if(p.error)body.append(el('p','error',p.error));modalButtons(button('返回修改',closeModal),...(p.ready===false?[]:[button('確認執行',async()=>{await action('workflow_confirm',{wid:w.id,revision:p.revision});closeModal();},'button primary')]));}
 function editWorkflow(w){const body=modal('修改分工步驟');body.append(el('p','notice','修改會使舊批准失效。依序保留合法步驟與指定輸入。'));const input=field(body,'步驟 JSON',JSON.stringify(w.steps,null,2),'textarea');input.rows=15;modalButtons(button('取消',closeModal),button('保存修改',async()=>{await action('workflow_update',{wid:w.id,revision:w.revision,steps:JSON.parse(input.value)});closeModal();},'button primary'));}
 async function previewAction(a){const automated=['schedule','report'].includes(a.kind),report=a.kind==='report';const body=modal(automated?'確認啟用自動工作':'確認查詢');body.append(el('p','notice',report?'尚未執行。每次只將核准合計資料傳給試用助理整理日報，應用需保持開啟。':'尚未執行。資料只留在本機，不自動交給助理。'),el('div','plain-text',plain(a.spec||a)));let consent;if(report){const label=el('label','check-field');consent=el('input');consent.type='checkbox';label.append(consent,document.createTextNode('我授權每次執行時持續傳送上述合計資料給指定助理。'));body.append(label);}if(a.error)body.append(el('p','error',a.error));modalButtons(button('返回修改',()=>editAction(a)),...(a.ready===false?[]:[button(automated?'確認啟用':'確認查詢',async()=>{if(report&&!consent.checked)throw Error('請先確認持續傳送授權。');await action('action_confirm',{action_id:a.id,revision:a.revision,consent:report&&consent.checked});closeModal();},'button primary')]));}
 function editAction(a){const body=modal('補齊工作條件');const choices=(S.state.catalog||[]).map(q=>({value:q.id,label:q.name}));const query=field(body,'核准查詢',a.spec?.query_id||choices[0]?.value,'text',choices);const params=el('div');body.append(params);let fields={};function form(){params.replaceChildren();fields={};const q=(S.state.catalog||[]).find(q=>q.id===query.value);Object.entries(q?.parameters||{}).forEach(([k,s])=>{let options=s.options;if(s.type==='boolean')options=[{value:'true',label:'是'},{value:'false',label:'否'}];fields[k]=[field(params,s.label||k,a.spec?.parameters?.[k]??s.default??'',s.type==='date'?'date':s.type==='integer'?'number':'text',options),s];});}query.addEventListener('change',form);form();const automated=['schedule','report'].includes(a.kind);const schedule=automated?scheduleFields(body,a.spec||{}):null;const dates=automated?field(body,'資料範圍',a.spec?.date_mode||'literal','text',[{value:'literal',label:'固定日期'},{value:'previous_day',label:'前一日（需模板支援）'}]):null;modalButtons(button('取消',closeModal),button('預覽',async()=>{const parameters={};for(const[k,[f,s]]of Object.entries(fields))parameters[k]=s.type==='integer'?Number(f.value):s.type==='boolean'?f.value==='true':f.value;const spec={...a.spec,query_id:query.value,parameters,...(schedule?schedule():{}),...(dates?{date_mode:dates.value}:{})};const updated=await call('action_update',{action_id:a.id,revision:a.revision,spec});const p=await call('action_preview',{action_id:a.id,revision:updated.revision});await refresh();await previewAction(p);},'button primary'));}

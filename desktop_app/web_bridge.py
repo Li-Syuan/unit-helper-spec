@@ -78,6 +78,8 @@ class WebBridge:
             'profile_roles':self._profile_roles,'connection_save':self._connection_save,'key_remove':self._key_remove,
             'company_readiness':self._company_readiness,
             'company_probe':self._company_probe,
+            'search_policy_save':self._search_policy_save,
+            'search_policy_clear':self._search_policy_clear,
             'briefing_defaults':self._briefing_defaults,
             'briefing_preview':self._briefing_preview,
             'briefing_run':lambda p:s.briefings.run(p['token']),
@@ -118,7 +120,7 @@ class WebBridge:
         conversation=s.store.conversation(cid)
         messages=[dict(m,html=render_markdown(m['text'])) for m in s.store.messages(cid)]
         profiles=s.profiles.items()
-        profiles=[{k:v for k,v in r.items() if k in {'id','name','assistant_id','notes','enabled','revision','workflow'}} for r in profiles]
+        profiles=[{k:v for k,v in r.items() if k in {'id','name','assistant_id','notes','enabled','revision','workflow','search_policy'}} for r in profiles]
         prefs=load_preferences(s.preferences_path)
         return dict(version=__version__,mode='Groq 外部 AI 試用 · 合成資料' if s.trial else '公司工作區' if s.config['query_mode']!='demo' else '本機示範 · 合成資料',
             theme=load_theme(s.preferences_path),sidebar_collapsed=bool(prefs.get('sidebar_collapsed',False)),
@@ -268,6 +270,16 @@ class WebBridge:
     def _company_probe(self,p):
         if self._s.trial:raise ValueError('請使用正式工作區設定公司助理。')
         return self._s.company_probe.inspect(p['profile_id'])
+
+    def _search_policy_save(self,p):
+        with self._s.engine._lock,self._s.dialogue.lock,self._s.company_probe.condition:
+            self._profile_guard()
+            return self._s.company_probe.approve(p.get('token'),p.get('names'),p.get('consent'))
+
+    def _search_policy_clear(self,p):
+        with self._s.engine._lock,self._s.dialogue.lock,self._s.company_probe.condition:
+            self._profile_guard()
+            return self._s.profiles.set_search_policy(self._s.profiles.snapshot(p['profile_id']),None)
 
     def _briefing_defaults(self,p):
         from .assistant_briefings import DEFAULT_PROMPT

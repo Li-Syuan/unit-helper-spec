@@ -223,7 +223,12 @@ class WorkflowService:
                 if r['questions']:raise ValueError('請先回答主代理的問題。')
                 self.validate_steps(r['steps'])
                 self.previews[wid]=(revision,time.monotonic()+600)
-                return dict(r,ready=True,error='')
+                searches=[]
+                for step in r['steps']:
+                    if step.get('role')=='rag':
+                        profile=self.profiles.validate_workflow(step['binding'],'rag') or {}
+                        searches.append({'step_id':step['id'],'tools':[t['name'] for t in profile.get('search_policy',{}).get('tools',[])]})
+                return dict(r,ready=True,error='',search_tools=searches)
             except ValueError as exc:
                 self.previews.pop(wid,None);return dict(r,ready=False,error=str(exc))
 

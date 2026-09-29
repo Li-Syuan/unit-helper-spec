@@ -1,4 +1,4 @@
-"""Company Assistants protocol: explicit sessions, bounded runs, no plugins.
+"""Company Assistants protocol: explicit sessions and approved search only.
 
 The wire contract follows the supplied company Threads/Messages/Runs sample.
 No company connection has been verified by this implementation's offline tests.
@@ -11,6 +11,7 @@ import uuid
 from urllib.parse import urlsplit
 from .assistant_sessions import AssistantSessions
 from .gateways import GatewayError, PURPOSES, validated_messages
+from .search_tools import policy, arguments, fingerprint, STOPPED
 
 
 def _digest(value):
@@ -81,6 +82,7 @@ class AssistantsGateway:
                                                           follow_redirects=False))
         self.ledger = ledger if isinstance(ledger, AssistantSessions) else AssistantSessions(ledger)
         self.binding = dict(binding)
+        self.search_policy = policy(config.get('search_policy'))
         self.clock = clock or time.monotonic
         self.sleep = sleep or time.sleep
 
@@ -98,7 +100,7 @@ class AssistantsGateway:
             declared=getattr(assistant,'tools',None)
             if not isinstance(declared,list) or len(declared)>128:
                 raise GatewayError('公司工具設定格式不相容；請維護者核對。')
-            tools=[]
+            tools=[];candidates=[];unsupported=[];names=set()
             for tool in declared:
                 kind=getattr(tool,'type',None)
                 if not isinstance(kind,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}',kind):
@@ -109,9 +111,23 @@ class AssistantsGateway:
                     if not isinstance(name,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}',name):
                         raise GatewayError('公司工具名称格式不相容。')
                     item['name']=name
+                    if name in names:raise GatewayError('公司工具名稱重複；未提供核准選項。')
+                    names.add(name)
+                    parameters=getattr(tool.function,'parameters',None)
+                    try:
+                        candidate={'name':name,'parameters':parameters}
+                        description=getattr(tool.function,'description',None)
+                        if description is not None:candidate['description']=description
+                        candidate=policy({'tools':[candidate]})['tools'][0]
+                        candidates.append(candidate);item['parameters']=candidate['parameters']
+                    except GatewayError:
+                        unsupported.append({'name':name,'reason':'參數 schema 不在目前支援範圍；不得核准或執行。'})
+                else:
+                    unsupported.append({'name':kind,'reason':'目前只開放核准的 function 搜尋工具。'})
                 tools.append(item)
             plugins=any(t['type']=='function' for t in tools)
             return {'connection':'passed','search':'not_tested','tools':tools,
+                'search_candidates':candidates,'unsupported_tools':unsupported,
                 'requires_plugin_review':plugins,
                 'message':('已讀取助理設定；包含函式工具，需核對哪些是搜尋及 pluginapi 的權限與參數。'
                     if plugins else '已讀取助理設定；未看到函式工具，但不能由此證明助理有即時搜尋能力。')}
@@ -156,18 +172,22 @@ class AssistantsGateway:
         if clean[-1]['role'] != 'user':
             raise GatewayError('公司對話最後一筆必須是使用者訊息。')
         key, rid, cancelled, resume = session_context(self.binding, purpose, context)
+        approved=self.search_policy['tools'] if (context or {}).get('search_authorized') is True and purpose in ('chat','workflow_step') else []
+        policy_hash=fingerprint(approved)
         digest = _digest([purpose, clean])
         hashes = [_digest(message) for message in clean]
-        deadline = self.clock() + self.deadline_seconds
+        deadline = self.clock() + (min(600,self.deadline_seconds) if approved else self.deadline_seconds)
         with self.ledger.session(key):
             session = self.ledger.get_session(key) or {'thread_id': None, 'history': [], 'active': None}
             request = self.ledger.get_request(key, rid)
             if request:
+                if request.get('search_fingerprint',fingerprint([]))!=policy_hash:
+                    raise GatewayError('搜尋授權已改變；舊請求不能套用新的工具權限。')
                 if request['digest'] != digest:
                     raise GatewayError('相同請求識別的內容已改變；未重新送出。')
                 if request['state'] == 'completed':
                     return request['result']
-                if request['state'] in ('cancel_requested', 'cancelled', 'failed', 'tools_blocked'):
+                if request['state'] in STOPPED:
                     raise GatewayError('此請求已停止或已取消，不能直接恢復或重新送出。')
                 if not resume or not request.get('run_id'):
                     raise GatewayError('先前公司請求尚未釐清；請檢查遠端狀態，未重新送出。')
@@ -182,7 +202,7 @@ class AssistantsGateway:
                 if cancelled():
                     raise GatewayError('工作已取消；未傳送公司請求。')
                 request = {'digest': digest, 'state': 'prepared', 'run_id': None,
-                           'message_ids': [], 'remote_terminal': False}
+                           'message_ids': [], 'remote_terminal': False,'search_fingerprint':policy_hash,'tool_batches':[]}
                 session['active'] = rid
                 self.ledger.save(key, session, rid, request)
             try:
@@ -206,9 +226,12 @@ class AssistantsGateway:
                         self._cancel(key, session, rid, request, deadline)
                     request['state'] = 'run_outcome_unknown'
                     self.ledger.save(key, session, rid, request)
+                    tool_options={'tool_choice':'none'}
+                    if approved:
+                        tool_options={'tool_choice':'auto','tools':[{'type':'function','function':t} for t in approved]}
                     run = self._call(self.client.beta.threads.runs.create, deadline,
                                      thread_id=session['thread_id'], assistant_id=self.assistant_id,
-                                     additional_instructions=PURPOSES[purpose], tool_choice='none')
+                                     additional_instructions=PURPOSES[purpose], **tool_options)
                     request.update(run_id=self._id(run), state='polling')
                     self.ledger.save(key, session, rid, request)
                 else:
@@ -223,9 +246,8 @@ class AssistantsGateway:
                     if status == 'completed':
                         break
                     if status == 'requires_action':
-                        request['state'] = 'tools_blocked'
-                        self.ledger.save(key, session, rid, request)
-                        raise GatewayError('公司助理要求尚未核准的工具；未呼叫 pluginapi，請由維護者處理遠端工作。')
+                        run=self._search(run,approved,key,session,rid,request,deadline,cancelled)
+                        continue
                     if status in ('cancelled', 'failed', 'expired', 'incomplete'):
                         request.update(state='cancelled' if status == 'cancelled' else 'failed', remote_terminal=True)
                         self.ledger.save(key, session, rid, request)
@@ -254,6 +276,61 @@ class AssistantsGateway:
                 if isinstance(exc, GatewayError):
                     raise
                 raise GatewayError('公司回傳格式不相容；未自動重送或改用示範。') from None
+
+    def _search(self,run,approved,key,session,rid,request,deadline,cancelled):
+        """Validate the entire batch before dispatch; unknown writes never replay."""
+        import httpx
+        def save():self.ledger.save(key,session,rid,request)
+        def blocked(message):
+            request['state']='tools_blocked';save();raise GatewayError(message)
+        action=getattr(run,'required_action',None)
+        calls=getattr(getattr(action,'submit_tool_outputs',None),'tool_calls',None)
+        if not approved or getattr(action,'type',None)!='submit_tool_outputs' or not isinstance(calls,list) or not 1<=len(calls)<=4:
+            blocked('公司助理要求未核准或超過限制的工具；本批沒有呼叫 pluginapi。')
+        by_name={t['name']:t for t in approved};validated=[];ids=set()
+        try:
+            for call in calls:
+                cid=getattr(call,'id',None);fn=getattr(call,'function',None);name=getattr(fn,'name',None)
+                if (getattr(call,'type',None)!='function' or not isinstance(cid,str) or not cid or len(cid)>256
+                        or cid in ids or name not in by_name):raise GatewayError('搜尋工具名称或識別不在核准範圍；本批未執行。')
+                args=arguments(getattr(fn,'arguments',None),by_name[name]['parameters'])
+                validated.append({'id':cid,'name':name,'arguments':args,'digest':fingerprint(args)});ids.add(cid)
+        except GatewayError as exc:blocked(str(exc))
+        signature=fingerprint([{k:c[k] for k in ('id','name','digest')} for c in validated])
+        batches=request.setdefault('tool_batches',[])
+        batch=next((b for b in batches if b['fingerprint']==signature),None)
+        if batch:
+            if batch['submit_state']!='pending' or any(c['state']=='unknown' for c in batch['calls']):
+                blocked('工具批次已送出或結果未明；不重送搜尋或工具結果。')
+        else:
+            if len(batches)>=3 or ids.intersection(c['id'] for b in batches for c in b['calls']):
+                blocked('搜尋超過三批或重用了工具識別；本批未執行。')
+            batch={'fingerprint':signature,'submit_state':'pending',
+                   'calls':[{k:c[k] for k in ('id','name','digest')} | {'state':'prepared'} for c in validated]}
+            batches.append(batch);request['state']='tools_ready';save()
+        for info,receipt in zip(validated,batch['calls']):
+            if cancelled():self._cancel(key,session,rid,request,deadline)
+            if receipt['state']=='completed':continue
+            request['state']='tool_outcome_unknown';receipt['state']='unknown';save()
+            response=self._call(lambda timeout:self.client.post('/pluginapi',cast_to=httpx.Response,
+                body=info['arguments'],options={'timeout':timeout,'max_retries':0,
+                    'params':{'tid':session['thread_id'],'aid':self.assistant_id,'pid':info['name']}}),deadline)
+            if len(response.content)>131072:
+                blocked('搜尋結果超過 128 KiB；未截斷或送給助理，請縮小範圍後建立新工作。')
+            try:output=response.content.decode('utf-8',errors='strict')
+            except UnicodeDecodeError:blocked('搜尋結果不是 UTF-8 文字；未送給助理。')
+            if not output.strip():blocked('搜尋工具沒有回傳內容；未當成成功。')
+            receipt.update(state='completed',result=output);request['state']='tools_ready';save()
+        if cancelled():self._cancel(key,session,rid,request,deadline)
+        # Write-ahead receipt: a lost acknowledgement cannot cause a duplicate POST.
+        batch['submit_state']='unknown';request['state']='tool_submit_unknown';save()
+        updated=self._call(self.client.beta.threads.runs.submit_tool_outputs,deadline,
+            thread_id=session['thread_id'],run_id=request['run_id'],
+            tool_outputs=[{'tool_call_id':c['id'],'output':c['result']} for c in batch['calls']])
+        if getattr(updated,'id',None)!=request['run_id'] or getattr(updated,'thread_id',None)!=session['thread_id']:
+            raise GatewayError('工具提交回覆識別不符；結果未明，不會自動重送。')
+        batch['submit_state']='submitted';request['state']='polling';save()
+        return updated
 
     def _read_text(self, thread_id, run_id, deadline):
         parts, seen, after = [], set(), None
@@ -307,5 +384,5 @@ class AssistantsGateway:
                 except Exception:
                     raise GatewayError('無法確認遠端工作狀態；沒有重新執行。') from None
             return {'state': request['state'], 'recoverable': bool(request.get('run_id')) and
-                    request['state'] not in ('failed', 'cancelled', 'cancel_requested', 'tools_blocked'),
+                    request['state'] not in STOPPED,
                     'remote_checked': checked, 'remote_terminal': request.get('remote_terminal', False)}

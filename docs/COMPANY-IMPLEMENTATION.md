@@ -1,4 +1,4 @@
-# 給公司 GPT 6 sol：0.17.0 接手指令
+# 給公司 GPT 6 sol：0.18.0 接手指令
 
 請先讀根目錄 AGENTS.md、COMPANY-HANDOFF.md 與本文件。保留公司現有能成功呼叫的程式與設定，不重寫 UI，也不要把 Assistant ID 當 model。
 
@@ -7,7 +7,7 @@
 使用者已回報：公司 UI 能搜尋，過去本機 App 亦曾排程呼叫並取得回報。請優先比對那份成功程式，不重寫現有成功接線。新入口已完成「選現有助理 → 預覽 → 試跑 → 核對 → 啟用每日08:00」，不要求先建立四個角色。
 
 1. 重建既有 lock 環境，保留公司 checkout 修改。設定 assistants 協定、endpoint、API key 及現有搜尋助理 ID；需要 CA 時使用核准憑證，不關 TLS。
-2. 「設定／公司啟用檢查」先看本機缺項。這不讀金鑰或連線。「檢查搜尋助理連線」是明確的 assistant metadata GET；取得工具名稱不等於工具能力已測過。如公司不支援此 GET，記錄相容性問題，不把它等同所有聊天皆不可用。
+2. 「設定／公司啟用檢查」先看本機缺項。這不讀金鑰或連線。另按「檢查搜尋助理連線」讀取 metadata；核對 function 名稱、schema與唯讀用途後，勾選核准工具及授權聲明保存。取得工具名稱不是能力驗收。如公司不支援 GET，記錄相容性問題，不把它等同所有聊天皆不可用；也不要填假的核准策略。
 3. 主對話按「財經日報」，確認台股、美股、重大總經及08:00。預覽零派發，按「現在試跑」才送出一次；看實際日期、來源連結及內容，不以 HTTP200 或 succeeded 當搜尋驗收。
 4. 若成功：人工核對後才勾選每日傳送並啟用。啟用不多跑一次，另測「現在測試一次」、暫停、重開及歷史；App 開啟才執行。每次應是獨立遠端 thread。
 5. 若失敗：先分清憑證／協定、工具派發、輸出格式；一次只修該邊界。不得為了過關同時重寫 UI、換模型、跳過驗證或改成示範。成果不合格不啟用排程。
@@ -18,9 +18,9 @@
 
 不必重建搜尋引擎。助理配置 Internet Search 可能由服務端自行完成，也可能回 `requires_action`，要求呼叫端把指定 function 送到公司 `/pluginapi` 再回填結果。使用者提供的成功範例包含後者，但該搜尋助理實際走哪條路仍待公司實測。
 
-本版明確傳 `tool_choice=none`、不呼叫 pluginapi，可能抑制已配置搜尋。不得宣称本版只換參數就能搜尋；也不得直接移除限制並允許所有模型指定 function。
+本版已實作核准搜尋 pluginapi 往返。先由「公司啟用檢查」讀取 metadata，核對唯讀搜尋名稱與參數，再保存核准；只有日報／rag步驟使用核准tools＋auto。其他呼叫仍 `tool_choice=none`。不得直接允許所有模型指定 function，也不能由核准勾選宣稱公司實測通過。
 
-**2026-09-29 官方查證更新：**[Assistant API 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/200671332/MediaTek+Assistant+API) 已公開上述 pluginapi 往返範例；[Plugin Chat 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/3309569/Plugin+Chat) 確認 Internet Search 為插件。通用接線格式已有官方依據，請直接沿用，不再把重新取得整套 API 規格當作開發前置阻礙。公司只需核對特定搜尋工具識別、參數／權限及部署差異。完整來源與尚未啟用的修改範圍見 [搜尋接線草案](ASSISTANT-INTEGRATION.md#待批准的具體修改範圍)。
+**2026-09-29 官方查證：**[Assistant API 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/200671332/MediaTek+Assistant+API) 公開 pluginapi 往返範例；[Plugin Chat 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/3309569/Plugin+Chat) 確認 Internet Search 為插件。通用接線已完成，不再把重新取得整套 API 規格當作前置阻礙。公司需核對特定搜尋工具識別、參數／權限及部署差異。完整來源與限制見 [搜尋接線契約](ASSISTANT-INTEGRATION.md#已實作的核准範圍)。
 
 需要公司保存的本地資訊：搜尋工具名稱、參數 schema、成功回覆形狀／大小、是否唯讀、是否有費用或其他副作用，以及 run 狀態變化。不要把金鑰或內部原始回覆提交 Git。核對後另做限定搜尋工具的 adapter：固定公司 endpoint、白名單 function、嚴格 arguments 驗證、有限輪數／時間／回覆大小、取消與未知写入停止；其他工具拒絕。需公司明確核准與真實測試才改現行工具限制，不能以 metadata 或 checkbox 作驗收。
 
@@ -47,7 +47,13 @@ C：某項政策聲明預計明日公布，目前沒有公布結果。
 
 再用既有 Instruction 案例 C（原始12.50、分析文字125.00）於公司測試 hook 驗證覆核停止、後續彙整零派發；正常任務成功不能代替這個負向驗收。
 
-真實財經版本可擴為「主代理 → 既有搜尋助理 → 分析 → 覆核 → 彙整」。搜尋結果需保留來源及日期並交覆核，不能讓分析自行補新聞。這是搜尋接線後的目標流程；目前沒有已驗證的獨立搜尋角色／pluginapi 節點，不能將上述合成通過寫成五助理上網已完成。
+財經流程可用「主代理 → 搜尋助理(rag) → 分析 → 覆核 → 彙整」。搜尋結果保留來源及日期並交覆核，不能讓分析自行補新聞。[rag Instruction](assistant-instructions/rag.md) 可供既有搜尋助理的工作用副本使用，單助理日報不強迫JSON。先核准搜尋，再由可信hook實測角色並啟用；修改核准會撤銷角色驗收。真SDK＋LangGraph合成五角色旅程已測，但公司五助理上網尚未驗收。
+
+可貼給主代理：
+
+> 請規劃一份台股、美股與重大總經日報。先由搜尋助理取得最近24小時公開資訊與日期／來源，再分析重點，覆核是否有無來源、過期或矛盾內容，最後彙整結論、注意事項及待確認事項。先討論及預覽，不立即執行；待我確認後再做。這次成功後才考慮每天台北08:00。
+
+覆核的 inputs 應包含搜尋及分析兩步，彙整應包含搜尋、分析與覆核；不能只靠最後一步的摘要推定已核對原始來源。最多六步依序執行，搜尋只給 rag 角色。查看實際分工後確認，不用替未通過覆核的結果強行排程。
 
 ## 已完成
 
@@ -67,7 +73,7 @@ C：某項政策聲明預計明日公布，目前沒有公布結果。
 | 能力驗收 | 助理的伺服器工具、唯讀能力、結構化輸出 | 公司本地 hook、profiles.set_workflow_capability | 證據合格才啟用 planner／analysis／review／compose |
 | 多 ID 試跑 | 四個角色 ID；可同模型，不推測模型名稱 | 我的助理團隊、docs/assistant-instructions | 規劃只提建議，確認前零子助理；一次確認後依序完成 |
 | 中斷與恢復 | 可核對的測試 run | WorkflowService、AssistantsGateway | 已知 run 不重建，結果不明停止；取消後不復活 |
-| 工具與排程（後續） | 核准插件名稱、參數、回覆、唯讀範圍及人工基準 | 新工具 adapter，另提修改計畫 | pluginapi 本版不執行；先工具實測，再明確啟用持續授權排程 |
+| 核准搜尋與排程 | 公司核准的function名稱、schema、唯讀範圍、來源／日期人工基準 | search_tools.py／assistants_gateway.py／公司啟用檢查 | 沿用現有pluginapi往返；未知工具零派發，試跑符合来源後再授權每日工作 |
 
 ## 本機命令
 
@@ -84,7 +90,7 @@ mock server 僅提供本機協定測試，不直接作公司 App HTTP endpoint�
 1. 設定頁選 assistants 協定，保存 endpoint 和 API key；助理團隊建立各名稱／ID。
 2. 如需要公司 CA，在本機 config.json 的 assistant.ca_bundle 指向公司核准 PEM。不得使用 verify=False。
 3. 主畫面選「公司 · 助理名稱」，用合成文字驗證多輪，從對話紀錄重開後再追問。
-4. 連接器傳 additional_instructions 及 tool_choice=none；先確認平台接受且服務端不執行未授權工具。如果不支援，保留錯誤並由公司審查契約，不能直接移除工具限制。
+4. 先確認平台接受 additional_instructions、tool_choice=none 與核准搜尋時的 tools override＋auto，且不執行未授權工具。不支援時保留錯誤並核對公司相容差異，不能移除限制。metadata不支援或schema不相容時只收去識別化樣本；不索取真實key。
 5. 工作角色必須依回傳的 JSON 契約測試，再由可信本機 hook 登錄驗收證據。不可只寫 verified=True 交差。
 6. API key 只管理認證，不取代 AD／owner 授權。目前仍為單人本機工作區；部門全面部署前完成原交接工作單。
 

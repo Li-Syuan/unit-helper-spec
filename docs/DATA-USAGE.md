@@ -6,6 +6,8 @@
 
 公司啟用檢查只盤點本機設定，沒有讀取金鑰。使用者另按連線檢查才從認證來源取得金鑰並向公司讀取助理 metadata；工具宣告不代表工具可用或已批准，沒有呼叫模型或 pluginapi。
 
+核准搜尋會在本機助理設定保存 function 名稱、參數 schema 與說明，綁定助理版本。只有確認的日報或 rag 步驟將驗證過的參數送往同一公司端點 pluginapi；公司搜尋工具可能再使用外部搜尋供應商，其資料去向需公司確認。本機不另外選第三方端點。工具結果、call ID、參數雜湊及提交狀態存 assistant-sessions.sqlite3，不進 Git／分享診斷；資料可能含來源內容，備份應與整個使用者目錄一併保護。完整 HTTP 回覆由 SDK 接收後檢查128KiB上限，不截斷。取消不能保證已發出的遠端搜尋即時停止。
+
 # Assistants 與 checkpoint 本機資料
 
 使用者資料目錄新增 assistant-sessions.sqlite3（遠端 thread/run ID、歷史雜湊、請求狀態與回覆快取）及 workflow-checkpoints.sqlite3（graph 游標、task/step ID、定義指紋）。不包含 API key，亦不自動上傳 LangSmith。

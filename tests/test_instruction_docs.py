@@ -41,6 +41,13 @@ class InstructionDocumentTests(unittest.TestCase):
         lines = text.splitlines()
         self.assertEqual([line for line in lines if line in headings], headings)
 
+    def test_search_role_example_does_not_invent_program_facts(self):
+        result=examples('rag.md')[0]
+        self.assertEqual(set(result),{'text','facts'})
+        self.assertEqual(result['facts'],{})
+        self.assertTrue(result['text'].strip())
+        self.assertLessEqual(len(result['text']),12000)
+
     def test_guide_synthetic_examples_link_facts_to_source(self):
         payload, analysis, planner, review = examples('README.md')
         facts = payload['sources']['s1']['numeric_totals']

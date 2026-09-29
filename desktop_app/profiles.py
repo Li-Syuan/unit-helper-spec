@@ -57,6 +57,9 @@ class Profiles:
         ids=[p['id'] for p in d['profiles']]
         if len(ids)!=len(set(ids)) or 'demo' in ids: raise GatewayError('助理識別重複。')
         for p in d['profiles']:
+            if 'search_policy' in p:
+                from .search_tools import policy
+                p['search_policy']=policy(p['search_policy'])
             if not isinstance(p['revision'],int) or p['revision']<1 or type(p['enabled']) is not bool: raise GatewayError('助理版本或狀態不正確。')
             for key in ('id','name','assistant_id','notes'):
                 if not isinstance(p[key],str): raise GatewayError('助理欄位格式不正確。')
@@ -112,7 +115,7 @@ class Profiles:
                 p={'id':uuid.uuid4().hex,'revision':1,'enabled':bool(enabled)}; d['profiles'].append(p)
             elif p['assistant_id']!=assistant_id.strip():
                 d.setdefault('history',[]).append(dict(p,endpoint=d['endpoint']))
-                p['revision']+=1; p.pop('legacy',None)
+                p['revision']+=1; p.pop('legacy',None);p.pop('search_policy',None)
                 if 'workflow' in p:p['workflow']['verified']=False
             p.update(name=name.strip(),assistant_id=assistant_id.strip(),notes=notes.strip(),enabled=bool(enabled))
             self._write(d); return p['id']
@@ -135,7 +138,7 @@ class Profiles:
                 d['credential_id']=uuid.uuid4().hex; d['credential_source']='keyring'
                 for p in d['profiles']:
                     d.setdefault('history',[]).append(dict(p,endpoint=self.data['endpoint']))
-                    p['revision']+=1; p.pop('legacy',None)
+                    p['revision']+=1; p.pop('legacy',None);p.pop('search_policy',None)
                     if 'workflow' in p:p['workflow']['verified']=False
             self._write(d)
     def save_key(self,key):
@@ -179,14 +182,14 @@ class Profiles:
             if values!=old:
                 for p in d['profiles']:
                     d.setdefault('history',[]).append(dict(p,endpoint=d['endpoint']))
-                    p['revision']+=1;p.pop('legacy',None)
+                    p['revision']+=1;p.pop('legacy',None);p.pop('search_policy',None)
                     if 'workflow' in p:p['workflow']['verified']=False
                 d['wire_mode'],d['model'],d['assistant_field']=values
             self._write(d)
 
     def _assistants_client(self, d, p, key, binding):
         from .assistants_gateway import AssistantsGateway
-        config={'base_url':d['endpoint'],'assistant_id':p['assistant_id']}
+        config={'base_url':d['endpoint'],'assistant_id':p['assistant_id'],'search_policy':p.get('search_policy')}
         for field in ('ca_bundle','timeout_seconds','run_timeout_seconds'):
             if field in self.legacy:config[field]=self.legacy[field]
         return AssistantsGateway(config,key,self.path.parent/'assistant-sessions.sqlite3',binding)
@@ -228,7 +231,7 @@ class Profiles:
             if not request:return {'state':'not_found','recoverable':False,'remote_checked':False}
             if not remote or request['state']=='completed':
                 return {'state':request['state'],'recoverable':bool(request.get('run_id')) and request['state'] not in
-                        ('failed','cancelled','cancel_requested','tools_blocked'),
+                        ('failed','cancelled','cancel_requested','tools_blocked','tool_outcome_unknown','tool_submit_unknown'),
                         'remote_checked':False,'remote_terminal':request.get('remote_terminal',False)}
             api_key=self.key()
         client=self._assistants_client(d,p,api_key,binding)
@@ -249,6 +252,23 @@ class Profiles:
         """Only explicitly verified read-only capabilities may be orchestrated."""
         return [p for p in self.items(True) if p.get('workflow',{}).get('verified') is True
                 and p['workflow'].get('roles') and p['workflow'].get('read_only') is True]
+
+    def set_search_policy(self,binding,value):
+        """Local authorization only; metadata and consent never verify capabilities."""
+        from .search_tools import policy
+        approved=policy(value)
+        with self.lock:
+            current=self.validate(binding)
+            if current['id']=='demo' or self.data['wire_mode']!='assistants':
+                raise GatewayError('僅公司 Assistants 連線可設定搜尋工具。')
+            d=copy.deepcopy(self.data);p=next(p for p in d['profiles'] if p['id']==current['id'])
+            d.setdefault('history',[]).append(copy.deepcopy(dict(p,endpoint=d['endpoint'])))
+            p['revision']+=1
+            if approved['tools']:p['search_policy']=approved
+            else:p.pop('search_policy',None)
+            if 'workflow' in p:p['workflow']['verified']=False
+            self._write(d)
+            return dict(profile_id=p['id'],revision=p['revision'],names=[t['name'] for t in approved['tools']],company_search='not_tested')
 
     def forget_conversations_tx(self,db,ids):
         """Remove additional local response copies with the existing deletion transaction.
@@ -307,4 +327,7 @@ class Profiles:
         self.validate_workflow(binding,role)
         if not isinstance(context,dict) or not all(context.get(k) for k in ('run_id','step_id')):
             raise GatewayError('協作呼叫缺少隔離識別。')
+        context=dict(context)
+        context.pop('search_authorized',None)
+        if role=='rag':context['search_authorized']=True
         return self.respond(messages,'workflow_plan' if role=='planner' else 'workflow_step',binding,context=context)

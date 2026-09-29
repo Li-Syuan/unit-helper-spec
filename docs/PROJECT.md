@@ -1,6 +1,6 @@
-# 0.17.0 公司試跑與財經日報
+# 0.18.0 公司核准搜尋與財經日報
 
-官方手冊已確認 Internet Search 插件與通用 pluginapi 呼叫流程，參考 [查證與修改草案](ASSISTANT-INTEGRATION.md)。目前實作仍為禁止工具的文字連接器；文件查證不是已完成公司搜尋或變更工具授權。
+官方手冊確認 Internet Search 插件與通用 pluginapi 呼叫流程，參考 [接線契約](ASSISTANT-INTEGRATION.md)。使用者已批准有限搜尋；metadata 核准表單、參數驗證、同源工具往返、回執防重與日報搜尋紀錄已實作。公司真實搜尋仍待現場驗收。
 
 新增公司啟用檢查及明確的助理 metadata GET，與模型呼叫分開。CompanyProbe 追蹤實際請求與關閉；本機設定存在、金鑰來源設定或工具名稱都不代表能力已驗證。
 
@@ -18,7 +18,7 @@ AssistantsGateway 使用 Threads/Messages/Runs。Profiles.respond 增加可選 c
 
 ProfileDialogueProvider 讓主畫面明確選擇示範／公司；一般聊天沿用對話 thread。建立任務每輪帶完整已顯示歷史與草稿，使用獨立遠端 thread，避免 JSON 原文與 UI 顯示訊息混用；只有 confirm 能存未啟用草稿。主畫面有對話紀錄與取消入口；I/O 不持有 bridge 全域鎖，關閉先阻止寫回並等待請求收尾。
 
-公司節點使用 tool_choice=none；如果平台不接受此欄位，需公司審查與測試後調整 adapter，不能偷偷移除限制。requires_action 停止，未實作 pluginapi。已知公司呼叫格式不等於公司實測，能力驗收仍待完成。
+搜尋 policy 與助理連線 revision 綁定。只有經確認的 assistant_briefing／rag 步驟使用核准 tools＋auto；其餘呼叫 tool_choice=none。未知工具、錯誤參數整批停止。最多4工具／批、3批／run、600秒、單回覆128KiB。請求與工具回執保存原有 assistant-sessions SQLite JSON，不更改 schema 或依賴；工具POST／submit結果未明不重送。核准變更在派發鎖內完成並拒絕真實請求未結束時修改。來源與事實仍需人核對。
 
 新增 workflow_inspect、workflow_resume、workflow_abandon 僅由明確 UI 操作呼叫。人工重試不允許繞過未釐清遠端請求。既有結束結果可讀，舊工作不自動遷移為可恢復 graph。正常關閉中的工作仍取消；意外中斷或可查的未明遠端 run 提供人工恢復。
 

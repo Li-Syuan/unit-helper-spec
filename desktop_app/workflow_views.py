@@ -109,6 +109,10 @@ class WorkflowViews:
             lines.extend([f'{index}. {step["title"]} → {target}',step.get('instruction',''),
                           '輸入：'+('、'.join(step.get('inputs',[])) or '本次需求')])
             if step['kind']=='query':lines.append('條件：'+json.dumps(step.get('parameters',{}),ensure_ascii=False)+' · '+('每次前一日' if step.get('date_mode')=='previous_day' else '固定日期'))
+            if step.get('role')=='rag':
+                profile=self.profiles.information(step.get('binding')) or {}
+                names=[t['name'] for t in profile.get('search_policy',{}).get('tools',[])]
+                lines.append('本步可用核准搜尋：'+('、'.join(names) if names else '未核准工具，僅取得文字'))
             lines.append('')
         if record.get('discussion'):lines.append('需求討論紀錄')
         for item in record.get('discussion',[]):

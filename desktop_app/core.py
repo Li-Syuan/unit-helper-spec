@@ -422,6 +422,7 @@ class Engine:
                 if hasattr(owner,'inspect_request') and getattr(owner,'data',{}).get('wire_mode')=='assistants':
                     task=self.store.task(task_id)
                     context={'conversation_id':('engine:'+task['conversation_id']) if purpose=='chat' and task['conversation_id'] else 'task:'+task_id,
+                             'search_authorized':task['kind']=='assistant_briefing',
                              'request_id':task_id,'cancelled':lambda:self._closed or self.store.task(task_id)['state']!='running'}
                     return self.assistant_router(messages,purpose,binding,context=context)
                 return self.assistant_router(messages,purpose,binding)

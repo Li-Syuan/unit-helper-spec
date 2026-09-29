@@ -2,6 +2,8 @@
 import copy
 import os
 import threading
+import time
+import secrets
 from urllib.parse import urlsplit
 
 ROLES={'planner':'規劃','analysis':'分析','review':'覆核','compose':'彙整'}
@@ -11,6 +13,7 @@ class CompanyProbe:
     """Track a single explicit metadata request without blocking the UI bridge."""
     def __init__(self,profiles):
         self.profiles=profiles;self.condition=threading.Condition();self.pending=False;self.closed=False
+        self.approval=None
 
     def has_inflight(self):
         with self.condition:return self.pending
@@ -26,6 +29,10 @@ class CompanyProbe:
             with self.condition:
                 if self.closed:raise ValueError('程式已關閉，檢查結果不再顯示。')
                 self.profiles.validate(binding)
+                token=secrets.token_urlsafe(32)
+                self.approval=dict(token=token,binding=binding,expires=time.monotonic()+600,
+                    tools=copy.deepcopy(result.get('search_candidates',[])))
+                result=dict(result,policy_token=token)
                 return result
         finally:
             with self.condition:
@@ -35,6 +42,21 @@ class CompanyProbe:
         with self.condition:
             self.closed=True
             while wait and self.pending:self.condition.wait()
+
+    def approve(self,token,names,consent):
+        with self.condition:
+            saved=self.approval
+            if (self.closed or self.pending or not saved or token!=saved['token'] or
+                    time.monotonic()>saved['expires'] or consent is not True):
+                raise ValueError('搜尋核准預覽失效或尚未同意；請重新檢查助理。')
+            if (not isinstance(names,list) or not names or not all(isinstance(n,str) for n in names)
+                    or len(names)!=len(set(names))):
+                raise ValueError('請選擇已檢查的搜尋工具。')
+            tools={t['name']:t for t in saved['tools']}
+            if set(names)-set(tools):raise ValueError('包含未檢查的工具；未核准任何工具。')
+            result=self.profiles.set_search_policy(saved['binding'],{'tools':[tools[n] for n in names]})
+            self.approval=None
+            return result
 
 
 def inspect_company(profiles, *, trial=False):
@@ -74,7 +96,8 @@ def inspect_company(profiles, *, trial=False):
             '尚未分配此角色；先在助理團隊設定用途，再完成角色試跑。','team')
     add('tls','TLS 與公司 CA','not_tested',
         '已指定公司 CA 檔案；本次未讀取或驗證。' if ca_configured else '使用系統信任庫；若公司憑證不受信任，需設定核准 CA，不能關閉 TLS。','settings')
-    add('tools','公司查資料／插件','not_tested','目前僅文字連接器，pluginapi 未開放；查資料若依賴它，填好參數仍無法完成。')
+    approved=sum(len(p.get('search_policy',{}).get('tools',[])) for p in entries)
+    add('tools','公司查資料／插件','not_tested',f'已核准 {approved} 項搜尋工具；僅已確認日報／搜尋步驟可呼叫 pluginapi。核准不代表搜尋已實測。','settings')
     add('drafts','建立任務與排程','ready','建立任務只存未啟用草稿；規劃工作試跑成功後才能另行授權排程。','plan')
     missing=next((c for c in checks[:4] if c['state']=='missing'),None)
     next_step=(missing['detail'] if missing else

@@ -36,6 +36,7 @@ class AssistantBriefings:
             self.previews={k:v for k,v in self.previews.items() if v['expires']>time.monotonic()}
             self.previews[token]={'spec':copy.deepcopy(spec),'expires':time.monotonic()+600}
             return {'token':token,'assistant_name':p['name'],'prompt':prompt,'time_hhmm':time_hhmm,
+                'search_tools':[t['name'] for t in p.get('search_policy',{}).get('tools',[])],
                 'message':'尚未執行。現在試跑會把此需求及當次台北時間傳給所選公司助理，不會啟用排程。'}
 
     def _insert(self,db,spec,request_id,when,schedule_id=None):
@@ -61,6 +62,17 @@ class AssistantBriefings:
     def status(self,tid):
         task=self.store.task(tid)
         if task['kind']!='assistant_briefing':raise ValueError('這不是助理日報。')
+        # Local receipt only: never retrieve remote state just to paint a result.
+        from .assistants_gateway import session_context
+        from .assistant_sessions import AssistantSessions
+        path=self.profiles.path.parent/'assistant-sessions.sqlite3'
+        activity=[]
+        if path.exists():
+            key,rid,_,_=session_context(task['payload']['_binding'],'chat',{'conversation_id':'task:'+tid,'request_id':tid})
+            receipt=AssistantSessions(path).get_request(key,rid) or {}
+            activity=[{'name':c['name'],'state':c['state'],'submitted':b['submit_state']=='submitted'}
+                for b in receipt.get('tool_batches',[]) for c in b['calls']]
+        task=dict(task,search_activity=activity)
         if not task['schedule_id']:
             with self.store.connection() as db:
                 row=db.execute("SELECT id FROM schedules WHERE query_id='ASSISTANT_BRIEFING' AND json_extract(parameters,'$.trial_task')=?",(tid,)).fetchone()

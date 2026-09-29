@@ -1,3 +1,11 @@
+# 0.18.0 僅核准搜尋（優先於下方禁止 pluginapi 的舊規則）
+
+使用者已明確同意「只開核准的搜尋工具」。`search_tools.py` 的每助理 policy 保存人工核對的 function 名稱、有限 JSON schema 與說明；CompanyProbe metadata GET 產生十分鐘一次性核准 token，保存／移除皆提升連線 revision、撤銷 workflow verified。改 endpoint／assistant ID／協定清除 policy。核准不是能力實測，不能由 UI 自動標 verified。
+
+僅已確認的 assistant_briefing 與已驗收 rag 流程步驟可送核准 tools＋auto；普通聊天、task 草稿、planner、analysis／review／compose 保持 tool_choice=none。每批先完整驗證、最多4 call／3批／600秒，固定同源 pluginapi，不接受模型 URL／headers／檔案指令。TLS、零自動重試不變。單工具回覆超128KiB停止、不截斷（目前 HTTP response 先由 SDK 完整接收，再檢查大小）。
+
+每個 call 的 digest／結果及提交狀態存既有 JSON 帳本，未知 plugin POST／submit 不 retry；已知完成快取可以明確恢復，取消不得提交晚到結果。公司真實相容、來源、權限與多ID仍 not_tested。新核准修改在 Engine／Dialogue／Probe 鎖內檢查真實 inflight 並保存，不阻塞遠端請求時持有 bridge 全域鎖。Store schema6／dialogue CHECK=0／依賴保持。
+
 # 0.17.0 公司試跑入口
 
 `company_readiness.py` 本機盤點不讀取金鑰或呼叫服務。明確啟動的 CompanyProbe 只 retrieve assistant metadata，工具宣告不是實測或授權；close 等待真實請求，不持有 bridge 全域鎖。不得由連線成功自動設定 workflow verified。

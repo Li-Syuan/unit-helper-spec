@@ -1,6 +1,6 @@
-# 官方文件查證與搜尋接線草案
+# 0.18.0 官方契約與核准搜尋接線
 
-查證日期：2026-09-29。以下為公開官方文件；不代表公司部署已實測，也不改變目前禁止 pluginapi 的執行規則。
+查證日期：2026-09-29。使用者已批准僅核准搜尋；下列往返已實作並以合成 HTTP 驗證，公開文件與本機測試不代表公司部署已實測。
 
 | 官方來源 | 已確認內容 |
 |---|---|
@@ -14,28 +14,32 @@
 
 尚未由公開頁面確認的是公司搜尋插件實際 function 識別、參數定義、權限及版本相容性；顯示名稱 Internet Search 不可直接猜成 function.name。可先由已配置助理的 metadata／公司插件設定核對，僅在不支援讀取時再取去識別化樣本。metadata 是宣告，非唯讀性或能力驗收證明。
 
-## 待批准的具體修改範圍
+## 已實作的核准範圍
 
-目標是讓已配置 Internet Search 的公司助理完成「搜尋一次 → 查看來源 → 確認每日執行」，再加入已批准多助理流程。保留现有文字模式，不開放任意插件。本節是修改提案，**目前未啟用**。
+已配置 Internet Search 的公司助理可走「核准工具 → 搜尋試跑 → 查看來源 → 另行確認每日執行」，也可使用既有 rag 角色加入批准後的多助理流程。預設仍沒有核准工具；不開放任意插件。
 
 1. **公司搜尋設定**：沿用 endpoint／key／Assistant ID，新增管理者核准的搜尋工具識別與參數契約，綁定該助理及連線版本。從官方 metadata 讀取候選設定後仍須核對實際用途；普通使用者不編寫程式，未核准助理保持工具停用。
 2. **派發範圍**：planner 的需求討論與草稿建議保持 tool_choice=none。只有明確預覽／確認過的搜尋試跑或流程搜尋步驟可使用該策略；分析、覆核、彙整不因此自動取得工具能力。新搜尋步驟可沿用既有 rag 角色及 JSON 契約，不另加隱藏主代理。
 3. **Gateway 處理**：在 assistants_gateway.py 的 requires_action 分支驗證同一 thread/run、call ID、function 白名單與參數型別。先驗完整批次，再 POST 公司固定 pluginapi；不接受模型指定 endpoint、headers 或本機檔案路徑。不符合核准策略即停止，不執行其他插件。
-4. **有限執行**：建議每輪最多4個工具呼叫、每run最多3輪，沿用工作總期限600秒及單次timeout；回覆最多128KiB，超限明示失敗，不照抄範例的靜默截斷。TLS及零自動重試保持。具體限制需在 UI 提示與測試一致呈現。
+4. **有限執行**：每輪最多4個工具呼叫、每run最多3輪，工作總期限最多600秒及原單次timeout；回覆最多128KiB，超限明示失敗，不靜默截斷。SDK目前先完整接收HTTP回覆再檢查大小，非串流記憶體上限。TLS及零自動重試保持。
 5. **收據與恢復**：assistant_sessions.py 請求記錄增加每個call的識別、參數雜湊、策略指紋、傳送前狀態及已取得結果。工具送出／工具結果提交前先記錄；結果不明時停止。已取得结果使用快取、不重搜；只在遠端run與工具批次完全一致時允許明確恢復，不宣稱 exactly-once。取消後不提交晚到結果，不復活已取消任務。
 6. **試跑與呈現**：財經日報試跑顯示實際工具呼叫狀態及完整成果，不因HTTP200／有文字就標搜尋已驗證。人核對日期／來源後才另外啟用08:00台北排程。主代理仍為planner；多助理接入沿用一次確認、來源限制、覆核停止與固定版本排程。
 
 驗證需包含官方形狀的合成往返、兩輪工具、多call配對、未知工具／錯誤參數整批零派發、逾時與未知結果不重送、取消晚到、改助理或策略使舊批准失效，以及主代理規劃期間零工具派發。再於公司完成真實搜尋、多輪、排程及多助理成果核對，才能記 company_real_passed。合成通過不自動寫 verified。
 
-預計修改入口：assistants_gateway.py、assistant_sessions.py、profiles.py、company_readiness.py、assistant_briefings.py、workflows.py 與 WebView 設定／成果介面；主Store schema6、dialogue task_drafts.enabled=0 與既有資料界線保持。若需要帳本格式升級，先備份並加入舊紀錄相容測試。
+修改入口：search_tools.py（有限schema／policy）、assistants_gateway.py（工具往返）、profiles.py（修訂與rag路由）、company_readiness.py（metadata一次性token）、assistant_briefings.py（預覽與收據）、web_bridge.py／app.js（核准UI）。主Store schema6、dialogue task_drafts.enabled=0 與依賴保持；工具記錄放現有 JSON 帳本，舊文字請求相容預設無工具。
 
-# 0.16.0 Assistants 模式
+支援 schema：object／string／integer／number／boolean／array、properties／required／additionalProperties=false、items、enum、數值上下限、字串／陣列長度，以及有上限的 description／title。最多6層、每物件32欄，字串最多4000字、陣列64項、參數JSON32KiB；未知條件（含 $ref、pattern、anyOf、default）拒絕，不忽略限制。省略 additionalProperties 會明確收緊為false；metadata畫面呈現的是核准後定義。公司若用不同schema，請提供去識別化定義，擴充驗證及反例後再啟用，不把驗證移除。
+
+metadata／核准不執行工具，也不等於多助理能力驗收。核准token10分鐘、一次使用；變更策略提升profile revision並撤銷角色verified。更換endpoint、ID或協定清除核准。正在執行或取消尚未收尾時不能修改。已取得工具結果可在原batch明確恢復時用快取；未知plugin POST／submit永不自動重送。
+
+# Assistants 模式
 
 公司已提供 Threads／Messages／Runs 範例。設定頁 wire_mode 選 assistants，輸入共用 endpoint／API key，助理團隊管理各 Assistant ID。每段對話綁定版本；改 endpoint、ID、協定會使旧綁定失效並撤銷協作能力驗證。
 
 傳輸在 assistants_gateway.py、隔離與請求收據在 assistant_sessions.py、路由仍在 Profiles。respond 的可選 context 支援 conversation_id／request_id；workflow_call 以 run_id／step_id 隔離。已完成收據回傳快取，已知未完成 run 必須明確 resume，結果不明不重送。
 
-本版使用 tool_choice=none，requires_action 停止，不呼叫 pluginapi。CA 使用本機 config.json 的 assistant.ca_bundle；不關閉 TLS。公司測試仍須確認此限制被平台接受、伺服器是否有原生工具及 session 保留政策。
+普通聊天與規劃使用 tool_choice=none；僅上述核准日報／rag步驟傳入受限tools與auto。CA 使用本機 config.json 的 assistant.ca_bundle；不關閉 TLS。公司測試仍須確認平台遵守tools限制、服務端是否有其他原生副作用及session保留政策。
 
 來源為使用者提供的公司去金鑰範例；Git 不保存內部 endpoint。沒有正式 API server，scripts/mock-assistants.py 只供 loopback 合成協定測試。
 
@@ -82,6 +86,6 @@
 
 公司沿用 `workflow_call(messages, role, binding, context)`，role 為 planner／analysis／review／compose／rag，binding 包含 profile_id、連線 revision、capability_revision；context 包含 run_id、step_id。無狀態 API 可沿用現有 respond；有 session 的平台需依上述識別及助理版本建立獨立上下文，不能挪用個人聊天 session。重試有新的 run_id。
 
-规划 role 回傳 JSON：message、questions、steps。問題支援 text/single/multi/boolean；有問題時 steps 為空。步驟為目錄內 query 或 assistant，inputs 引用前置步驟 ID。分析／彙整／RAG 回傳 JSON：text、facts；覆核另含 verdict=pass 或 needs_attention。facts 的精確預期物件隨每步輸入提供，不推測或轉浮點。回覆格式不符、錯誤數值及工具要求都應失敗，不截斷、不替換成示範答案。
+规划 role 回傳 JSON：message、questions、steps。問題支援 text/single/multi/boolean；有問題時 steps 為空。步驟為目錄內 query 或 assistant，inputs 引用前置步驟 ID。分析／彙整／RAG 回傳 JSON：text、facts；覆核另含 verdict=pass 或 needs_attention。facts 的精確預期物件隨每步輸入提供，不推測或轉浮點。回覆格式不符、錯誤數值及未核准工具要求都應失敗，不截斷、不替換成示範答案。搜尋所得行情等數字寫在 text 並附來源，不新增到程式 facts。
 
 RAG 來源按平台實際格式映射至回覆文字，不能猜引用；assistant metadata verified/read_only 需公司核准測試支持。UI 只可保存角色、會撤銷驗證；啟用由可信公司 hook 完成並記錄本機證據識別。名稱／備註修改不影響連線，ID／endpoint 改變會撤銷能力驗證；流程固定版本，不能暗換目標。參見 [公司工作單](../COMPANY-HANDOFF.md#多助理協作接手工作)。

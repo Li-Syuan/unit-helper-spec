@@ -153,8 +153,8 @@ def main():
                 import httpx
                 from openai import OpenAI
                 from desktop_app.assistants_gateway import AssistantsGateway
-                from test_support.assistants_mock import AssistantsMock
-                company_mock=AssistantsMock(reply='【協定模擬】公司文字連接器已收到合成需求。')
+                from test_support.search_mock import SearchMock
+                company_mock=SearchMock()
                 profiles=session.profiles
                 profiles.set_endpoint('https://fixture.example.test/v1');profiles.set_wire_mode('assistants')
                 pid=profiles.save('合成公司助理','asst_synthetic')
@@ -162,7 +162,7 @@ def main():
                 def mock_client(d,p,key,binding):
                     sdk=OpenAI(base_url='https://fixture.example.test/v1',api_key=key,max_retries=0,
                         http_client=httpx.Client(transport=httpx.MockTransport(company_mock.handle)))
-                    return AssistantsGateway({'base_url':d['endpoint'],'assistant_id':p['assistant_id']},key,
+                    return AssistantsGateway({'base_url':d['endpoint'],'assistant_id':p['assistant_id'],'search_policy':p.get('search_policy')},key,
                         session.directory/'assistant-sessions.sqlite3',binding,client=sdk)
                 profiles._assistants_client=mock_client
                 window.evaluate_js("document.querySelector('[data-page=dialogue]').click()")
@@ -193,10 +193,22 @@ def main():
                 time.sleep(.3);count=len(company_mock.runs)
                 click_button('檢查本機設定');wait_text('下一步')
                 assert len(company_mock.runs)==count,'readiness_dispatched_model'
-                company_mock.assistant_tools=[{'type':'function','function':{'name':'synthetic_search','description':'mock only','parameters':{'type':'object'}}}]
-                click_button('檢查搜尋助理連線');wait_text('synthetic_search')
+                click_button('檢查搜尋助理連線');wait_text('internet_search')
                 assert len(company_mock.runs)==count,'metadata_probe_dispatched_model'
+                assert not window.evaluate_js("document.querySelector('[data-search-tool]').checked"),'search_default_selected'
+                assert not company_mock.plugin_requests,'metadata_dispatched_search'
+                window.evaluate_js("document.querySelector('[data-search-save]').scrollIntoView({block:'center'})")
+                assert window.evaluate_js("(()=>{const r=document.querySelector('[data-search-save]').getBoundingClientRect(),b=document.getElementById('modal-body').getBoundingClientRect();return r.top>=b.top&&r.bottom<=b.bottom;})()"),'search_consent_control_unreachable'
+                window.evaluate_js("document.querySelector('[data-search-tool]').click();document.querySelector('[data-search-consent]').click();document.querySelector('[data-search-save]').click()")
+                wait_text('已保存搜尋核准')
+                assert not company_mock.plugin_requests,'approval_dispatched_search'
                 capture('company-setup.png')
+                window.evaluate_js("document.getElementById('modal-close').click()")
+                click_button('檢查本機設定');wait_text('目前核准的搜尋工具：internet_search')
+                capture('search-policy-dark.png')
+                window.evaluate_js("document.getElementById('theme-toggle').click()")
+                time.sleep(.3);capture('search-policy-light.png')
+                window.evaluate_js("document.getElementById('theme-toggle').click()")
                 window.evaluate_js("document.getElementById('modal-close').click();document.querySelector('[data-page=dialogue]').click()")
                 time.sleep(.3);window.evaluate_js("document.getElementById('dialogue-briefing').click()");wait_text('台北')
                 company_mock.reply='【合成財經日報，非真實新聞】\n台股、美股、總經：此處僅展示回覆與排程流程。\n來源：https://example.test/synthetic'
@@ -205,6 +217,8 @@ def main():
                 click_button('現在試跑');wait_text('我已核對日報內容')
                 briefings=[t for t in session.store.tasks() if t['kind']=='assistant_briefing']
                 assert len(briefings)==1 and briefings[0]['state']=='succeeded','briefing_trial_failed'
+                assert len(company_mock.plugin_requests)==1,'approved_search_not_executed_once'
+                wait_text('結果已交回助理')
                 capture('briefing-result.png')
                 for text in ('關閉','啟用每日'):
                     assert window.evaluate_js("(()=>{const e=Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent.startsWith("+json.dumps(text)+"));const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()"),'briefing_controls_clipped'
@@ -226,6 +240,7 @@ def main():
                 assert not window.evaluate_js("document.getElementById('modal-body').innerText.includes('已啟用每日')"),'stale_enabled_label'
                 report['checks'].append('briefing_dom_preview_trial_review_schedule_pause_mock')
                 report['checks'].append('company_setup_and_metadata_probe_no_model_dispatch')
+                report['checks'].append('search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search')
                 report['viewport']=window.evaluate_js("({width:innerWidth,height:innerHeight,devicePixelRatio})")
                 report['text']=window.evaluate_js('document.body.innerText')
                 report['state']=api.call('state',{})

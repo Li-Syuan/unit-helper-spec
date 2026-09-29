@@ -11,21 +11,22 @@
     "untrusted_navigation_blocked",
     "company_sdk_mock_multiturn_main_ui_badge_small_controls",
     "briefing_dom_preview_trial_review_schedule_pause_mock",
-    "company_setup_and_metadata_probe_no_model_dispatch"
+    "company_setup_and_metadata_probe_no_model_dispatch",
+    "search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search"
   ],
   "viewport": {
     "width": 942,
     "height": 603,
     "devicePixelRatio": 1.6500000953674316
   },
-  "version": "0.17.0",
+  "version": "0.18.0",
   "capture_method": "WebView2 CapturePreview (application content only)",
   "gui": "local_real_passed",
   "company_protocol": "mock_passed",
   "company_services": "not_tested",
   "ime": "not_tested",
   "manual_usability": "not_tested",
-  "clipboard": "failed: Windows error 5",
+  "clipboard": "local synthetic passed; first pass Windows error 5",
   "norton": "not_tested",
   "sizes": [
     "1050x700 requested",

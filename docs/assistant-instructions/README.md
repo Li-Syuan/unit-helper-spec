@@ -10,6 +10,9 @@
 | QA 分析 | analysis | [analysis.md](analysis.md) |
 | QA 覆核 | review | [review.md](review.md) |
 | QA 彙整 | compose | [compose.md](compose.md) |
+| QA 搜尋（選用） | rag | [rag.md](rag.md) |
+
+要試真實財經多助理，可加入既有Internet Search助理的工作用副本作為rag角色，沿用新文件的text／facts契約。先在App讀取metadata並人工核准唯讀搜尋，再做公司角色驗收；核准更動會撤銷舊verified。規劃主代理不搜尋，analysis／review／compose不自動取得工具。單助理財經日報可先行試跑，不要求建立五位助理或JSON角色。
 
 1. 在公司平台建立四個助理，各貼入對應文件全文。預計都使用公司提供的 Luna；以公司平台實際名稱與可用設定為準，不把「GPT 6 Luna」猜成 API model ID。
 2. 初次只使用合成資料，停用非必要工具；由公司確認其唯讀文字／RAG 能力，不因 Instruction 寫「不執行」就認定內建工具無副作用。
