@@ -1,5 +1,7 @@
 # 0.15.0 接手更新
 
+**公司已能呼叫助理、接著要完成產品流程時：**把 [GPT 6 sol 實作指令](docs/COMPANY-IMPLEMENTATION.md) 交給公司 agent。此為使用者回報的公司進度，不代表本外部儲存庫已取得或驗證公司 adapter；以公司 checkout 為準並保留現有修改。
+
 公司若先評估 LangChain／LangGraph，使用 [獨立離線試驗包](experiments/langgraph-lab/README.md)。已包含 wheels 與公司 agent 指令；先驗安裝及無金鑰範例，再討論公司接線。不得覆蓋 App 的根目錄鎖檔，框架可用不代表公司 API 契約已完成。
 
 先確認 WebView2 Runtime 與 .NET Framework 已核准，重建requirements.lock環境。新版WebView為主入口，Tkinter為備用；兩者沿用Python服务與個人資料，但新增兩模式對話使用獨立dialogue-v1資料庫。
