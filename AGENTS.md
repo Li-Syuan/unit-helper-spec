@@ -1,3 +1,7 @@
+# 0.18.2 外觀選擇
+
+color_style只允許ocean/violet/forest，與theme深淺獨立存ui-preferences；缺失或損壞預設ocean。恢復預設僅重設dark/ocean，不清除其他偏好或公司連線。WebBridge appearance變更本次顏色，保存失敗須如實回報saved=false並可重試。風格只調主操作與選取，不改WARNING/RUNNING/SUCCESS/ERROR及一般未讀青藍；故紫色也可作星霧紫的操作色。切換不得重建設定表單、丟失草稿或派發。Tk同名選擇與整組原子保存保持相容。
+
 # 0.18.1 呈現規則
 
 WebView 的 badge／tone 只將既有狀態映射為語意色：待確認琥珀、執行藍、完成綠、失敗紅、取消中性；紫色只標團隊識別。未讀數不表示故障，使用青藍；notifications.is_read 是已讀來源，只有明確查看才標讀。Tk 同步主題，紅色驚嘆號保留給錯誤。顏色須搭配文字／圖示，不改批准、派發或成功判定；綠色不代表事實已核實。

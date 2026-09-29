@@ -7,6 +7,17 @@ from tests.test_theme_semantics import contrast
 
 
 class WebPaletteTests(unittest.TestCase):
+    def test_all_accent_variants_keep_button_and_selection_readable(self):
+        css = (Path(__file__).resolve().parents[1] / 'desktop_app/web_assets/app.css').read_text('utf-8')
+        for style in ('violet','forest'):
+            for theme in ('dark','light'):
+                selector=('body' if theme=='dark' else 'body[data-theme=light]')+'[data-color-style='+style+']'
+                declaration=css.split(selector+'{',1)[1].split('}',1)[0]
+                colors=dict(re.findall(r'--([a-z-]+):(#[a-fA-F0-9]{6})(?:;|})',declaration+'}'))
+                with self.subTest(theme=theme,style=style):
+                    self.assertGreaterEqual(contrast(colors['accent'],colors['accent-bg']),4.5)
+                    self.assertGreaterEqual(contrast(colors['on-accent'],colors['accent']),4.5)
+
     def test_text_and_status_contrast_in_both_themes(self):
         css = (Path(__file__).resolve().parents[1] / 'desktop_app/web_assets/app.css').read_text('utf-8')
         for selector in (':root', 'body[data-theme=light]'):
@@ -21,4 +32,3 @@ class WebPaletteTests(unittest.TestCase):
                     self.assertGreaterEqual(contrast(colors[semantic], colors[semantic + '-bg']), 4.5)
                     self.assertGreaterEqual(contrast(colors[semantic], colors['surface']), 4.5)
             self.assertGreaterEqual(contrast(colors['on-accent'], colors['accent']), 4.5)
-

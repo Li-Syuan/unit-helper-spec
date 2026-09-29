@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 from . import __version__
 from .gateways import GatewayError
-from .preferences import load_preferences, load_theme, update_preferences
+from .preferences import load_preferences, load_theme, load_color_style, save_appearance, COLOR_STYLES, update_preferences
 from .web_render import render_markdown
 from .files import load_upload, render_csv, render_tsv
 
@@ -15,6 +15,8 @@ from .files import load_upload, render_csv, render_tsv
 class WebBridge:
     def __init__(self, session):
         self._s=session;self._lock=threading.RLock();self._window=None
+        self._appearance={'theme':load_theme(session.preferences_path), 'color_style':load_color_style(session.preferences_path)}
+        self._appearance_saved=True
         self._attachments={};self._uploads={};self._seq={};self._previews={};self._submitted={};self._transfers={}
         self._parse_notes={};self._closing=False
 
@@ -73,7 +75,7 @@ class WebBridge:
             'notification_read':lambda p:s.store.mark_read(p['id']),
             'issue_save':lambda p:s.store.save_issue(p['type'],p['title'],p['description'],p.get('expected','')),
             'issue_submit':lambda p:s.store.submit_issue(p['id']),
-            'theme':self._theme,'sidebar':self._sidebar,'help':self._help,
+            'theme':self._theme,'appearance':self._set_appearance,'sidebar':self._sidebar,'help':self._help,
             'profile_save':self._profile_save,'profile_default':self._profile_default,
             'profile_roles':self._profile_roles,'connection_save':self._connection_save,'key_remove':self._key_remove,
             'company_readiness':self._company_readiness,
@@ -123,7 +125,7 @@ class WebBridge:
         profiles=[{k:v for k,v in r.items() if k in {'id','name','assistant_id','notes','enabled','revision','workflow','search_policy'}} for r in profiles]
         prefs=load_preferences(s.preferences_path)
         return dict(version=__version__,mode='Groq 外部 AI 試用 · 合成資料' if s.trial else '公司工作區' if s.config['query_mode']!='demo' else '本機示範 · 合成資料',
-            theme=load_theme(s.preferences_path),sidebar_collapsed=bool(prefs.get('sidebar_collapsed',False)),
+            **self._appearance,appearance_saved=self._appearance_saved,sidebar_collapsed=bool(prefs.get('sidebar_collapsed',False)),
             conversations=conversations,conversation=conversation,messages=messages,profiles=profiles,
             planners=[v for v in s.profiles.workflow_catalog() if 'planner' in v['workflow']['roles']],
             tasks=s.store.tasks(),plans=s.store.plans(),workflows=[s.workflows.snapshot(r['id']) for r in s.workflows.list(cid)],
@@ -248,10 +250,23 @@ class WebBridge:
         aid,revision=self._previews.pop(p['token']);return self._s.actions.confirm(aid,revision)
 
     def _theme(self,p):
-        if p['name'] not in ('dark','light'):raise ValueError('主題無效。')
-        update_preferences(self._s.preferences_path,{'theme':p['name']})
+        return self._set_appearance({'theme':p['name']})
+
+    def _set_appearance(self,p):
+        if set(p)-{'theme','color_style'}:raise ValueError('外觀設定格式無效。')
+        candidate={**self._appearance,**p}
+        if candidate['theme'] not in ('dark','light') or candidate['color_style'] not in COLOR_STYLES:
+            raise ValueError('不支援的外觀主題。')
+        # Apply for this session even when persistence is unavailable; never report a false save.
+        self._appearance=candidate
+        try:
+            save_appearance(self._s.preferences_path,**candidate)
+            self._appearance_saved=True
+        except OSError:
+            self._appearance_saved=False
         from .web_chrome import apply_chrome
-        apply_chrome(self._window,p['name'])
+        apply_chrome(self._window,candidate['theme'])
+        return {**candidate,'saved':self._appearance_saved}
 
     def _sidebar(self,p):
         if type(p['collapsed']) is not bool:raise ValueError('側欄偏好無效。')

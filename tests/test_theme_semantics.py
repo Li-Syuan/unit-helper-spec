@@ -16,15 +16,16 @@ def contrast(first, second):
 
 class SemanticPaletteTests(unittest.TestCase):
     def test_regular_text_and_status_labels_have_readable_contrast(self):
-        for theme in ('dark', 'light'):
-            colors = palette(theme)
+        for theme, color_style in ((theme, style) for theme in ('dark', 'light')
+                                   for style in ('ocean', 'violet', 'forest')):
+            colors = palette(theme, color_style)
             for background in ('BG', 'SURFACE'):
                 for foreground in ('INK', 'MUTED', 'ACCENT', 'WARNING', 'ERROR',
-                                   'SUCCESS', 'RUNNING', 'TEAM'):
-                    with self.subTest(theme=theme, foreground=foreground, background=background):
+                                   'SUCCESS', 'RUNNING', 'TEAM', 'INFO'):
+                    with self.subTest(theme=theme, color_style=color_style, foreground=foreground, background=background):
                         self.assertGreaterEqual(contrast(getattr(colors, foreground),
                                                         getattr(colors, background)), 4.5)
-            with self.subTest(theme=theme, control='unread badge'):
-                self.assertGreaterEqual(contrast(colors.ACCENT, colors.TINT), 4.5)
-            with self.subTest(theme=theme, control='primary button'):
+            with self.subTest(theme=theme, color_style=color_style, control='unread badge'):
+                self.assertGreaterEqual(contrast(colors.INFO, colors.TINT_INFO), 4.5)
+            with self.subTest(theme=theme, color_style=color_style, control='primary button'):
                 self.assertGreaterEqual(contrast(colors.BUTTON_INK, colors.ACCENT), 4.5)

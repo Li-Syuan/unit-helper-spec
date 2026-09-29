@@ -113,7 +113,7 @@ class ThemeTests(TestCase):
     def test_save_failure_remains_applied_and_restart_preference(self):
         a=self.app
         a.change_theme('light')
-        with patch('desktop_app.ui.save_theme',side_effect=OSError('denied')), patch('desktop_app.ui.messagebox.showwarning') as notice:
+        with patch('desktop_app.ui.save_appearance',side_effect=OSError('denied')), patch('desktop_app.ui.messagebox.showwarning') as notice:
             a.change_theme('dark')
         self.assertEqual(a.appearance.name,'dark'); self.assertEqual(a.input.cget('background'),a.palette.SURFACE)
         self.assertIn('無法保存',a.status.get()); notice.assert_called_once()

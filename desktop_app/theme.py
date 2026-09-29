@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import tkinter as tk
 from tkinter import ttk
 from .window_chrome import apply_titlebar
+from .preferences import COLOR_STYLES
 
 FONT = 'Microsoft JhengHei'
 _TOKENS = {
@@ -17,15 +18,30 @@ _TOKENS = {
         ERROR='#AE3542', SUCCESS='#1C7050', DISABLED='#6A7A90', BUTTON_INK='#FFFFFF',
         WARNING='#865300', RUNNING='#305BB6', TEAM='#7150B5'),
 }
+_STYLE_TOKENS = {
+    'violet': {
+        'dark': dict(ACCENT='#B29BFF', ACCENT_HOVER='#C9B8FF', TINT='#302943', BUTTON_INK='#201331'),
+        'light': dict(ACCENT='#6946B6', ACCENT_HOVER='#553591', TINT='#F0EAFF', BUTTON_INK='#FFFFFF'),
+    },
+    'forest': {
+        'dark': dict(ACCENT='#69CBB5', ACCENT_HOVER='#94DECA', TINT='#173A32', BUTTON_INK='#082C26'),
+        'light': dict(ACCENT='#136F60', ACCENT_HOVER='#0D594D', TINT='#E0F3EC', BUTTON_INK='#FFFFFF'),
+    },
+}
 
 
-def palette(name):
+def palette(name, color_style='ocean'):
     if name not in _TOKENS: raise ValueError('不支援的外觀主題。')
-    return SimpleNamespace(**_TOKENS[name], FONT=FONT)
+    if color_style not in COLOR_STYLES: raise ValueError('不支援的配色風格。')
+    colors = dict(_TOKENS[name])
+    # Informational notices retain their meaning when the action accent changes.
+    colors.update(INFO=colors['ACCENT'], TINT_INFO=colors['TINT'])
+    colors.update(_STYLE_TOKENS.get(color_style, {}).get(name, {}))
+    return SimpleNamespace(**colors, FONT=FONT)
 
 
 class Appearance:
-    def __init__(self, root, name='dark'):
+    def __init__(self, root, name='dark', color_style='ocean'):
         self.root = root
         root._qa_appearance=self
         root.bind('<Map>',self._mapped,add='+')
@@ -36,16 +52,20 @@ class Appearance:
         self.style = ttk.Style(root)
         self.style.theme_use('clam')
         self.name = name
-        self.colors = palette(name)
+        self.color_style = color_style
+        self.colors = palette(name, color_style)
         self.configure(name)
 
     def _mapped(self,event):
         if isinstance(event.widget,(tk.Tk,tk.Toplevel)):
             apply_titlebar(event.widget,self.name,self.colors)
 
-    def configure(self, name):
+    def configure(self, name, color_style=None):
+        color_style = self.color_style if color_style is None else color_style
+        c = palette(name, color_style)
         self.name = name
-        c = self.colors = palette(name)
+        self.color_style = color_style
+        self.colors = c
         root = self.root
         root.configure(background=c.BG)
         # Defaults are scoped to this Tk interpreter and used by future dialogs.
@@ -79,10 +99,10 @@ class Appearance:
         s.configure('Muted.TLabel',foreground=c.MUTED)
         s.configure('Title.TLabel',font=(FONT,16,'bold'))
         s.configure('Section.TLabel',font=(FONT,11,'bold'))
-        s.configure('DialogMark.TLabel',background=c.TINT,foreground=c.ACCENT,font=(FONT,20,'bold'),padding=6)
+        s.configure('DialogMark.TLabel',background=c.TINT_INFO,foreground=c.INFO,font=(FONT,20,'bold'),padding=6)
         # Unread is informational, not an error. Severity belongs to the notice itself.
-        s.configure('NotificationBadge.TLabel',background=c.TINT,foreground=c.ACCENT,padding=(7,3),font=(FONT,10,'bold'))
-        for name,color in [('Info',c.ACCENT),('Success',c.SUCCESS),('Warning',c.WARNING),('Error',c.ERROR),('Neutral',c.MUTED)]:
+        s.configure('NotificationBadge.TLabel',background=c.TINT_INFO,foreground=c.INFO,padding=(7,3),font=(FONT,10,'bold'))
+        for name,color in [('Info',c.INFO),('Success',c.SUCCESS),('Warning',c.WARNING),('Error',c.ERROR),('Neutral',c.MUTED)]:
             s.configure(name+'.ToastBorder.TFrame',background=color)
             s.configure(name+'.ToastMark.TLabel',background=c.SURFACE,foreground=color,font=(FONT,20,'bold'))
         s.configure('Error.DialogMark.TLabel',background=c.SURFACE,foreground=c.ERROR)

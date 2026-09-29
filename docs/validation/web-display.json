@@ -2,6 +2,7 @@
   "status": "passed",
   "checks": [
     "bridge_ready",
+    "six_style_modes_preserve_form_semantic_colors_save_retry_reset_zero_dispatch",
     "semantic_theme_keeps_draft_selection_and_zero_dispatch",
     "provider_failure_preserves_input_and_messages_no_fallback",
     "offline_multiturn_mode_reset_questions_preview_cancel_and_disabled_save",
@@ -22,7 +23,7 @@
     "height": 603,
     "devicePixelRatio": 1.6500000953674316
   },
-  "version": "0.18.1",
+  "version": "0.18.2",
   "capture_method": "WebView2 CapturePreview (application content only)",
   "gui": "local_real_passed",
   "company_protocol": "mock_passed",
@@ -40,5 +41,11 @@
     "workspace-light.png",
     "workspace-small.png",
     "task-preview.png"
-  ]
+  ],
+  "color_styles": [
+    "ocean",
+    "violet",
+    "forest"
+  ],
+  "appearance": "six combinations, semantic state colors unchanged, preserve unsaved fields, failed save and retry, reset"
 }

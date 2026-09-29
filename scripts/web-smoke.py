@@ -44,6 +44,53 @@ def main():
                         if not pending[0].Wait(10000):raise AssertionError('capture_timeout')
                     finally:stream.Dispose()
                 time.sleep(.4);capture('dark.png')
+                # Theme choices use existing widgets; unsaved connection inputs stay local.
+                window.evaluate_js("document.querySelector('[data-page=settings]').click()")
+                time.sleep(.3)
+                assert window.evaluate_js("document.querySelectorAll('[data-color-choice]').length")==3,'missing_style_cards'
+                window.evaluate_js("window.paletteEndpoint=document.querySelector('#page-content input:not([type=password])');paletteEndpoint.value='https://unsaved.example.test/v1'")
+                def wait_script(script):
+                    for _ in range(60):
+                        if window.evaluate_js(script):return
+                        time.sleep(.1)
+                    raise AssertionError('appearance_wait_timeout')
+                state_colors={}
+                for theme in ('dark','light'):
+                    window.evaluate_js("document.querySelector('[data-theme-choice="+theme+"]').click()")
+                    wait_script("document.body.dataset.theme==="+json.dumps(theme)+"&&!document.querySelector('[data-theme-choice="+theme+"]').disabled")
+                    for style in ('ocean','violet','forest'):
+                        window.evaluate_js("document.querySelector('[data-color-choice="+style+"]').click()")
+                        wait_script("document.body.dataset.colorStyle==="+json.dumps(style)+"&&!document.querySelector('[data-color-choice="+style+"]').disabled")
+                        assert window.evaluate_js("document.querySelector('[data-color-choice="+style+"]').getAttribute('aria-pressed')")=='true','selected_style_not_marked'
+                        assert window.evaluate_js("paletteEndpoint===document.querySelector('#page-content input:not([type=password])')&&paletteEndpoint.value==='https://unsaved.example.test/v1'"),'appearance_rebuilt_connection_form'
+                        colors=window.evaluate_js("Array.from(document.querySelectorAll('.appearance-legend .pill')).map(e=>getComputedStyle(e).color)")
+                        if theme in state_colors:assert colors==state_colors[theme],'style_changed_status_colors'
+                        else:state_colors[theme]=colors
+                        capture('style-'+theme+'-'+style+'.png')
+                assert not session.store.tasks(),'style_choice_dispatched_work'
+                from desktop_app.preferences import load_color_style
+                assert load_color_style(session.preferences_path)=='forest','style_not_persisted'
+                from unittest.mock import patch
+                with patch('desktop_app.web_bridge.save_appearance',side_effect=OSError('synthetic_write_failure')):
+                    window.evaluate_js("document.querySelector('[data-color-choice=violet]').click()")
+                    wait_script("document.getElementById('appearance-status').dataset.saved==='false'&&!document.querySelector('[data-color-choice=violet]').disabled")
+                    assert window.evaluate_js('document.body.dataset.colorStyle')=='violet','failed_save_lost_session_style'
+                    assert load_color_style(session.preferences_path)=='forest','failed_save_overwrote_disk'
+                    assert not window.evaluate_js("document.getElementById('appearance-retry').hidden"),'missing_save_retry'
+                window.evaluate_js("document.getElementById('appearance-retry').click()")
+                wait_script("document.getElementById('appearance-status').dataset.saved==='true'&&!document.getElementById('appearance-retry').disabled")
+                assert load_color_style(session.preferences_path)=='violet','retry_not_persisted'
+                assert window.evaluate_js("document.getElementById('toast').textContent")=='外觀已保存。','stale_save_failure_toast'
+                window.resize(1050,700);time.sleep(.3);capture('appearance-settings-small.png')
+                window.evaluate_js("document.getElementById('appearance-reset').scrollIntoView({block:'center'})")
+                assert window.evaluate_js("(()=>{const r=document.getElementById('appearance-reset').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()"),'appearance_reset_unreachable'
+                window.evaluate_js("document.getElementById('appearance-reset').click()")
+                wait_script("document.body.dataset.colorStyle==='ocean'&&document.body.dataset.theme==='dark'&&!document.getElementById('appearance-reset').disabled")
+                assert session.profiles.data.get('endpoint','')!='https://unsaved.example.test/v1','appearance_saved_connection'
+                window.resize(1280,860)
+                window.evaluate_js("document.querySelector('[data-page=dialogue]').click()")
+                time.sleep(.3)
+                report['checks'].append('six_style_modes_preserve_form_semantic_colors_save_retry_reset_zero_dispatch')
                 # Semantic palette and live theme updates are local presentation only.
                 window.evaluate_js("document.getElementById('dialogue-input').value='保留配色驗收草稿';document.getElementById('dialogue-input').setSelectionRange(2,6)")
                 for theme in ('light','dark'):
@@ -146,7 +193,7 @@ def main():
                 cid=api.call('state',{})['data']['conversation']['id']
                 workflow=session.workflows.create(cid,'合成分工介面驗證',trial.workflow_binding('groq-planner'))
                 session.workflows.update(workflow['id'],workflow['revision'],steps)
-                time.sleep(2)
+                wait_script("Array.from(document.querySelectorAll('#workflow-panel button')).some(b=>b.textContent==='檢視並確認')")
                 window.evaluate_js("Array.from(document.querySelectorAll('#workflow-panel button')).find(b=>b.textContent==='檢視並確認').click()")
                 time.sleep(.3);capture('workflow-preview.png')
                 assert len(session.store.tasks())==2,'workflow_dispatched_before_confirmation'
@@ -154,8 +201,10 @@ def main():
                 time.sleep(2)
                 task=session.store.tasks()[0]
                 assert task['kind']=='workflow' and task['state']=='succeeded','workflow_failed'
+                wait_script("Array.from(document.querySelectorAll('#workflow-panel button')).some(b=>b.textContent==='查看成果')")
                 window.evaluate_js("Array.from(document.querySelectorAll('#workflow-panel button')).find(b=>b.textContent==='查看成果').click()")
-                time.sleep(.3);capture('outcome.png')
+                wait_script("Array.from(document.querySelectorAll('#modal-body button')).some(b=>b.textContent==='可採用')")
+                capture('outcome.png')
                 assert window.evaluate_js("Boolean(document.querySelector('#modal-body .pill[data-tone=success]'))"),'outcome_not_success'
                 window.evaluate_js("Array.from(document.querySelectorAll('#modal-body button')).find(b=>b.textContent==='可採用').click()")
                 time.sleep(.3)
@@ -296,6 +345,8 @@ def main():
                 # This runner contains synthetic data only; keep the assertion location.
                 import traceback
                 report['error_line']=traceback.extract_tb(e.__traceback__)[-1].lineno
+                report['runner_line']=[frame.lineno for frame in traceback.extract_tb(e.__traceback__)
+                                       if Path(frame.filename).resolve()==Path(__file__).resolve()][-1]
             finally:
                 (destination/'result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
                 window.destroy()

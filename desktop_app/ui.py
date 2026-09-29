@@ -13,7 +13,7 @@ from tkinter import ttk, filedialog
 from . import dialogs as messagebox
 from . import __version__
 from . import theme
-from .preferences import load_theme, save_theme
+from .preferences import load_theme, load_color_style, save_appearance
 from .profiles import Profiles
 from .assistant_views import AssistantViews
 from .team_views import TeamViews
@@ -131,7 +131,7 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
         self.display=Display(root)
         self.display.size_window(root,1280,860,(1050,700))
         self.preferences_path=self.directory/'ui-preferences.json'
-        self.appearance=theme.Appearance(root,load_theme(self.preferences_path))
+        self.appearance=theme.Appearance(root,load_theme(self.preferences_path),load_color_style(self.preferences_path))
         self.brand_icon,self.brand_warning=apply_icons(root,theme=self.appearance.name)
         self.palette=self.appearance.colors; self.style=self.appearance.style
         self.status=tk.StringVar(value='準備就緒。排程只在此程式開啟時執行。')
@@ -768,23 +768,35 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
         for value,label in [('dark','深色'),('light','淺色')]:
             ttk.Radiobutton(appearance,text=label,value=value,variable=self.theme_choice,
                 command=lambda:self.change_theme(self.theme_choice.get())).pack(side='left',padx=(0,14))
-        ttk.Label(appearance,text='立即切換並記住選擇',style='Muted.TLabel').pack(side='right')
+        color_row=appearance
+        ttk.Label(color_row,text='配色',style='Section.TLabel').pack(side='left',padx=(8,12))
+        self.color_style_choice=tk.StringVar(value=self.appearance.color_style)
+        for value,label in [('ocean','深海青藍'),('violet','星霧紫'),('forest','森林青綠')]:
+            ttk.Radiobutton(color_row,text=label,value=value,variable=self.color_style_choice,
+                command=lambda:self.change_color_style(self.color_style_choice.get())).pack(side='left',padx=(0,10))
+        self.button(color_row,'恢復預設',self.reset_appearance,'Compact.TButton').pack(side='right')
         # Hidden legacy variables retain the old maintenance API; user settings use assistant profiles.
         self.setting_vars={k:tk.StringVar(value=str(self.config['assistant'][k])) for k in ('mode','base_url','model','api_key_env','timeout_seconds')}
         self.build_profile_settings(tab)
-    def change_theme(self,name):
+    def change_color_style(self,color_style):
+        self.change_theme(self.appearance.name,color_style)
+    def reset_appearance(self):
+        self.change_theme('dark','ocean')
+    def change_theme(self,name,color_style=None):
         # Recolor in place: no service call, widget rebuild, draft or selection change.
-        self.appearance.configure(name); self.palette=self.appearance.colors
+        self.appearance.configure(name,color_style); self.palette=self.appearance.colors
         self.brand_icon,self.brand_warning=apply_icons(self.root,theme=name)
         self.brand_image_label.configure(image=self.brand_icon or '',bg=self.palette.SIDEBAR)
         self.brand_warning_label.configure(text=self.brand_warning)
         if self.brand_warning:self.brand_warning_label.pack(fill='x',pady=4)
         else:self.brand_warning_label.pack_forget()
-        self.theme_choice.set(name); self.route_changed();self.workspace_theme()
+        self.theme_choice.set(name); self.color_style_choice.set(self.appearance.color_style)
+        self.route_changed();self.workspace_theme()
         self.refresh_team();self.navigation.apply()
         try:
-            save_theme(self.preferences_path,name)
-            self.status.set(self.brand_warning or '已套用'+('深色' if name=='dark' else '淺色')+'外觀。')
+            save_appearance(self.preferences_path,name,self.appearance.color_style)
+            label={'ocean':'深海青藍','violet':'星霧紫','forest':'森林青綠'}[self.appearance.color_style]
+            self.status.set(self.brand_warning or '已套用'+label+' · '+('深色' if name=='dark' else '淺色')+'外觀。')
         except OSError:
             self.status.set('外觀已套用，但無法保存偏好；下次開啟可能恢復原設定。')
             messagebox.showwarning('外觀未保存','本次切換仍有效，但無法保存偏好。請確認資料目錄可寫入。',parent=self.root)

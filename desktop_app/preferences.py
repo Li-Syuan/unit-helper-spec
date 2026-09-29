@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 HINT_PAGES = ('activity', 'team', 'todo', 'chat', 'query', 'work', 'result', 'schedule', 'notice', 'settings', 'issue')
+COLOR_STYLES = ('ocean', 'violet', 'forest')
 
 
 def load_preferences(path):
@@ -43,6 +44,17 @@ def save_theme(path, name):
     if name not in ('dark', 'light'):
         raise ValueError('不支援的外觀主題。')
     update_preferences(path, {'theme': name})
+
+
+def load_color_style(path):
+    value = load_preferences(path).get('color_style')
+    return value if value in COLOR_STYLES else 'ocean'
+
+
+def save_appearance(path, theme, color_style):
+    if theme not in ('dark', 'light') or color_style not in COLOR_STYLES:
+        raise ValueError('不支援的外觀主題。')
+    update_preferences(path, {'theme': theme, 'color_style': color_style})
 
 
 def load_page_hints(path):
