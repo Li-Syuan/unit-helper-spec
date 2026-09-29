@@ -264,7 +264,7 @@ class Engine:
         self._assistant_dispatching = set()
         # Only the process holding the app's data-directory lock may create Engine.
         with store.connection() as db:
-            db.execute("UPDATE schedules SET enabled=0 WHERE id IN (SELECT schedule_id FROM tasks WHERE kind='workflow' AND state IN ('queued','running'))")
+            db.execute("UPDATE schedules SET enabled=0 WHERE id IN (SELECT schedule_id FROM tasks WHERE kind IN ('workflow','assistant_briefing') AND state IN ('queued','running'))")
             db.execute("UPDATE tasks SET state='failed',error=?,finished_at=? WHERE state IN ('queued','running')",
                        ("應用程式已中斷；未自動重送，請確認後重新操作。", stamp()))
             db.execute("UPDATE plans SET state='failed' WHERE state='executing'")
@@ -601,8 +601,11 @@ class Engine:
             db.execute("UPDATE plans SET state='cancelled' WHERE task_id=? AND state='executing'", (task_id,))
             db.execute("UPDATE occurrences SET state='cancelled' WHERE task_id=? AND state IN ('queued','running')", (task_id,))
             if hasattr(self,'_workflows'):self._workflows.cancel_task_tx(db,task_id)
+            db.execute("UPDATE schedules SET enabled=0 WHERE id IN (SELECT schedule_id FROM tasks WHERE id=? AND kind='assistant_briefing' AND state='cancelled')",(task_id,))
 
     def _work(self, task_id):
+        if hasattr(self,'_briefings') and self.store.task(task_id)['kind']=='assistant_briefing':
+            return self._briefings.work(task_id)
         if hasattr(self,'_workflows') and self.store.task(task_id)['kind']=='workflow':
             return self._workflows.work(task_id)
         with self._lock, self.store.connection() as db:
@@ -679,6 +682,7 @@ class Engine:
                            (uid(), t["conversation_id"], "assistant", result["text"], stamp()))
             if t["schedule_id"]:
                 if t['kind']=='workflow':self._workflows.notify(db,t,state)
+                elif t['kind']=='assistant_briefing':self._briefings.notify(db,t,state)
                 else:self._notify_result(db, t, state, result)
 
     @staticmethod
@@ -752,6 +756,7 @@ class Engine:
             db.execute("BEGIN IMMEDIATE")
             s = self.store.decode(db.execute("SELECT * FROM schedules WHERE id=?", (schedule_id,)).fetchone())
             if '_workflow' in s['parameters']:raise ValueError('協作流程日期屬於已批准計畫；請另建流程修改並試跑。')
+            if '_assistant_briefing' in s['parameters']:raise ValueError('日報使用每次實際執行時間；修改需求請重新試跑。')
             if s["enabled"]:
                 raise ValueError("請先停用排程再修改日期模式。")
             if mode == 'previous_day' and not self.schedule_date_mapping(s['query_id']):
@@ -767,6 +772,10 @@ class Engine:
         return LEGACY_DATE_RANGES.get(query_id) if legacy else None
 
     def _schedule_parameters(self, schedule, occurrence):
+        if '_assistant_briefing' in schedule['parameters']:
+            if not hasattr(self,'_briefings'):raise ValueError('助理日報服務尚未初始化。')
+            self._briefings.validate(schedule['parameters']['_assistant_briefing'])
+            return copy.deepcopy(schedule['parameters'])
         if '_workflow' in schedule['parameters']:
             if not hasattr(self,'_workflows'):raise ValueError('協作服務尚未初始化。')
             self._workflows.schedule_spec(schedule,occurrence)
@@ -796,6 +805,9 @@ class Engine:
             return task_id
 
     def _claim_occurrence(self, db, schedule, key, occurrence):
+        if '_assistant_briefing' in schedule['parameters']:
+            if not hasattr(self,'_briefings'):raise ValueError('助理日報服務尚未初始化。')
+            return self._briefings.claim(db,schedule,key,occurrence)
         if '_workflow' in schedule['parameters']:
             if not hasattr(self,'_workflows'):raise ValueError('協作服務尚未初始化。')
             return self._workflows.claim(db,schedule,key,occurrence)
@@ -894,7 +906,7 @@ class Engine:
             if not self._closed:
                 self._closed = True
                 with self.store.connection() as db:
-                    db.execute("UPDATE schedules SET enabled=0 WHERE id IN (SELECT schedule_id FROM tasks WHERE kind='workflow' AND state IN ('queued','running'))")
+                    db.execute("UPDATE schedules SET enabled=0 WHERE id IN (SELECT schedule_id FROM tasks WHERE kind IN ('workflow','assistant_briefing') AND state IN ('queued','running'))")
                     db.execute("UPDATE tasks SET state='cancelled',finished_at=? WHERE state IN ('queued','running')", (stamp(),))
                     db.execute("UPDATE plans SET state='cancelled' WHERE state='executing'")
                     db.execute("UPDATE occurrences SET state='cancelled' WHERE state IN ('queued','running')")

@@ -1,49 +1,40 @@
-# QA agent 0.16.0 驗證紀錄
+# QA agent 0.17.0 驗證紀錄
 
-本版將 LangGraph 接入正式工作流程，新增公司 Assistants 協定連接器。以下區分本機實作、合成協定及公司實測；沒有呼叫公司端點或使用真實金鑰。
+本版新增公司啟用檢查、明確 assistant metadata GET 及單助理財經日報。沒有呼叫公司端點或使用真實金鑰；公司搜尋、工具派發與多 ID 能力均未以本機結果代替。
 
-## 完整回歸與環境
+## 回歸與環境
 
-Windows x64、Python **恰好 3.10.4**，69 個直接與間接套件依 requirements.lock 安裝。三個環境依序執行，沒有共用外部 site-packages：
+正式 Windows x64、Python **3.10.4**，常駐 `.venv` 執行 460 項：**459 通過、1 錯誤、0 跳過**。doctor、pip check、freeze 與既有69項鎖檔一致；原始命令／結果見 [development.json](validation/development.json)。完整命令保留非零結束碼。
 
-| 環境 | 完整回歸 | 原始紀錄 |
-|---|---|---|
-| 常駐 .venv | 443 項：442 通過、1 錯誤、0 跳過 | [development.json](validation/development.json) |
-| 乾淨重建 .venv-graphverify | 443 項：442 通過、1 錯誤、0 跳過 | [clean-rebuild.json](validation/clean-rebuild.json) |
-| 完全離線 .venv-graphoffline | 443 項：442 通過、1 錯誤、0 跳過 | [offline-rebuild.json](validation/offline-rebuild.json) |
+唯一錯誤是既有 `test_long_message_theme_copy_and_close_without_mutation` 的 Windows 剪貼簿讀回：`OpenClipboard failed (Windows error 5)`。沒有刪除或放寬測試，根因及真實貼上能力尚未確認，仍需可互動桌面驗證。
 
-三環境的 doctor、pip check、freeze 與鎖檔比對通過。唯一錯誤是既有 test_long_message_theme_copy_and_close_without_mutation 的 Windows 剪貼簿讀回：OpenClipboard failed (Windows error 5)。沒有刪除、跳過或放寬該測試；全套命令保留非零結束碼。須在可互動桌面重測，根因及實際貼上能力尚未確認。
+本版沒有新增依賴或重建環境。沿用0.16.0已完成的乾淨／完全離線69 wheels安裝證據：[clean-rebuild.json](validation/clean-rebuild.json)、[offline-rebuild.json](validation/offline-rebuild.json)；兩者是先前443項測試紀錄，**不是本版460項重建結果**。重新交付離線包僅更新已提交原始碼，wheels與lock不變。常駐仍只有`.venv`與其基礎直譯器。
 
-離線環境使用 --no-index --no-cache-dir 從完整 wheelhouse 安裝；69 個 wheel 雜湊、平台與最終 lock 指紋均通過檢查。正式 App 依賴與試驗包分開管理，沒有直接引用試驗包 site-packages。驗證後清除本輪兩個暫存環境，只保留 .venv 及其基礎直譯器 .runtime/python3104。
+## 本版新增證據
 
-## 新功能證據
-
-| 範圍 | 狀態與內容 |
+| 範圍 | 狀態與證據 |
 |---|---|
-| LangGraph | local_real_passed：真 StateGraph／SqliteSaver 執行、重開不自動派發、明確恢復、checkpoint 與成果不一致停止、已完成步驟不重跑 |
-| 公司協定 | mock_passed：真 OpenAI SDK + MockTransport，Threads／Messages／Runs、多輪隔離、四個合成 ID、當次 run 訊息分頁、認證／逾時／格式錯誤、取消與未知寫入不重送 |
-| 工具限制 | mock_passed：送出 tool_choice=none；requires_action 停止，零 pluginapi 呼叫 |
-| 主畫面旅程 | mock_passed：公司對話、多輪、切助理、任務追問／預覽／確認只存 enabled=0；Plan 確認前零子助理、批准後順序執行、防重 |
-| 背景請求 | mock_passed：I/O 期間狀態與取消可操作、取消／關閉後晚到結果不保存，關閉等待真實請求收尾 |
-| 本機模擬伺服器 | local_real_passed：實際啟動 loopback HTTP，SDK 完成 thread/message/run/list 後關閉；只用合成資料，不代表公司服務通過 |
-| 資料保存 | local_real_passed：原對話刪除同步清本機額外回覆快取；已批准獨立流程成果保留。主 Store schema6／dialogue schema1 不變 |
+| 公司啟用檢查 | mock_passed：純本機盤點、不讀金鑰、不派發；角色宣告不能冒充驗收，分享欄位不含植入秘密 |
+| metadata GET | mock_passed：真SDK+MockTransport，僅一次retrieve、無thread/run/pluginapi；錯誤ID及認證錯誤拒絕，真實pending阻擋改設定並等待關閉 |
+| 財經日報 | mock_passed：預覽零派發、十分鐘期限、固定request防重、公司版本綁定、無四角色前提、試跑後核對及持續同意才排程 |
+| 排程與保存 | local_real_passed／mock_passed：真SQLite與可控時鐘；台北08:00、立即測試不改時間、重開不重播、每次隔離thread、失敗暫停及通知 |
+| 取消 | mock_passed：晚到回覆不成功，取消後真實future尚未結束阻擋重疊 |
+| 工具界線 | mock_passed：tool_choice=none；requires_action停止，零pluginapi呼叫；結果search仍為not_tested |
 
-新增 34 項案例保留原有 409 項覆蓋。最後另驗證「成果已提交但 checkpoint 寫入失敗」時，原成果仍為已完成，明確恢復不重新查詢。未知查詢結果及未知遠端寫入仍停止，不以重試猜測。
-
-早期整合測試曾發現 SQLite 連線未即時關閉、Groq 舊介面不接受 context 參數，以及 Tk 最小視窗新增協定列遮住按鈕；已修正並包含在最終全套回歸。中途紀錄保存在本機 artifacts，不以初次失敗宣稱已通過。
+新增17項案例，保留原443項覆蓋。既有LangGraph、Assistants多輪、Plan批准、恢復、待辦、刪除與成果功能仍納入全套回歸。GUI中發現排程enabled的SQLite整數與前端布林契約不符，已修正為明確布林並補正反斷言；失敗紀錄保留本機開發log，不以首次嘗試宣稱通過。
 
 ## 實際介面
 
-真正啟動 WebView2，以合成資料、模擬 SDK 回覆操作 DOM，9 組檢查通過。檢視深淺主題、一般、小視窗與最大化內容；公司主畫面雙輪對話、模式標示、輸入／取消入口及任務預覽可達。使用 CapturePreview 擷取 App 內容，不截取其他程式。見 [介面摘要](validation/web-display.json) 及 docs/images 的四張現行畫面。
+真正啟動WebView2，以合成資料／SDK模擬回覆操作DOM，**11組檢查通過**。新增旅程從主對話財經日報按鈕進入，預覽→試跑→核對→啟用→暫停；啟用不多跑一次，暫停後不殘留已啟用文字。公司設定盤點與metadata檢查均未建立模型run。
 
-Tk 真控制項回歸涵蓋深淺主題與最小視窗，協定選擇改放附屬視窗，保留原設定頁操作空間。程式 GUI 操作不能代替人工直觀性、真實 IME、Windows 框線外觀或 Excel 貼上驗收。
+檢視深淺主題、1050×700、1280×860與最大化；小視窗成果與關閉／啟用入口可達，長內容使用可捲動主體。截圖為WebView2 CapturePreview，只包含App；見 [介面摘要](validation/web-display.json) 與 docs/images 的四張現行畫面。自動GUI操作不代表人工直觀性或中文IME通過。
 
 ## 待公司及人工驗收
 
-- 公司 API／CA／多 assistant ID／原生工具能力：**not_tested**。範例確定了協定位置，不保證公司平台接受 tool_choice 或其執行行為。
-- 公司 AD、owner 隔離、Oracle 及舊資料移轉：**not_tested**。不得啟用未核准查詢或插件。
-- 真人使用性、中文 IME、Excel／Clipboard：**not_tested；本機剪貼簿測試目前失敗**。
-- Norton 成效：**未能確認**。沿用固定腳本，沒有關防毒、加排除或修改執行政策；測試通過不代表防毒驗收。
-- 沒有啟用 LangSmith 雲端 tracing、自動重試、並行自主代理或未經批准的任務。正常關閉的取消不等於遠端一定已停止。
+- 公司API／CA／真實多ID／Internet Search／pluginapi：**not_tested**。使用者回報舊App已能搜尋，但本checkout未取得公司成功搜尋原始證據。工具已配置在助理內，仍可能需要客戶端requires_action往返；目前工具限制可能阻擋搜尋。
+- 四角色Instruction／Luna內容品質：**not_tested**。planner為主代理，另三位為分析／覆核／彙整；尚無已驗證的第五位搜尋角色。合成題見 [公司指令](COMPANY-IMPLEMENTATION.md)。
+- AD、owner隔離、Oracle、舊資料移轉：**not_tested**。
+- 真人使用性、中文IME、Excel／Clipboard：**not_tested；本機Clipboard測試失敗**。
+- Norton成效：**未能確認**。未關防毒、加排除、修改執行政策或停用TLS。
 
-公司 agent 請依 [接手指令](COMPANY-IMPLEMENTATION.md) 逐項實測並補證據。完整歷史證據可從 Git 查閱；本文件只描述當前交付。
+沒有啟用LangSmith、背景模型檢查或自動重試。收到文字只代表取得回覆，不能認定日期、行情、來源或自由文字已核實。App關閉不執行本機排程；取消不能保證遠端已停止。

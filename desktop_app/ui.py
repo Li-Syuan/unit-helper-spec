@@ -121,6 +121,8 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
             self.lock.close(); raise
         self.actions=ActionService(self.engine)
         self.workflows=WorkflowService(self.engine,self.profiles)
+        from .assistant_briefings import AssistantBriefings
+        self.briefings=AssistantBriefings(self.engine,self.profiles)
         self.io=ThreadPoolExecutor(max_workers=1); self.events=queue.Queue(); self.stop=threading.Event()
         self.closed=False; self.pending_io=0; self.io_futures=[]; self.attachment=None; self.result=None; self.result_task=None; self.page=0
         self.editing_plan=None; self.issue_id=None; self.seen={t['id']:t['state'] for t in self.store.tasks()}

@@ -235,6 +235,16 @@ class Profiles:
         try:return client.inspect_request(context=context,remote=True)
         finally:client.close()
 
+    def inspect_assistant(self,binding):
+        with self.lock:
+            p=self.validate(binding);d=copy.deepcopy(self.data)
+            if p['id']=='demo' or d['wire_mode']!='assistants':
+                raise GatewayError('請先設定公司 Assistants 協定及公司助理 ID。')
+            key=self.key()
+        client=self._assistants_client(d,p,key,binding)
+        try:return client.inspect_assistant()
+        finally:client.close()
+
     def workflow_catalog(self):
         """Only explicitly verified read-only capabilities may be orchestrated."""
         return [p for p in self.items(True) if p.get('workflow',{}).get('verified') is True

@@ -1,4 +1,12 @@
-# 0.16.0 正式 LangGraph 與公司 Assistants
+# 0.17.0 公司試跑與財經日報
+
+新增公司啟用檢查及明確的助理 metadata GET，與模型呼叫分開。CompanyProbe 追蹤實際請求與關閉；本機設定存在、金鑰來源設定或工具名稱都不代表能力已驗證。
+
+`AssistantBriefings` 使用既有 Engine 的背景派發、取消、防重及排程時鐘，新增 assistant_briefing 工作種類與 ASSISTANT_BRIEFING 排程識別，不變更 schema。預覽→一次試跑→人工核對／持續傳送同意→每日排程；主對話、設定與自動工作皆可開啟，活動紀錄可重開成果。結果保留完整文字，search 固定 not_tested；實際搜尋及事實準確性另驗。
+
+試跑及每次排程依 task ID 隔離公司遠端 thread。排程保留已批准需求、助理版本與台北 HH:MM；使用當次執行時間，App 開啟才運作。失敗、取消、中斷或綁定失效時暫停；取消後尚未結束的請求仍阻擋重疊。多助理 WorkflowService、未啟用任務草稿與工具限制保持原契約。
+
+# 正式 LangGraph 與公司 Assistants
 
 正式依賴加入 LangGraph 1.2.12、SQLite checkpoint 3.1.1 及其間接依賴，不使用高階 LangChain agent 或 langchain-openai。試驗包保持獨立，正式 lock 由 App 的乾淨環境重新建立。
 

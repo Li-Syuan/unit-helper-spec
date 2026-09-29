@@ -87,6 +87,38 @@ class AssistantsGateway:
     def close(self):
         self.client.close()
 
+    def inspect_assistant(self):
+        """One metadata GET only. Declared tools are not permission or capability proof."""
+        import re
+        try:
+            assistant=self._call(self.client.beta.assistants.retrieve,
+                self.clock()+self.timeout,assistant_id=self.assistant_id)
+            if getattr(assistant,'id',None)!=self.assistant_id:
+                raise GatewayError('公司回傳助理識別不符；尚未執行搜尋。')
+            declared=getattr(assistant,'tools',None)
+            if not isinstance(declared,list) or len(declared)>128:
+                raise GatewayError('公司工具設定格式不相容；請維護者核對。')
+            tools=[]
+            for tool in declared:
+                kind=getattr(tool,'type',None)
+                if not isinstance(kind,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}',kind):
+                    raise GatewayError('公司工具型別格式不相容。')
+                item={'type':kind}
+                if kind=='function':
+                    name=getattr(getattr(tool,'function',None),'name',None)
+                    if not isinstance(name,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}',name):
+                        raise GatewayError('公司工具名称格式不相容。')
+                    item['name']=name
+                tools.append(item)
+            plugins=any(t['type']=='function' for t in tools)
+            return {'connection':'passed','search':'not_tested','tools':tools,
+                'requires_plugin_review':plugins,
+                'message':('已讀取助理設定；包含函式工具，需核對哪些是搜尋及 pluginapi 的權限與參數。'
+                    if plugins else '已讀取助理設定；未看到函式工具，但不能由此證明助理有即時搜尋能力。')}
+        except GatewayError:raise
+        except Exception:
+            raise GatewayError('讀取公司助理設定失敗；請核對端點、憑證、CA 或此平台是否支援讀取助理。沒有執行搜尋或重送。') from None
+
     def _call(self, function, deadline, **kwargs):
         remaining = deadline - self.clock()
         if remaining <= 0:

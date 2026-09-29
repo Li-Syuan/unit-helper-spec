@@ -1,3 +1,11 @@
+# 0.17.0 公司試跑入口
+
+`company_readiness.py` 本機盤點不讀取金鑰或呼叫服務。明確啟動的 CompanyProbe 只 retrieve assistant metadata，工具宣告不是實測或授權；close 等待真實請求，不持有 bridge 全域鎖。不得由連線成功自動設定 workflow verified。
+
+`assistant_briefings.py` 以既有 tasks/schedules/occurrences 保存單助理日報，kind=assistant_briefing；schema 與依賴不變。預覽零派發、十分鐘 token、固定 request ID、連線版本綁定；試跑收到文字後，由人核對並另行同意持續傳送才建立每日台北時間排程。四角色不是單助理日報前提。每次執行獨立遠端 thread；失敗、取消或中斷暫停對應排程，真實 future 未結束不重疊執行。收到文字不代表已搜尋或事實正確。
+
+工具仍禁止 pluginapi、保留 tool_choice=none 與 TLS；公司搜尋能力必須另行實測。主畫面兩模式 task_drafts.enabled=0 不變，不將草稿私自接入排程。
+
 # 0.16.0 正式整合規則（優先於舊版限制）
 
 使用者已明確批准 App 正式引入 LangGraph、SQLite checkpoint 及必要間接依賴，允許重新鎖定正式 requirements 與更新常駐 .venv。仍不得直接覆蓋為 lab lock；lab wheels 的 Git 例外僅原目錄。正式離線包在 artifacts，不提交 Git。無 LangSmith tracing／外部遙測。

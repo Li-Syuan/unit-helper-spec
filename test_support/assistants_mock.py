@@ -32,6 +32,10 @@ class AssistantsMock:
             parts = path.strip('/').split('/')
             if path == '/health' and method == 'GET':
                 return 200, {'mode': 'synthetic', 'company_verified': False}
+            if len(parts)==2 and parts[0]=='assistants' and method=='GET':
+                return 200, {'id':parts[1],'object':'assistant','created_at':0,'model':'synthetic',
+                    'name':'合成助理','description':None,'instructions':'synthetic only',
+                    'tools':getattr(self,'assistant_tools',[]),'metadata':{}}
             if path == '/threads' and method == 'POST':
                 tid = 'thread_mock_' + str(len(self.threads) + 1)
                 self.threads[tid] = []

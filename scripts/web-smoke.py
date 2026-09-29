@@ -176,17 +176,65 @@ def main():
                 assert len(company_mock.threads)==1 and len(company_mock.runs)==2,'company_thread_continuity'
                 assert window.evaluate_js("document.getElementById('dialogue-mode-label').textContent.includes('公司助理')"),'company_badge'
                 window.restore();window.resize(1050,700);time.sleep(.3);capture('company-small.png')
-                for control in ('dialogue-send','dialogue-plan','dialogue-stop'):
+                for control in ('dialogue-send','dialogue-plan','dialogue-stop','dialogue-briefing'):
                     assert window.evaluate_js("(()=>{const e=document.getElementById("+json.dumps(control)+");if(e.hidden)return true;const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;})()"),'company_controls_clipped'
                 window.evaluate_js("document.getElementById('theme-toggle').click()")
                 time.sleep(.3);capture('company-dark.png')
                 report['checks'].append('company_sdk_mock_multiturn_main_ui_badge_small_controls')
+                # Guided setup does not query a model; the explicit probe is metadata GET only.
+                def click_button(text):
+                    window.evaluate_js("Array.from(document.querySelectorAll('#modal button,#page-content button,#page-actions button')).find(b=>b.textContent==="+json.dumps(text)+").click()")
+                def wait_text(text):
+                    for _ in range(100):
+                        if window.evaluate_js("document.getElementById('modal-body').innerText.includes("+json.dumps(text)+")"):return
+                        time.sleep(.1)
+                    raise AssertionError('missing_modal_text')
+                window.evaluate_js("document.querySelector('[data-page=settings]').click()")
+                time.sleep(.3);count=len(company_mock.runs)
+                click_button('檢查本機設定');wait_text('下一步')
+                assert len(company_mock.runs)==count,'readiness_dispatched_model'
+                company_mock.assistant_tools=[{'type':'function','function':{'name':'synthetic_search','description':'mock only','parameters':{'type':'object'}}}]
+                click_button('檢查搜尋助理連線');wait_text('synthetic_search')
+                assert len(company_mock.runs)==count,'metadata_probe_dispatched_model'
+                capture('company-setup.png')
+                window.evaluate_js("document.getElementById('modal-close').click();document.querySelector('[data-page=dialogue]').click()")
+                time.sleep(.3);window.evaluate_js("document.getElementById('dialogue-briefing').click()");wait_text('台北')
+                company_mock.reply='【合成財經日報，非真實新聞】\n台股、美股、總經：此處僅展示回覆與排程流程。\n來源：https://example.test/synthetic'
+                time.sleep(.3);click_button('預覽試跑');wait_text('尚未執行')
+                assert len(company_mock.runs)==count,'briefing_preview_dispatched_model'
+                click_button('現在試跑');wait_text('我已核對日報內容')
+                briefings=[t for t in session.store.tasks() if t['kind']=='assistant_briefing']
+                assert len(briefings)==1 and briefings[0]['state']=='succeeded','briefing_trial_failed'
+                capture('briefing-result.png')
+                for text in ('關閉','啟用每日'):
+                    assert window.evaluate_js("(()=>{const e=Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent.startsWith("+json.dumps(text)+"));const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()"),'briefing_controls_clipped'
+                window.evaluate_js("document.getElementById('theme-toggle').click()")
+                time.sleep(.3);capture('briefing-light-small.png')
+                window.resize(1280,860);time.sleep(.3);capture('briefing-light-normal.png')
+                window.maximize();time.sleep(.3);capture('briefing-light-maximized.png')
+                window.evaluate_js("document.getElementById('theme-toggle').click()")
+                time.sleep(.3);capture('briefing-dark-maximized.png')
+                window.restore();window.resize(1050,700);time.sleep(.3)
+                window.evaluate_js("document.querySelector('#modal-body input[type=checkbox]').click()")
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent.startsWith('啟用每日')).click()")
+                wait_text('已啟用每日')
+                schedules=[s for s in session.store.schedules() if s['query_id']=='ASSISTANT_BRIEFING']
+                assert len(schedules)==1 and schedules[0]['enabled'],'briefing_schedule_missing'
+                assert len(company_mock.runs)==count+1,'briefing_schedule_ran_immediately'
+                click_button('暫停每日工作');wait_text('已暫停')
+                assert not session.store.schedule(schedules[0]['id'])['enabled'],'briefing_pause_failed'
+                assert not window.evaluate_js("document.getElementById('modal-body').innerText.includes('已啟用每日')"),'stale_enabled_label'
+                report['checks'].append('briefing_dom_preview_trial_review_schedule_pause_mock')
+                report['checks'].append('company_setup_and_metadata_probe_no_model_dispatch')
                 report['viewport']=window.evaluate_js("({width:innerWidth,height:innerHeight,devicePixelRatio})")
                 report['text']=window.evaluate_js('document.body.innerText')
                 report['state']=api.call('state',{})
                 report['status']='passed'
             except Exception as e:
                 report['error_type']=type(e).__name__
+                # This runner contains synthetic data only; keep the assertion location.
+                import traceback
+                report['error_line']=traceback.extract_tb(e.__traceback__)[-1].lineno
             finally:
                 (destination/'result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
                 window.destroy()

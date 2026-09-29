@@ -28,7 +28,7 @@ class WebBridge:
                 if self._closing and name not in {'state','save_draft'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                if name not in {'dialogue_send','workflow_inspect','workflow_resume'}:
+                if name not in {'dialogue_send','workflow_inspect','workflow_resume','company_probe'}:
                     return {'ok':True,'data':handler(payload or {})}
             # Provider I/O must not block theme/state/cancellation/close commands.
             return {'ok':True,'data':handler(payload or {})}
@@ -76,6 +76,13 @@ class WebBridge:
             'theme':self._theme,'sidebar':self._sidebar,'help':self._help,
             'profile_save':self._profile_save,'profile_default':self._profile_default,
             'profile_roles':self._profile_roles,'connection_save':self._connection_save,'key_remove':self._key_remove,
+            'company_readiness':self._company_readiness,
+            'company_probe':self._company_probe,
+            'briefing_defaults':self._briefing_defaults,
+            'briefing_preview':self._briefing_preview,
+            'briefing_run':lambda p:s.briefings.run(p['token']),
+            'briefing_status':lambda p:s.briefings.status(p['task_id']),
+            'briefing_schedule':lambda p:s.briefings.schedule(p['task_id'],p.get('consent',False),p.get('reviewed',False)),
             'delete_preview':lambda p:s.engine.preview_conversation_deletion(p['ids']),
             'delete_confirm':self._delete,'upload':self._upload,'attachment_accept':self._attach,
             'attachment_remove':lambda p:self._attachments.pop(p['cid'],None),
@@ -256,7 +263,23 @@ class WebBridge:
 
     def _profile_guard(self):
         if self._s.trial:raise ValueError('試用與公司設定隔離，請使用正式工作區設定助理。')
-        if self._s.engine.has_inflight() or self._s.dialogue.has_inflight():raise ValueError('請等背景工作完全結束後再修改連線。')
+        if self._s.engine.has_inflight() or self._s.dialogue.has_inflight() or self._s.company_probe.has_inflight():raise ValueError('請等背景工作完全結束後再修改連線。')
+
+    def _company_probe(self,p):
+        if self._s.trial:raise ValueError('請使用正式工作區設定公司助理。')
+        return self._s.company_probe.inspect(p['profile_id'])
+
+    def _briefing_defaults(self,p):
+        from .assistant_briefings import DEFAULT_PROMPT
+        return {'prompt':DEFAULT_PROMPT,'time_hhmm':'08:00'}
+
+    def _briefing_preview(self,p):
+        if self._s.trial:raise ValueError('財經日報使用公司搜尋助理，請以 start-app.bat 啟動。')
+        return self._s.briefings.preview(p['profile_id'],p['prompt'],p.get('time_hhmm','08:00'))
+
+    def _company_readiness(self,p):
+        from .company_readiness import inspect_company
+        return inspect_company(self._s.profiles,trial=self._s.trial)
 
     def _profile_save(self,p):
         self._profile_guard();return self._s.profiles.save(p['name'],p['assistant_id'],p.get('notes',''),p.get('id'),p.get('enabled',True))

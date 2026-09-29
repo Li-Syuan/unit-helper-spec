@@ -50,6 +50,21 @@ class AssistantsGatewayTests(unittest.TestCase):
         self.assertEqual(run['assistant_id'], 'asst_fixture')
         self.assertEqual(run['tool_choice'], 'none')
 
+    def test_assistant_inspection_is_one_get_not_permission_or_search(self):
+        self.mock.assistant_tools=[{'type':'function','function':{'name':'synthetic_search','description':'synthetic only','parameters':{'type':'object'}}}]
+        result=self.gateway().inspect_assistant()
+        self.assertEqual(result['connection'],'passed')
+        self.assertEqual(result['search'],'not_tested')
+        self.assertTrue(result['requires_plugin_review'])
+        self.assertEqual([(m,p) for m,p,b in self.mock.requests],[('GET','/assistants/asst_fixture')])
+        self.assertFalse(self.mock.runs);self.assertFalse(self.mock.threads)
+
+    def test_assistant_inspection_rejects_wrong_id_and_redacts_errors(self):
+        def wrong(request):return httpx.Response(200,json={'id':'wrong','object':'assistant','created_at':0,'model':'synthetic','tools':[]})
+        with self.assertRaisesRegex(GatewayError,'識別'):self.gateway(wrong).inspect_assistant()
+        self.mock.fail_status=403
+        with self.assertRaisesRegex(GatewayError,'沒有執行搜尋'):self.gateway().inspect_assistant()
+
     def test_isolation_binding_conversation_and_ephemeral(self):
         self.gateway().respond(self.messages, context=self.ctx)
         self.gateway(binding={'profile_id': 'two', 'revision': 1}).respond(self.messages, context=self.ctx)

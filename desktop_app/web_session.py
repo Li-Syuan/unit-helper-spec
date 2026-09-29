@@ -38,12 +38,16 @@ class WebSession:
             self.engine=engine_class(self.store,self.queries.run,None,query_validator=self.queries.validate,
                 query_catalog=self.queries.catalog,assistant_router=self.profiles.respond,binding_validator=self.profiles.validate)
             self.actions=ActionService(self.engine);self.workflows=WorkflowService(self.engine,self.profiles)
+            from .assistant_briefings import AssistantBriefings
+            self.briefings=AssistantBriefings(self.engine,self.profiles)
             self.outcomes=OutcomeService(self.workflows);self.forms=ChoiceForms(self.store.path)
             self.preferences_path=self.directory/'ui-preferences.json'
             from .dialogue_store import DialogueStore
             from .dialogue_service import DialogueService
             from .dialogue_provider import ProfileDialogueProvider
             self.dialogue=DialogueService(DialogueStore(self.directory/'dialogue-v1.sqlite3'),ProfileDialogueProvider(self.profiles))
+            from .company_readiness import CompanyProbe
+            self.company_probe=CompanyProbe(self.profiles)
             self.scheduler_error=False
             self.scheduler=threading.Thread(target=self._tick,daemon=True);self.scheduler.start()
         except BaseException:
@@ -59,7 +63,10 @@ class WebSession:
         if self.closed:return
         self.closed=True;self.stop.set();self.scheduler.join()
         self.dialogue.close(wait=False)
+        self.company_probe.close(wait=False)
         try:self.engine.close(wait=True)
         finally:
             try:self.dialogue.close(wait=True)
-            finally:self.lock.close()
+            finally:
+                try:self.company_probe.close(wait=True)
+                finally:self.lock.close()

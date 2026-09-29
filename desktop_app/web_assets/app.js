@@ -24,7 +24,7 @@ function comparisonView(data){const area=el('div');if(!data)return area;if(data.
 function renderQuestions(card,questions){if(!questions?.length)return;const answers=[];for(const q of questions){if(q.type==='multi'){const box=el('div','field');box.append(el('label','',q.text));const values=[];for(const option of q.options||[]){const label=el('label','check-field'),input=el('input');input.type='checkbox';label.append(input,document.createTextNode(option));box.append(label);values.push([option,input]);}card.append(box);answers.push(()=>q.text+'：'+values.filter(v=>v[1].checked).map(v=>v[0]).join('、'));}else{const options=q.type==='boolean'?['請選擇','是','否']:q.type==='single'?['請選擇',...(q.options||[])]:null;const input=field(card,q.text,'','text',options);answers.push(()=>q.text+'：'+input.value);}}card.append(button('帶入回答',()=>{$('message-input').value=[$('message-input').value,...answers.map(a=>a())].filter(Boolean).join('\n');S.dirty=true;S.editVersion++;resizeInput();$('message-input').focus();return saveDraft();},'button'));}
 function explicitIntent(text){if(/日報/.test(text)&&/查|每天|每日|自動|早上|排程/.test(text))return 'report';if(/每天|每日|每週|每周|定時|排程|自動查/.test(text))return 'schedule';if(/查詢|查資料|查數據|查.*(?:合計|庫存|訂單)/.test(text))return 'query';return null;}
 function actionCard(a){const c=el('div','workflow-card');c.append(el('h3','',a.request||'查詢工作'),badge(a.status||a.state));if(a.error)c.append(el('p','error',a.error));if(a.parse_note)c.append(el('p','notice',a.parse_note));if(a.status==='parsing'){c.append(el('p','muted','正在整理條件，尚未查詢或啟用。'));return c;}const tools=el('div','card-actions');if(a.schedule_id){c.append(el('p','notice','自動工作已設定。只有應用開啟時執行，不會因啟用立即執行。'));tools.append(button('現在測試一次',()=>confirm('立即測試','將依核准條件執行一次，不改原定時間。','確認執行',()=>action('schedule_run',{id:a.schedule_id,request_id:rid()}))),button(a.schedule?.enabled?'暫停':'啟用',()=>action('schedule_toggle',{id:a.schedule_id,enabled:!a.schedule?.enabled})));}if(a.task){if(['queued','running'].includes(a.task.state))tools.append(button('取消工作',()=>action('cancel_task',{task_id:a.task.id})));else tools.append(button('查看結果',()=>showTask(a.task.id),'button primary'));const result=a.result?.query_result||a.result;if(result?.columns&&result?.rows){c.append(el('p','muted',result.rows.length+' 列 · '+time(result.fetched_at_utc)+' · 前五列預覽'));const wrap=el('div','table-wrap'),table=el('table','data-table'),head=el('tr');result.columns.forEach(x=>head.append(el('th','',x.label||x.name)));table.append(head);result.rows.slice(0,5).forEach(row=>{const tr=el('tr');result.columns.forEach((x,i)=>tr.append(el('td','',Array.isArray(row)?row[i]:row[x.name])));table.append(tr);});wrap.append(table);c.append(wrap);}}else if(!a.schedule_id)tools.append(button('補齊／修改條件',()=>editAction(a)));c.append(tools);return c;}
-async function showTask(tid){const task=await call('task_result',{task_id:tid});if(task.kind==='workflow')return showOutcome(tid);if(task.result?.columns||task.result?.query_result?.columns)return showTable(tid);const body=modal('工作結果');body.append(badge(task.state),el('p','error',task.error||''),el('div','plain-text',task.result?.text||task.result?.report||plain(task.result||'尚無結果')));}
+async function showTask(tid){const task=await call('task_result',{task_id:tid});if(task.kind==='assistant_briefing')return showBriefing(tid);if(task.kind==='workflow')return showOutcome(tid);if(task.result?.columns||task.result?.query_result?.columns)return showTable(tid);const body=modal('工作結果');body.append(badge(task.state),el('p','error',task.error||''),el('div','plain-text',task.result?.text||task.result?.report||plain(task.result||'尚無結果')));}
 function plain(value){return typeof value==='string'?value:JSON.stringify(value,null,2);}
 // Only renderer-sanitized HTML returned by the backend enters this sink.
 function trustedMarkdown(node,html,fallback){if(typeof html==='string'){node.innerHTML=html;node.classList.add('markdown');}else node.textContent=fallback||'';}
@@ -34,6 +34,158 @@ function modal(title){S.modalVersion++;$('modal-title').textContent=title;$('mod
 function closeModal(){$('modal').close();S.modalVersion++;}
 function modalButtons(...items){$('modal-actions').replaceChildren(...items);}
 function confirm(title,text,label,fn){const body=modal(title);body.append(el('p','plain-text',text));const cancel=button('取消',closeModal);modalButtons(cancel,button(label,async()=>{await fn();closeModal();},'button primary'));cancel.focus();}
+function companyReadinessEntry(root){
+ const card=el('section','card');card.style.marginTop='18px';
+ card.append(el('h3','','公司啟用檢查'),el('p','muted','儲存設定不代表實測通過。先檢查本機缺少哪些設定，再依提示完成公司試跑。'));
+ const tools=el('div','card-actions');tools.append(button('財經日報',()=>showBriefing(),'button primary'),button('檢查本機設定',showCompanyReadiness));card.append(tools);root.append(card);
+}
+async function showBriefing(existingTaskId=null){
+ const body=modal('財經日報'),version=S.modalVersion;
+ const active=()=>!S.closing&&version===S.modalVersion&&$('modal').open;
+ let taskId=existingTaskId,clock='',polling=false;
+ const close=()=>button('關閉',closeModal);
+ modalButtons(close());
+ if(String(S.state?.mode).toLowerCase().includes('groq')||S.state?.settings?.editable===false){body.append(el('p','notice','財經日報使用公司助理，請以正式 start-app.bat 入口啟動後設定公司連線。'));return;}
+ function scheduleReady(data){
+  const enabled=data.enabled===true;
+  body.append(el('p','notice',(enabled?'已啟用':'已暫停')+'每日 '+(data.time_hhmm||clock||'指定時間')+'（台北時間）。'+(enabled?'啟用不會立即再跑，只有 QA agent 保持開啟時才會執行。':'暫停期間不會依排程執行。')));
+  if(enabled)body.append(el('p','muted','下次執行：'+(time(data.next_fire)||'請至自動工作查看')));
+  const manage=button('管理自動工作',()=>{closeModal();navigate('schedule');});
+  modalButtons(close(),manage,...(enabled?[button('暫停每日工作',async()=>{await call('schedule_toggle',{id:data.schedule_id,enabled:false});if(!active())return;body.replaceChildren(el('p','muted','正在讀取排程狀態…'));modalButtons(close(),manage);await poll();await refresh();})]:[]));
+ }
+ function ended(status){
+  body.replaceChildren(badge(status.state));
+  if(status.error)body.append(el('p','error',status.error));
+  const text=typeof status.result?.text==='string'?status.result.text:'';
+  if(text)body.append(el('div','plain-text',text));
+  if(status.state!=='succeeded'||!text){
+   body.append(el('p','notice',status.state==='cancelled'?'已取消；不會啟用每日工作。取消不保證遠端立即停止。':'本次日報未完成，沒有啟用每日工作。若助理要求 pluginapi，現階段會停止，不會自行執行工具。'));
+   modalButtons(close(),button('公司啟用檢查',showCompanyReadiness));return;
+  }
+  body.append(el('p','notice','AI 日報內容與來源需要核對。產生文字不代表搜尋能力已獨立驗收，請確認資料日期、來源及台股／美股／總經內容。'));
+  if(status.schedule_id){
+   if(!status.schedule||typeof status.schedule.enabled!=='boolean'){body.append(el('p','notice','尚無法確認排程狀態，請至自動工作查看。'));modalButtons(close(),button('管理自動工作',()=>{closeModal();navigate('schedule');}));return;}
+   scheduleReady({...status.schedule,schedule_id:status.schedule_id});return;
+  }
+  clock=status.payload?.spec?.time_hhmm||status.time_hhmm||status.result?.time_hhmm||clock;
+  const label=el('label','check-field'),consent=el('input');consent.type='checkbox';
+  label.append(consent,document.createTextNode('我已核對日報內容，並同意每天傳送此需求'));body.append(label);
+  body.append(el('p','muted','確認後才會建立每日工作。只在 App 開啟時執行；關閉此視窗不代表已啟用。'));
+  const enable=button(clock?'啟用每日 '+clock:'啟用每日自動工作',async()=>{
+   if(!consent.checked)throw Error('請先核對日報並勾選每天傳送授權。');
+   consent.disabled=true;
+   try{await call('briefing_schedule',{task_id:taskId,consent:true,reviewed:true});if(!active())return;body.replaceChildren(el('p','muted','正在讀取排程狀態…'));modalButtons(close());await poll();await refresh();}
+   catch(error){if(active()){consent.disabled=false;notify(error.message||'未完成每日工作設定，請重試。',true);}}
+  },'button primary');enable.disabled=true;consent.addEventListener('change',()=>enable.disabled=!consent.checked);
+  modalButtons(close(),enable);
+ }
+ async function poll(){
+  if(!active()||polling)return;polling=true;
+  try{
+   const status=await call('briefing_status',{task_id:taskId});if(!active())return;
+   clock=status.payload?.spec?.time_hhmm||clock;
+   if(['queued','running'].includes(status.state)){
+    body.replaceChildren(badge(status.state),el('p','plain-text','正在依已確認需求取得日報。'),el('p','muted','關閉視窗只停止顯示；背景工作仍可從活動紀錄查看。'));
+    modalButtons(close(),button('取消本次試跑',async()=>{await call('cancel_task',{task_id:taskId});if(active())body.append(el('p','notice','已送出取消要求，正在讀取工作狀態。'));}));
+    setTimeout(()=>{if(active())poll();},1000);
+   }else ended(status);
+  }catch(error){if(active()){body.append(el('p','error',error.message||'暫時無法取得工作狀態，尚未重送日報需求。'));modalButtons(close(),button('重新讀取狀態',poll));}}
+  finally{polling=false;}
+ }
+ if(taskId){body.append(el('p','muted','正在讀取日報狀態…'));await poll();return;}
+ const profiles=(S.state?.profiles||[]).filter(p=>p.id!=='demo'&&p.enabled!==false);
+ if(!profiles.length){body.append(el('p','notice','請先新增公司的搜尋 Assistant ID。單一助理即可試跑，不需要先配置四個分工角色。'));modalButtons(close(),button('新增公司助理',()=>readinessDestination('team')));return;}
+ body.append(el('p','muted','正在載入財經日報需求…'));
+ let defaults;
+ try{defaults=await call('briefing_defaults');}catch(error){if(active()){body.replaceChildren(el('p','error',error.message||'無法載入日報需求。'));modalButtons(close(),button('重新開啟',()=>showBriefing()));}return;}
+ if(!active())return;body.replaceChildren();
+ body.append(el('p','notice','使用一位公司搜尋助理，先預覽、試跑並核對，再決定是否每天執行。此入口不需要先配置四個分工角色。'));
+ const profile=field(body,'公司搜尋助理',profiles[0].id,'text',profiles.map(p=>({value:p.id,label:(p.name||'公司助理')+' · '+p.assistant_id}))),prompt=field(body,'日報需求',defaults.prompt||'','textarea'),when=field(body,'每日時間（台北）',defaults.time_hhmm||'08:00','time');
+ prompt.rows=7;prompt.required=true;when.required=true;
+ const previewArea=el('div');body.append(previewArea);
+ const lock=value=>[profile,prompt,when].forEach(input=>input.disabled=value);
+ function previewButton(){return button('預覽試跑',async()=>{
+  if(!prompt.value.trim()||!prompt.reportValidity()||!when.reportValidity())throw Error('請填寫日報需求與每日時間。');
+  lock(true);previewArea.replaceChildren(el('p','muted','正在建立預覽，尚未執行。'));modalButtons(close());
+  try{
+   const draft=await call('briefing_preview',{profile_id:profile.value,prompt:prompt.value,time_hhmm:when.value});if(!active())return;
+   clock=draft.time_hhmm;
+   previewArea.replaceChildren(el('h3','','尚未執行'),el('p','plain-text','目的助理：'+draft.assistant_name+'\n每日時間：'+draft.time_hhmm+'（台北）'),el('div','plain-text',draft.prompt),el('p','notice',draft.message||'按「現在試跑」才會將上述需求傳送給公司助理；不會自動啟用排程。'));
+   modalButtons(close(),button('修改需求',()=>{lock(false);previewArea.replaceChildren();modalButtons(close(),previewButton());}),button('現在試跑',async()=>{
+    modalButtons(close());previewArea.append(el('p','muted','正在提交試跑…'));
+    try{const result=await call('briefing_run',{token:draft.token});if(!active())return;taskId=result.task_id;await poll();await refresh();}
+    catch(error){if(active()){previewArea.append(el('p','error',error.message||'提交未完成。'),el('p','notice','未自動重送。請先到活動紀錄確認是否已受理，再決定下一步。'));modalButtons(close(),button('查看活動紀錄',()=>{closeModal();navigate('activity');}));}}
+   },'button primary'));
+  }catch(error){if(active()){lock(false);previewArea.replaceChildren(el('p','error',error.message||'預覽未完成，尚未執行。'));modalButtons(close(),previewButton());}}
+ },'button primary');}
+ modalButtons(close(),previewButton());
+}
+function readinessDestination(action){
+ closeModal();
+ if(action==='plan'){navigate('chat');mode('workflow');$('message-input').focus();}
+ else if(action==='settings'||action==='team')navigate(action);
+}
+function companyProbeSection(body,version){
+ const section=el('section','card');section.append(el('h3','','檢查搜尋助理連線'),el('p','plain-text','先以現有搜尋助理試跑財經日報，不需要先配置四個分工角色。此檢查只讀取公司助理設定，不問模型、不執行搜尋，也不啟用任務。'));
+ const profiles=(S.state?.profiles||[]).filter(p=>p.id!=='demo'&&p.enabled!==false);
+ body.append(section);
+ if(!profiles.length){section.append(el('p','notice','尚無已啟用的公司助理。請先新增公司的搜尋 Assistant ID。'),button('新增公司助理',()=>readinessDestination('team')));return;}
+ const select=field(section,'選擇公司搜尋助理',profiles[0].id,'text',profiles.map(p=>({value:p.id,label:(p.name||'公司助理')+' · '+p.assistant_id})));
+ const output=el('div');output.setAttribute('aria-live','polite');
+ const run=button('檢查搜尋助理連線',async()=>{
+  const profileId=select.value;
+  if(!(S.state?.profiles||[]).some(p=>p.id===profileId&&p.id!=='demo'&&p.enabled!==false))throw Error('這位助理已停用或不存在，請關閉後重新檢查。');
+  select.disabled=true;output.replaceChildren(el('p','muted','正在讀取公司助理設定，可能需要約 30 秒。關閉視窗只停止顯示，不能保證中止遠端請求。'));
+  try{
+   const result=await call('company_probe',{profile_id:profileId});
+   if(S.closing||version!==S.modalVersion||!$('modal').open)return;
+   if(result?.connection!=='passed'||!Array.isArray(result.tools))throw Error('連線檢查結果格式不符，請更新程式後重試。');
+   output.replaceChildren(el('p','plain-text',result.message||'已讀取公司助理設定。'),el('p','muted','連線讀取通過 · 搜尋與日報尚未實測'));
+   const list=el('ul');
+   for(const tool of result.tools){const type=typeof tool.type==='string'?tool.type:'未提供類型',name=typeof tool.name==='string'?tool.name:'';list.append(el('li','plain-text',type+(name?' · '+name:'')));}
+   output.append(el('h4','','公司助理宣告的工具'),result.tools.length?list:el('p','muted','未宣告工具；這不代表搜尋能力已驗證。'));
+   if(result.requires_plugin_review||result.tools.some(t=>t.type==='function'))output.append(el('p','notice','搜尋可能需要 pluginapi，尚未授權執行；檢查成功不代表日報成功。工具名稱不代表已核准使用。'));
+   else output.append(el('p','notice','檢查成功不代表搜尋或日報成功；後續仍需確認資料來源與執行結果。'));
+  }catch(error){
+   if(S.closing||version!==S.modalVersion||!$('modal').open)return;
+   output.replaceChildren(el('p','error',error.message||'連線檢查未完成，請檢查設定後重試。'));
+  }finally{if(version===S.modalVersion&&$('modal').open)select.disabled=false;}
+ });
+ const tools=el('div','card-actions');tools.append(run);section.append(tools,output);
+}
+async function showCompanyReadiness(){
+ const body=modal('公司啟用檢查'),version=S.modalVersion;
+ const close=button('關閉',closeModal);modalButtons(close);close.focus();
+ body.append(el('p','notice','開啟此頁只檢查已保存的本機設定，不啟用任務。下方「檢查搜尋助理連線」需另行點擊，才會連線讀取公司助理設定。'));
+ if(String(S.state?.mode).toLowerCase().includes('groq')||S.state?.settings?.editable===false){
+  body.append(el('p','plain-text','目前是外部試用工作區，無法在這裡檢查公司連線。請以正式 start-app.bat 入口啟動，再開啟此檢查。'));return;
+ }
+ companyProbeSection(body,version);
+ const pending=el('p','muted','正在檢查本機設定…');pending.setAttribute('role','status');body.append(pending);
+ try{
+  const result=await call('company_readiness');
+  if(S.closing||version!==S.modalVersion||!$('modal').open)return;
+  if(result?.scope!=='local_only'||!Array.isArray(result.checks))throw Error('本機檢查結果格式不符，請更新程式後重試。');
+  pending.remove();
+  body.append(el('h3','',result.ready_for_company_test?'本機設定已備妥，可以安排公司試跑':'還有設定需要完成'));
+  const statusLabels={ready:'本機已備妥',missing:'待補齊',not_tested:'尚未實測'};
+  const destinations={settings:'前往設定',team:'前往助理團隊',plan:'開啟規劃工作'};
+  for(const check of result.checks){
+   const row=el('div','list-row'),info=el('div','grow');
+   info.append(el('strong','',check.label||'檢查項目'),el('p','plain-text',check.detail||''));
+   const state=Object.hasOwn(statusLabels,check.state)?check.state:'not_tested';
+   row.append(info,el('span','pill'+(state==='missing'?' warning':''),statusLabels[state]));
+   if(Object.hasOwn(destinations,check.action))row.append(button(destinations[check.action],()=>readinessDestination(check.action)));
+   body.append(row);
+  }
+  body.append(el('h3','','下一步'),el('p','plain-text',result.next_step||'請先補齊設定，再由公司完成實際試跑。'),el('p','notice','儲存設定不代表實測通過。公司 API、角色能力與資料查詢仍須實測；pluginapi 尚未開放，這份檢查不代表已可查詢公司資料。'));
+  modalButtons(button('關閉',closeModal),button('重新檢查',showCompanyReadiness));
+ }catch(error){
+  if(S.closing||version!==S.modalVersion||!$('modal').open)return;
+  pending.remove();body.append(el('p','error',error.message||'本機檢查未完成，請重試。'));
+  modalButtons(button('關閉',closeModal),button('重試檢查',showCompanyReadiness));
+ }
+}
 function renderNav(){const nav=$('navigation');[['dialogue','chat'],['chat','workflow'],['team','team'],['todo','todo'],['schedule','clock'],['activity','activity'],['notice','bell'],['query','database'],['issue','issue']].forEach(([page,i])=>{const b=button('',()=>navigate(page),'nav-item');b.dataset.page=page;b.title=labels[page];b.append(icon(i),el('span','nav-label',labels[page]));nav.append(b);});document.querySelectorAll('.sidebar-bottom [data-page]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));}
 function navigate(page){S.page=page;document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('page-title').textContent=labels[page];$('chat-page').hidden=page!=='chat';$('dialogue-page').hidden=page!=='dialogue';$('content-page').hidden=page==='chat'||page==='dialogue';if(page==='dialogue'){document.dispatchEvent(new Event('qa-dialogue-enter'));$('connection').replaceChildren(el('span','status-dot'),document.createTextNode(document.body.dataset.dialogueMode||'示範模式 · 離線'));}else if(page!=='chat')renderPage(true);}
 function applyPreferences(data){document.body.dataset.theme=data.theme||'dark';const brand=document.querySelector('.brand img');brand.src=data.theme==='light'?brand.dataset.light:brand.dataset.dark;document.querySelector('.sidebar').classList.toggle('collapsed',!!data.sidebar_collapsed);$('collapse').title=data.sidebar_collapsed?'展開側欄':'收合側欄';$('collapse').setAttribute('aria-label',$('collapse').title);}
@@ -82,17 +234,17 @@ async function transferDialog(source){const body=modal('選擇接收助理');bod
 async function scheduleQuery(tid){const task=await call('task_result',{task_id:tid});const body=modal('設定自動查詢');body.append(el('p','notice','排程只查詢及通知，不自動將資料交給助理。應用程式需保持開啟。'));const values=scheduleFields(body);const template=(S.state.catalog||[]).find(q=>q.id===task.payload?.query_id);const dates=[{value:'literal',label:'沿用固定條件'}];if(template?.date_range)dates.push({value:'previous_day',label:'每次查前一日'});const dateMode=field(body,'資料範圍','literal','text',dates);modalButtons(button('取消',closeModal),button('預覽自動工作',async()=>{const p=await call('query_schedule',{cid:S.cid,source_task_id:tid,...values(),date_mode:dateMode.value});const view=modal('確認啟用自動查詢');view.append(el('div','plain-text',plain(p.spec||p)));if(p.error)view.append(el('p','error',p.error));modalButtons(button('取消',closeModal),...(p.ready===false?[]:[button('確認啟用',async()=>{await action('schedule_confirm',{token:p.token});closeModal();notify('已啟用，尚未立即執行');},'button primary')]));},'button primary'));}
 async function showTable(tid,stepId){let raw;if(stepId){const o=await call('outcome',{task_id:tid});raw=o.steps.find(s=>s.step_id===stepId)?.output?.query_result;}else{const d=await call('task_result',{task_id:tid});raw=d.result||d.task?.result||d;}raw=raw?.query_result||raw;if(!raw?.columns||!raw?.rows)throw Error('此工作沒有可顯示的表格。');const body=modal('查詢結果 · 固定快照');if(raw.summary){body.append(el('h3','','日報整理'),el('div','plain-text',raw.summary));}if(raw.summary_error){body.append(el('p','error',raw.summary_error),el('p','notice','整理未完成，以下查詢資料仍可查看。'));}body.append(el('p','muted','資料時間：'+time(raw.fetched_at_utc)+' · '+raw.rows.length+' 列'),el('p','plain-text',plain(raw.parameters||{})));let page=0;const selected=new Set();const wrap=el('div','table-wrap');const controls=el('div','toolbar');body.append(controls,wrap);function draw(){wrap.replaceChildren();controls.replaceChildren();const table=el('table','data-table');const head=el('tr');head.append(el('th','','選取'));raw.columns.forEach(c=>head.append(el('th','',c.label||c.name)));table.append(head);raw.rows.slice(page*100,page*100+100).forEach((r,i)=>{const index=page*100+i,tr=el('tr');const check=el('input');check.type='checkbox';check.checked=selected.has(index);check.addEventListener('change',()=>{check.checked?selected.add(index):selected.delete(index);tr.classList.toggle('selected',check.checked);});const cell=el('td');cell.append(check);tr.append(cell);raw.columns.forEach((c,j)=>tr.append(el('td','',Array.isArray(r)?r[j]:r[c.name])));table.append(tr);});wrap.append(table);controls.append(button('上一頁',()=>{page=Math.max(0,page-1);draw();}),el('span','muted',(page+1)+' / '+Math.max(1,Math.ceil(raw.rows.length/100))),button('下一頁',()=>{page=Math.min(Math.max(0,Math.ceil(raw.rows.length/100)-1),page+1);draw();}));}draw();modalButtons(button('複製選取列',()=>{if(!selected.size)throw Error('請先選取資料列。');return call('table_export',{task_id:tid,step_id:stepId,format:'tsv',selected:[...selected]});}),button('複製全部',()=>call('table_export',{task_id:tid,step_id:stepId,format:'tsv'})),button('匯出 CSV',()=>call('table_export',{task_id:tid,step_id:stepId,format:'csv'})));$('modal-actions').append(button('交給助理整理',()=>transferDialog({task_id:tid,step_id:stepId,...(selected.size?{selected:[...selected]}:{})})));if(!stepId)$('modal-actions').append(button('每天自動查',()=>scheduleQuery(tid)));}
 function renderPage(force=false){if(!S.state)return;const data=S.state,page=S.page;if(!force&&$('page-content').contains(document.activeElement)&&document.activeElement.matches('input,select,textarea'))return;if(!force&&!changed('page-'+page,[data[({team:'profiles',todo:'todos',schedule:'schedules',activity:'tasks',notice:'notifications',issue:'issues',query:'catalog',settings:'settings'})[page]],page]))return;const saved={};if(!force)$('page-content').querySelectorAll('input,textarea,select').forEach((e,i)=>saved[i]={value:e.value,checked:e.checked});const scroll=$('content-page').scrollTop;$('section-title').textContent=labels[page];$('section-description').textContent=descriptions[page]||'';$('page-actions').replaceChildren();const root=$('page-content');root.replaceChildren();({team:renderTeam,todo:renderTodos,schedule:renderSchedules,activity:renderActivity,notice:renderNotices,query:renderQuery,settings:renderSettings,help:renderHelp,issue:renderIssues}[page]||(()=>{}))(root,data);if(!force){root.querySelectorAll('input,textarea,select').forEach((e,i)=>{if(saved[i]){e.value=saved[i].value;e.checked=saved[i].checked;e.dispatchEvent(new Event('input'));}});$('content-page').scrollTop=scroll;}}
-function renderTeam(root,data){$('page-actions').append(button('新增助理',()=>editProfile(),'button primary'));const grid=el('div','card-grid');root.append(grid);(data.profiles||[]).forEach(p=>{const c=el('div','card'),top=el('div','card-top');top.append(el('span','agent-symbol','✦'),badge(p.enabled===false?'停用':p.workflow?.verified?'已驗證':'待驗證'));c.append(top,el('h3','',p.name),el('p','',p.notes||'用途尚未填寫'),el('p','muted','ID：'+p.assistant_id));const tools=el('div','card-actions');tools.append(button('編輯',()=>editProfile(p)),button('分工角色',()=>profileRoles(p)),button('設為預設',()=>action('profile_default',{id:p.id})));c.append(tools);grid.append(c);});if(!data.profiles?.length)empty(root,'建立你的助理團隊','加入公司核准的助理 ID，驗證能力後即可開始協作。');}
+function renderTeam(root,data){$('page-actions').append(button('公司啟用檢查',showCompanyReadiness));$('page-actions').append(button('新增助理',()=>editProfile(),'button primary'));const grid=el('div','card-grid');root.append(grid);(data.profiles||[]).forEach(p=>{const c=el('div','card'),top=el('div','card-top');top.append(el('span','agent-symbol','✦'),badge(p.enabled===false?'停用':p.workflow?.verified?'已驗證':'待驗證'));c.append(top,el('h3','',p.name),el('p','',p.notes||'用途尚未填寫'),el('p','muted','ID：'+p.assistant_id));const tools=el('div','card-actions');tools.append(button('編輯',()=>editProfile(p)),button('分工角色',()=>profileRoles(p)),button('設為預設',()=>action('profile_default',{id:p.id})));c.append(tools);grid.append(c);});if(!data.profiles?.length)empty(root,'建立你的助理團隊','加入公司核准的助理 ID，驗證能力後即可開始協作。');}
 function editProfile(p={}){const body=modal(p.id?'編輯助理':'新增助理');const name=field(body,'名稱',p.name),id=field(body,'Assistant ID',p.assistant_id),notes=field(body,'用途與備註',p.notes,'textarea'),enabled=field(body,'啟用狀態',p.enabled===false?'false':'true','text',[{value:'true',label:'啟用'},{value:'false',label:'停用'}]);body.append(el('p','notice','新增或變更 ID 不會自動啟用協作能力，需由公司完成驗證。'));modalButtons(button('取消',closeModal),button('保存',async()=>{await action('profile_save',{id:p.id,name:name.value,assistant_id:id.value,notes:notes.value,enabled:enabled.value==='true'});closeModal();},'button primary'));}
 function profileRoles(p){const body=modal('分工角色');body.append(el('p','notice','這是用途宣告，保存後仍需公司驗證，不代表能力已接通。'));const fields=['planner','analysis','review','compose','rag'].map(r=>{const label=el('label','check-field');const check=el('input');check.type='checkbox';check.checked=(p.workflow?.roles||[]).includes(r);label.append(check,document.createTextNode(r));body.append(label);return [r,check];});modalButtons(button('取消',closeModal),button('保存角色',async()=>{await action('profile_roles',{id:p.id,roles:fields.filter(x=>x[1].checked).map(x=>x[0])});closeModal();}));}
 function renderTodos(root,data){$('page-actions').append(button('新增待辦',()=>editTodo(),'button primary'));const search=el('input');search.placeholder='搜尋待辦標題';search.setAttribute('aria-label','搜尋待辦');const toolbar=el('div','toolbar');toolbar.append(search);root.append(toolbar);const board=el('div','board');root.append(board);function draw(){board.replaceChildren();['todo','ongoing','done'].forEach(state=>{const rows=(data.todos||[]).filter(t=>t.state===state&&t.title.includes(search.value));const col=el('div','board-column');col.append(el('h3','',states[state]+' · '+rows.length));rows.forEach(t=>{const c=el('div','card');c.append(button(t.title,()=>editTodo(t),'button quiet'));if(t.due_date)c.append(el('p','',t.due_date));const next=state==='todo'?'ongoing':state==='ongoing'?'done':'todo';c.append(button(state==='todo'?'開始':state==='ongoing'?'完成':'重新開啟',()=>action('todo_state',{id:t.id,state:next})));col.append(c);});board.append(col);});}search.addEventListener('input',draw);draw();}
 function editTodo(t={}){const body=modal(t.id?'待辦詳情':'新增待辦');const title=field(body,'標題',t.title),desc=field(body,'說明',t.description,'textarea'),due=field(body,'到期日',t.due_date,'date');title.maxLength=120;desc.maxLength=50000;if(t.source_conversation_id)body.append(button('查看來源',async()=>{closeModal();await switchChat(t.source_conversation_id);}));modalButtons(...(t.id?[button('刪除',()=>confirm('刪除待辦','確定永久刪除此待辦？不影響來源對話。','確認刪除',()=>action('todo_delete',{id:t.id})),'button danger')]:[]),button('取消',closeModal),button('保存',async()=>{await action('todo_save',{id:t.id,title:title.value,description:desc.value,due_date:due.value||null,state:t.state||'todo',source_conversation_id:t.source_conversation_id,request_id:rid()});closeModal();},'button primary'));}
-function renderSchedules(root,data){root.append(el('p','notice','只在 QA agent 開啟時執行。立即測試不改變原定時間。'));(data.schedules||[]).forEach(s=>{const row=el('div','list-row'),info=el('div','grow');info.append(el('strong','',s.name),el('p','','下次：'+time(s.next_fire)));row.append(info,badge(s.enabled?'已啟用':'已暫停'),button(s.enabled?'暫停':'啟用',()=>action('schedule_toggle',{id:s.id,enabled:!s.enabled})),button('現在測試一次',()=>confirm('立即測試','將依核准流程執行一次，原定時間保持不變。','確認執行',()=>action('schedule_run',{id:s.id,request_id:rid()}))),button('紀錄',async()=>{const runs=await call('schedule_history',{id:s.id});modal('自動工作歷史').append(el('div','plain-text',plain(runs)));}));root.append(row);});if(!data.schedules?.length)empty(root,'尚無自動工作','先完成一次查詢或流程，再從成果設定固定排程。');}
-function renderActivity(root,data){(data.tasks||[]).forEach(t=>{const row=el('div','list-row'),info=el('div','grow');info.append(el('strong','',t.kind==='workflow'?'多助理協作':t.kind),el('p','',time(t.created_at)),...(t.error?[el('p','error',t.error)]:[]));row.append(info,badge(t.state));if(['running','queued'].includes(t.state))row.append(button('取消',()=>action('cancel_task',{task_id:t.id})));else row.append(button('查看',()=>showTask(t.id)));root.append(row);});if(!data.tasks?.length)empty(root,'工作紀錄將出現在這裡','從對話開始一件事，即可追蹤實際進度。');}
+function renderSchedules(root,data){$('page-actions').append(button('財經日報',()=>showBriefing(),'button primary'));root.append(el('p','notice','只在 QA agent 開啟時執行。立即測試不改變原定時間。'));(data.schedules||[]).forEach(s=>{const row=el('div','list-row'),info=el('div','grow');info.append(el('strong','',s.name),el('p','','下次：'+time(s.next_fire)));row.append(info,badge(s.enabled?'已啟用':'已暫停'),button(s.enabled?'暫停':'啟用',()=>action('schedule_toggle',{id:s.id,enabled:!s.enabled})),button('現在測試一次',()=>confirm('立即測試','將依核准流程執行一次，原定時間保持不變。','確認執行',()=>action('schedule_run',{id:s.id,request_id:rid()}))),button('紀錄',async()=>{const runs=await call('schedule_history',{id:s.id});modal('自動工作歷史').append(el('div','plain-text',plain(runs)));}));root.append(row);});if(!data.schedules?.length)empty(root,'尚無自動工作','先完成一次查詢或流程，再從成果設定固定排程。');}
+function renderActivity(root,data){(data.tasks||[]).forEach(t=>{const row=el('div','list-row'),info=el('div','grow');info.append(el('strong','',t.kind==='workflow'?'多助理協作':t.kind==='assistant_briefing'?'財經日報':t.kind),el('p','',time(t.created_at)),...(t.error?[el('p','error',t.error)]:[]));row.append(info,badge(t.state));if(['running','queued'].includes(t.state))row.append(button('取消',()=>action('cancel_task',{task_id:t.id})));else row.append(button('查看',()=>showTask(t.id)));root.append(row);});if(!data.tasks?.length)empty(root,'工作紀錄將出現在這裡','從對話開始一件事，即可追蹤實際進度。');}
 function renderNotices(root,data){(data.notifications||[]).forEach(n=>{const row=el('div','list-row'),info=el('div','grow');info.append(el('strong','',n.text||n.message||n.title),el('p','',time(n.created_at)));row.append(info,badge(n.read?'已讀':'未讀'),button('查看',async()=>{await action('notification_read',{id:n.id});const body=modal('通知');body.append(el('p','plain-text',n.text||n.message||n.title));if(n.task_id)body.append(button('查看工作',()=>{const t=(data.tasks||[]).find(t=>t.id===n.task_id);return t?.kind==='workflow'?showOutcome(n.task_id):showTable(n.task_id);}));}));root.append(row);});if(!data.notifications?.length)empty(root,'目前沒有通知','新成果或執行問題會顯示在此。');}
 function renderQuery(root,data){const grid=el('div','card-grid');root.append(grid);(data.catalog||[]).forEach(q=>{const c=el('div','card');c.append(el('h3','',q.name),el('p','',q.description||'核准模板 · 執行前可核對條件'),button('設定查詢條件',()=>queryForm(q),'button primary'));grid.append(c);});}
 function queryForm(q){const body=modal(q.name),fields={};Object.entries(q.parameters||{}).forEach(([key,spec])=>{const type=spec.type==='date'?'date':spec.type==='integer'?'number':'text';let options=spec.options;if(spec.type==='boolean')options=[{value:'true',label:'是'},{value:'false',label:'否'}];const input=field(body,spec.label||key,spec.default??'',type,options);input.required=!!spec.required;if(spec.min!==undefined)input.min=spec.min;if(spec.max!==undefined)input.max=spec.max;fields[key]=[input,spec];});modalButtons(button('取消',closeModal),button('預覽查詢',async()=>{const parameters={};for(const[key,[input,spec]]of Object.entries(fields)){if(!input.reportValidity())return;const v=input.value;parameters[key]=spec.type==='integer'?Number(v):spec.type==='boolean'?v==='true':v;}const a=await call('query_preview',{cid:S.cid,query_id:q.id,parameters});await refresh();await previewAction(a);},'button primary'));}
-function renderSettings(root,data){const card=el('div','card');root.append(card);card.append(el('h3','','外觀'));const tools=el('div','card-actions');tools.append(button('深色',()=>action('theme',{name:'dark'})),button('淺色',()=>action('theme',{name:'light'})));card.append(tools);const conn=el('div','card');conn.style.marginTop='18px';root.append(conn);conn.append(el('h3','','公司助理連線'));const wire=field(conn,'連線協定',data.settings?.wire_mode||'unconfigured','text',['unconfigured','assistants','model','body_field']);conn.append(el('p','muted','公司範例請選 assistants；切換協定會使舊助理版本及能力驗證失效。'));const endpoint=field(conn,'Endpoint',data.settings?.endpoint||''),key=field(conn,'API key','','password');key.autocomplete='new-password';conn.append(el('p','muted','金鑰狀態：'+(data.settings?.key_status||'尚未設定')));const actions=el('div','card-actions');actions.append(button('保存連線',async()=>{await action('connection_save',{endpoint:endpoint.value,wire_mode:wire.value,...(key.value?{key:key.value}:{})});key.value='';notify('連線設定已保存');},'button primary'),button('移除金鑰',()=>confirm('移除金鑰','只移除此應用保存的金鑰，之後需重新設定才能呼叫公司助理。','確認移除',()=>action('key_remove')),'button danger'));conn.append(actions);if(String(data.mode).toLowerCase().includes('groq')||data.settings?.editable===false){wire.disabled=true;endpoint.disabled=true;key.disabled=true;actions.querySelectorAll('button').forEach(b=>b.disabled=true);conn.append(el('p','notice','外部試用工作區不能修改公司連線。'));}}
+function renderSettings(root,data){const card=el('div','card');root.append(card);card.append(el('h3','','外觀'));const tools=el('div','card-actions');tools.append(button('深色',()=>action('theme',{name:'dark'})),button('淺色',()=>action('theme',{name:'light'})));card.append(tools);const conn=el('div','card');conn.style.marginTop='18px';root.append(conn);conn.append(el('h3','','公司助理連線'));const wire=field(conn,'連線協定',(!data.settings?.wire_mode||data.settings.wire_mode==='unconfigured')?'assistants':data.settings.wire_mode,'text',['unconfigured','assistants','model','body_field']);conn.append(el('p','muted','公司範例請選 assistants；切換協定會使舊助理版本及能力驗證失效。'));const endpoint=field(conn,'Endpoint',data.settings?.endpoint||''),key=field(conn,'API key','','password');key.autocomplete='new-password';conn.append(el('p','muted','金鑰狀態：'+(data.settings?.key_status||'尚未設定')));const actions=el('div','card-actions');actions.append(button('保存連線',async()=>{await action('connection_save',{endpoint:endpoint.value,wire_mode:wire.value,...(key.value?{key:key.value}:{})});key.value='';notify('連線設定已保存；尚未完成公司實測，可開啟公司啟用檢查。');},'button primary'),button('移除金鑰',()=>confirm('移除金鑰','只移除此應用保存的金鑰，之後需重新設定才能呼叫公司助理。','確認移除',()=>action('key_remove')),'button danger'));conn.append(actions);companyReadinessEntry(root);if(String(data.mode).toLowerCase().includes('groq')||data.settings?.editable===false){wire.disabled=true;endpoint.disabled=true;key.disabled=true;actions.querySelectorAll('button').forEach(b=>b.disabled=true);conn.append(el('p','notice','外部試用工作區不能修改公司連線。'));}}
 function renderHelp(root){const grid=el('div','card-grid');root.append(grid);[['USER-GUIDE','使用手冊','依工作查找操作步驟與常見問題'],['DATA-USAGE','資料使用說明','了解本機保存、傳送與功能限制'],['THIRD-PARTY-LICENSES','第三方授權','使用的開源元件與授權資訊']].forEach(([name,title,desc])=>{const c=el('div','card');c.append(el('h3','',title),el('p','',desc),button('閱讀',async()=>{const r=await call('help',{name});const body=modal(title);trustedMarkdown(body,r.html,'手冊未提供');}));grid.append(c);});}
 function renderIssues(root,data){$('page-actions').append(button('回報問題',()=>{const body=modal('問題與需求回報');const type=field(body,'類型','操作故障','text',['操作故障','回答不符','新需求']),title=field(body,'標題'),desc=field(body,'問題描述','','textarea'),expected=field(body,'預期結果','','textarea');body.append(el('p','notice','目前只保存在本機，不自動附加對話、資料或附件。'));modalButtons(button('取消',closeModal),button('保存回報',async()=>{await action('issue_save',{type:type.value,title:title.value,description:desc.value,expected:expected.value});closeModal();},'button primary'));},'button primary'));(data.issues||[]).forEach(i=>{const row=el('div','list-row');row.append(el('strong','grow',i.title||i.description),badge(i.state||'本機草稿'));root.append(row);});if(!data.issues?.length)empty(root,'讓工作區逐漸更好','記下問題或需求，交給公司維護者後續處理。');}
 async function manageChats(){const body=modal('管理對話');const search=field(body,'搜尋標題');const list=el('div');body.append(list);const chosen=new Set();function draw(){list.replaceChildren();(S.state.conversations||[]).filter(c=>(c.title||'').includes(search.value)).forEach(c=>{const label=el('label','check-field'),check=el('input');check.type='checkbox';check.checked=chosen.has(c.id);check.addEventListener('change',()=>check.checked?chosen.add(c.id):chosen.delete(c.id));label.append(check,document.createTextNode(c.title||'新對話'));list.append(label);});}search.addEventListener('input',draw);draw();modalButtons(button('取消',closeModal),button('刪除選取對話',async()=>{if(!chosen.size)throw Error('請先選擇對話。');const preview=await call('delete_preview',{ids:[...chosen]});confirm('永久刪除對話','不能由應用復原。另存待辦、獨立查詢與排程保留。\n'+plain(preview.counts),'確認永久刪除',async()=>{const r=await call('delete_confirm',{token:preview.token});S.cid=r?.new_cid||null;S.signatures={};S.dirty=false;await refresh();});},'button danger'));}
@@ -116,6 +268,7 @@ document.querySelectorAll('[data-starter]').forEach(b=>b.addEventListener('click
 document.addEventListener('selectionchange',()=>{const selected=window.getSelection();const within=selected?.anchorNode&&$('messages').contains(selected.anchorNode)&&$('messages').contains(selected.focusNode);const text=within?selected.toString():'';if(text.trim()){S.selectedText=text;S.selectedCid=S.cid;}$('selection-tools').hidden=!text.trim();});
 $('selection-todo').addEventListener('click',()=>{const text=S.selectedText||'';if(text.length>50000){notify('選取文字超過 50,000 字，請縮小範圍。',true);return;}const title=text.split('\n').find(t=>t.trim())||'';editTodo({title:title.length<=120?title:'',description:text,source_conversation_id:S.selectedCid});});
 $('selection-transfer').addEventListener('click',()=>transferDialog({cid:S.selectedCid,text:S.selectedText||''}).catch(e=>notify(e.message,true)));
+const briefingEntry=button('財經日報',()=>showBriefing(),'button quiet');briefingEntry.id='dialogue-briefing';$('dialogue-plan').insertAdjacentElement('afterend',briefingEntry);$('dialogue-plan').parentElement.style.flexWrap='wrap';
 renderNav();navigate('dialogue');
 const closingControls=new Map();let previousInert=false;
 window.qaSetClosing=value=>{if(value===true){if(S.closing)return;S.closing=true;clearTimeout(S.saveTimer);previousInert=document.body.inert;document.body.inert=true;document.querySelectorAll('button,input,textarea,select').forEach(control=>{closingControls.set(control,{disabled:control.disabled,readOnly:control.readOnly});control.disabled=true;if('readOnly'in control)control.readOnly=true;});$('status-text').textContent='正在保存並等待背景工作結束…';}else{S.closing=false;document.body.inert=previousInert;for(const[control,prior]of closingControls){if(control.isConnected){control.disabled=prior.disabled;if('readOnly'in control)control.readOnly=prior.readOnly;}}closingControls.clear();$('send').disabled=S.sending;$('status-text').textContent='關閉未完成，請檢查草稿保存狀態。';}};
