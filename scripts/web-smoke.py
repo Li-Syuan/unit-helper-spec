@@ -44,6 +44,20 @@ def main():
                         if not pending[0].Wait(10000):raise AssertionError('capture_timeout')
                     finally:stream.Dispose()
                 time.sleep(.4);capture('dark.png')
+                # Semantic palette and live theme updates are local presentation only.
+                window.evaluate_js("document.getElementById('dialogue-input').value='保留配色驗收草稿';document.getElementById('dialogue-input').setSelectionRange(2,6)")
+                for theme in ('light','dark'):
+                    window.evaluate_js("document.getElementById('theme-toggle').click()")
+                    time.sleep(.4)
+                    assert window.evaluate_js('document.body.dataset.theme')==theme,'theme_not_applied'
+                    assert window.evaluate_js("document.getElementById('dialogue-input').value")=='保留配色驗收草稿','theme_lost_draft'
+                    assert window.evaluate_js("document.getElementById('dialogue-input').selectionStart")==2,'theme_lost_caret'
+                    capture('palette-'+theme+'.png')
+                assert not session.store.tasks(),'palette_dispatched_work'
+                window.resize(1050,700);time.sleep(.3);capture('palette-small.png')
+                assert window.evaluate_js("document.documentElement.scrollWidth<=innerWidth"),'palette_horizontal_overflow'
+                window.resize(1280,860)
+                report['checks'].append('semantic_theme_keeps_draft_selection_and_zero_dispatch')
                 def dialogue_send(text):
                     window.evaluate_js("document.getElementById('dialogue-input').value="+json.dumps(text)+";document.getElementById('dialogue-send').click()")
                     for _ in range(50):
@@ -67,6 +81,7 @@ def main():
                 assert not session.dialogue.list_saved(),'task_saved_before_confirmation'
                 window.evaluate_js("Array.from(document.querySelectorAll('#dialogue-result button')).find(b=>b.textContent==='預覽任務').click()")
                 time.sleep(.2);capture('dialogue-task-preview.png')
+                assert window.evaluate_js("Boolean(document.querySelector('#modal-body .notice[data-tone=attention]'))"),'draft_preview_not_attention'
                 window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='取消').click()")
                 time.sleep(.2)
                 assert not session.dialogue.list_saved(),'cancel_saved_task'
@@ -103,6 +118,7 @@ def main():
                 window.evaluate_js("document.getElementById('send').click()")
                 time.sleep(.6)
                 assert len(session.store.tasks())==1,'query_dispatched_before_approval'
+                assert window.evaluate_js("Boolean(document.querySelector('#modal-body .notice[data-tone=attention]'))"),'query_preview_not_attention'
                 capture('query-preview.png')
                 window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='確認查詢').click()")
                 time.sleep(2)
@@ -140,10 +156,40 @@ def main():
                 assert task['kind']=='workflow' and task['state']=='succeeded','workflow_failed'
                 window.evaluate_js("Array.from(document.querySelectorAll('#workflow-panel button')).find(b=>b.textContent==='查看成果').click()")
                 time.sleep(.3);capture('outcome.png')
+                assert window.evaluate_js("Boolean(document.querySelector('#modal-body .pill[data-tone=success]'))"),'outcome_not_success'
                 window.evaluate_js("Array.from(document.querySelectorAll('#modal-body button')).find(b=>b.textContent==='可採用').click()")
                 time.sleep(.3)
                 assert session.outcomes.feedback(task['id'])['rating']=='usable','feedback_failed'
                 report['checks'].append('workflow_explicit_approval_and_outcome_feedback_mock')
+                window.evaluate_js("document.getElementById('modal-close').click();document.querySelector('[data-page=activity]').click()")
+                time.sleep(.3)
+                assert window.evaluate_js("Array.from(document.querySelectorAll('.status-legend .pill')).map(e=>e.dataset.tone).join(',')")=='attention,working,success,danger','semantic_status_mapping'
+                for theme in ('light','dark'):
+                    if window.evaluate_js('document.body.dataset.theme')!=theme:
+                        window.evaluate_js("document.getElementById('theme-toggle').click()")
+                        time.sleep(.4)
+                    colors=window.evaluate_js("Array.from(document.querySelectorAll('.status-legend .pill')).map(e=>getComputedStyle(e).color)")
+                    assert len(set(colors))==4,'semantic_status_colors_collapsed'
+                    capture('activity-'+theme+'.png')
+                report['checks'].append('attention_running_success_failure_distinct_in_both_themes')
+                from desktop_app.core import stamp
+                with session.store.connection() as db:
+                    db.execute('INSERT INTO notifications VALUES(?,?,?,?,0,?)',
+                               ('palette-notice','palette-notice',task['id'],'合成通知：成果已完成，請核對來源。',stamp()))
+                time.sleep(2)
+                window.evaluate_js("document.querySelector('[data-page=notice]').click()")
+                time.sleep(.3);capture('notifications-dark.png')
+                assert window.evaluate_js("document.querySelector('[data-page=notice] .badge').hidden===false"),'unread_badge_missing'
+                assert not session.store.notifications()[0]['is_read'],'opening_inbox_marked_read'
+                assert window.evaluate_js("getComputedStyle(document.querySelector('[data-page=notice] .badge')).color===getComputedStyle(document.querySelector('[data-page=notice]')).color"),'unread_badge_not_informational'
+                assert window.evaluate_js("Boolean(document.querySelector('#page-content .list-row[data-tone=success]'))"),'notification_severity_missing'
+                window.evaluate_js("Array.from(document.querySelectorAll('#page-content button')).find(b=>b.textContent==='查看').click()")
+                time.sleep(.4)
+                assert session.store.notifications()[0]['is_read'],'explicit_view_did_not_mark_read'
+                assert window.evaluate_js("document.querySelector('[data-page=notice] .badge').hidden"),'read_badge_stale'
+                assert window.evaluate_js("document.getElementById('page-content').innerText.includes('已讀')"),'read_label_stale'
+                window.evaluate_js("document.getElementById('modal-close').click()")
+                report['checks'].append('notification_unread_is_informational_explicit_view_only_and_state_retained')
                 window.evaluate_js("location.href='data:text/html,<h1>UNTRUSTED</h1>'")
                 time.sleep(.3)
                 assert window.evaluate_js("Boolean(document.getElementById('dialogue-input'))"),'navigation_not_blocked'

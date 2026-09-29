@@ -63,6 +63,23 @@ class NotificationTests(unittest.TestCase):
         self.assertEqual(self.p.badge_count,1)
         self.assertFalse(self.app.store.notifications()[0]['is_read'])
 
+    def test_unread_is_informational_and_cancelled_is_neutral(self):
+        with self.app.store.connection() as db:
+            tid,_=self.app.engine._new_task(db,'query',{})
+            db.execute("UPDATE tasks SET state='cancelled' WHERE id=?",(tid,))
+        self.add('工作已取消',task=tid);self.refresh()
+        self.assertEqual(self.p.symbol.cget('text'),'—')
+        self.assertEqual(self.p.symbol.cget('style'),'Neutral.ToastMark.TLabel')
+        for theme in ('light','dark'):
+            self.app.change_theme(theme);self.root.update()
+            style=self.app.appearance.style
+            self.assertEqual(style.lookup('NotificationBadge.TLabel','foreground'),self.app.palette.ACCENT)
+            self.assertEqual(style.lookup('NotificationBadge.TLabel','background'),self.app.palette.TINT)
+            self.assertEqual(style.lookup('Neutral.ToastMark.TLabel','foreground'),self.app.palette.MUTED)
+            self.assertNotEqual(style.lookup('Neutral.ToastMark.TLabel','foreground'),self.app.palette.ERROR)
+        self.p.dismiss();self.refresh()
+        self.assertFalse(self.app.store.notifications()[0]['is_read'])
+
     def test_timeout_and_hover(self):
         self.add();self.refresh();self.p.pause();self.p.DURATION_MS=20
         time.sleep(.03);self.root.update();self.assertIsNotNone(self.p.toast)

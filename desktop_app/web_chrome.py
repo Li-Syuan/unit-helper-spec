@@ -37,7 +37,7 @@ def apply_chrome(window, theme):
             setter=ctypes.WinDLL('dwmapi').DwmSetWindowAttribute
             setter.argtypes=[wintypes.HWND,wintypes.DWORD,ctypes.c_void_p,wintypes.DWORD]
             setter.restype=ctypes.c_long
-            for attribute,value in [(20,int(theme=='dark')),(35,0x141211 if theme=='dark' else 0xF4F1ED),(36,0xE8E8E8 if theme=='dark' else 0x342D24)]:
+            for attribute,value in [(20,int(theme=='dark')),(35,0x221610 if theme=='dark' else 0xF7EDE6),(36,0xE8E8E8 if theme=='dark' else 0x342D24)]:
                 item=wintypes.DWORD(value)
                 setter(form.Handle.ToInt64(),attribute,ctypes.byref(item),ctypes.sizeof(item))
         window.native.Invoke(Action(update))

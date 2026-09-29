@@ -6,14 +6,16 @@ from .window_chrome import apply_titlebar
 
 FONT = 'Microsoft JhengHei'
 _TOKENS = {
-    'dark': dict(BG='#181C21', SURFACE='#22272E', INK='#ECEEF1', MUTED='#B1B7C0',
-        BORDER='#41464F', ACCENT='#63D3EC', ACCENT_HOVER='#8DE3F5', TINT='#263E49',
-        SIDEBAR='#11151A', SIDEBAR_HOVER='#30343B', STRIPE='#2D3035',
-        ERROR='#FF9C94', SUCCESS='#88D8B0', DISABLED='#868D98', BUTTON_INK='#10242A', WARNING='#F0CC89'),
-    'light': dict(BG='#F6F7F9', SURFACE='#FFFFFF', INK='#222833', MUTED='#5C6675',
-        BORDER='#D5DAE2', ACCENT='#08768E', ACCENT_HOVER='#075E73', TINT='#DFF1F6',
-        SIDEBAR='#ECEFF3', SIDEBAR_HOVER='#DCE3EB', STRIPE='#F2F5F8',
-        ERROR='#AB302C', SUCCESS='#187548', DISABLED='#727B89', BUTTON_INK='#FFFFFF', WARNING='#83580C'),
+    'dark': dict(BG='#141B27', SURFACE='#1C2635', INK='#EAF0F8', MUTED='#A3B2C5',
+        BORDER='#3B4B61', ACCENT='#53C8E8', ACCENT_HOVER='#87DDF2', TINT='#183C4D',
+        SIDEBAR='#101722', SIDEBAR_HOVER='#26354A', STRIPE='#243145',
+        ERROR='#F08086', SUCCESS='#72D6AA', DISABLED='#8897AB', BUTTON_INK='#10242A',
+        WARNING='#F2BC62', RUNNING='#7DA9FF', TEAM='#B29BFF'),
+    'light': dict(BG='#F2F5FA', SURFACE='#FFFFFF', INK='#202D42', MUTED='#52647B',
+        BORDER='#CED8E6', ACCENT='#086D87', ACCENT_HOVER='#07586D', TINT='#DEF2F8',
+        SIDEBAR='#E8EEF7', SIDEBAR_HOVER='#DCE7F4', STRIPE='#EFF4FA',
+        ERROR='#AE3542', SUCCESS='#1C7050', DISABLED='#6A7A90', BUTTON_INK='#FFFFFF',
+        WARNING='#865300', RUNNING='#305BB6', TEAM='#7150B5'),
 }
 
 
@@ -72,14 +74,15 @@ class Appearance:
         s.configure('Warning.TLabel',background=c.BG,foreground=c.WARNING,font=(FONT,10))
         s.configure('Compact.TButton',padding=(8,4),font=(FONT,10))
         s.configure('Card.TCheckbutton',background=c.SURFACE)
-        s.configure('Workspace.Horizontal.TProgressbar',troughcolor=c.SURFACE,background=c.ACCENT,borderwidth=0,thickness=3)
+        s.configure('Workspace.Horizontal.TProgressbar',troughcolor=c.SURFACE,background=c.RUNNING,borderwidth=0,thickness=3)
         s.configure('TLabel',background=c.BG,foreground=c.INK)
         s.configure('Muted.TLabel',foreground=c.MUTED)
         s.configure('Title.TLabel',font=(FONT,16,'bold'))
         s.configure('Section.TLabel',font=(FONT,11,'bold'))
         s.configure('DialogMark.TLabel',background=c.TINT,foreground=c.ACCENT,font=(FONT,20,'bold'),padding=6)
-        s.configure('NotificationBadge.TLabel',background='#B42332',foreground='#FFFFFF',padding=(7,3),font=(FONT,10,'bold'))
-        for name,color in [('Info',c.ACCENT),('Success',c.SUCCESS),('Warning',c.WARNING),('Error',c.ERROR)]:
+        # Unread is informational, not an error. Severity belongs to the notice itself.
+        s.configure('NotificationBadge.TLabel',background=c.TINT,foreground=c.ACCENT,padding=(7,3),font=(FONT,10,'bold'))
+        for name,color in [('Info',c.ACCENT),('Success',c.SUCCESS),('Warning',c.WARNING),('Error',c.ERROR),('Neutral',c.MUTED)]:
             s.configure(name+'.ToastBorder.TFrame',background=color)
             s.configure(name+'.ToastMark.TLabel',background=c.SURFACE,foreground=color,font=(FONT,20,'bold'))
         s.configure('Error.DialogMark.TLabel',background=c.SURFACE,foreground=c.ERROR)
@@ -160,7 +163,7 @@ class Appearance:
             widget.configure(background=c.SURFACE,foreground=c.INK,insertbackground=c.INK,
                 selectbackground=c.TINT,selectforeground=c.INK,highlightbackground=c.BORDER,highlightcolor=c.ACCENT)
             for tag,opts in {'welcome_title':{'foreground':c.INK},'welcome_body':{'foreground':c.MUTED},
-                'speaker_user':{'foreground':c.ACCENT},'speaker_assistant':{'foreground':c.MUTED},'body_user':{'background':c.TINT},'body_assistant':{'background':c.SURFACE},'separator':{'foreground':c.BORDER}}.items():
+                'speaker_user':{'foreground':c.ACCENT},'speaker_assistant':{'foreground':c.TEAM},'body_user':{'background':c.TINT},'body_assistant':{'background':c.SURFACE},'separator':{'foreground':c.BORDER}}.items():
                 if tag in widget.tag_names(): widget.tag_configure(tag,**opts)
         elif isinstance(widget,tk.Canvas): widget.configure(background=c.BG,highlightbackground=c.BORDER)
         elif isinstance(widget,tk.Scrollbar) and not isinstance(widget,ttk.Scrollbar):

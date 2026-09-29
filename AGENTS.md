@@ -1,3 +1,7 @@
+# 0.18.1 呈現規則
+
+WebView 的 badge／tone 只將既有狀態映射為語意色：待確認琥珀、執行藍、完成綠、失敗紅、取消中性；紫色只標團隊識別。未讀數不表示故障，使用青藍；notifications.is_read 是已讀來源，只有明確查看才標讀。Tk 同步主題，紅色驚嘆號保留給錯誤。顏色須搭配文字／圖示，不改批准、派發或成功判定；綠色不代表事實已核實。
+
 # 0.18.0 僅核准搜尋（優先於下方禁止 pluginapi 的舊規則）
 
 使用者已明確同意「只開核准的搜尋工具」。`search_tools.py` 的每助理 policy 保存人工核對的 function 名稱、有限 JSON schema 與說明；CompanyProbe metadata GET 產生十分鐘一次性核准 token，保存／移除皆提升連線 revision、撤銷 workflow verified。改 endpoint／assistant ID／協定清除 policy。核准不是能力實測，不能由 UI 自動標 verified。
@@ -65,7 +69,7 @@ graph_runner.py 接管已批准順序步驟；WorkflowService 保持唯一業務
 
 - 0.13.0：`navigation.py` 管圖示側欄收合與 tooltip，偏好存 ui-preferences；切換保留頁面／草稿。`team_views.py` 沿用 Profiles 管理，UI 不得自行標記 verified。`workflow_presenter.py` 只呈現 snapshot，不另存工作狀態。「確認執行」是使用者明確授權當下可見修訂；不要恢復額外 checkbox 或逐步批准，也不要改成送出需求就自動授權。排程持續授權保持獨立。
 
-- 0.12.1 通知 UI 位於 `notifications.py`：只讀既有通知與工作狀態，不派發工作。關閉／逾時不標已讀、啟動不重播舊通知；僅明確查看單則才標讀。彈窗不搶焦點或使用 grab，關閉 App 清除 timer。紅色徽章是側欄按鈕的 sibling overlay，避免 Windows 原生按鈕遮蔽子元件；保留實際畫面檢查。
+- 0.12.1 通知 UI 位於 `notifications.py`：只讀既有通知與工作狀態，不派發工作。關閉／逾時不標已讀、啟動不重播舊通知；僅明確查看單則才標讀。彈窗不搶焦點或使用 grab，關閉 App 清除 timer。未讀徽章是側欄按鈕的 sibling overlay，避免 Windows 原生按鈕遮蔽子元件；保留實際畫面檢查。
 
 - 品牌固定 **QA agent**，正式 A 深淺圖示與各倍率圖示隨專案提供；assets 根目錄為深色及固定捷徑，assets/light 為淺色，切換須更新已開啟附屬視窗；Tk 視窗使用多尺寸 PNG iconphoto，ICO 僅供捷徑，勿恢復每次切換的 iconbitmap 載入（會累積 Windows 圖形資源），不在 runtime 下載素材。名稱集中 `branding.py`；不得因更名改資料路徑／環境變數。捷徑只更新本工具建立的項目。
 - System DPI awareness 及 AppUserModelID 在 Tk 建立前設定，保留較高既有模式。沿用 `display.py`：固定尺寸按倍率換算，點數字型不再縮放；不宣稱跨螢幕即時 DPI 重排已完成。

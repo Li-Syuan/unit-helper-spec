@@ -47,7 +47,7 @@ class NotificationPresenter:
             try:
                 state=self.app.store.task(notice['task_id'])['state']
                 if state=='failed':return 'error','!','需要處理'
-                if state=='cancelled':return 'warning','!','工作已取消'
+                if state=='cancelled':return 'neutral','—','工作已取消'
                 if state=='succeeded':return 'success','✓','工作已完成'
             except ValueError:pass
         return 'info','i','新通知'
