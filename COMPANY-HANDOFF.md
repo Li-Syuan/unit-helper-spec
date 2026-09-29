@@ -1,5 +1,7 @@
 # 0.15.0 接手更新
 
+公司若先評估 LangChain／LangGraph，使用 [獨立離線試驗包](experiments/langgraph-lab/README.md)。已包含 wheels 與公司 agent 指令；先驗安裝及無金鑰範例，再討論公司接線。不得覆蓋 App 的根目錄鎖檔，框架可用不代表公司 API 契約已完成。
+
 先確認 WebView2 Runtime 與 .NET Framework 已核准，重建requirements.lock環境。新版WebView為主入口，Tkinter為備用；兩者沿用Python服务與個人資料，但新增兩模式對話使用獨立dialogue-v1資料庫。
 
 新主畫面目前**只提供離線示範**，任務僅確認保存、固定不啟用。接公司服務前需取得：正式endpoint、認證流程、assistant ID、request/response格式、session隔離、原生工具副作用與成功/失敗樣本。修改`dialogue_provider.py`实现Protocol，維持`dialogue_contracts.py`嚴格驗證；不得讓回覆直接儲存、執行或讀本機檔案，不得把Demo當失敗fallback。

@@ -1,5 +1,7 @@
 # 0.15.0 新增規則（優先於下方舊版介面限制）
 
+`experiments/langgraph-lab` 是使用者明確要求隨 GitHub 提供 wheels 的獨立試驗包，例外僅限該目錄的 `packages/*.whl`。不得把其 lock 合併到 App、把 LangGraph 範例當正式多助理整合，或啟用公司任務。試裝使用自身暫時 .venv，完成驗證後清除；原 App requirements 與常駐 .venv 保持不變。公司試跑見該目錄 README。
+
 使用者已允許pywebview>=6,<7、markdown-it-py>=4,<5、bleach>=6,<7、python-dotenv>=1,<2。WebView2為主介面、Tkinter保留--ui tk備用。宿主／bridge／session／render與web_assets分層，不從模型載入HTML或外部URL，禁止任意bridge方法、檔案路径或eval命令。
 
 新主畫面無附件、一般聊天／建立任務兩模式，始終明示離線示範。dialogue_provider/company provider未完成正式契約保持停用、不fallback；dialogue_contracts嚴格驗證助理、欄位與schedule。dialogue_store獨立schema1（主Store仍schema6），task_drafts.enabled CHECK=0，不能接到原scheduler。只有dialogue_service.confirm可儲存完整且預覽未過期的草稿。切模式或助理開新thread，不永久刪歷史。既有多助理与排程保留進階入口。

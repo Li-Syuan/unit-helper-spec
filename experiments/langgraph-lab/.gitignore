@@ -1,0 +1,4 @@
+.venv*/
+data/
+verification.local.json
+__pycache__/

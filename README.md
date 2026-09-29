@@ -63,6 +63,8 @@ Groq 是同一測試模型的四個隔離角色，並非公司真實多 assistan
 
 ## 找到需要的文件
 
+想在公司試裝 LangChain／LangGraph，可下載 [獨立離線試驗包](experiments/langgraph-lab/README.md)：包含鎖定 wheels、安裝工具及無金鑰範例。它不更動目前 App 的依賴或執行流程。
+
 | 你要做的事 | 入口 |
 |---|---|
 | 使用桌面、了解資料保存及刪除 | [使用手冊](docs/USER-GUIDE.md)、[資料說明](docs/DATA-USAGE.md) |

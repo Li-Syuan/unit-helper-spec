@@ -1,5 +1,7 @@
 # QA agent 0.15.0 最新驗證
 
+可選 LangChain／LangGraph 離線試驗包另見 [試驗驗證](../experiments/langgraph-lab/VALIDATION.md)：兩個全新 Python 3.10.4 x64 環境各 10 項通過，52 個 wheels 完整離線安裝。這不代表正式 App 已接入框架；本輪未改 App 執行程式或根依賴，原下列限制繼續保留。
+
 日常 `.venv` 與純離線重建 `.venv-offlineverify` 均使用 **Python恰好3.10.4 x64**，完整回歸各 **409項：408通過、1錯誤、0跳過**。唯一錯誤是既有Windows剪貼簿讀回 `OpenClipboard failed (Windows error 5)`，未修改測試／加skip／冒稱通過。當時桌面處於鎖定狀態；這是觀察條件，沒有宣稱已證明根因。解鎖後仍需重測。紀錄：[日常](validation/web-development.json)、[離線](validation/web-offline.json)。
 
 doctor的Python／Tk／WebView2／.NET／41個鎖定套件及pip check通過；離線安裝使用--no-index、--no-deps、--no-cache-dir，沒有借用外部site-packages。鎖檔最後只統一LF換行，版本未再改變；wheel manifest已依最終指紋重算並驗證。已確認兩個暫存驗證環境沒有執行程序或連結跳轉並清除，只留日常.venv與其基礎直譯器.runtime/python3104。

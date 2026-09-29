@@ -1,5 +1,7 @@
 # 0.15.0 當前介面與離線對話
 
+可選的 `experiments/langgraph-lab` 提供真正 LangChain／LangGraph 套件與合成節點試驗，使用獨立環境及 checkpoint 資料，不被 App import、不修改上述正式對話／排程。其離線包與驗證說明見 [試驗入口](../experiments/langgraph-lab/README.md)。
+
 主入口是 pywebview + WebView2，HTML/CSS/JS 全部隨專案提供，無 CDN／遠端字型／遠端頁面。`web_app.py` 管宿主，`web_bridge.py` 僅允許列舉命令，`web_session.py` 組合既有 Engine／Profiles／Store。`web_render.py` 使用 markdown-it-py 與 bleach，回覆移除腳本、屬性、圖片及連結，不執行模型 HTML。Tkinter 保留 `--ui tk`／start-tk.bat。
 
 新主畫面是無附件、完全離線的兩模式對話。`dialogue_provider.py` 是服務 Protocol、本機示範與明確拒絕連線的公司 provider；`dialogue_contracts.py` 驗證助理、草稿和每日／每週／指定日期格式；`dialogue_service.py` 管多輪、修訂、十分鐘預覽及明確確認；`dialogue_store.py` 保存獨立 `dialogue-v1.sqlite3`（schema1）。公司端點、認證、ID及格式未確認前不建立真實 client，失敗不自動換示範。
