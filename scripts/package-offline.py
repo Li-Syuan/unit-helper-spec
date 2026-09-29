@@ -54,8 +54,8 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         '2. 公司提供Python恰好3.10.4 x64完整安裝（含Tk）、WebView2 Runtime與.NET Framework 4.6.2以上。\n'
         '3. 雙擊install-offline.bat，輸入python.exe完整路徑。已有.venv時拒絕覆寫。\n'
         '4. 雙擊start-app.bat；WebView2尚未安裝時使用start-tk.bat備用。\n'
-        '5. 新主畫面完全離線示範，確認儲存的任務保持未啟用，不能自動執行。公司接線見COMPANY-HANDOFF.md。\n\n'
-        '含完整已提交原始碼、文件、測試及41個鎖定wheels。沒有Python／WebView2／.NET安裝程式、API key、.env、.venv、對話或SQLite。\n'
+        '5. 主畫面預設示範；公司 Assistants 需另設定與實測。LangGraph 批准後依序執行，任務草稿仍未啟用。公司接線見COMPANY-HANDOFF.md。\n\n'
+        '含完整已提交原始碼、文件、測試及69個鎖定wheels。沒有Python／WebView2／.NET安裝程式、API key、.env、.venv、對話或SQLite。\n'
         '套件缺件、雜湊或lock不符立即停止，不連外補件。不更改執行政策、防毒或TLS。\n'
         '本機／公司與未測限制見docs/VALIDATION.md；目前剪貼簿讀回尚未通過，不宣稱全項通過。\n'
         'MANIFEST.sha256驗證原始碼；wheelhouse/manifest.json驗證wheels；PACKAGE-CONTENTS.sha256驗證整包。雜湊不是數位簽章。\n',encoding='utf-8-sig')

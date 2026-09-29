@@ -1,4 +1,11 @@
-# 0.15.0 接手更新
+# 0.16.0 公司接手入口
+
+先照 [GPT 6 sol 工作指令](docs/COMPANY-IMPLEMENTATION.md) 完成公司文字旅程。公司 Threads/Messages/Runs 接口已依範例實作，LangGraph 已正式接管批准後的順序分工；不用再從零設計 agent 引擎或猜 Assistant ID 映射。
+
+本版工具未開放，pluginapi 不執行；公司部署、CA、服務端副作用、真實多 ID 與格式仍須實測。原有 AD／Oracle／舊資料工作單保持待辦，不是啟動合成文字驗證的前提。以下舊條目中的「API 格式待確認」指公司相容差異與現場驗收，標準 Threads/Runs 位置已確定。
+
+
+# WebView 與公司既有修改
 
 **公司已能呼叫助理、接著要完成產品流程時：**把 [GPT 6 sol 實作指令](docs/COMPANY-IMPLEMENTATION.md) 交給公司 agent。此為使用者回報的公司進度，不代表本外部儲存庫已取得或驗證公司 adapter；以公司 checkout 為準並保留現有修改。
 
@@ -6,7 +13,7 @@
 
 先確認 WebView2 Runtime 與 .NET Framework 已核准，重建requirements.lock環境。新版WebView為主入口，Tkinter為備用；兩者沿用Python服务與個人資料，但新增兩模式對話使用獨立dialogue-v1資料庫。
 
-新主畫面目前**只提供離線示範**，任務僅確認保存、固定不啟用。接公司服務前需取得：正式endpoint、認證流程、assistant ID、request/response格式、session隔離、原生工具副作用與成功/失敗樣本。修改`dialogue_provider.py`实现Protocol，維持`dialogue_contracts.py`嚴格驗證；不得讓回覆直接儲存、執行或讀本機檔案，不得把Demo當失敗fallback。
+新主畫面預設離線示範，可明確選取已設定的公司助理；任務僅確認保存、固定不啟用。ProfileDialogueProvider 已實作，維持 dialogue_contracts.py 嚴格驗證；公司現場需驗證 endpoint、認證、assistant ID、服務相容差異、session 隔離及工具副作用；不得讓回覆直接儲存、執行或讀本機檔案，不得把Demo當失敗fallback。
 
 新草稿尚不接執行器，不能只把enabled改1；公司若要自動執行，應另外確認核准來源與工具映射、權限、批准範圍、排程防重及取消測試。原進階Workflow／Oracle／AD工作單繼續適用。測試：`python -m unittest tests.test_dialogue tests.test_web -v`，公司正式連線保持not_tested。
 
@@ -14,7 +21,7 @@
 
 # QA agent 公司接手工作單
 
-目前版本 **0.15.0**，已完成本機桌面與接手工具；圖示側欄、助理團隊及分工進度可直接沿用。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。目前沒有公司原始碼、成功 API 樣本或資料庫規格，不能保證任意端點只填三個參數就全部接通。
+目前版本 **0.16.0**，已完成本機桌面與接手工具；圖示側欄、助理團隊及分工進度可直接沿用。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。已取得使用者提供的 Threads/Runs 呼叫範例，但沒有公司原始碼、測試憑證或資料庫規格，不能保證任意端點只填三個參數就全部接通。
 
 交付給一般同仁的目標：公司接線者先配置共用 endpoint、請求／session 映射與核准助理能力；同仁只需設定個人 API key、加入已核准 assistant ID，說需求並按一次「確認執行」。不要要求同仁編輯程式、填驗證證據或理解 adapter。新增未核准 ID 仍顯示待驗證，不能偽裝可自動協作。
 

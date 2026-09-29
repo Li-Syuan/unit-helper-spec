@@ -1,3 +1,7 @@
+# 0.16.0 新增框架依賴
+
+正式 App 使用 LangGraph、langgraph-checkpoint-sqlite 及其鎖定的 langchain-core、LangSmith client 等間接依賴；安裝不代表啟用 LangSmith 雲端 tracing。版本以 requirements.lock 為準，新增完整授權文字位於 docs/licenses。LangSmith 與 sqlite-vec 的上游授權來源沿用獨立試驗包 licenses/sources.json；原 wheel 不另附授權的項目已保留上游文字。
+
 # 第三方套件授權
 
 QA agent 使用 Python、Tcl/Tk、OpenAI SDK、keyring 與鎖定檔列出的間接依賴。這些元件的著作權與授權分別屬於原權利人；QA agent 不表示受到這些專案的背書。

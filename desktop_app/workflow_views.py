@@ -59,6 +59,7 @@ class WorkflowViews:
         self.workflow_buttons={}
         for text,fn in [('修改步驟',self.edit_workflow_steps),('批准並試跑',self.confirm_workflow_from_card),('停止',self.cancel_workflow),
                         ('重試未完成步驟',self.retry_workflow),('設為自動工作',self.schedule_workflow),
+                        ('檢查遠端狀態',self.inspect_workflow),('繼續工作',self.resume_workflow),('放棄恢復',self.abandon_workflow),
                         ('現在測試一次',self.run_workflow_now),('暫停自動工作',self.pause_workflow_schedule),('步驟詳情',self.workflow_step_details)]:
             button=self.button(self.workflow_controls,text,fn,'Primary.TButton' if text=='批准並試跑' else 'Compact.TButton')
             self.workflow_buttons[text]=button
@@ -197,7 +198,10 @@ class WorkflowViews:
                 self.workflow_buttons['批准並試跑'].pack(side='right',padx=2)
                 self.workflow_buttons['批准並試跑'].configure(state='normal' if record['state']=='ready' else 'disabled')
             if busy:self.workflow_buttons['停止'].pack(side='right')
-            if state=='failed' and task:self.workflow_buttons['重試未完成步驟'].pack(side='left')
+            if state=='failed' and task:
+                if record.get('recovery',{}).get('eligible'):
+                    for label in ('檢查遠端狀態','繼續工作','放棄恢復'):self.workflow_buttons[label].pack(side='left',padx=2)
+                else:self.workflow_buttons['重試未完成步驟'].pack(side='left')
             if task:self.workflow_buttons['步驟詳情'].pack(side='left')
             if state=='succeeded' and not record.get('schedule'):self.workflow_buttons['設為自動工作'].pack(side='right')
             if record.get('schedule') and not busy:
@@ -286,6 +290,20 @@ class WorkflowViews:
     def retry_workflow(self):
         if messagebox.askyesno('重試未完成步驟','將沿用未變更的成功前置成果，從失敗處繼續；可能再次呼叫助理。確認重試？',parent=self.root):
             self.workflows.retry(self.workflow_record['task']['id'],uuid.uuid4().hex);self.refresh_workflow_view()
+
+    def inspect_workflow(self):
+        tid=self.workflow_record['task']['id']
+        self.background(lambda:self.workflows.inspect_recovery(tid),lambda result:self.status.set(result['message']))
+
+    def resume_workflow(self):
+        tid=self.workflow_record['task']['id']
+        if messagebox.askyesno('恢復工作','只接續核准版本；結果不明時停止，不自動重送。確認繼續？',parent=self.root):
+            self.background(lambda:self.workflows.resume(tid),lambda _:self.refresh_workflow_view(force=True))
+
+    def abandon_workflow(self):
+        tid=self.workflow_record['task']['id']
+        if messagebox.askyesno('放棄恢復','保留已有成果，將工作標示取消？',parent=self.root):
+            self.workflows.abandon(tid);self.refresh_workflow_view(force=True)
 
     def run_workflow_now(self):
         self.engine.run_schedule_now(self.workflow_record['schedule']['id'],uuid.uuid4().hex)

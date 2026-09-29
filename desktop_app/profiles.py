@@ -53,7 +53,7 @@ class Profiles:
     def _validate_data(self):
         d=self.data
         if d.get('credential_source') not in ('environment','keyring'): raise GatewayError('金鑰來源設定不正確。')
-        if d.get('wire_mode') not in ('unconfigured','model','body_field'): raise GatewayError('公司 API 映射設定不正確。')
+        if d.get('wire_mode') not in ('unconfigured','model','body_field','assistants'): raise GatewayError('公司 API 映射設定不正確。')
         ids=[p['id'] for p in d['profiles']]
         if len(ids)!=len(set(ids)) or 'demo' in ids: raise GatewayError('助理識別重複。')
         for p in d['profiles']:
@@ -164,12 +164,41 @@ class Profiles:
     def key_status(self):
         try: self.key(); return '已設定（'+('Windows 認證管理員' if self.data['credential_source']=='keyring' else '舊環境變數')+'）'
         except GatewayError: return '尚未設定或無法讀取'
-    def respond(self,messages,purpose,binding):
+    def set_wire_mode(self, mode, model='', assistant_field=''):
+        """Explicit transport selection; changes revoke old bindings/capabilities."""
+        if mode not in ('unconfigured','model','body_field','assistants'):
+            raise GatewayError('公司 API 映射設定不正確。')
+        if not isinstance(model,str) or not isinstance(assistant_field,str):
+            raise GatewayError('公司 API 映射欄位不正確。')
+        if mode=='body_field' and (not model.strip() or not assistant_field.strip()):
+            raise GatewayError('請提供公司核准的 model 與助理欄位名稱。')
+        with self.lock:
+            d=copy.deepcopy(self.data)
+            values=(mode,model.strip() if mode=='body_field' else '',assistant_field.strip() if mode=='body_field' else '')
+            old=(d['wire_mode'],d.get('model',''),d.get('assistant_field',''))
+            if values!=old:
+                for p in d['profiles']:
+                    d.setdefault('history',[]).append(dict(p,endpoint=d['endpoint']))
+                    p['revision']+=1;p.pop('legacy',None)
+                    if 'workflow' in p:p['workflow']['verified']=False
+                d['wire_mode'],d['model'],d['assistant_field']=values
+            self._write(d)
+
+    def _assistants_client(self, d, p, key, binding):
+        from .assistants_gateway import AssistantsGateway
+        config={'base_url':d['endpoint'],'assistant_id':p['assistant_id']}
+        for field in ('ca_bundle','timeout_seconds','run_timeout_seconds'):
+            if field in self.legacy:config[field]=self.legacy[field]
+        return AssistantsGateway(config,key,self.path.parent/'assistant-sessions.sqlite3',binding)
+
+    def respond(self,messages,purpose,binding,context=None):
         with self.lock:
             p=self.validate(binding)
             if p['id']=='demo': return DemoAssistant().respond(messages,purpose)
             d=copy.deepcopy(self.data); legacy=copy.deepcopy(self.legacy)
-            if p.get('legacy'):
+            if d['wire_mode']=='assistants':
+                config=None
+            elif p.get('legacy'):
                 config=legacy
                 config['base_url']=d['endpoint']
             else:
@@ -180,14 +209,60 @@ class Profiles:
                 for field in ('ca_bundle','header_env','verified_side_effect_free'):
                     if field in legacy: config[field]=legacy[field]
             key=self.key()
-        client=CompanyAssistant(config,api_key=key)
-        try: return client.respond(messages,purpose)
+        client=self._assistants_client(d,p,key,binding) if config is None else CompanyAssistant(config,api_key=key)
+        try:
+            if config is None:return client.respond(messages,purpose,context=context)
+            return client.respond(messages,purpose)
         finally: client.close()
+
+    def inspect_request(self,binding,context,remote=False):
+        """Explicit status check, never sends a new message or creates a run."""
+        with self.lock:
+            p=self.validate(binding);d=copy.deepcopy(self.data)
+            if p['id']=='demo' or d['wire_mode']!='assistants':
+                return {'state':'unsupported','recoverable':False,'remote_checked':False}
+            from .assistant_sessions import AssistantSessions
+            from .assistants_gateway import session_context
+            key,rid,_,_=session_context(binding,'chat',context)
+            request=AssistantSessions(self.path.parent/'assistant-sessions.sqlite3').get_request(key,rid)
+            if not request:return {'state':'not_found','recoverable':False,'remote_checked':False}
+            if not remote or request['state']=='completed':
+                return {'state':request['state'],'recoverable':bool(request.get('run_id')) and request['state'] not in
+                        ('failed','cancelled','cancel_requested','tools_blocked'),
+                        'remote_checked':False,'remote_terminal':request.get('remote_terminal',False)}
+            api_key=self.key()
+        client=self._assistants_client(d,p,api_key,binding)
+        try:return client.inspect_request(context=context,remote=True)
+        finally:client.close()
 
     def workflow_catalog(self):
         """Only explicitly verified read-only capabilities may be orchestrated."""
         return [p for p in self.items(True) if p.get('workflow',{}).get('verified') is True
                 and p['workflow'].get('roles') and p['workflow'].get('read_only') is True]
+
+    def forget_conversations_tx(self,db,ids):
+        """Remove additional local response copies with the existing deletion transaction.
+
+        Remote threads and independent workflow receipts are intentionally retained.
+        """
+        path=self.path.parent/'assistant-sessions.sqlite3'
+        if not path.exists():return
+        from .assistants_gateway import session_context
+        keys=set()
+        for cid in ids:
+            row=db.execute('SELECT binding FROM conversations WHERE id=?',(cid,)).fetchone()
+            if row and row['binding']:
+                binding=json.loads(row['binding'])
+                keys.add(session_context(binding,'chat',{'conversation_id':'engine:'+cid})[0])
+            for task in db.execute('SELECT id,payload FROM tasks WHERE conversation_id=?',(cid,)):
+                binding=json.loads(task['payload']).get('_binding')
+                if binding:
+                    keys.add(session_context(binding,'chat',{'conversation_id':'engine:'+cid})[0])
+                    keys.add(session_context(binding,'chat',{'conversation_id':'task:'+task['id']})[0])
+        db.execute('ATTACH DATABASE ? AS assistant_cache',(str(path),))
+        for key in keys:
+            db.execute('DELETE FROM assistant_cache.requests WHERE session_id=?',(key,))
+            db.execute('DELETE FROM assistant_cache.sessions WHERE id=?',(key,))
 
     def workflow_binding(self,profile_id):
         p=next((p for p in self.workflow_catalog() if p['id']==profile_id),None)
@@ -218,9 +293,8 @@ class Profiles:
             self._write(d)
 
     def workflow_call(self,messages,role,binding,context):
-        """Stateless adapter. Stateful company providers must map context to isolated sessions here."""
+        """Company Assistants sessions are isolated by run, step and binding version."""
         self.validate_workflow(binding,role)
         if not isinstance(context,dict) or not all(context.get(k) for k in ('run_id','step_id')):
             raise GatewayError('協作呼叫缺少隔離識別。')
-        return self.respond(messages,'workflow_plan' if role=='planner' else 'workflow_step',binding)
-
+        return self.respond(messages,'workflow_plan' if role=='planner' else 'workflow_step',binding,context=context)

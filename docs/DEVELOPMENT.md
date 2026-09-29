@@ -1,6 +1,15 @@
-# 0.15.0 WebView 開發與部署
+# 0.16.0 依賴與恢復驗證
 
-使用七個公司核准直接依賴，精確版本與41個套件以requirements.lock為準。主入口 `python -m desktop_app`；備用 `python -m desktop_app --ui tk`。新主畫面是完全離線示範兩模式，舊進階介面沿用原服務。
+正式 App 加入 LangGraph 與 SQLite checkpoint，requirements.lock 是 App 的完整 69 套件鎖檔，不能用獨立 lab lock 覆蓋。既有 .venv 升級前請關閉 App，再以該環境 Python 執行 `-m pip install -r requirements.lock`；公司離線使用核對過的完整 wheelhouse 與 `--no-index`，不連外補件。首次建立仍使用 setup.ps1，不覆蓋既有環境。
+
+新增回歸：tests.test_graph_runner、tests.test_assistants_gateway、tests.test_assistants_profiles、tests.test_company_journey、tests.test_dialogue_concurrency。完整回歸仍為 scripts/test.ps1。scripts/web-smoke.py 使用臨時資料及實際 SDK MockTransport，涵蓋主畫面公司模式、多輪與小視窗；不代表公司真實 API 或人工 IME 驗收。
+
+mock-assistants.py 只綁定 127.0.0.1，無真實金鑰。正式 App 不允許 HTTP endpoint；單元測試透過注入 client 驗證，不能用公開服務替換 mock。SDK 的公開 Assistants 棄用提示不代表公司私有平台已公告停用。
+
+
+# WebView 開發與部署
+
+直接與間接依賴共 69 個鎖定套件，精確版本以 requirements.lock 為準。主入口 `python -m desktop_app`；備用 `python -m desktop_app --ui tk`。新主畫面兩模式預設離線示範，可明確選公司助理；進階介面沿用原服務。
 
 Windows需 WebView2 Runtime、.NET Framework 4.6.2以上，依公司流程提供；wheels不包含Windows元件。doctor新增唯讀偵測。缺元件時明示錯誤並提供Tk入口，不降回IE、不改TLS或防毒設定。
 

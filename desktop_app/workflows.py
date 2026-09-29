@@ -228,7 +228,7 @@ class WorkflowService:
                 self.previews.pop(wid,None);return dict(r,ready=False,error=str(exc))
 
     def _insert_task(self,db,spec,request_id,schedule_id=None,reuse=None):
-        payload={'workflow':copy.deepcopy(spec),'reuse':reuse or {}}
+        payload={'workflow':copy.deepcopy(spec),'reuse':reuse or {},'runner':'langgraph-v1'}
         digest=hashlib.sha256(dumps([payload,schedule_id]).encode()).hexdigest()
         old=db.execute('SELECT id,request_hash FROM tasks WHERE request_id=?',(request_id,)).fetchone()
         if old:
@@ -278,7 +278,8 @@ class WorkflowService:
         with self.store.connection() as db:
             latest=db.execute("SELECT id FROM tasks WHERE kind='workflow' AND json_extract(payload,'$.workflow.id')=? ORDER BY rowid DESC LIMIT 1",(wid,)).fetchone()
         if latest:task=self.store.task(latest['id'])
-        return dict(r,task=task,steps_status=self.get_task_steps(task['id']) if task else [],schedule=schedule)
+        return dict(r,task=task,steps_status=self.get_task_steps(task['id']) if task else [],schedule=schedule,
+                    recovery=self.recovery(task['id']) if task else None)
 
     def _active(self,tid):return not self.engine._closed and self.store.task(tid)['state']=='running'
 
@@ -286,16 +287,21 @@ class WorkflowService:
         with self.engine._lock,self.store.connection() as db:
             if not db.execute("UPDATE tasks SET state='running' WHERE id=? AND state='queued'",(tid,)).rowcount:return
             db.execute("UPDATE occurrences SET state='running' WHERE task_id=?",(tid,))
-        task=self.store.task(tid);spec=task['payload']['workflow'];current=None
+        task=self.store.task(tid);spec=task['payload']['workflow'];current=None;phase=None
         try:
             self.profiles.validate_workflow(spec['planner'],'planner')
             steps=self.validate_steps(spec['steps'],occurrence=datetime.fromisoformat(spec.get('occurrence',task['created_at'])))
             outputs={s['step_id']:s['output'] for s in self.get_task_steps(tid) if s['state']=='succeeded'}
-            for s in steps:
-                current=s['id']
-                if current in outputs:continue
+            def dispatch(s):
+                nonlocal current,phase
+                current=s['id'];phase='validating'
+                if current in outputs:
+                    if outputs[current].get('transfer',{}).get('verdict')=='needs_attention':
+                        raise ValueError('覆核尚未通過，不能恢復後續步驟。')
+                    phase='committed'
+                    return
                 with self.engine._lock:
-                    if not self._active(tid):return
+                    if not self._active(tid):raise ValueError('工作已取消或停止。')
                     inputs={'goal':spec['goal'],'instruction':s.get('instruction',''),'sources':{ref:outputs[ref]['transfer'] for ref in s['inputs']}}
                     if len(dumps(inputs))>20000:raise ValueError('步驟輸入超過上限，請縮小資料範圍；沒有截斷送出。')
                     with self.store.connection() as db:
@@ -319,7 +325,9 @@ class WorkflowService:
                                   'text 不得聲稱核准、建立排程或實際執行其他步驟。缺乏來源不可捏造，RAG 未提供來源需明示。')
                     try:
                         text=self.profiles.workflow_call([{'role':'user','content':format_hint+'\n角色：'+role+'\n核准工作與輸入：'+dumps(inputs)}],
-                            role,s['binding'],{'run_id':tid,'step_id':current})
+                            role,s['binding'],{'run_id':tid,'step_id':current,
+                                'cancelled':lambda: not self._active(tid),
+                                'resume':bool(task['payload'].get('resuming'))})
                     except GatewayError:raise
                     except Exception:raise GatewayError('子代理呼叫未完成，請檢查公司 adapter 或連線。') from None
                     result=json_object(text);allowed={'text','facts','verdict'} if role=='review' else {'text','facts'}
@@ -328,23 +336,92 @@ class WorkflowService:
                     if result.get('facts')!=expected:raise ValueError('子代理的結構化數值與原始資料不一致，請人工核對。')
                     if role=='review' and result.get('verdict') not in {'pass','needs_attention'}:raise ValueError('覆核狀態格式錯誤。')
                     output={'transfer':result,'text':result['text']}
+                phase='receipt'
                 with self.engine._lock:
-                    if not self._active(tid):return
+                    if not self._active(tid):raise ValueError('工作已取消或停止。')
                     with self.store.connection() as db:
                         db.execute("UPDATE workflow_steps SET state='succeeded',output=? WHERE task_id=? AND step_id=?",(dumps(output),tid,current))
                     outputs[current]=output
                 if s.get('role')=='review' and result['verdict']=='needs_attention':
+                    phase='review_blocked'
                     raise ValueError('覆核提出需要處理的問題；已保留成果，後續步驟尚未執行。')
+                phase='committed'
+            from .graph_runner import execute
+            execute(self.store.path.with_name('workflow-checkpoints.sqlite3'),tid,steps,dispatch,receipts=set(outputs))
+            if not self._active(tid):return
+            if any(s['id'] not in outputs for s in steps):
+                raise ValueError('工作成果不完整；checkpoint 不代表已完成業務步驟。')
             report=next((outputs[s['id']].get('text') for s in reversed(steps) if outputs[s['id']].get('text')),'查詢完成，請查看原始結果。')
             self.engine._finish(tid,'succeeded',{'report':report,'steps':self.get_task_steps(tid)})
         except Exception as exc:
             error=str(exc) if isinstance(exc,(GatewayError,ValueError)) else '協作步驟未完成，請檢查設定或連線。錯誤編號 WORKFLOW_STEP_FAILED。'
+            if phase in ('receipt','committed'):error='WORKFLOW_RECOVERY_REQUIRED：成果或 checkpoint 保存中斷；請核對後恢復。'
             with self.engine._lock:
                 if not self._active(tid):return
                 with self.store.connection() as db:
-                    if current:db.execute("UPDATE workflow_steps SET state='failed',error=? WHERE task_id=? AND step_id=?",(error,tid,current))
+                    if current and phase!='committed':db.execute("UPDATE workflow_steps SET state='failed',error=? WHERE task_id=? AND step_id=?",(error,tid,current))
                     db.execute("UPDATE workflow_steps SET state='blocked' WHERE task_id=? AND state='queued'",(tid,))
                 self.engine._finish(tid,'failed',{'report':'','steps':self.get_task_steps(tid)},error)
+
+    def recovery(self,tid):
+        """Local-only eligibility; never dispatch a model while painting the UI."""
+        task=self.store.task(tid)
+        rows=self.get_task_steps(tid)
+        eligible=(task['kind']=='workflow' and task['payload'].get('runner')=='langgraph-v1'
+                  and task['state']=='failed' and any(code in (task['error'] or '') for code in ('應用程式已中斷','WORKFLOW_RECOVERY_REQUIRED')))
+        if task['kind']=='workflow' and task['state']=='failed' and hasattr(self.profiles,'inspect_request'):
+            definitions={s['id']:s for s in task['payload']['workflow']['steps']}
+            for row in rows:
+                step=definitions[row['step_id']]
+                if row['state'] not in ('failed','interrupted') or row['input'] is None or step['kind']!='assistant':continue
+                try:
+                    status=self.profiles.inspect_request(step['binding'],{'run_id':tid,'step_id':step['id']})
+                    # Completed but invalid structured output is not recoverable.
+                    if status.get('recoverable') and status.get('state')!='completed':eligible=True
+                except ValueError:pass
+        uncertain=any(r['state']=='interrupted' and r['input'] is not None for r in rows)
+        return {'eligible':eligible,'needs_remote_check':uncertain,
+                'message':'恢復前先核對遠端狀態；不會自動重送。' if eligible else '此工作不屬於可恢復的中斷工作。'}
+
+    def inspect_recovery(self,tid):
+        with self.engine._lock:
+            task=self.store.task(tid)
+            if not self.recovery(tid)['eligible']:raise ValueError('此工作無法恢復。')
+            if any(t==tid and not f.done() for f,t in self.engine._future_tasks.items()):
+                raise ValueError('工作仍在結束中。')
+            spec=task['payload']['workflow'];self.profiles.validate_workflow(spec['planner'],'planner')
+            steps=self.validate_steps(spec['steps'],occurrence=datetime.fromisoformat(spec.get('occurrence',task['created_at'])))
+            rows={r['step_id']:r for r in self.get_task_steps(tid)}
+        statuses=[]
+        for step in steps:
+            row=rows[step['id']]
+            if row['state']=='succeeded':continue
+            if row['input'] is None:continue
+            if step['kind']!='assistant' or not hasattr(self.profiles,'inspect_request'):
+                raise ValueError('中斷步驟無法確認是否已執行，禁止自動重送。')
+            status=self.profiles.inspect_request(step['binding'],{'run_id':tid,'step_id':step['id']},remote=True)
+            statuses.append(status)
+            if not status.get('recoverable'):raise ValueError('遠端結果不明或已終止，不能自動重送此步驟。')
+        return {'eligible':True,'steps':statuses,'message':'狀態已核對，可由你確認繼續。'}
+
+    def resume(self,tid):
+        self.inspect_recovery(tid)
+        with self.engine._lock:
+            self.engine._ensure_open()
+            if not self.recovery(tid)['eligible']:raise ValueError('恢復狀態已改變。')
+            task=self.store.task(tid);payload=task['payload'];payload['resuming']=True
+            with self.store.connection() as db:
+                db.execute("UPDATE tasks SET state='queued',payload=?,error=NULL,finished_at=NULL WHERE id=?",(dumps(payload),tid))
+                db.execute("UPDATE workflow_steps SET state='queued',error='' WHERE task_id=? AND state IN ('interrupted','failed','blocked')",(tid,))
+            self.engine._submit(tid)
+        return tid
+
+    def abandon(self,tid):
+        with self.engine._lock:
+            if not self.recovery(tid)['eligible']:raise ValueError('此工作無法放棄恢復。')
+            with self.store.connection() as db:
+                db.execute("UPDATE tasks SET state='cancelled' WHERE id=?",(tid,))
+                db.execute("UPDATE workflow_steps SET state='cancelled' WHERE task_id=? AND state='interrupted'",(tid,))
 
     def cancel(self,wid):
         with self.engine._lock:
@@ -369,6 +446,14 @@ class WorkflowService:
             self.engine._ensure_open();task=self.store.task(tid)
             if task['kind']!='workflow' or task['state']!='failed':raise ValueError('只可明確重試未完成的協作流程。')
             if any(t==tid and not f.done() for f,t in self.engine._future_tasks.items()):raise ValueError('遠端請求仍在結束中。')
+            if hasattr(self.profiles,'inspect_request'):
+                definitions={s['id']:s for s in task['payload']['workflow']['steps']}
+                for row in self.get_task_steps(tid):
+                    step=definitions[row['step_id']]
+                    if row['state']=='succeeded' or row['input'] is None or step['kind']!='assistant':continue
+                    status=self.profiles.inspect_request(step['binding'],{'run_id':tid,'step_id':step['id']})
+                    if status['state'] not in ('unsupported','completed','failed','cancelled') or (status['state'] in ('failed','cancelled') and not status.get('remote_terminal')):
+                        raise ValueError('原請求結果未明，請先檢查遠端狀態，不建立另一個工作。')
             spec=copy.deepcopy(task['payload']['workflow'])
             spec.setdefault('occurrence',task['created_at'])
             self.validate_steps(spec['steps'],occurrence=datetime.fromisoformat(spec['occurrence']))

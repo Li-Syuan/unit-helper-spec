@@ -25,7 +25,7 @@ def main():
         def inspect():
             try:
                 for _ in range(100):
-                    ready=window.evaluate_js("document.getElementById('dialogue-status') && document.getElementById('dialogue-status').textContent.includes('離線示範')")
+                    ready=window.evaluate_js("document.getElementById('dialogue-status') && document.getElementById('dialogue-status').textContent.includes('示範模式')")
                     if ready:break
                     time.sleep(.2)
                 if not ready:raise AssertionError('bridge_not_ready')
@@ -148,6 +148,39 @@ def main():
                 time.sleep(.3)
                 assert window.evaluate_js("Boolean(document.getElementById('dialogue-input'))"),'navigation_not_blocked'
                 report['checks'].append('untrusted_navigation_blocked')
+                # Company-shaped HTTP remains synthetic, using the actual SDK adapter.
+                window.evaluate_js("if(document.getElementById('modal').open)document.getElementById('modal').close()")
+                import httpx
+                from openai import OpenAI
+                from desktop_app.assistants_gateway import AssistantsGateway
+                from test_support.assistants_mock import AssistantsMock
+                company_mock=AssistantsMock(reply='【協定模擬】公司文字連接器已收到合成需求。')
+                profiles=session.profiles
+                profiles.set_endpoint('https://fixture.example.test/v1');profiles.set_wire_mode('assistants')
+                pid=profiles.save('合成公司助理','asst_synthetic')
+                profiles.key=lambda:'synthetic-test-key'
+                def mock_client(d,p,key,binding):
+                    sdk=OpenAI(base_url='https://fixture.example.test/v1',api_key=key,max_retries=0,
+                        http_client=httpx.Client(transport=httpx.MockTransport(company_mock.handle)))
+                    return AssistantsGateway({'base_url':d['endpoint'],'assistant_id':p['assistant_id']},key,
+                        session.directory/'assistant-sessions.sqlite3',binding,client=sdk)
+                profiles._assistants_client=mock_client
+                window.evaluate_js("document.querySelector('[data-page=dialogue]').click()")
+                time.sleep(.4)
+                selection='company:'+pid+':'+str(profiles.snapshot(pid)['revision'])
+                window.evaluate_js("document.getElementById('dialogue-chat-mode').click()")
+                time.sleep(.2)
+                window.evaluate_js("document.getElementById('dialogue-assistant').value="+json.dumps(selection)+";document.getElementById('dialogue-assistant').dispatchEvent(new Event('change'))")
+                time.sleep(.3)
+                dialogue_send('合成第一題');dialogue_send('接續合成追問')
+                assert len(company_mock.threads)==1 and len(company_mock.runs)==2,'company_thread_continuity'
+                assert window.evaluate_js("document.getElementById('dialogue-mode-label').textContent.includes('公司助理')"),'company_badge'
+                window.restore();window.resize(1050,700);time.sleep(.3);capture('company-small.png')
+                for control in ('dialogue-send','dialogue-plan','dialogue-stop'):
+                    assert window.evaluate_js("(()=>{const e=document.getElementById("+json.dumps(control)+");if(e.hidden)return true;const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;})()"),'company_controls_clipped'
+                window.evaluate_js("document.getElementById('theme-toggle').click()")
+                time.sleep(.3);capture('company-dark.png')
+                report['checks'].append('company_sdk_mock_multiturn_main_ui_badge_small_controls')
                 report['viewport']=window.evaluate_js("({width:innerWidth,height:innerHeight,devicePixelRatio})")
                 report['text']=window.evaluate_js('document.body.innerText')
                 report['state']=api.call('state',{})

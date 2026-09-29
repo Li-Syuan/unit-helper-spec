@@ -8,16 +8,27 @@
     "chat_sent_from_dom",
     "three_click_query_zero_dispatch_before_confirm",
     "workflow_explicit_approval_and_outcome_feedback_mock",
-    "untrusted_navigation_blocked"
+    "untrusted_navigation_blocked",
+    "company_sdk_mock_multiturn_main_ui_badge_small_controls"
   ],
   "viewport": {
-    "width": 1552,
-    "height": 906,
+    "width": 942,
+    "height": 603,
     "devicePixelRatio": 1.6500000953674316
   },
+  "version": "0.16.0",
   "capture_method": "WebView2 CapturePreview (application content only)",
+  "gui": "local_real_passed",
+  "company_protocol": "mock_passed",
   "company_services": "not_tested",
   "ime": "not_tested",
   "manual_usability": "not_tested",
-  "clipboard": "failed: Windows error 5"
+  "clipboard": "failed: Windows error 5",
+  "norton": "not_tested",
+  "screenshots": [
+    "workspace-dark.png",
+    "workspace-light.png",
+    "workspace-small.png",
+    "task-preview.png"
+  ]
 }

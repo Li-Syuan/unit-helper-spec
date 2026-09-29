@@ -1,3 +1,16 @@
+# 0.16.0 正式整合規則（優先於舊版限制）
+
+使用者已明確批准 App 正式引入 LangGraph、SQLite checkpoint 及必要間接依賴，允許重新鎖定正式 requirements 與更新常駐 .venv。仍不得直接覆蓋為 lab lock；lab wheels 的 Git 例外僅原目錄。正式離線包在 artifacts，不提交 Git。無 LangSmith tracing／外部遙測。
+
+graph_runner.py 接管已批准順序步驟；WorkflowService 保持唯一業務状态與批准／成果／排程契約。checkpoint 不代表 exactly-once。恢复核對 task、step、定義指紋、成果收據及 Assistants 請求帳本；未知寫入不 retry；已知 run 只 retrieve，已完成結果用快取。重開無自動派發，取消後不可復活。
+
+公司成功範例已確認為 Threads/Messages/Runs + 自訂 pluginapi（非 Azure Chat Completions）。assistants_gateway.py 為文字專用連接器，Profiles 顯式 wire_mode=assistants，不猜 ID 是 model。tool_choice=none 需公司驗收，requires_action 停止，禁止 pluginapi；TLS 保持驗證。公司服務端副作用與角色能力尚未實測，不以設定旗標當證據。
+
+主畫面透過 ProfileDialogueProvider 明確選擇公司或示範，無 fallback。task_drafts CHECK=0 保持；草稿建議每輪獨立遠端 thread，一般聊天沿用相同 thread。dialogue_send 不得持有 bridge 全域鎖；追蹤真实請求、取消與 close drain，原始錯誤不顯示。公司端 thread 不隨 App 退出刪除。
+
+本機新增 assistant-sessions.sqlite3 與 workflow-checkpoints.sqlite3，皆為使用者資料，不進 Git。刪除進階對話在同一 SQLite transaction 刪除附加帳本的對應回覆快取，獨立 workflow 及遠端資料保留。跨 SQLite 檔的斷電原子性不作保證；還原必須關閉 App 並還原整個資料目錄的一致備份。
+
+
 # 0.15.0 新增規則（優先於下方舊版介面限制）
 
 `experiments/langgraph-lab` 是使用者明確要求隨 GitHub 提供 wheels 的獨立試驗包，例外僅限該目錄的 `packages/*.whl`。不得把其 lock 合併到 App、把 LangGraph 範例當正式多助理整合，或啟用公司任務。試裝使用自身暫時 .venv，完成驗證後清除；原 App requirements 與常駐 .venv 保持不變。公司試跑見該目錄 README。

@@ -69,6 +69,8 @@ class AssistantViews:
         ttk.Label(row,text='Endpoint',width=14).pack(side='left')
         ttk.Entry(row,textvariable=self.endpoint_var).pack(side='left',fill='x',expand=True)
         self.button(row,'保存',self.save_endpoint).pack(side='left',padx=6)
+        self.wire_var=tk.StringVar(value=self.profiles.data.get('wire_mode','unconfigured'))
+        self.button(row,'協定',self.edit_wire_mode).pack(side='left',padx=2)
         row=ttk.Frame(tab);row.pack(fill='x',pady=4)
         self.key_label=ttk.Label(row,text='API key：'+self.profiles.key_status()); self.key_label.pack(side='left')
         self.button(row,'設定／更換',self.edit_key).pack(side='right')
@@ -109,6 +111,26 @@ class AssistantViews:
         self.require_profile_edit(); self.profiles.set_endpoint(self.endpoint_var.get())
         self.key_label.configure(text='API key：'+self.profiles.key_status()); self.refresh_profiles()
         self.status.set('Endpoint 已保存；改變目的地後請重新設定 API key。')
+
+    def save_wire_mode(self):
+        self.require_profile_edit()
+        if self.wire_var.get()!=self.profiles.data.get('wire_mode'):
+            self.profiles.set_wire_mode(self.wire_var.get())
+        self.refresh_profiles();self.refresh_workflow_catalog()
+        self.status.set('連線協定已保存；改變協定後需重新核對助理能力。')
+
+    def edit_wire_mode(self):
+        self.require_profile_edit()
+        w=tk.Toplevel(self.root);apply_child_icons(w);w.title('公司連線協定');w.transient(self.root)
+        self.display.size_window(w,560,230,(400,210))
+        body=ttk.Frame(w,padding=20);body.pack(fill='both',expand=True)
+        ttk.Label(body,text='公司範例使用 assistants；變更將撤銷舊連線與能力驗證。',wraplength=470).pack(fill='x')
+        value=tk.StringVar(value=self.profiles.data.get('wire_mode','unconfigured'))
+        ttk.Combobox(body,textvariable=value,values=('unconfigured','assistants','model','body_field'),state='readonly').pack(fill='x',pady=12)
+        def save():
+            self.wire_var.set(value.get());self.save_wire_mode();w.destroy()
+        self.button(body,'保存協定',save).pack(side='right')
+        self.button(body,'取消',w.destroy).pack(side='left');self.appearance.apply(w)
     def edit_key(self):
         self.require_profile_edit()
         w=tk.Toplevel(self.root);apply_child_icons(w);w.title('設定共用 API key');self.display.size_window(w,740,420,(500,300));w.transient(self.root)
@@ -225,4 +247,3 @@ class AssistantViews:
         self.handoff_window=w
         self.handoff_windows=[x for x in getattr(self,'handoff_windows',[]) if x.winfo_exists()]+[w]
         self.safe(prepare)
-

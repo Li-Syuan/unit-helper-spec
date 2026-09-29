@@ -382,6 +382,9 @@ class Engine:
                 if fingerprint != preview["fingerprint"]:
                     self._deletion_previews.pop(token, None)
                     raise ValueError("對話內容或工作狀態已變更，請重新預覽後刪除。")
+                owner=getattr(self.assistant_router,'__self__',None)
+                if hasattr(owner,'forget_conversations_tx') and hasattr(owner,'path'):
+                    owner.forget_conversations_tx(db,preview['ids'])
                 if summary["task_ids"]:
                     marks = ','.join('?' for _ in summary["task_ids"])
                     db.execute(f"DELETE FROM notifications WHERE task_id IN ({marks})", summary["task_ids"])
@@ -415,6 +418,12 @@ class Engine:
             if self.assistant_router is not None:
                 binding=self.store.task(task_id)["payload"].get("_binding")
                 self.binding_validator(binding)
+                owner=getattr(self.assistant_router,'__self__',None)
+                if hasattr(owner,'inspect_request') and getattr(owner,'data',{}).get('wire_mode')=='assistants':
+                    task=self.store.task(task_id)
+                    context={'conversation_id':('engine:'+task['conversation_id']) if purpose=='chat' and task['conversation_id'] else 'task:'+task_id,
+                             'request_id':task_id,'cancelled':lambda:self._closed or self.store.task(task_id)['state']!='running'}
+                    return self.assistant_router(messages,purpose,binding,context=context)
                 return self.assistant_router(messages,purpose,binding)
             return self.assistant_runner(messages, purpose)
         finally:

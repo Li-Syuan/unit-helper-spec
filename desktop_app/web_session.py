@@ -42,7 +42,8 @@ class WebSession:
             self.preferences_path=self.directory/'ui-preferences.json'
             from .dialogue_store import DialogueStore
             from .dialogue_service import DialogueService
-            self.dialogue=DialogueService(DialogueStore(self.directory/'dialogue-v1.sqlite3'))
+            from .dialogue_provider import ProfileDialogueProvider
+            self.dialogue=DialogueService(DialogueStore(self.directory/'dialogue-v1.sqlite3'),ProfileDialogueProvider(self.profiles))
             self.scheduler_error=False
             self.scheduler=threading.Thread(target=self._tick,daemon=True);self.scheduler.start()
         except BaseException:
@@ -57,5 +58,8 @@ class WebSession:
     def close(self):
         if self.closed:return
         self.closed=True;self.stop.set();self.scheduler.join()
+        self.dialogue.close(wait=False)
         try:self.engine.close(wait=True)
-        finally:self.lock.close()
+        finally:
+            try:self.dialogue.close(wait=True)
+            finally:self.lock.close()

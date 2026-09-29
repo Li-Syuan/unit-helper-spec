@@ -28,7 +28,10 @@ class WebBridge:
                 if self._closing and name not in {'state','save_draft'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                return {'ok':True,'data':handler(payload or {})}
+                if name not in {'dialogue_send','workflow_inspect','workflow_resume'}:
+                    return {'ok':True,'data':handler(payload or {})}
+            # Provider I/O must not block theme/state/cancellation/close commands.
+            return {'ok':True,'data':handler(payload or {})}
         except (ValueError,GatewayError) as exc:
             return {'ok':False,'error':str(exc)}
         except Exception:
@@ -43,6 +46,9 @@ class WebBridge:
             'workflow_confirm':lambda p:s.workflows.confirm(p['wid'],p['revision'],True),
             'workflow_cancel':lambda p:s.workflows.cancel(p['wid']),
             'workflow_retry':lambda p:s.workflows.retry(p['task_id'],p['request_id']),
+            'workflow_inspect':lambda p:s.workflows.inspect_recovery(p['task_id']),
+            'workflow_resume':lambda p:s.workflows.resume(p['task_id']),
+            'workflow_abandon':lambda p:s.workflows.abandon(p['task_id']),
             'workflow_schedule':self._workflow_schedule,
             'plan_preview':lambda p:s.store.plan(p['plan_id']),
             'plan_confirm':lambda p:s.engine.confirm_plan(p['plan_id'],p['revision'],p['request_id']),
@@ -79,19 +85,23 @@ class WebBridge:
             'dialogue_start':lambda p:s.dialogue.start(p.get('mode','chat'),p.get('assistant_id','demo-general')),
             'dialogue_state':lambda p:s.dialogue.state(p['id']),
             'dialogue_send':lambda p:s.dialogue.send(p['id'],p['text'],p['request_id']),
+            'dialogue_stop':lambda p:s.dialogue.stop(p['id']),
             'dialogue_edit':lambda p:s.dialogue.edit(p['id'],p['revision'],p['draft']),
             'dialogue_preview':lambda p:s.dialogue.preview(p['id'],p['revision']),
             'dialogue_confirm':lambda p:s.dialogue.confirm(p['id'],p['token']),
             'dialogue_cancel':lambda p:s.dialogue.cancel(p['id']),
             'dialogue_saved':lambda p:s.dialogue.list_saved(),
+            'dialogue_history':lambda p:s.dialogue.history(),
         }
 
     def _dialogue_catalog(self,p):
         from .dialogue_contracts import ASSISTANTS,TASK_TYPES
-        return {'assistants':copy.deepcopy(ASSISTANTS),'task_types':TASK_TYPES[:],
-                'mode_label':'示範模式 · 完全離線','company_enabled':False,
-                'company_fields':['endpoint','認證方式','assistant_id','請求格式','回覆格式'],
-                'company_note':'正式服務契約尚未確認，真實連線保持停用。API key不在此頁保存。'}
+        provider=self._s.dialogue.provider
+        rows=provider.catalog() if hasattr(provider,'catalog') else copy.deepcopy(ASSISTANTS)
+        return {'assistants':rows,'task_types':TASK_TYPES[:],
+                'mode_label':'示範模式 · 完全離線','company_enabled':any(r['id'].startswith('company:') for r in rows),
+                'company_fields':['endpoint','API key','assistant_id'],
+                'company_note':'設定公司 Assistants 連線後，選取公司助理才會傳送內容；工具尚未開放。'}
 
     def _state(self,p):
         s=self._s;conversations=s.store.conversations();cid=p.get('cid')
@@ -112,6 +122,7 @@ class WebBridge:
             todos=s.store.todos(),schedules=s.store.schedules(),notifications=s.store.notifications(),issues=s.store.issues(),
             draft=s.store.draft(cid),attachment=self._attachment_info(cid),busy=s.engine.has_inflight(),
             scheduler_error=s.scheduler_error,settings={'endpoint':s.profiles.data.get('endpoint','') if not s.trial else '',
+                'wire_mode':s.profiles.data.get('wire_mode','unconfigured'),
                 'key_status':s.profiles.key_status() if not s.trial else '由隔離試用 .env 提供','trial':s.trial})
 
     def _new_chat(self,p):
@@ -245,7 +256,7 @@ class WebBridge:
 
     def _profile_guard(self):
         if self._s.trial:raise ValueError('試用與公司設定隔離，請使用正式工作區設定助理。')
-        if self._s.engine.has_inflight():raise ValueError('請等背景工作完全結束後再修改連線。')
+        if self._s.engine.has_inflight() or self._s.dialogue.has_inflight():raise ValueError('請等背景工作完全結束後再修改連線。')
 
     def _profile_save(self,p):
         self._profile_guard();return self._s.profiles.save(p['name'],p['assistant_id'],p.get('notes',''),p.get('id'),p.get('enabled',True))
@@ -258,6 +269,8 @@ class WebBridge:
 
     def _connection_save(self,p):
         self._profile_guard();self._s.profiles.set_endpoint(p['endpoint'])
+        if 'wire_mode' in p and p['wire_mode']!=self._s.profiles.data.get('wire_mode'):
+            self._s.profiles.set_wire_mode(p['wire_mode'])
         if p.get('key'):self._s.profiles.save_key(p['key'])
 
     def _key_remove(self,p):
