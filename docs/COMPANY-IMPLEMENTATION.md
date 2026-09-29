@@ -22,7 +22,7 @@
 
 **2026-09-29 官方查證：**[Assistant API 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/200671332/MediaTek+Assistant+API) 公開 pluginapi 往返範例；[Plugin Chat 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/3309569/Plugin+Chat) 確認 Internet Search 為插件。通用接線已完成，不再把重新取得整套 API 規格當作前置阻礙。公司需核對特定搜尋工具識別、參數／權限及部署差異。完整來源與限制見 [搜尋接線契約](ASSISTANT-INTEGRATION.md#已實作的核准範圍)。
 
-需要公司保存的本地資訊：搜尋工具名稱、參數 schema、成功回覆形狀／大小、是否唯讀、是否有費用或其他副作用，以及 run 狀態變化。不要把金鑰或內部原始回覆提交 Git。核對後另做限定搜尋工具的 adapter：固定公司 endpoint、白名單 function、嚴格 arguments 驗證、有限輪數／時間／回覆大小、取消與未知写入停止；其他工具拒絕。需公司明確核准與真實測試才改現行工具限制，不能以 metadata 或 checkbox 作驗收。
+需要公司保存的本地資訊：搜尋工具名稱、參數 schema、成功回覆形狀／大小、是否唯讀、是否有費用或其他副作用，以及 run 狀態變化。不要把金鑰或內部原始回覆提交 Git。固定公司 endpoint、白名單 function、參數驗證、執行上限、取消與未知寫入停止已實作，請先直接設定並試跑，**不要重做搜尋 adapter**。只有實測發現具體相容差異時，才修改該邊界並補案例；公司核准及真實驗收仍必要，metadata 或 checkbox 不能代替。
 
 ### 多代理第一題：固定資料晨報
 
