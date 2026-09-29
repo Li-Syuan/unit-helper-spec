@@ -20,6 +20,8 @@
 
 本版明確傳 `tool_choice=none`、不呼叫 pluginapi，可能抑制已配置搜尋。不得宣称本版只換參數就能搜尋；也不得直接移除限制並允許所有模型指定 function。
 
+**2026-09-29 官方查證更新：**[Assistant API 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/200671332/MediaTek+Assistant+API) 已公開上述 pluginapi 往返範例；[Plugin Chat 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/3309569/Plugin+Chat) 確認 Internet Search 為插件。通用接線格式已有官方依據，請直接沿用，不再把重新取得整套 API 規格當作開發前置阻礙。公司只需核對特定搜尋工具識別、參數／權限及部署差異。完整來源與尚未啟用的修改範圍見 [搜尋接線草案](ASSISTANT-INTEGRATION.md#待批准的具體修改範圍)。
+
 需要公司保存的本地資訊：搜尋工具名稱、參數 schema、成功回覆形狀／大小、是否唯讀、是否有費用或其他副作用，以及 run 狀態變化。不要把金鑰或內部原始回覆提交 Git。核對後另做限定搜尋工具的 adapter：固定公司 endpoint、白名單 function、嚴格 arguments 驗證、有限輪數／時間／回覆大小、取消與未知写入停止；其他工具拒絕。需公司明確核准與真實測試才改現行工具限制，不能以 metadata 或 checkbox 作驗收。
 
 ### 多代理第一題：固定資料晨報

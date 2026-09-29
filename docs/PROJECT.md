@@ -1,5 +1,7 @@
 # 0.17.0 公司試跑與財經日報
 
+官方手冊已確認 Internet Search 插件與通用 pluginapi 呼叫流程，參考 [查證與修改草案](ASSISTANT-INTEGRATION.md)。目前實作仍為禁止工具的文字連接器；文件查證不是已完成公司搜尋或變更工具授權。
+
 新增公司啟用檢查及明確的助理 metadata GET，與模型呼叫分開。CompanyProbe 追蹤實際請求與關閉；本機設定存在、金鑰來源設定或工具名稱都不代表能力已驗證。
 
 `AssistantBriefings` 使用既有 Engine 的背景派發、取消、防重及排程時鐘，新增 assistant_briefing 工作種類與 ASSISTANT_BRIEFING 排程識別，不變更 schema。預覽→一次試跑→人工核對／持續傳送同意→每日排程；主對話、設定與自動工作皆可開啟，活動紀錄可重開成果。結果保留完整文字，search 固定 not_tested；實際搜尋及事實準確性另驗。
