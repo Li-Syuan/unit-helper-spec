@@ -17,7 +17,7 @@
 
 新主畫面預設離線示範，可明確選取已設定的公司助理；任務僅確認保存、固定不啟用。ProfileDialogueProvider 已實作，維持 dialogue_contracts.py 嚴格驗證；公司現場需驗證 endpoint、認證、assistant ID、服務相容差異、session 隔離及工具副作用；不得讓回覆直接儲存、執行或讀本機檔案，不得把Demo當失敗fallback。
 
-新草稿尚不接執行器，不能只把enabled改1；公司若要自動執行，應另外確認核准來源與工具映射、權限、批准範圍、排程防重及取消測試。原進階Workflow／Oracle／AD工作單繼續適用。測試：`python -m unittest tests.test_dialogue tests.test_web -v`，公司正式連線保持not_tested。
+新草稿尚不接執行器，不能只把enabled改1；公司若要自動執行，應另外確認核准來源與工具映射、權限、批准範圍、排程防重及取消測試。原進階Workflow／Oracle／AD工作單繼續適用。測試：`.\scripts\test.ps1 -Suite targeted -Tests tests.test_dialogue,tests.test_web`，公司正式連線保持not_tested。
 
 以下是既有進階功能接手項目。
 
@@ -37,7 +37,7 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 
 ## 公司先提供的資訊
 
-新增的 start-trial.bat 是個人 Groq 外部 AI 試用，供使用者先體驗真正摘要／改寫。回公司仍使用 start-app.bat 與公司 adapters；不要把試用 .env 或資料帶回公司，也不能以 Groq 實測代替公司 API 驗收。修改入口 trial.py，獨立測試 `python -m unittest tests.test_trial -v`；公司不需重新設計 UI。
+新增的 start-trial.bat 是個人 Groq 外部 AI 試用，供使用者先體驗真正摘要／改寫。回公司仍使用 start-app.bat 與公司 adapters；不要把試用 .env 或資料帶回公司，也不能以 Groq 實測代替公司 API 驗收。修改入口 trial.py，獨立測試 `.\scripts\test.ps1 -Suite targeted -Tests tests.test_trial`；公司不需重新設計 UI。
 
 在公司內部副本填「內部文件位置／負責窗口」，未知填待確認。**不填密碼、token、內部網址實值、個人資料或真實對話**；去識別樣本及測試 hooks 放被忽略的 `company_local`，原始證據放公司核准位置。
 
@@ -70,7 +70,7 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 
 已完成 `intent_drafts.py` 的受限結構化建議、`action_views.py` 的同頁確認及 `report_engine.py` 的日報執行。Groq 只在 start-trial.bat 獨立資料區啟用；公司 adapter 契約不變。schema 4 的 conversation_actions／schedule_sources 保存來源，不混入模型歷史，也不改變排程工作歸屬。公司 agent 可參考流程，但不得將 Oracle 結果自動送至 Groq。
 
-本機測試：`.venv/Scripts/python.exe -m unittest tests.test_report_engine tests.test_report_views -v`。個人明確允許外部合成測試時，執行 `.venv/Scripts/python.exe scripts/check-trial.py --live --reports`，最多三筆 Groq 請求，暫存資料庫結束後清除；一般 doctor 不呼叫模型。此項不是公司驗收。
+本機測試：`.\scripts\test.ps1 -Suite targeted -Tests tests.test_report_engine,tests.test_report_views`。個人明確允許外部合成測試時，執行 `.venv/Scripts/python.exe scripts/check-trial.py --live --reports`，最多三筆 Groq 請求，暫存資料庫結束後清除；一般 doctor 不呼叫模型。此項不是公司驗收。
 
 若公司後續要開放日報整理，需另核准助理資料去向、持續傳送授權、模型結構化能力、查詢範圍與每次派發身分檢查，再接公司 adapter；不僅更換 endpoint。公司持續 Goal、Windows 背景排程及自動寄信仍未實作。
 
@@ -89,7 +89,7 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 | 能力測試證據識別（不是秘密） | 實測通過後由可信公司 hook 呼叫 set_workflow_capability(profile_id, roles, verified=True, evidence=本機證據識別) | verified 只記錄真實驗收結果，不以填旗標代替測試；改 ID／endpoint 後重新驗證 |
 | 查詢模板及數據比對 | 沿用下方 Oracle 工作單 | 相同條件的精確合計與人工一致；首版只轉交 metadata／合計，原始表格本機保存 |
 
-本機命令：`.venv/Scripts/python.exe -m unittest tests.test_workflows tests.test_workflow_profiles tests.test_workflow_ui -v`。另以核准的內部合成資料驗證兩個以上真實 ID 及不同 run/step 的 session 隔離，保存 company_real_passed 證據後才開放日常排程。公司版不讀 Groq .env。
+本機命令：`.\scripts\test.ps1 -Suite targeted -Tests tests.test_workflows,tests.test_workflow_profiles,tests.test_workflow_ui`。另以核准的內部合成資料驗證兩個以上真實 ID 及不同 run/step 的 session 隔離，保存 company_real_passed 證據後才開放日常排程。公司版不讀 Groq .env。
 
 接手順序：先跑基準 → 接通一般 API → 驗證唯讀規劃與子代理能力／隔離 → 登錄並啟用角色 → 用內部合成文字試跑 → 接核准數據 → 人工對照成果 → 啟用流程排程。不必重寫畫面或引擎；但不能只換 ID、跳過能力及 API 契約驗證。
 
@@ -98,7 +98,7 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 ### 1. 建立公司環境基準
 
 - **入口／已備妥**：`scripts/setup.ps1`、`requirements.lock`、doctor、離線工具與完整測試；操作見 [開發指南](docs/DEVELOPMENT.md)。公司提供上表核准環境。
-- **命令**：`./scripts/setup.ps1 -PythonExe 'C:\核准路徑\python.exe'`，接著 `./scripts/test.ps1`。以 `-Environment .venv-verify` 建第二乾淨環境並用其 Python 執行完整測試；離線安裝依開發指南。
+- **命令**：`./scripts/setup.ps1 -PythonExe 'C:\核准路徑\python.exe'`，接著 `./scripts/test.ps1 -Suite full`。以 `-Environment .venv-verify` 建第二乾淨環境並用其 Python 執行完整測試；離線安裝依開發指南。
 - **完成條件**：確切 3.10.4／64 位元／Tk、pip check、lock 一致與完整回歸通過；記錄實際路徑、版本、命令及 exit code。不得借別的 site-packages，改鎖檔後重建及驗證，不僅修改現有 venv。
 
 ### 2. 接公司 chatbot
@@ -106,14 +106,14 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 - **入口／已備妥**：使用者管理共用 endpoint／API key 與多助理名稱／ID／備註；`profiles.py` 固定 binding／revision 與映射，`gateways.py` 的 CompanyAssistant 保留 SDK 實作及 `respond` 介面。依 [多助理接線](docs/ASSISTANT-INTEGRATION.md) 對照成功範例，未知映射維持停用。
 - **實作界線**：assistant ID 不猜成 model；自訂 headers、session、request／response 差異留在 adapter，不改成公共 OpenAI URL。session 按使用者、助理版本及對話隔離。keyring 不可用就報錯；設定只存索引，舊環境變數保持相容，不用明文 fallback。CA 使用可信 PEM，不停用 TLS 驗證。
 - **能力確認**：Plan 預覽固定本機表單、零 API 呼叫。核准測試助理的副作用能力後才設定連線測試 gate／啟動真實測試；prompt 或 `verified_side_effect_free` 標記不能代替服務端工具治理與實際授權。
-- **命令**：`.venv/Scripts/python.exe -m unittest tests.test_gateways tests.test_profiles tests.test_assistant_ui -v`；沿用 `test_support/assistant_contract.py` 補合成 wire 測試，再按下方公司 runner 明確實測。
+- **命令**：`.\scripts\test.ps1 -Suite targeted -Tests tests.test_gateways,tests.test_profiles,tests.test_assistant_ui`；沿用 `test_support/assistant_contract.py` 補合成 wire 測試，再按下方公司 runner 明確實測。
 - **完成條件**：真實回覆、401／403、timeout、空回覆、格式錯誤、不同助理／對話隔離、修訂／停用拒絕及轉交資料範圍皆符合人工結果；不自動重送、不 demo fallback，金鑰與 HTTP body 不進 log。
 
 ### 3. 接 AD、指定員工與資料 owner
 
 - **入口／已備妥**：`CompanyIdentity.current()` 與測試骨架。公司提供登入／名單規則；優先沿用既有登入服務，補身分 adapter、Engine 每次派發與排程授權。
 - **現有缺口**：`local-demo` 僅本機展示；Store 是單本機 profile，尚無多租戶 ACL。共用裝置須依登入者分目錄或補 owner 驗證及相應資料遷移，包含讀取、匯出、轉交與刪除；改名字／隱藏 UI 都不算授權。
-- **命令**：`.venv/Scripts/python.exe -m unittest tests.test_local tests.test_gateways -v`；補派發 gate／owner 隔離測試，以公司核准帳號完成 hooks 的允許、拒絕、停用、逾期四案。
+- **命令**：`.\scripts\test.ps1 -Suite targeted -Tests tests.test_local,tests.test_gateways`；補派發 gate／owner 隔離測試，以公司核准帳號完成 hooks 的允許、拒絕、停用、逾期四案。
 - **完成條件**：錯密碼、錯單位、不在名單、停用與逾期均拒絕，不能讀取其他人資料；排程持有人失效時停止並提示，離線策略經公司確認。AD 密碼不保存、不送模型；授權失敗不能 fallback demo，也不能把連線 timeout 當成預期授權拒絕。
 
 ### 4. 接 Oracle 三項核准查詢
@@ -121,20 +121,26 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 - **入口／已備妥**：`OracleQueries.catalog/validate/run`、動態表單、Plan 與排程預覽；依 [查詢 catalog](docs/QUERY-CATALOG.md) 填公司欄位與日期映射，不重寫 UI。未宣告日期映射只允許固定參數排程。
 - **實作界線**：優先接公司既有可信查詢服務。若要求桌面直連，先確認公司核准的憑證／權限治理，不打包共享 DB 密碼，不自行建立整套中央平台。模型只能選模板與參數，不能產生任意 SQL；使用 bind、可信 scope、有限唯讀結果。`validate` 必須無 DB／HTTP I/O，`run` 前重驗身份；不要將所有 driver 錯誤都視為可重試。
 - **結果契約**：欄列一致、UTC 資料時間、條件、來源、筆數及截斷明確；NUMBER／Decimal 用精確字串，不經 float。
-- **命令**：`.venv/Scripts/python.exe -m unittest tests.test_gateways tests.test_files tests.test_core -v`；沿用 `test_support/query_contract.py`，攔截真正 I/O 驗證純 validate，補公司合成樣本及 query.q01～q03 真實 hooks。
+- **命令**：`.\scripts\test.ps1 -Suite targeted -Tests tests.test_gateways,tests.test_files,tests.test_core`；沿用 `test_support/query_contract.py`，攔截真正 I/O 驗證純 validate，補公司合成樣本及 query.q01～q03 真實 hooks。
 - **完成條件**：上表三模板填齊，正常／空資料／界線／越權／超時／截斷與人工結果逐欄相符；不以 DEMO 資料當公司證據。
 
 ### 5. 舊 SQLite 與排程遷移
 
 - **入口／狀態**：`core.Store` schema 與 occurrence 邊界可沿用；**遷移工具尚未實作**。公司先提供舊 DB／runner／watermark 資訊，不直接讀寫舊版正式 DB。
 - **工作內容**：一致性備份及 checksum、唯讀盤點、dry-run 映射，stable legacy ID 防重，保留原檔。SQLite 使用 backup API 或關閉 writer 後處理 WAL，不能只複製正在寫入的主檔。先停舊 runner、確認無執行中工作及最後完成點，才啟用新排程；回復先停新 runner。
-- **命令／完成條件**：新增 `scripts/migrate_legacy.py` 與 `tests/test_migration.py` 後，執行 `.venv/Scripts/python.exe -m unittest tests.test_migration -v`，再於備份副本跑 migration `--dry-run`。驗證空 DB、部分失敗、重跑、回復、筆數與條件一致及無雙跑；此命令是待實作入口，不能宣稱現在可用。正式切換依公司流程。
+- **命令／完成條件**：新增 `scripts/migrate_legacy.py` 與 `tests/test_migration.py` 後，執行 `.\scripts\test.ps1 -Suite targeted -Tests tests.test_migration`，再於備份副本跑 migration `--dry-run`。驗證空 DB、部分失敗、重跑、回復、筆數與條件一致及無雙跑；此命令是待實作入口，不能宣稱現在可用。正式切換依公司流程。
 
 ### 6. 現場 GUI／Excel 驗收後才打包
 
 - **入口／已備妥**：原生 Tkinter UI、[離線手冊](docs/USER-GUIDE.md)、[資料說明](docs/DATA-USAGE.md)、顯示診斷及完整回歸；打包腳本尚未提供。
-- **命令**：`./scripts/test.ps1` → `./scripts/run.ps1`；按下表逐項操作，記錄版本／環境及證據。GUI、真實 Excel、IME、縮放不得以字串或模擬測試取代。
+- **命令**：`./scripts/test.ps1 -Suite full` → `./scripts/run.ps1`；按下表逐項操作，記錄版本／環境及證據。GUI、真實 Excel、IME、縮放不得以字串或模擬測試取代。
 - **完成條件**：公司接線與現場驗收通過後，才依公司流程打包／簽章；保留 Tcl/Tk、CA／設定外置、資料目錄獨立。若需 packaging 依賴，用獨立 build lock，勿污染 runtime lock。不改防毒或增加排除；Norton 警示另記操作與警示 ID。
+
+## 公司開發期間的選測規則
+
+首次建立公司環境須 full 驗收一次；之後修改不重複從頭跑全部。`./scripts/test.ps1` 預設 quick，僅非 GUI 核心離線檢查；`./scripts/test.ps1 -Suite targeted -Tests tests.test_appearance` 指定模組、class 或案例，多個名稱在 PowerShell 用逗號分隔。文字／配色跑受影響測試與畫面，一般功能加 quick，核心服務／遷移／依賴／發布才跑 full。WebView smoke 只在相關 UI／bridge 變更或介面發布驗收時執行。
+
+交付證據使用 `.venv/Scripts/python.exe scripts/verify.py development`，它執行同一 full 一次，不先跑 test full 再跑 verify。日常報告覆寫 `artifacts/testing/latest.json`，只宣稱實際選測範圍通過。新增模組／TestCase class 須加入 `tests/suites.json` 分類；保留關鍵保障，不以測試數持續增加當績效，也不為每次文案或版本另堆案例。完整做法見 [開發指南](docs/DEVELOPMENT.md#測試與交付)。
 
 ## 真實測試與現場驗收表
 
@@ -176,6 +182,8 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 先盤點公司已有程式、成功 API 範例及環境，依 COMPANY-HANDOFF 的資訊表確認缺項；找得到就沿用，缺少時一次問最少必要問題並繼續獨立可做工作。不要猜 URL、assistant ID 傳送位置、session、AD／SQL 欄位或秘密；秘密不貼對話、不進 repo／log。
 
 依工作單六項順序完成環境基準、chatbot、AD／owner、Oracle、舊資料／排程遷移與現場驗收。每項先列可寫位置及完成條件，再實作與驗證。保留 Plan／刪除服務 gate、future 防重、綁定版本、精度、純 validate 與明確資料轉交；公司模式失敗不能 demo fallback。舊 DB 不直接改，遷移先備份與 dry-run，停舊後才啟新。
+
+按本文件的選測規則驗證：日常 quick／targeted，核心變更或交付 full；交付只跑 verify 一次，不先完整測試再重跑。新增測試保護具體行為，不要求數量增加或每次全跑。
 
 使用 test_support、company_templates 與 docs 的三份契約指南，不重造測試或查詢 UI。公司 hooks 預設 not_tested，審查助理能力及真實斷言後才明確執行；mock、skip、True 常值不能算公司通過。GUI／Excel／IME／縮放保留獨立實測證據。
 

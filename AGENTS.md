@@ -99,7 +99,11 @@ Store 升級至 schema 6，schema 1／2／3／4／5 先以 SQLite backup 備份�
 
 ## 驗證與交付
 
-環境、離線安裝與診斷操作見 [開發指南](docs/DEVELOPMENT.md)。正式測試使用專案 Python 3.10.4；`scripts/test.ps1` 執行完整檢查。改依賴須更新鎖檔並在第二乾淨環境及離線來源重建，不借外部 site-packages。離線包缺件／雜湊／lock 不符必須停止，不連外補件。
+環境、離線安裝與診斷操作見 [開發指南](docs/DEVELOPMENT.md)。正式測試使用專案 Python 3.10.4；`scripts/test.ps1` 預設 quick，僅非 GUI 核心離線測試。`-Suite targeted -Tests tests.test_appearance` 可選多個模組或案例；`-Suite full` 才執行完整回歸及 doctor／pip check／lock 檢查。改依賴須更新鎖檔並在第二乾淨環境及離線來源重建，不借外部 site-packages。離線包缺件／雜湊／lock 不符必須停止，不連外補件。
+
+測試按變更風險選取：文字／配色只跑受影響測試與畫面，功能修改加 quick；核心服務、遷移、依賴或發布跑 full。交付需正式證據時，只跑 `scripts/verify.py development` 一次，它使用同一 full 執行器，不先跑 test full 再重跑 verify。WebView smoke 只在相關 UI／bridge 變更或介面發布驗收時跑；純文件修改只檢查引用。通過後沒有新修改、失敗或未解疑慮，不重複驗證。
+
+`scripts/test_runner.py` 共用執行與計時，`tests/suites.json` 按 TestCase class 明確分類；新增模組／class 未分類即失敗。新增測試需保護具體行為或已發現問題，不以測試數增加為交付條件；重複覆蓋可合併，但批准、防重、取消、隔離、工具授權、遷移及刪除保障必須保留。GUI 串行且案例資料獨立；空集合、載入錯誤、失敗或非預期 skip 不算通過。日常報告覆寫 `artifacts/testing/latest.json`，明示範圍與耗時；quick／targeted 通過不能宣稱 full 通過。正式交付才更新驗證摘要，不累積逐版測試材料。
 
 常駐環境只保留 `.venv`。另建的驗證環境完成後保留實測紀錄，確認程序已結束、解析路徑位於專案內且無連結跳轉，再清除該次建立的環境；不要累積版本備份。刪除前讀取 `.venv/pyvenv.cfg`，保留它依賴的基礎直譯器（此機為 `.runtime/python3104`）。
 

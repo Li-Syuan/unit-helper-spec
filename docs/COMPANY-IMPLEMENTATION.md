@@ -77,11 +77,22 @@ C：某項政策聲明預計明日公布，目前沒有公布結果。
 
 ## 本機命令
 
+首次公司環境驗收跑 full 一次；日常修改按需要選 quick 或 targeted，不將下列命令依序全跑。
+
 ```powershell
+# 日常核心離線檢查，不開 GUI
 .\scripts\test.ps1
-.venv\Scripts\python.exe -m unittest tests.test_assistants_gateway tests.test_assistants_profiles tests.test_company_journey tests.test_graph_runner tests.test_dialogue_concurrency -v
+# 公司 adapter 改動時選相關模組，可再縮小到 class／案例
+.\scripts\test.ps1 -Suite targeted -Tests tests.test_assistants_gateway,tests.test_assistants_profiles,tests.test_company_journey,tests.test_graph_runner,tests.test_dialogue_concurrency
+# 首次環境、核心變更或整合驗收
+.\scripts\test.ps1 -Suite full
+# 需要正式交付證據時取代上一行，不重複執行完整測試
+.venv\Scripts\python.exe scripts/verify.py development
+# 只有需要檢查協定時才明確啟動合成 mock server
 .venv\Scripts\python.exe scripts/mock-assistants.py
 ```
+
+UI 文案／配色只驗受影響範圍；一般功能加 quick，核心服務／遷移／依賴／發布跑 full。WebView smoke 限相關 UI／bridge 變更或介面發布驗收。日常報告覆寫 `artifacts/testing/latest.json`，不得把選測通過當完整通過；新增 TestCase class 在 `tests/suites.json` 分類，不要求測試數持續增加。細節見 [開發指南](DEVELOPMENT.md#測試與交付)。
 
 mock server 僅提供本機協定測試，不直接作公司 App HTTP endpoint；正式連接器保持 HTTPS。公司網址與真實樣本只存忽略的 company_local；API key 存 Windows 認證管理員，不填進 Markdown 或 Git。
 

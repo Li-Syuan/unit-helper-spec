@@ -5,32 +5,42 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from desktop_app.preferences import load_color_style, load_preferences, save_appearance, update_preferences
+from desktop_app.preferences import load_color_style, load_preferences, load_theme, save_theme, save_appearance, update_preferences
 from desktop_app.web_session import WebSession
 from desktop_app.web_bridge import WebBridge
 
 
 class AppearancePreferencesTests(unittest.TestCase):
-    def test_missing_corrupt_and_invalid_styles_default_to_ocean(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path=Path(tmp)/'ui-preferences.json'
-            self.assertEqual(load_color_style(path),'ocean')
-            for content in ('broken','[]','{"color_style": []}','{"color_style": "unknown"}'):
-                path.write_text(content,encoding='utf-8')
-                self.assertEqual(load_color_style(path),'ocean')
+    def test_missing_corrupt_invalid_and_roundtrip_preferences(self):
+        for key, load, fallback, chosen, save in (
+                ('theme',load_theme,'dark','light',lambda p:save_theme(p,'light')),
+                ('color_style',load_color_style,'ocean','forest',lambda p:save_appearance(p,'light','forest'))):
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as tmp:
+                path=Path(tmp)/'ui-preferences.json'
+                self.assertEqual(load(path),fallback)
+                for content in ('broken','[]',json.dumps({key: []}),json.dumps({key:'unknown'})):
+                    path.write_text(content,encoding='utf-8')
+                    self.assertEqual(load(path),fallback)
+                path.unlink()
+                save(path)
+                self.assertEqual(load(path),chosen)
+                expected={'theme':'light'} if key=='theme' else {'theme':'light','color_style':'forest'}
+                self.assertEqual(json.loads(path.read_text()),expected)
 
-    def test_atomic_pair_preserves_unrelated_preferences(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path=Path(tmp)/'ui-preferences.json'
-            update_preferences(path,{'sidebar_collapsed':True,'page_hints':{'chat':False}})
-            save_appearance(path,'light','forest')
-            before=path.read_bytes()
-            self.assertEqual(load_color_style(path),'forest')
-            with patch('desktop_app.preferences.os.replace',side_effect=OSError('synthetic')):
-                with self.assertRaises(OSError):save_appearance(path,'dark','violet')
-            self.assertEqual(before,path.read_bytes())
-            self.assertEqual(load_preferences(path)['page_hints'],{'chat':False})
-            self.assertEqual(list(Path(tmp).glob('.appearance-*.tmp')),[])
+    def test_atomic_writes_preserve_unrelated_preferences_and_cleanup(self):
+        for legacy in (False,True):
+            with self.subTest(legacy=legacy), tempfile.TemporaryDirectory() as tmp:
+                path=Path(tmp)/'ui-preferences.json'
+                update_preferences(path,{'sidebar_collapsed':True,'page_hints':{'chat':False}})
+                save_appearance(path,'light','forest')
+                before=path.read_bytes()
+                with patch('desktop_app.preferences.os.replace',side_effect=OSError('synthetic')):
+                    with self.assertRaises(OSError):
+                        if legacy:save_theme(path,'dark')
+                        else:save_appearance(path,'dark','violet')
+                self.assertEqual(before,path.read_bytes())
+                self.assertEqual(load_preferences(path)['page_hints'],{'chat':False})
+                self.assertEqual(list(Path(tmp).iterdir()),[path])
 
 
 class WebAppearanceTests(unittest.TestCase):

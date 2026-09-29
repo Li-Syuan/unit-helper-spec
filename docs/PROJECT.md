@@ -1,3 +1,7 @@
+## 開發驗證入口
+
+日常`test.ps1`預設quick；`-Suite targeted -Tests tests.test_appearance`只跑指定範圍，`-Suite full`才跑全部及環境檢查。交付用`verify.py development`取代full，不兩次重跑。共用`scripts/test_runner.py`及`tests/suites.json`，新TestCase需分類；結果與耗時見[驗證紀錄](VALIDATION.md)。本次只整理測試，產品0.18.2、schema與依賴不變。
+
 # 0.18.2 可選風格與公司核准搜尋
 
 設定→外觀提供深海青藍、星霧紫、森林青綠預覽卡，與深淺外觀獨立保存；失敗保留本次選擇並提示重試，恢復預設只重設dark/ocean。WebBridge appearance只接受theme/color_style白名單，ui-preferences保存兩值，不修改公司設定或工作。Tk備用提供同名選擇。

@@ -1,7 +1,6 @@
 """Real Tk appearance checks; company GUI/Excel acceptance remains separate."""
 import copy
 import gc
-import json
 import tempfile
 import threading
 import time
@@ -12,30 +11,9 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from desktop_app.config import DEFAULT
-from desktop_app.preferences import load_theme, save_theme
+from desktop_app.preferences import load_color_style
 from desktop_app.theme import Appearance
 from desktop_app.ui import App, ChoiceDialog
-
-
-class PreferenceTests(TestCase):
-    def test_missing_corrupt_unknown_and_roundtrip(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path=Path(tmp)/'ui-preferences.json'
-            self.assertEqual(load_theme(path),'dark')
-            for content in ('broken','[]','{"theme": "invalid"}','{"theme": []}'):
-                path.write_text(content,encoding='utf-8')
-                self.assertEqual(load_theme(path),'dark')
-            save_theme(path,'light')
-            self.assertEqual(load_theme(path),'light')
-            self.assertEqual(json.loads(path.read_text()),{'theme':'light'})
-
-    def test_failed_atomic_replace_preserves_previous_and_cleans_temporary(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path=Path(tmp)/'ui-preferences.json'; save_theme(path,'light')
-            with patch('desktop_app.preferences.os.replace',side_effect=OSError('denied')):
-                with self.assertRaises(OSError): save_theme(path,'dark')
-            self.assertEqual(load_theme(path),'light')
-            self.assertEqual(list(Path(tmp).iterdir()),[path])
 
 
 class ThemeTests(TestCase):
@@ -58,13 +36,26 @@ class ThemeTests(TestCase):
         a.book.select(a.tabs['chat']); self.root.update()
         before=(str(a.input),a.input.get('1.0','end'),a.input.index('insert'),a.input.tag_ranges('sel'),a.input.yview(),a.history.curselection(),a.attachment,a.store.plan(plan['id']))
         config=copy.deepcopy(a.config)
-        for name in ('light','dark'):
-            a.change_theme(name)
+        form=a.forms.create([{'id':'q','title':'確認？','type':'yes_no',
+            'options':[{'id':'yes','label':'是'},{'id':'no','label':'否'}]}])
+        dialog=ChoiceDialog(a,form,lambda _:None)
+        dialog.variables['q'].set('yes')
+        for name, color_style in ((mode, style) for mode in ('light','dark')
+                                  for style in ('violet','forest','ocean')):
+            if a.appearance.name != name:
+                a.change_theme(name)
+            a.change_color_style(color_style)
+            self.assertEqual(a.appearance.color_style,color_style)
+            self.assertEqual(dialog.variables['q'].get(),'yes')
+            self.assertEqual(dialog.cget('background'),a.palette.BG)
+            self.assertEqual(a.style.lookup('NotificationBadge.TLabel','foreground'),a.palette.INFO)
+            self.assertEqual(load_color_style(a.preferences_path),color_style)
             after=(str(a.input),a.input.get('1.0','end'),a.input.index('insert'),a.input.tag_ranges('sel'),a.input.yview(),a.history.curselection(),a.attachment,a.store.plan(plan['id']))
             self.assertEqual(before,after)
             self.assertEqual(a.input.cget('background'),a.palette.SURFACE)
             self.assertEqual(a.config,config); self.assertFalse(Path(a.config_path).exists())
             self.assertEqual(a.store.tasks(),[])
+        dialog.destroy()
 
     def test_existing_and_future_dialogs_popup_and_all_pages(self):
         a=self.app
@@ -147,13 +138,19 @@ class ThemeTests(TestCase):
                         self.assertLessEqual(widget.winfo_rooty()+widget.winfo_height(),bottom+2,widget.cget('text'))
                         self.assertLessEqual(widget.winfo_rootx()+widget.winfo_width(),right+2,widget.cget('text'))
 
+
+class PaletteInterpreterTests(TestCase):
+    """Style interpreter isolation needs two Tk roots, not a full App/database."""
     def test_palette_isolation_between_tk_interpreters(self):
-        a=self.app; other=tk.Tk(); other.withdraw()
+        root=tk.Tk(); root.withdraw()
+        other=tk.Tk(); other.withdraw()
         try:
-            appearance=Appearance(other,'light')
-            light=appearance.colors.BG
-            a.change_theme('dark')
-            self.assertEqual(appearance.style.lookup('TFrame','background'),light)
-            appearance.configure('dark'); a.change_theme('light')
-            self.assertNotEqual(appearance.style.lookup('TFrame','background'),a.style.lookup('TFrame','background'))
-        finally: other.update_idletasks(); other.destroy()
+            first=Appearance(root,'dark'); second=Appearance(other,'light')
+            light=second.colors.BG
+            first.configure('dark')
+            self.assertEqual(second.style.lookup('TFrame','background'),light)
+            second.configure('dark'); first.configure('light')
+            self.assertNotEqual(second.style.lookup('TFrame','background'),first.style.lookup('TFrame','background'))
+        finally:
+            other.update_idletasks(); other.destroy()
+            root.update_idletasks(); root.destroy()

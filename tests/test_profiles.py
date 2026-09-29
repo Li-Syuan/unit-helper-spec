@@ -83,6 +83,8 @@ class ProfileTests(unittest.TestCase):
         for fn,args in [(v.get,('id',)),(v.set,('id','secret'))]:
             with self.assertRaises(GatewayError) as e:fn(*args)
             self.assertNotIn('private-token',str(e.exception))
+
+class WindowsCredentialTests(unittest.TestCase):
     def test_real_windows_credential_roundtrip_isolated(self):
         vault=CredentialVault();account='test-'+uuid.uuid4().hex
         try:

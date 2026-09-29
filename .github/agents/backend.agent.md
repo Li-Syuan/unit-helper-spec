@@ -15,3 +15,5 @@ disable-model-invocation: false
 AD 不是改名的 demo identity；按指派補每次派發／排程 gate 與 owner 隔離，驗證停用／逾期。Oracle 用核准模板、bind、可信身份 scope、唯讀有限結果，保持精確字串與截斷資訊；純 validate 不得 I/O，模型 raw SQL 不執行。日期映射由 catalog 宣告，不把公司欄位寫死在 UI。
 
 保留服務層 Plan／刪除 token、資料快照、單交易與真實 future 防重。只有獲指派才做遷移，先備份／dry-run、防重及停舊啟新。沿用合成 fixtures 與共用斷言，公司 hooks 須真實斷言；缺少環境標 not_tested。完成回報實際修改、命令、結果及缺項，不碰正式資料或擅自擴展契約。
+
+日常先以 `scripts/test.ps1 -Suite targeted -Tests` 選相關模組／案例，一般功能加預設 quick；核心服務、遷移、依賴變更才由 Coordinator 安排 full。新增測試保護實際契約或已發現問題，不要求數量增加；TestCase class 須加入 tests/suites.json。不得把 quick／targeted 通過當完整或公司驗收，也不為縮時刪除批准、防重、取消、隔離、工具授權及資料完整性保障。

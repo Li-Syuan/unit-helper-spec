@@ -29,3 +29,16 @@ class SemanticPaletteTests(unittest.TestCase):
                 self.assertGreaterEqual(contrast(colors.INFO, colors.TINT_INFO), 4.5)
             with self.subTest(theme=theme, color_style=color_style, control='primary button'):
                 self.assertGreaterEqual(contrast(colors.BUTTON_INK, colors.ACCENT), 4.5)
+
+
+class ThemeStylePaletteTests(unittest.TestCase):
+    def test_only_action_colors_change_and_unknown_styles_are_rejected(self):
+        for mode in ('dark', 'light'):
+            original = palette(mode)
+            for style in ('violet', 'forest'):
+                colors = palette(mode, style)
+                self.assertNotEqual(colors.ACCENT, original.ACCENT)
+                for name in ('WARNING', 'RUNNING', 'ERROR', 'SUCCESS', 'INFO', 'TINT_INFO', 'TEAM'):
+                    self.assertEqual(getattr(colors, name), getattr(original, name))
+        with self.assertRaises(ValueError):
+            palette('dark', 'unknown')

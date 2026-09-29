@@ -2,11 +2,38 @@
 
 本版新增設定頁三款風格與六種深淺組合、預覽卡、即時套用、保存重試與恢復預設，不新增依賴、不改 schema、模型派發或核准契約。搜尋能力及公司服務沿用先前界線，仍需公司實測。
 
-## 回歸與環境
+## 測試收斂實測（2026-09-29）
 
-Windows x64、Python **3.10.4**，常駐 `.venv` 完整回歸 **508 項通過，0 跳過**。doctor、pip check、freeze 與既有 69 項鎖檔一致；命令、時間及輸出見 [development.json](validation/development.json)。保留原498項基準，新增三款外觀、保存失敗重試、重開／恢復預設、風格對比與Tk狀態保留驗證。
+本輪僅整理測試及交接規則，產品仍為0.18.2；未修改產品功能、schema或依賴。全部使用同一個Python3.10.4常駐環境，不新增虛擬環境、不呼叫公司服務。
 
-本輪未新建環境。先前0.16.0的乾淨／離線重建證據仍是443項：[clean-rebuild.json](validation/clean-rebuild.json)、[offline-rebuild.json](validation/offline-rebuild.json)，不能當成本版重新安裝結果。離線交付使用相同鎖定wheels。
+| 範圍 | 案例數 | 實測時間 | 判定 |
+|---|---:|---:|---|
+| 整理前完整基準 | 508 | 225.67秒（含載入） | 全數通過 |
+| 整理後日常quick | 344 | 21.86秒（測試本身20.65秒） | 全數通過、0跳過；未跑GUI與完整環境檢查 |
+| 整理後full | 510 | 166.75秒（測試本身164.46秒） | 全数通過、0跳過；doctor/pip/lock通過 |
+
+較早完整回歸曾量得174.661秒，本輪基準測試本身224.230秒，表示耗時有波動。主要節省來自日常不啟動GUI／環境檢查，以及交付不再連跑test full與verify；不宣稱full本身大幅加速。逐項耗時與最慢案例見[development.json](validation/development.json)。本轮quick與baseline原始量測留在被忽略的artifacts/testing。
+
+整理前後覆蓋對照：
+
+| 原覆蓋 | 整理後 |
+|---|---|
+| theme的2個舊偏好案例＋appearance的2個新偏好案例 | appearance中2個參數化案例，保留舊API、缺失／損壞／型別／roundtrip、原子寫入失敗、其他偏好及暫存清理 |
+| theme與theme_choices_tk各一個閒置切換保留案例 | theme的一個六組配色旅程，保留兩入口、草稿／游標／選取／捲動／附件／Plan／對話框／徽章／零派發 |
+| Tk套件中的純配色檢查 | 移至theme_semantics，quick執行，不建立視窗 |
+| App＋第二Tk的樣式隔離 | 兩個獨立Tk解譯器檢查，不再建立App與資料庫 |
+| 實際Windows認證管理員往返 | 分離到WindowsCredentialTests，只於full或明確targeted執行 |
+| 批准／防重／取消／隔離／工具授權／遷移／刪除 | 原核心案例保留於quick及full |
+
+合併3個重複測試單位，新增5個執行器契約案例，因此508→510；數量不是品質或完成門檻。新的案例驗證分類防漏、選測去重、失敗／skip／expectedFailure不得通過、GUI與網路阻擋、報告範圍及full僅執行一次。日常報告覆寫latest，不累积逐版文件。
+
+PowerShell預設quick、多模組targeted及個別方法入口已實跑；verify實際執行同一full一次並保存本次證據。合成失敗曾發現WebView資源初始化受暫存cwd影響與Windows暫存目錄收尾問題，已修正測試隔離並通過重測；失敗紀錄保留artifacts/testing/runner-failure.json。未以skip或假成功處理。
+
+本輪沒有變更UI／bridge，未重跑WebView smoke；下方WebView畫面證據沿用0.18.2外觀交付。公司、人工GUI、IME及Norton成效不因本輪回歸變成已驗收。
+
+完整回歸後僅修正報告使用LF換行，保留原始量測值；受影響的5項執行器契約已再通過targeted驗證，沒有重跑產品全套。
+
+先前0.16.0的乾淨／離線重建證據仍為當時版本：[clean-rebuild.json](validation/clean-rebuild.json)、[offline-rebuild.json](validation/offline-rebuild.json)，不代表本輪重新安裝。本輪鎖檔不變，沒有重建離線包。
 
 ## 外觀選擇與保存
 

@@ -16,3 +16,5 @@ disable-model-invocation: true
 沿用使用者指定的開發模型，不猜產品模型 ID。公司契約缺少時列出具體缺項並繼續離線工作，不能製造 SQL、AD 欄位、假公司回答或真實驗收紀錄。服務層 gate、future 防重、綁定與 owner 隔離不得以 UI 或 prompt 代替。
 
 收回工作後檢查實際 diff、執行整合測試，更新現行產品／驗證文件、公司工作單及 manifest。依 [開發指南](../../docs/DEVELOPMENT.md) 使用專案 Python、固定腳本及獨立測試資料；不以子 agent 的文字回報代替證據，不改防毒或公司規則，不擅自切換正式排程／發布。
+
+按實際風險選測：日常 `scripts/test.ps1` 為 quick；修改期間用 `-Suite targeted -Tests` 指定模組／案例；核心服務、遷移、依賴或發布才 full。交付用 `scripts/verify.py development` 完整跑一次並存證，不先 test full 再 verify。WebView smoke 限相關 UI／bridge 或介面發布。日常報告覆寫 artifacts/testing/latest.json；無新修改、失敗或未解疑慮不重跑。新增 TestCase class 須在 tests/suites.json 分類；不以測試數增加當完成條件，相同覆蓋可合併，核心保障不得刪除。

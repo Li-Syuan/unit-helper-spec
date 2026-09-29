@@ -24,9 +24,11 @@ Clone 後，在專案根目錄指定公司核准的 Python **3.10.4** 完整安�
 
 ```powershell
 .\scripts\setup.ps1 -PythonExe 'C:\Python3104\python.exe'
-.\scripts\test.ps1
+.\scripts\test.ps1 -Suite full
 .\start-app.bat
 ```
+
+日常開發使用 `.\scripts\test.ps1` 快速檢查；指定範圍及交付完整檢查見[開發指南](docs/DEVELOPMENT.md#測試與交付)，不需每次重跑全部。
 
 已有專案 `.venv` 時，直接雙擊 **start-app.bat**。需要桌面捷徑可雙擊 **create-shortcut.bat**；環境有問題使用 **diagnose.bat**。安裝、離線套件、公司 CA 與診斷詳見 [開發指南](docs/DEVELOPMENT.md)。不隨 Git 提供 Python、虛擬環境、金鑰或使用者資料。
 
