@@ -2,6 +2,19 @@
 
 本版新增設定頁三款風格與六種深淺組合、預覽卡、即時套用、保存重試與恢復預設，不新增依賴、不改 schema、模型派發或核准契約。搜尋能力及公司服務沿用先前界線，仍需公司實測。
 
+## 公司部署修正（2026-09-30）
+
+公司去識別報告指出正式環境缺少LangGraph且核准索引缺指定Bleach版本。本機核對正式69個wheels與根lock一致，保留現有lock；不使用lab的52套件，也沒有調整公司索引。新增直接Python離線安裝入口，拒絕覆寫已有環境；full先檢查環境再探索測試，缺件保存commands並標記not_run。
+
+- **local_real_passed**：Windows x64、Python恰好3.10.4，由`.runtime/python3104/python.exe`新建`.venv-deploy`，以正式wheels安裝，doctor／pip check／精確freeze-lock比對通過。包含LangGraph1.2.12、checkpoint-sqlite3.1.1、aiosqlite0.22.1、Bleach6.4.0、OpenAI2.54.0。安裝與診斷未呼叫公司服務。
+- **mock_passed**：7项套件完整性與2项安裝器契約通過；既有env不覆蓋、缺件在建立前停止、安裝失敗停止、不連外fallback、lock不符拒絕。5項共用runner契約通過，full環境失敗不探索或執行測試。安裝子程序以`PIP_CONFIG_FILE=NUL`停讀pip設定，避免額外find-links來源；不改公司設定檔。
+- **full_failed**：乾淨離線環境完整執行512項，511通過、1錯誤、0跳過；測試141.243秒，總計144.31秒。失敗為`tests.test_dialogs.DialogTests.test_long_message_theme_copy_and_close_without_mutation`，Windows `OpenClipboard`回傳error5；獨立複查仍失敗，未移除、skip或改為假通過。[offline-rebuild.json](validation/offline-rebuild.json)保留本次失敗證據，不能宣稱正式full驗收通過。原首輪紀錄亦留於忽略目錄artifacts/deployment。
+- **not_tested**：公司真實API／權限／多ID／搜尋、人工GUI／IME／Excel仍未驗收。本輪未改UI／bridge，不重跑WebView smoke；先前畫面證據不代表本輪人工驗收。Norton成效未能確認。
+
+部署包可用來修正公司依賴缺件；公司仍需在實際電腦重跑一次完整驗證，尤其剪貼簿讀回。安裝成功與完整回歸成功分開判定，不將本機框架或lab通過當成公司功能通過。
+
+最後補強pip設定隔離後，已再次以相同69個wheels新建乾淨環境並通過安裝／doctor／pip／lock檢查；14項部署相關targeted檢查亦全數通過。實際結果附於offline-rebuild的deployment_followup，不覆寫full_failed。暫時`.venv-deploy`已於確認程序結束及路徑安全後清除，只保留原常駐`.venv`與其基礎直譯器。
+
 ## 測試收斂實測（2026-09-29）
 
 本輪僅整理測試及交接規則，產品仍為0.18.2；未修改產品功能、schema或依賴。全部使用同一個Python3.10.4常駐環境，不新增虛擬環境、不呼叫公司服務。
@@ -33,7 +46,7 @@ PowerShell預設quick、多模組targeted及個別方法入口已實跑；verify
 
 完整回歸後僅修正報告使用LF換行，保留原始量測值；受影響的5項執行器契約已再通過targeted驗證，沒有重跑產品全套。
 
-先前0.16.0的乾淨／離線重建證據仍為當時版本：[clean-rebuild.json](validation/clean-rebuild.json)、[offline-rebuild.json](validation/offline-rebuild.json)，不代表本輪重新安裝。本輪鎖檔不變，沒有重建離線包。
+先前0.16.0的乾淨重建證據仍為當時版本：[clean-rebuild.json](validation/clean-rebuild.json)。offline-rebuild已更新為上方2026-09-30部署修正的實測結果；9月29日測試收斂本身未改鎖檔或重建套件。
 
 ## 外觀選擇與保存
 

@@ -1,5 +1,7 @@
 # 0.18.2 外觀選擇
 
+部署補充（2026-09-30）：正式離線包沿用根目錄69套件lock。`install-offline.bat`／`scripts/install-offline.py`直接以核准Python建立新環境，不需PowerShell；已有環境拒絕覆写，失敗不連外、不降版、不套lab lock。full先doctor／pip／lock，再探索測試；環境失敗保留commands並明示not_run，不能宣稱部分測試已通過。公司現有修改留存，比對後再合併，不以完整ZIP覆蓋。
+
 color_style只允許ocean/violet/forest，與theme深淺獨立存ui-preferences；缺失或損壞預設ocean。恢復預設僅重設dark/ocean，不清除其他偏好或公司連線。WebBridge appearance變更本次顏色，保存失敗須如實回報saved=false並可重試。風格只調主操作與選取，不改WARNING/RUNNING/SUCCESS/ERROR及一般未讀青藍；故紫色也可作星霧紫的操作色。切換不得重建設定表單、丟失草稿或派發。Tk同名選擇與整組原子保存保持相容。
 
 # 0.18.1 呈現規則

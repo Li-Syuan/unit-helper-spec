@@ -174,23 +174,28 @@ def main(argv=None):
     report = {'recorded_at_utc': datetime.now(timezone.utc).isoformat(), 'environment': sys.executable,
               'python': platform.python_version(), 'architecture_bits': __import__('struct').calcsize('P') * 8,
               'suite': args.suite, 'selectors': args.tests, 'passed': False, 'commands': [],
-              'company_real': 'not_tested', 'webview_smoke': 'not_tested', 'status': 'running'}
+              'company_real': 'not_tested', 'webview_smoke': 'not_tested', 'status': 'running',
+              'discovered': None, 'selected': None,
+              'result': {'status': 'not_run', 'count': 0, 'tests': []}}
     save_report(report, ROOT / 'artifacts/testing/latest.json')
     try:
         if sys.version_info[:3] != (3, 10, 4) or sys.flags.optimize:
             raise ValueError('Tests require Python exactly 3.10.4 without -O.')
+        if args.suite == 'full':
+            report['commands'], environment_ok = environment_checks()
+            if not environment_ok:
+                raise ValueError('Full-suite environment checks failed; tests were not discovered or run. '
+                                 'Restore the environment from requirements.lock and inspect commands in the report.')
         cases, groups = classified_tests()
         selected = select_tests(cases, groups, args.suite, args.tests)
         report.update(discovered=len(cases), selected=len(selected))
         print(f'Suite: {args.suite}; selected {len(selected)}/{len(cases)}. Company services NOT tested.', flush=True)
-        environment_ok = True
-        if args.suite == 'full':
-            report['commands'], environment_ok = environment_checks()
         result = execute(selected, quick=args.suite == 'quick')
         report['result'] = {key: value for key, value in result.items() if key != 'output'}
+        report['result']['status'] = 'completed'
         report['commands'].append({'command': [sys.executable, 'scripts/test_runner.py', '--suite', args.suite, *(['--tests', *args.tests] if args.tests else [])],
                                    'exit_code': 0 if result['passed'] else 1, 'output': result['output'], 'seconds': result['seconds']})
-        report['passed'] = environment_ok and result['passed']
+        report['passed'] = result['passed']
         report['slowest'] = sorted(result['tests'], key=lambda item: item['seconds'], reverse=True)[:10]
         for item in report['slowest']:
             print(f"  {item['seconds']:.3f}s {item['id']}")

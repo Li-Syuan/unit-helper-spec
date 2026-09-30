@@ -1,5 +1,7 @@
 ## 開發驗證入口
 
+正式部署提供不依賴PowerShell的`install-offline.bat`／`scripts/install-offline.py`：先驗69個正式wheels及lock，僅新建環境，再檢查依賴。full改為先檢查環境，缺件時停止且明示測試未執行。公司核准索引缺版時使用完整離線包，不改公司索引或以lab套件取代。詳見[離線安裝](DEVELOPMENT.md#離線安裝)。本輪產品仍為0.18.2，schema、執行契約及依賴版本不變。
+
 日常`test.ps1`預設quick；`-Suite targeted -Tests tests.test_appearance`只跑指定範圍，`-Suite full`才跑全部及環境檢查。交付用`verify.py development`取代full，不兩次重跑。共用`scripts/test_runner.py`及`tests/suites.json`，新TestCase需分類；結果與耗時見[驗證紀錄](VALIDATION.md)。本次只整理測試，產品0.18.2、schema與依賴不變。
 
 # 0.18.2 可選風格與公司核准搜尋

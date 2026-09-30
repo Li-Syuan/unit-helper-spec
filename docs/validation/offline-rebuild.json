@@ -1,48 +1,2357 @@
 {
-  "recorded_at_utc": "2026-09-29T09:46:13.519265+00:00",
-  "environment": "D:\\unit-helper-spec\\.venv-graphoffline\\Scripts\\python.exe",
+  "recorded_at_utc": "2026-09-30T01:33:33.597486+00:00",
+  "environment": "D:\\unit-helper-spec\\.venv-deploy\\Scripts\\python.exe",
+  "python": "3.10.4",
+  "architecture_bits": 64,
+  "suite": "full",
+  "selectors": [],
+  "passed": false,
   "commands": [
     {
       "command": [
-        "D:\\unit-helper-spec\\.venv-graphoffline\\Scripts\\python.exe",
+        "D:\\unit-helper-spec\\.venv-deploy\\Scripts\\python.exe",
         "scripts/doctor.py"
       ],
       "exit_code": 0,
-      "output": "{\n  \"schema_version\": 1,\n  \"local_environment\": \"passed\",\n  \"company_acceptance\": \"not_tested\",\n  \"python_version\": \"3.10.4\",\n  \"architecture_bits\": 64,\n  \"tk_patch\": \"8.6.12\",\n  \"packages\": {\n    \"aiosqlite\": \"0.22.1\",\n    \"annotated-types\": \"0.8.0\",\n    \"anyio\": \"4.15.1\",\n    \"backports-tarfile\": \"1.2.0\",\n    \"bleach\": \"6.4.0\",\n    \"bottle\": \"0.13.4\",\n    \"certifi\": \"2026.7.22\",\n    \"cffi\": \"2.1.1\",\n    \"charset-normalizer\": \"3.5.1\",\n    \"clr-loader\": \"0.3.1\",\n    \"colorama\": \"0.4.6\",\n    \"distro\": \"1.9.0\",\n    \"exceptiongroup\": \"1.3.1\",\n    \"h11\": \"0.16.0\",\n    \"httpcore\": \"1.0.9\",\n    \"httpcore2\": \"2.13.1\",\n    \"httpx\": \"0.28.1\",\n    \"httpx2\": \"2.13.1\",\n    \"idna\": \"3.20\",\n    \"importlib-metadata\": \"9.0.1\",\n    \"jaraco-classes\": \"3.4.0\",\n    \"jaraco-context\": \"6.1.2\",\n    \"jaraco-functools\": \"4.6.0\",\n    \"jiter\": \"0.17.0\",\n    \"jsonpatch\": \"1.33\",\n    \"jsonpointer\": \"3.1.1\",\n    \"keyring\": \"25.7.0\",\n    \"langchain-core\": \"1.6.5\",\n    \"langchain-protocol\": \"0.0.19\",\n    \"langgraph\": \"1.2.12\",\n    \"langgraph-checkpoint\": \"4.2.0\",\n    \"langgraph-checkpoint-sqlite\": \"3.1.1\",\n    \"langgraph-prebuilt\": \"1.1.0\",\n    \"langgraph-sdk\": \"0.4.5\",\n    \"langsmith\": \"0.14.1\",\n    \"markdown-it-py\": \"4.2.0\",\n    \"mdurl\": \"0.1.2\",\n    \"more-itertools\": \"11.1.0\",\n    \"openai\": \"2.54.0\",\n    \"orjson\": \"3.12.0\",\n    \"ormsgpack\": \"1.12.2\",\n    \"packaging\": \"26.3\",\n    \"pip\": \"24.3.1\",\n    \"proxy-tools\": \"0.1.0\",\n    \"pycparser\": \"3.0\",\n    \"pydantic\": \"2.13.5\",\n    \"pydantic-core\": \"2.46.5\",\n    \"python-dotenv\": \"1.2.3\",\n    \"pythonnet\": \"3.1.0\",\n    \"pywebview\": \"6.2.1\",\n    \"pywin32-ctypes\": \"0.2.3\",\n    \"pyyaml\": \"6.0.3\",\n    \"requests\": \"2.34.2\",\n    \"requests-toolbelt\": \"1.0.0\",\n    \"setuptools\": \"58.1.0\",\n    \"sniffio\": \"1.3.1\",\n    \"sqlite-vec\": \"0.1.9\",\n    \"tenacity\": \"9.1.4\",\n    \"tqdm\": \"4.70.1\",\n    \"truststore\": \"0.10.4\",\n    \"typing-extensions\": \"4.16.0\",\n    \"typing-inspection\": \"0.4.4\",\n    \"urllib3\": \"2.8.0\",\n    \"uuid-utils\": \"0.17.1\",\n    \"webencodings\": \"0.6.1\",\n    \"websockets\": \"16.1.1\",\n    \"xxhash\": \"4.0.1\",\n    \"zipp\": \"4.1.0\",\n    \"zstandard\": \"0.25.0\"\n  },\n  \"checks\": [\n    {\n      \"check\": \"python\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"architecture\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"platform\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"tk\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"webview2\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"dependencies\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"configuration\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"assistant_profiles\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"credential_presence\",\n      \"status\": \"not_applicable\",\n      \"code\": \"demo_mode\"\n    },\n    {\n      \"check\": \"ca_bundle\",\n      \"status\": \"not_applicable\",\n      \"code\": \"default_trust_store\"\n    },\n    {\n      \"check\": \"data_directory\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"company_chatbot\",\n      \"status\": \"not_tested\",\n      \"code\": \"requires_company_acceptance\"\n    },\n    {\n      \"check\": \"company_identity\",\n      \"status\": \"not_tested\",\n      \"code\": \"requires_company_acceptance\"\n    },\n    {\n      \"check\": \"company_queries\",\n      \"status\": \"not_tested\",\n      \"code\": \"requires_company_acceptance\"\n    },\n    {\n      \"check\": \"excel\",\n      \"status\": \"not_tested\",\n      \"code\": \"requires_company_acceptance\"\n    }\n  ]\n}\n"
+      "output": "{\n  \"schema_version\": 1,\n  \"local_environment\": \"passed\",\n  \"company_acceptance\": \"not_tested\",\n  \"python_version\": \"3.10.4\",\n  \"architecture_bits\": 64,\n  \"tk_patch\": \"8.6.12\",\n  \"packages\": {\n    \"aiosqlite\": \"0.22.1\",\n    \"annotated-types\": \"0.8.0\",\n    \"anyio\": \"4.15.1\",\n    \"backports-tarfile\": \"1.2.0\",\n    \"bleach\": \"6.4.0\",\n    \"bottle\": \"0.13.4\",\n    \"certifi\": \"2026.7.22\",\n    \"cffi\": \"2.1.1\",\n    \"charset-normalizer\": \"3.5.1\",\n    \"clr-loader\": \"0.3.1\",\n    \"colorama\": \"0.4.6\",\n    \"distro\": \"1.9.0\",\n    \"exceptiongroup\": \"1.3.1\",\n    \"h11\": \"0.16.0\",\n    \"httpcore\": \"1.0.9\",\n    \"httpcore2\": \"2.13.1\",\n    \"httpx\": \"0.28.1\",\n    \"httpx2\": \"2.13.1\",\n    \"idna\": \"3.20\",\n    \"importlib-metadata\": \"9.0.1\",\n    \"jaraco-classes\": \"3.4.0\",\n    \"jaraco-context\": \"6.1.2\",\n    \"jaraco-functools\": \"4.6.0\",\n    \"jiter\": \"0.17.0\",\n    \"jsonpatch\": \"1.33\",\n    \"jsonpointer\": \"3.1.1\",\n    \"keyring\": \"25.7.0\",\n    \"langchain-core\": \"1.6.5\",\n    \"langchain-protocol\": \"0.0.19\",\n    \"langgraph\": \"1.2.12\",\n    \"langgraph-checkpoint\": \"4.2.0\",\n    \"langgraph-checkpoint-sqlite\": \"3.1.1\",\n    \"langgraph-prebuilt\": \"1.1.0\",\n    \"langgraph-sdk\": \"0.4.5\",\n    \"langsmith\": \"0.14.1\",\n    \"markdown-it-py\": \"4.2.0\",\n    \"mdurl\": \"0.1.2\",\n    \"more-itertools\": \"11.1.0\",\n    \"openai\": \"2.54.0\",\n    \"orjson\": \"3.12.0\",\n    \"ormsgpack\": \"1.12.2\",\n    \"packaging\": \"26.3\",\n    \"pip\": \"24.3.1\",\n    \"proxy-tools\": \"0.1.0\",\n    \"pycparser\": \"3.0\",\n    \"pydantic\": \"2.13.5\",\n    \"pydantic-core\": \"2.46.5\",\n    \"python-dotenv\": \"1.2.3\",\n    \"pythonnet\": \"3.1.0\",\n    \"pywebview\": \"6.2.1\",\n    \"pywin32-ctypes\": \"0.2.3\",\n    \"pyyaml\": \"6.0.3\",\n    \"requests\": \"2.34.2\",\n    \"requests-toolbelt\": \"1.0.0\",\n    \"setuptools\": \"58.1.0\",\n    \"sniffio\": \"1.3.1\",\n    \"sqlite-vec\": \"0.1.9\",\n    \"tenacity\": \"9.1.4\",\n    \"tqdm\": \"4.70.1\",\n    \"truststore\": \"0.10.4\",\n    \"typing-extensions\": \"4.16.0\",\n    \"typing-inspection\": \"0.4.4\",\n    \"urllib3\": \"2.8.0\",\n    \"uuid-utils\": \"0.17.1\",\n    \"webencodings\": \"0.6.1\",\n    \"websockets\": \"16.1.1\",\n    \"xxhash\": \"4.0.1\",\n    \"zipp\": \"4.1.0\",\n    \"zstandard\": \"0.25.0\"\n  },\n  \"checks\": [\n    {\n      \"check\": \"python\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"architecture\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"platform\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"tk\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"webview2\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"dependencies\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"configuration\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"assistant_profiles\",\n      \"status\": \"not_applicable\",\n      \"code\": \"no_assistant_profiles\"\n    },\n    {\n      \"check\": \"credential_presence\",\n      \"status\": \"not_applicable\",\n      \"code\": \"demo_mode\"\n    },\n    {\n      \"check\": \"ca_bundle\",\n      \"status\": \"not_applicable\",\n      \"code\": \"default_trust_store\"\n    },\n    {\n      \"check\": \"data_directory\",\n      \"status\": \"passed\",\n      \"code\": \"ok\"\n    },\n    {\n      \"check\": \"company_chatbot\",\n      \"status\": \"not_tested\",\n      \"code\": \"requires_company_acceptance\"\n    },\n    {\n      \"check\": \"company_identity\",\n      \"status\": \"not_tested\",\n      \"code\": \"requires_company_acceptance\"\n    },\n    {\n      \"check\": \"company_queries\",\n      \"status\": \"not_tested\",\n      \"code\": \"requires_company_acceptance\"\n    },\n    {\n      \"check\": \"excel\",\n      \"status\": \"not_tested\",\n      \"code\": \"requires_company_acceptance\"\n    }\n  ]\n}\n",
+      "seconds": 0.1396
     },
     {
       "command": [
-        "D:\\unit-helper-spec\\.venv-graphoffline\\Scripts\\python.exe",
+        "D:\\unit-helper-spec\\.venv-deploy\\Scripts\\python.exe",
         "-m",
         "pip",
         "check"
       ],
       "exit_code": 0,
-      "output": "No broken requirements found.\n"
+      "output": "No broken requirements found.\n",
+      "seconds": 0.3378
     },
     {
       "command": [
-        "D:\\unit-helper-spec\\.venv-graphoffline\\Scripts\\python.exe",
+        "D:\\unit-helper-spec\\.venv-deploy\\Scripts\\python.exe",
         "-m",
         "pip",
         "freeze",
         "--all"
       ],
       "exit_code": 0,
-      "output": "aiosqlite==0.22.1\nannotated-types==0.8.0\nanyio==4.15.1\nbackports.tarfile==1.2.0\nbleach==6.4.0\nbottle==0.13.4\ncertifi==2026.7.22\ncffi==2.1.1\ncharset-normalizer==3.5.1\nclr_loader==0.3.1\ncolorama==0.4.6\ndistro==1.9.0\nexceptiongroup==1.3.1\nh11==0.16.0\nhttpcore==1.0.9\nhttpcore2==2.13.1\nhttpx==0.28.1\nhttpx2==2.13.1\nidna==3.20\nimportlib_metadata==9.0.1\njaraco.classes==3.4.0\njaraco.context==6.1.2\njaraco.functools==4.6.0\njiter==0.17.0\njsonpatch==1.33\njsonpointer==3.1.1\nkeyring==25.7.0\nlangchain-core==1.6.5\nlangchain-protocol==0.0.19\nlanggraph==1.2.12\nlanggraph-checkpoint==4.2.0\nlanggraph-checkpoint-sqlite==3.1.1\nlanggraph-prebuilt==1.1.0\nlanggraph-sdk==0.4.5\nlangsmith==0.14.1\nmarkdown-it-py==4.2.0\nmdurl==0.1.2\nmore-itertools==11.1.0\nopenai==2.54.0\norjson==3.12.0\normsgpack==1.12.2\npackaging==26.3\npip==24.3.1\nproxy_tools==0.1.0\npycparser==3.0\npydantic==2.13.5\npydantic_core==2.46.5\npython-dotenv==1.2.3\npythonnet==3.1.0\npywebview==6.2.1\npywin32-ctypes==0.2.3\nPyYAML==6.0.3\nrequests==2.34.2\nrequests-toolbelt==1.0.0\nsetuptools==58.1.0\nsniffio==1.3.1\nsqlite-vec==0.1.9\ntenacity==9.1.4\ntqdm==4.70.1\ntruststore==0.10.4\ntyping-inspection==0.4.4\ntyping_extensions==4.16.0\nurllib3==2.8.0\nuuid_utils==0.17.1\nwebencodings==0.6.1\nwebsockets==16.1.1\nxxhash==4.0.1\nzipp==4.1.0\nzstandard==0.25.0\n"
+      "output": "aiosqlite==0.22.1\nannotated-types==0.8.0\nanyio==4.15.1\nbackports.tarfile==1.2.0\nbleach==6.4.0\nbottle==0.13.4\ncertifi==2026.7.22\ncffi==2.1.1\ncharset-normalizer==3.5.1\nclr_loader==0.3.1\ncolorama==0.4.6\ndistro==1.9.0\nexceptiongroup==1.3.1\nh11==0.16.0\nhttpcore==1.0.9\nhttpcore2==2.13.1\nhttpx==0.28.1\nhttpx2==2.13.1\nidna==3.20\nimportlib_metadata==9.0.1\njaraco.classes==3.4.0\njaraco.context==6.1.2\njaraco.functools==4.6.0\njiter==0.17.0\njsonpatch==1.33\njsonpointer==3.1.1\nkeyring==25.7.0\nlangchain-core==1.6.5\nlangchain-protocol==0.0.19\nlanggraph==1.2.12\nlanggraph-checkpoint==4.2.0\nlanggraph-checkpoint-sqlite==3.1.1\nlanggraph-prebuilt==1.1.0\nlanggraph-sdk==0.4.5\nlangsmith==0.14.1\nmarkdown-it-py==4.2.0\nmdurl==0.1.2\nmore-itertools==11.1.0\nopenai==2.54.0\norjson==3.12.0\normsgpack==1.12.2\npackaging==26.3\npip==24.3.1\nproxy_tools==0.1.0\npycparser==3.0\npydantic==2.13.5\npydantic_core==2.46.5\npython-dotenv==1.2.3\npythonnet==3.1.0\npywebview==6.2.1\npywin32-ctypes==0.2.3\nPyYAML==6.0.3\nrequests==2.34.2\nrequests-toolbelt==1.0.0\nsetuptools==58.1.0\nsniffio==1.3.1\nsqlite-vec==0.1.9\ntenacity==9.1.4\ntqdm==4.70.1\ntruststore==0.10.4\ntyping-inspection==0.4.4\ntyping_extensions==4.16.0\nurllib3==2.8.0\nuuid_utils==0.17.1\nwebencodings==0.6.1\nwebsockets==16.1.1\nxxhash==4.0.1\nzipp==4.1.0\nzstandard==0.25.0\n",
+      "seconds": 0.2783,
+      "matches_lock": true
     },
     {
       "command": [
-        "D:\\unit-helper-spec\\.venv-graphoffline\\Scripts\\python.exe",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "tests",
-        "-v"
+        "D:\\unit-helper-spec\\.venv-deploy\\Scripts\\python.exe",
+        "scripts/test_runner.py",
+        "--suite",
+        "full"
       ],
       "exit_code": 1,
-      "output": "test_catalog_dynamic_fields_and_unmapped_schedule_dates (test_action_ui.ActionUITests) ... ok\ntest_confirmation_controls_reachable_at_normal_small_and_maximized (test_action_ui.ActionUITests) ... ok\ntest_copy_in_card_keeps_chat_and_activity_opens_pending_action (test_action_ui.ActionUITests) ... ok\ntest_example_routes_to_local_card_preserves_draft_until_accepted (test_action_ui.ActionUITests) ... ok\ntest_failed_query_retry_only_prepares_new_confirmation (test_action_ui.ActionUITests) ... ok\ntest_immediate_test_double_click_and_busy_are_one_run (test_action_ui.ActionUITests) ... ok\ntest_manual_edit_and_cancel_reject_late_parse (test_action_ui.ActionUITests) ... ok\ntest_navigation_options_selection_and_existing_draft (test_action_ui.ActionUITests) ... ok\ntest_navigation_text_and_query_fields_remain_visible_at_current_dpi (test_action_ui.ActionUITests) ... ok\ntest_plan_approved_in_advanced_tools_shows_real_result (test_action_ui.ActionUITests) ... ok\ntest_plan_stays_in_conversation_and_approves_once (test_action_ui.ActionUITests) ... ok\ntest_repeated_send_reuses_pending_card_and_missing_report_rule_is_explicit (test_action_ui.ActionUITests) ... ok\ntest_report_consent_is_visible_without_scrolling_at_minimum_size (test_action_ui.ActionUITests) ... ok\ntest_report_requires_consent_and_edit_resets_it (test_action_ui.ActionUITests) ... ok\ntest_schedule_source_return_and_deleted_source_label (test_action_ui.ActionUITests) ... ok\ntest_summary_does_not_route_embedded_query_words (test_action_ui.ActionUITests) ... ok\ntest_timeline_refresh_preserves_selection_and_does_not_duplicate (test_action_ui.ActionUITests) ... ok\ntest_trial_auto_parse_is_background_and_stale_manual_edit_is_retained (test_action_ui.ActionUITests) ... ok\ntest_unknown_and_company_queries_do_not_parse (test_action_ui.ActionUITests) ... ok\ntest_demo_response_does_not_read_company_credentials (test_assistant_ui.AssistantUITests) ... ok\ntest_edit_other_assistant_plan_does_not_transfer_private_attachment (test_assistant_ui.AssistantUITests) ... ok\ntest_oversize_result_refused_without_truncation_or_task (test_assistant_ui.AssistantUITests) ... ok\ntest_selected_rows_preview_only_double_confirm_and_precision (test_assistant_ui.AssistantUITests) ... ok\ntest_switch_new_conversation_preserves_private_draft_and_attachment (test_assistant_ui.AssistantUITests) ... ok\ntest_transfer_failure_retains_query_and_source (test_assistant_ui.AssistantUITests) ... ok\ntest_active_session_refuses_double_dispatch_but_other_session_works (test_assistants_gateway.AssistantsGatewayTests) ... D:\\unit-helper-spec\\desktop_app\\assistants_gateway.py:94: DeprecationWarning: The Assistants API is deprecated in favor of the Responses API\n  return function(**kwargs, timeout=min(self.timeout, remaining))\nok\ntest_authentication_blank_malformed_and_failed (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_cancellation_late_completed_is_not_success (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_endpoint_and_ca_validation (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_history_and_request_revision_refuse_remote_calls (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_isolation_binding_conversation_and_ephemeral (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_known_run_resume_only_reads (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_overall_deadline_does_not_repeat_remote_mutations (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_real_sdk_request_and_multiturn_no_duplicate_history (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_remote_inspection_does_not_save_a_success_or_reexecute (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_requires_action_never_dispatches_plugin (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_run_correlated_paginated_reply (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_unknown_message_outcome_and_failed_run_never_replay_history (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_unknown_write_outcome_no_retry_after_reopen (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_wrong_run_identity_and_non_text_content_are_rejected (test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_context_forwarding_workflow_and_regular (test_assistants_profiles.AssistantsProfilesTests) ... ok\ntest_local_inspect_requires_no_key_or_network (test_assistants_profiles.AssistantsProfilesTests) ... ok\ntest_mapping_invalidates_bindings_and_capabilities_once (test_assistants_profiles.AssistantsProfilesTests) ... ok\ntest_ico_sizes_and_png_transparent_corners (test_branding.BrandingTests) ... ok\ntest_icons_load_from_another_working_directory_and_child_inherits (test_branding.BrandingTests) ... ok\ntest_missing_assets_keeps_app_usable_and_names_consistent (test_branding.BrandingTests) ... ok\ntest_missing_light_pack_reports_warning_and_uses_dark_pack (test_branding.BrandingTests) ... ok\ntest_repeated_theme_icons_release_native_handles (test_branding.BrandingTests) ... ok\ntest_saved_theme_and_live_existing_and_future_window_icons (test_branding.BrandingTests) ... ok\ntest_engine_chat_deletion_removes_extra_local_cache (test_company_journey.CompanyJourneyTests) ... ok\ntest_main_chat_true_provider_multiturn_and_switch (test_company_journey.CompanyJourneyTests) ... ok\ntest_plan_confirm_and_graph_multiple_real_sdk_ids (test_company_journey.CompanyJourneyTests) ... ok\ntest_task_suggestions_isolated_and_only_confirm_saves (test_company_journey.CompanyJourneyTests) ... ok\ntest_documented_cli_can_import_project_and_optimized_mode_refused (test_contract_tools.CompanyCommandTests) ... ok\ntest_load_failure_is_not_company_pass (test_contract_tools.ContractToolsTests) ... ok\ntest_missing_failed_and_passed_are_separate_and_errors_redacted (test_contract_tools.ContractToolsTests) ... ok\ntest_no_hooks_import_without_explicit_execution_and_review (test_contract_tools.ContractToolsTests) ... ok\ntest_result_contract_empty_truncated_precision_and_corruption (test_contract_tools.ContractToolsTests) ... ok\ntest_contract_result (test_contract_tools.DemoContractTests) ... ok\ntest_contract_validation_is_pure (test_contract_tools.DemoContractTests) ... ok\ntest_hook_output_suppressed_and_system_exit_not_passed (test_contract_tools.HookLoggingTests) ... ok\ntest_adopt_plan_uses_existing_gate_and_replay_id (test_conversation_actions.ActionTests) ... ok\ntest_cancelled_real_future_blocks_delete (test_conversation_actions.ActionTests) ... ok\ntest_delete_links_keeps_independent_query_and_schedule (test_conversation_actions.ActionTests) ... ok\ntest_incomplete_unknown_and_modified_preview (test_conversation_actions.ActionTests) ... ok\ntest_new_plan_revision_has_new_card_and_old_confirmation_expires (test_conversation_actions.ActionTests) ... ok\ntest_parser_cancel_change_delete_and_late_return (test_conversation_actions.ActionTests) ... ok\ntest_plan_atomic_rollback_no_dispatch (test_conversation_actions.ActionTests) ... ok\ntest_preview_expiry_and_binding (test_conversation_actions.ActionTests) ... ok\ntest_preview_query_confirmation_double_click_and_model_isolation (test_conversation_actions.ActionTests) ... ok\ntest_query_atomic_rollback_no_dispatch (test_conversation_actions.ActionTests) ... ok\ntest_reopen_preserves_link_and_never_dispatches (test_conversation_actions.ActionTests) ... ok\ntest_report_requires_consent_and_retains_fixed_binding (test_conversation_actions.ActionTests) ... ok\ntest_schedule_atomic_rollback (test_conversation_actions.ActionTests) ... ok\ntest_schedule_confirmation_atomic_pause_and_run_once (test_conversation_actions.ActionTests) ... ok\ntest_schema3_upgrade_backup_and_rollback (test_conversation_actions.ActionTests) ... ok\ntest_capability_and_intent (test_conversation_actions.IntentTests) ... ok\ntest_schema_parse_and_malformed_result (test_conversation_actions.IntentTests) ... ok\ntest_active_and_cancelled_remote_request_block_entire_batch (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_approved_plan_and_task_deleted_together (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_bulk_counts_and_dependent_records_deleted_persistently (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_content_and_title_changes_invalidate_confirmation (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_database_failure_rolls_back_entire_batch (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_deleted_conversation_cannot_receive_reassigned_plan (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_dispatch_after_preview_requires_new_confirmation (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_independent_query_schedule_issue_and_transferred_copy_survive (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_invalid_expired_and_caller_tampered_tokens (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_notification_change_invalidates_preview (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_pending_states_and_concurrent_confirmation_are_service_guarded (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_schedule_occurrence_or_cross_plan_dependency_refuses_deletion (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_selection_validation_and_missing_conversation_are_atomic (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_unrelated_remote_request_does_not_block_deletion (test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_all_selected_source_handoff_windows_close_other_source_and_copy_survive (test_conversation_views.ConversationViewTests) ... ok\ntest_context_menu_targets_clicked_history_without_switching_chat (test_conversation_views.ConversationViewTests) ... ok\ntest_delete_current_then_last_preserves_other_draft_attachment_and_file (test_conversation_views.ConversationViewTests) ... ok\ntest_deleting_other_chat_keeps_live_draft_attachment_selection (test_conversation_views.ConversationViewTests) ... ok\ntest_expired_or_changed_confirmation_shows_error_without_deletion (test_conversation_views.ConversationViewTests) ... ok\ntest_failed_initial_handoff_previews_close_and_late_upload_is_ignored (test_conversation_views.ConversationViewTests) ... ok\ntest_filtered_bulk_selection_and_cancel_defaults_do_not_delete (test_conversation_views.ConversationViewTests) ... ok\ntest_pending_plan_details_result_and_source_dialogs_are_cleared (test_conversation_views.ConversationViewTests) ... ok\ntest_running_and_cancelled_remote_request_refuse_ui_confirmation (test_conversation_views.ConversationViewTests) ... ok\ntest_cancel_before_summary_dispatch_prevents_provider_call (test_core.CoreTests) ... ok\ntest_cancel_fences_late_result (test_core.CoreTests) ... ok\ntest_cancelled_remote_call_remains_inflight_until_drained (test_core.CoreTests) ... ok\ntest_conversation_busy_and_context_isolation (test_core.CoreTests) ... ok\ntest_daily_occurrence_once_and_previous_day_by_scheduled_time (test_core.CoreTests) ... ok\ntest_expired_and_cancelled_plan_never_calls_runner (test_core.CoreTests) ... ok\ntest_general_query_summary_validates_and_deduplicates_without_plan (test_core.CoreTests) ... ok\ntest_history_and_issue_survive_reopen (test_core.CoreTests) ... ok\ntest_issue_draft_can_reopen_edit_but_local_saved_cannot (test_core.CoreTests) ... ok\ntest_newer_schema_fails_without_overwrite (test_core.CoreTests) ... ok\ntest_offline_coalesce_latest_and_overlap_skip (test_core.CoreTests) ... ok\ntest_only_transient_readonly_query_retried_three_times (test_core.CoreTests) ... ok\ntest_plan_concurrent_confirmations_one_task (test_core.CoreTests) ... ok\ntest_plan_gate_revision_duplicate_confirmation (test_core.CoreTests) ... ok\ntest_provider_error_does_not_persist_secret (test_core.CoreTests) ... ok\ntest_query_summary_partial_failure_preserves_table (test_core.CoreTests) ... ok\ntest_query_summary_success_calls_only_once_on_snapshot (test_core.CoreTests) ... ok\ntest_restart_marks_interrupted_and_does_not_reexecute (test_core.CoreTests) ... ok\ntest_safe_gateway_error_retained (test_core.CoreTests) ... ok\ntest_same_result_does_not_notify_due_to_fetch_timestamp (test_core.CoreTests) ... ok\ntest_schedule_failure_one_notification (test_core.CoreTests) ... ok\ntest_schedule_is_disabled_until_confirmed_and_validated (test_core.CoreTests) ... ok\ntest_summary_cancel_retains_completed_table_and_discards_late_summary (test_core.CoreTests) ... ok\ntest_task_idempotency_compares_payload (test_core.CoreTests) ... ok\ntest_threshold_only_notifies_crossing (test_core.CoreTests) ... ok\ntest_validator_rejects_before_plan_ready_and_rechecks_confirmation (test_core.CoreTests) ... ok\ntest_wait_closed_requires_closed_engine (test_core.CoreTests) ... ok\ntest_weekly_older_than_24_hours_not_replayed (test_core.CoreTests) ... ok\ntest_accepted_plan_clears_draft_and_late_save_is_rejected (test_daily_work.DailyWorkTests) ... ok\ntest_autosave_reopen_and_attachment_requires_selection (test_daily_work.DailyWorkTests) ... ok\ntest_cards_preserve_existing_draft_binding_and_do_not_dispatch (test_daily_work.DailyWorkTests) ... ok\ntest_deleted_conversation_fences_pending_save_and_keeps_todo (test_daily_work.DailyWorkTests) ... ok\ntest_failed_save_visible_retry_and_failed_send_keeps_draft (test_daily_work.DailyWorkTests) ... ok\ntest_failed_submission_rearms_superseded_autosave_without_more_typing (test_daily_work.DailyWorkTests) ... ok\ntest_name_labels_and_empty_card_visibility (test_daily_work.DailyWorkTests) ... ok\ntest_plan_edit_is_not_autosaved_or_approved_and_original_draft_returns (test_daily_work.DailyWorkTests) ... ok\ntest_query_plan_edit_does_not_discard_ordinary_chat_draft (test_daily_work.DailyWorkTests) ... ok\ntest_switch_preserves_drafts_and_does_not_move_to_other_binding (test_daily_work.DailyWorkTests) ... ok\ntest_confirmation_defaults_cancel_escape_and_explicit_accept (test_dialogs.DialogTests) ... ok\ntest_long_message_theme_copy_and_close_without_mutation (test_dialogs.DialogTests) ... ERROR\ntest_nested_grab_is_restored_and_copy_error_is_inline (test_dialogs.DialogTests) ... ok\ntest_startup_fallback_without_appearance (test_dialogs.DialogTests) ... ok\ntest_titlebar_optional_and_colorref (test_dialogs.DialogTests) ... ok\ntest_cancel_does_not_save_and_invalidates_token (test_dialogue.DialogueTests) ... ok\ntest_duplicate_turn_and_failed_commit_do_not_create_task (test_dialogue.DialogueTests) ... ok\ntest_edit_invalidates_approval (test_dialogue.DialogueTests) ... ok\ntest_mode_and_assistant_switch_start_empty_without_deleting_history (test_dialogue.DialogueTests) ... ok\ntest_multiturn_chat_keeps_context (test_dialogue.DialogueTests) ... ok\ntest_provider_failure_never_falls_back_or_loses_completed_messages (test_dialogue.DialogueTests) ... ok\ntest_schedule_questions_do_not_guess_missing_time (test_dialogue.DialogueTests) ... ok\ntest_source_path_is_text_only (test_dialogue.DialogueTests) ... ok\ntest_stepwise_questions_preview_and_explicit_disabled_save (test_dialogue.DialogueTests) ... ok\ntest_untrusted_reply_cannot_authorize_save (test_dialogue.DialogueTests) ... ok\ntest_validation_rejects_command_unknown_id_and_bad_schedule (test_dialogue.DialogueTests) ... ok\ntest_bridge_allows_state_and_cancel_during_main_send (test_dialogue_concurrency.DialogueConcurrencyTests) ... ok\ntest_cancel_fences_late_result_and_does_not_claim_remote_stopped (test_dialogue_concurrency.DialogueConcurrencyTests) ... ok\ntest_close_fences_and_drains_before_returning (test_dialogue_concurrency.DialogueConcurrencyTests) ... ok\ntest_state_and_new_thread_usable_while_request_waits (test_dialogue_concurrency.DialogueConcurrencyTests) ... ok\ntest_normal_maximized_theme_switch_preserve_point_fonts_and_draft (test_display.DisplayAppTests) ... ok\ntest_simulated_multipliers_keep_chat_inside_page_and_send_reachable (test_display.DisplayAppTests) ... ok\ntest_awareness_preserves_existing_context_without_setting_process (test_display.DisplayPolicyTests) ... ok\ntest_awareness_read_mapping_and_unavailable_are_not_fabricated (test_display.DisplayPolicyTests) ... ok\ntest_common_percentages_convert_logical_pixels_and_pick_exact_icon (test_display.DisplayPolicyTests) ... ok\ntest_older_api_fallback_and_total_failure_are_explicit (test_display.DisplayPolicyTests) ... ok\ntest_small_work_area_clamps_size_and_minimum_at_each_factor (test_display.DisplayPolicyTests) ... ok\ntest_unaware_startup_requests_system_context_and_reports_failure (test_display.DisplayPolicyTests) ... ok\ntest_work_area_api_failure_uses_screen_size (test_display.DisplayPolicyTests) ... ok\ntest_all_packaged_action_icons_have_real_requested_dimensions (test_display.DisplayWidgetTests) ... ok\ntest_dialog_scroll_frame_uses_content_size_and_reveals_bottom_action (test_display.DisplayWidgetTests) ... ok\ntest_fonts_remain_points_and_tk_scaling_is_not_multiplied (test_display.DisplayWidgetTests) ... ok\ntest_scaling_existing_widgets_and_retheme_is_not_cumulative (test_display.DisplayWidgetTests) ... ok\ntest_small_viewport_reveals_focused_action_and_resets_when_large (test_display.DisplayWidgetTests) ... ok\ntest_adapter_restrictions_fail_before_company_calls (test_environment.DiagnosticTests) ... ok\ntest_company_missing_credentials_and_invalid_endpoint (test_environment.DiagnosticTests) ... ok\ntest_invalid_config_does_not_hide_directory_failure (test_environment.DiagnosticTests) ... ok\ntest_profiles_use_data_directory_and_keyring_without_legacy_key (test_environment.DiagnosticTests) ... ok\ntest_share_report_is_whitelisted_and_checks_continue (test_environment.DiagnosticTests) ... ok\ntest_complete_bundle_verifies (test_environment.OfflineBundleTests) ... ok\ntest_corrupt_wheel_rejected (test_environment.OfflineBundleTests) ... ok\ntest_existing_build_destination_untouched (test_environment.OfflineBundleTests) ... ok\ntest_lock_mismatch_rejected (test_environment.OfflineBundleTests) ... ok\ntest_missing_wheel_rejected (test_environment.OfflineBundleTests) ... ok\ntest_unsafe_manifest_path_and_extra_files_rejected (test_environment.OfflineBundleTests) ... ok\ntest_wrong_target_rejected (test_environment.OfflineBundleTests) ... ok\ntest_first_run_diagnostic_is_scoped_and_explicit (test_experience.GuidanceDataTests) ... ok\ntest_manual_has_required_workflows_and_all_page_links (test_experience.GuidanceDataTests) ... ok\ntest_preferences_preserve_legacy_theme_and_unknown_fields (test_experience.GuidanceDataTests) ... ok\ntest_work_hints_distinguish_pending_success_failure_and_cancel (test_experience.GuidanceDataTests) ... ok\ntest_current_conversation_plan_and_query_validation_hints_are_scoped (test_experience.GuidanceUITests) ... ok\ntest_editing_context_expiry_and_plan_terminal_states (test_experience.GuidanceUITests) ... ok\ntest_normal_demo_query_approval_selection_and_transfer (test_experience.GuidanceUITests) ... ok\ntest_preference_restart_and_failed_save_keep_current_toggle (test_experience.GuidanceUITests) ... ok\ntest_schedule_result_notice_and_issue_hints_only_read_current_state (test_experience.GuidanceUITests) ... ok\ntest_startup_no_popup_process_or_service_request_and_offline_help (test_experience.GuidanceUITests) ... ok\ntest_toggle_all_pages_preserves_draft_attachment_selection_no_dispatch (test_experience.GuidanceUITests) ... ok\ntest_formula_protection_precision_and_snapshot_not_mutated (test_files.ExportTests) ... ok\ntest_header_formula_and_separator_validation (test_files.ExportTests) ... ok\ntest_invalid_numeric_never_bypasses_guard (test_files.ExportTests) ... ok\ntest_selection_and_cross_page_copy (test_files.ExportTests) ... ok\ntest_special_characters_csv_fallback_and_nul (test_files.ExportTests) ... ok\ntest_bom_chinese_original_and_preview (test_files.UploadTests) ... ok\ntest_csv_bad_headers_rows_and_quoting (test_files.UploadTests) ... ok\ntest_csv_exact_strings_and_metadata (test_files.UploadTests) ... ok\ntest_input_limits_encoding_and_extension (test_files.UploadTests) ... ok\ntest_company_client_options_headers_and_assistant_ref (test_gateways.AssistantTests) ... ok\ntest_configuration_and_context_rejected_before_network (test_gateways.AssistantTests) ... ok\ntest_demo_does_not_claim_ai_work (test_gateways.AssistantTests) ... ok\ntest_rate_limit_and_redirect_do_not_retry_or_follow (test_gateways.AssistantTests) ... ok\ntest_sdk_401_redacts_error_body_and_never_retries (test_gateways.AssistantTests) ... ok\ntest_sdk_empty_malformed_and_tool_response (test_gateways.AssistantTests) ... ok\ntest_sdk_request_and_conversation_isolation (test_gateways.AssistantTests) ... ok\ntest_sdk_timeout_never_retries (test_gateways.AssistantTests) ... ok\ntest_tls_default_and_company_ca_bundle (test_gateways.AssistantTests) ... ok\ntest_bad_template_and_parameters (test_gateways.QueryTests) ... ok\ntest_bounded_rows_and_defensive_copy (test_gateways.QueryTests) ... ok\ntest_company_unconfigured_and_explicit_demo_identity (test_gateways.QueryTests) ... ok\ntest_deterministic_snapshot_and_filters (test_gateways.QueryTests) ... ok\ntest_plan_validation_does_not_execute_query (test_gateways.QueryTests) ... ok\ntest_completed_receipt_prevents_repeat_after_checkpoint_write_failure (test_graph_runner.GraphCheckpointTests) ... ok\ntest_end_checkpoint_missing_store_receipt_stops_without_dispatch (test_graph_runner.GraphCheckpointTests) ... ok\ntest_resume_failed_node_does_not_replay_committed_predecessor (test_graph_runner.GraphCheckpointTests) ... ok\ntest_abandon_cannot_resume (test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_binding_change_blocks_recovery (test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_checkpoint_failure_preserves_receipt_and_resume_skips_query (test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_restart_no_dispatch_and_explicit_resume_once (test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_uncertain_query_never_replayed (test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_compose_example_has_readable_literal_headings (test_instruction_docs.InstructionDocumentTests) ... ok\ntest_documents_are_standalone_and_local_links_resolve (test_instruction_docs.InstructionDocumentTests) ... ok\ntest_guide_synthetic_examples_link_facts_to_source (test_instruction_docs.InstructionDocumentTests) ... ok\ntest_planner_question_example_obeys_live_question_contract (test_instruction_docs.InstructionDocumentTests) ... ok\ntest_role_examples_preserve_exact_facts_and_output_contract (test_instruction_docs.InstructionDocumentTests) ... ok\ntest_enter_ctrl_and_shift_newline (test_keyboard.KeyboardTests) ... ok\ntest_ime_empty_and_repeat_guard (test_keyboard.KeyboardTests) ... ok\ntest_ime_shift_does_not_insert_and_focus_loss_releases (test_keyboard.KeyboardTests) ... ok\ntest_missing_asset_fails_before_tk (test_launch_check.LaunchCheckTests) ... ok\ntest_sdk_check_optional_for_relocated_shortcut_fixture (test_launch_check.LaunchCheckTests) ... ok\ntest_tk_and_sdk_failures_are_clear_and_cleanup_root (test_launch_check.LaunchCheckTests) ... ok\ntest_version_architecture_and_platform_fail_closed (test_launch_check.LaunchCheckTests) ... ok\ntest_cancelled_form_cannot_submit (test_local.ChoiceTests) ... ok\ntest_invalid_stale_expired_answers (test_local.ChoiceTests) ... ok\ntest_persistent_answers_owner_and_idempotency (test_local.ChoiceTests) ... ok\ntest_roundtrip_no_secret_keys_and_company_modes (test_local.ConfigTests) ... ok\ntest_single_instance_and_release (test_local.ConfigTests) ... ok\ntest_clear_fences_queued_writer (test_local_work.LocalWorkTests) ... ok\ntest_delete_preview_tracks_drafts_and_preserves_todo_copy (test_local_work.LocalWorkTests) ... ok\ntest_delete_transaction_failure_restores_drafts_and_conversation (test_local_work.LocalWorkTests) ... ok\ntest_draft_cleanup_failure_rolls_back_dispatch_and_plan (test_local_work.LocalWorkTests) ... ok\ntest_drafts_reopen_isolation_and_latest_reservation_wins (test_local_work.LocalWorkTests) ... ok\ntest_invalid_save_keeps_last_saved_text (test_local_work.LocalWorkTests) ... ok\ntest_migration_failure_rolls_back_new_tables_and_version (test_local_work.LocalWorkTests) ... ok\ntest_parallel_create_is_one_record (test_local_work.LocalWorkTests) ... ok\ntest_todo_lifecycle_search_literal_and_source (test_local_work.LocalWorkTests) ... ok\ntest_v2_backup_and_upgrade_is_repeatable_without_extra_backup (test_local_work.LocalWorkTests) ... ok\ntest_validation_and_request_conflict_no_partial_insert (test_local_work.LocalWorkTests) ... ok\ntest_badge_over_99_and_read_notifications_never_popup (test_notifications.NotificationTests) ... ok\ntest_batch_is_one_popup_and_does_not_mark_all_read (test_notifications.NotificationTests) ... ok\ntest_corner_popup_unread_badge_and_repeat_refresh (test_notifications.NotificationTests) ... ok\ntest_deleted_notice_closes_popup_and_stale_click_is_safe (test_notifications.NotificationTests) ... ok\ntest_dismiss_retains_unread_without_redisplay (test_notifications.NotificationTests) ... ok\ntest_existing_unread_does_not_popup_on_start (test_notifications.NotificationTests) ... ok\ntest_long_content_is_preserved_and_close_cancels_timer (test_notifications.NotificationTests) ... ok\ntest_missing_source_keeps_notification_readable (test_notifications.NotificationTests) ... ok\ntest_result_routing_and_error_theme (test_notifications.NotificationTests) ... ok\ntest_single_view_marks_read_and_opens_inbox (test_notifications.NotificationTests) ... ok\ntest_timeout_and_hover (test_notifications.NotificationTests) ... ok\ntest_failed_feedback_retains_note_and_retry_choice (test_outcome_ui.OutcomeUITests) ... ok\ntest_feedback_background_save_edit_clear_and_no_dispatch (test_outcome_ui.OutcomeUITests) ... ok\ntest_outcome_controls_reachable_in_both_themes_and_sizes (test_outcome_ui.OutcomeUITests) ... ok\ntest_result_opens_outcome_first_and_preserves_draft_selection (test_outcome_ui.OutcomeUITests) ... ok\ntest_bad_query_snapshot_not_compared (test_outcomes.OutcomeTests) ... ok\ntest_changed_binding_and_nondate_parameter_not_compared (test_outcomes.OutcomeTests) ... ok\ntest_compare_exact_and_same_period_without_dispatch (test_outcomes.OutcomeTests) ... ok\ntest_failed_save_keeps_previous_feedback (test_outcomes.OutcomeTests) ... ok\ntest_feedback_cascades_with_task_deletion (test_outcomes.OutcomeTests) ... ok\ntest_feedback_upsert_clear_and_no_dispatch (test_outcomes.OutcomeTests) ... ok\ntest_high_precision_and_date_modes (test_outcomes.OutcomeTests) ... ok\ntest_invalid_feedback_and_running_rejected (test_outcomes.OutcomeTests) ... ok\ntest_partial_and_source_deletion_preserves_feedback (test_outcomes.OutcomeTests) ... ok\ntest_revision_and_schedule_isolation (test_outcomes.OutcomeTests) ... ok\ntest_schedule_retry_keeps_comparison_scope (test_outcomes.OutcomeTests) ... ok\ntest_schema_five_backup_and_transaction_rollback (test_outcomes.OutcomeTests) ... ok\ntest_confirmed_mapping_and_per_request_destination (test_profiles.ProfileTests) ... ok\ntest_environment_not_imported_and_explicit_keyring_takes_over (test_profiles.ProfileTests) ... ok\ntest_key_destination_isolation_and_never_persist_secret (test_profiles.ProfileTests) ... ok\ntest_keyring_error_redacted_no_fallback (test_profiles.ProfileTests) ... ok\ntest_legacy_profile_identity_persisted_before_any_user_edit (test_profiles.ProfileTests) ... ok\ntest_management_revision_disable_default_persistence (test_profiles.ProfileTests) ... ok\ntest_real_windows_credential_roundtrip_isolated (test_profiles.ProfileTests) ... ok\ntest_unconfigured_api_does_not_guess_or_dispatch (test_profiles.ProfileTests) ... ok\ntest_conversations_pin_target_and_context (test_profiles.RoutingTests) ... ok\ntest_no_auto_summary_and_legacy_readonly (test_profiles.RoutingTests) ... ok\ntest_plan_zero_dispatch_until_approved_and_changed_target_refused (test_profiles.RoutingTests) ... ok\ntest_v1_backup_and_transactional_migration_preserves_history (test_profiles.RoutingTests) ... ok\ntest_catalog_change_blocks_ready_plan_without_running (test_query_schema.CatalogServiceTests) ... ok\ntest_legacy_demo_mapping_only_and_invalid_saved_mode (test_query_schema.CatalogServiceTests) ... ok\ntest_plan_revision_validation_and_no_dispatch_before_confirmation (test_query_schema.CatalogServiceTests) ... ok\ntest_rolling_mapping_literal_and_removed_template (test_query_schema.CatalogServiceTests) ... ok\ntest_bounds_and_invalid_definitions (test_query_schema.QuerySchemaTests) ... ok\ntest_decimal_date_and_integer_limits (test_query_schema.QuerySchemaTests) ... ok\ntest_types_precision_defaults_and_optional (test_query_schema.QuerySchemaTests) ... ok\ntest_ai_failure_preserves_result_and_hides_secret (test_report_engine.ReportTests) ... ok\ntest_cancel_ai_retains_pending_snapshot_but_no_late_report (test_report_engine.ReportTests) ... ok\ntest_cancel_query_and_real_future_blocks_overlap (test_report_engine.ReportTests) ... ok\ntest_clock_restart_previous_day_dedup_disable_and_missed (test_report_engine.ReportTests) ... ok\ntest_close_fences_late_report_and_notifies_once (test_report_engine.ReportTests) ... ok\ntest_confirm_transaction_rollback_and_concurrent_clicks (test_report_engine.ReportTests) ... ok\ntest_empty_and_truncated_skip_ai (test_report_engine.ReportTests) ... ok\ntest_exact_totals_malformed_and_oversized_metadata (test_report_engine.ReportTests) ... ok\ntest_expiration_cancel_binding_and_invalid_input (test_report_engine.ReportTests) ... ok\ntest_expired_binding_at_run_blocks_query_and_notifies (test_report_engine.ReportTests) ... ok\ntest_normal_query_schedule_does_not_summarize (test_report_engine.ReportTests) ... ok\ntest_preview_immutable_and_double_confirmation_no_dispatch (test_report_engine.ReportTests) ... ok\ntest_query_failure_no_retry_or_ai (test_report_engine.ReportTests) ... ok\ntest_recovery_failure_is_not_retried_and_notification_deduplicates (test_report_engine.ReportTests) ... ok\ntest_success_aggregate_only_and_repeat_notification (test_report_engine.ReportTests) ... ok\ntest_bounds_and_intent (test_report_views.DraftTests) ... ok\ntest_invalid_fields_and_secret_error_rejected (test_report_views.DraftTests) ... ok\ntest_schema_and_no_execution (test_report_views.DraftTests) ... ok\ntest_chat_opens_confirmation_without_dispatch_and_preserves_draft (test_report_views.ReportViewTests) ... ok\ntest_close_revokes_preview_and_unapproved_no_schedule (test_report_views.ReportViewTests) ... ok\ntest_late_parse_does_not_replace_edited_request (test_report_views.ReportViewTests) ... ok\ntest_preview_consent_edit_invalidation_approve_and_theme (test_report_views.ReportViewTests) ... ok\ntest_create_and_repeat_update (test_shortcut.ShortcutTests) ... ok\ntest_invalid_destination_is_not_created (test_shortcut.ShortcutTests) ... ok\ntest_missing_assets_do_not_change_existing_shortcut (test_shortcut.ShortcutTests) ... ok\ntest_relocation_updates_managed_shortcut (test_shortcut.ShortcutTests) ... ok\ntest_unrelated_shortcut_is_preserved (test_shortcut.ShortcutTests) ... ok\ntest_all_routes_have_icons_and_no_navigation_dispatch (test_team_navigation.TeamNavigationTests) ... ok\ntest_closed_app_releases_interpreter_and_missing_icons_remain_usable (test_team_navigation.TeamNavigationTests) ... ok\ntest_collapse_keeps_widgets_drafts_selection_and_attachment (test_team_navigation.TeamNavigationTests) ... ok\ntest_collapsed_persistence_and_failed_save_keeps_current_view (test_team_navigation.TeamNavigationTests) ... ok\ntest_details_and_edit_reuse_existing_profile_actions (test_team_navigation.TeamNavigationTests) ... ok\ntest_more_tools_is_reachable_from_compact_and_theme_preserves_it (test_team_navigation.TeamNavigationTests) ... ok\ntest_responsive_cards_and_theme (test_team_navigation.TeamNavigationTests) ... ok\ntest_team_chat_creates_new_bound_conversation_preserving_old_draft (test_team_navigation.TeamNavigationTests) ... ok\ntest_team_search_and_status_never_fabricate_verification (test_team_navigation.TeamNavigationTests) ... ok\ntest_verified_planner_entry_is_explicit_and_never_runs (test_team_navigation.TeamNavigationTests) ... ok\ntest_failed_atomic_replace_preserves_previous_and_cleans_temporary (test_theme.PreferenceTests) ... ok\ntest_missing_corrupt_unknown_and_roundtrip (test_theme.PreferenceTests) ... ok\ntest_existing_and_future_dialogs_popup_and_all_pages (test_theme.ThemeTests) ... ok\ntest_minimum_size_actions_fit_both_themes (test_theme.ThemeTests) ... ok\ntest_palette_isolation_between_tk_interpreters (test_theme.ThemeTests) ... ok\ntest_save_failure_remains_applied_and_restart_preference (test_theme.ThemeTests) ... ok\ntest_switch_preserves_widgets_draft_attachment_selection_and_plan (test_theme.ThemeTests) ... ok\ntest_switch_while_work_is_running_does_not_dispatch_or_cancel (test_theme.ThemeTests) ... ok\ntest_utc_midnight_boundary_uses_fixed_taipei_offset (test_todo_ui.TaipeiDateTests) ... ok\ntest_cards_transition_and_edit_preserve_source (test_todo_ui.TodoViewTests) ... ok\ntest_delete_cancel_defaults_and_confirmation_preserve_source_and_others (test_todo_ui.TodoViewTests) ... ok\ntest_deleted_source_is_marked_but_independent_todo_survives (test_todo_ui.TodoViewTests) ... ok\ntest_each_column_uses_its_own_stable_order (test_todo_ui.TodoViewTests) ... ok\ntest_editor_validates_date_and_description_without_creating_rows (test_todo_ui.TodoViewTests) ... ok\ntest_empty_selection_and_overlong_title_never_silently_truncate (test_todo_ui.TodoViewTests) ... ok\ntest_refresh_and_responsive_layout_reuse_cards_and_keep_selection (test_todo_ui.TodoViewTests) ... ok\ntest_search_show_done_preference_and_write_failure_keep_current_view (test_todo_ui.TodoViewTests) ... ok\ntest_selection_copies_all_text_without_dispatch_or_forced_navigation (test_todo_ui.TodoViewTests) ... ok\ntest_show_link_is_explicit_navigation_and_filters_do_not_hide_target (test_todo_ui.TodoViewTests) ... ok\ntest_taipei_clock_controls_overdue_and_date_shortcuts (test_todo_ui.TodoViewTests) ... ok\ntest_title_opens_editor_and_completed_action_uses_clear_label (test_todo_ui.TodoViewTests) ... ok\ntest_bad_env_never_discloses_content (test_trial.TrialTests) ... ok\ntest_empty_malformed_incomplete_and_tools_rejected (test_trial.TrialTests) ... ok\ntest_env_literal_and_no_environment_side_effect (test_trial.TrialTests) ... ok\ntest_missing_key_fails_without_demo_fallback (test_trial.TrialTests) ... ok\ntest_profiles_readonly_and_stale_binding (test_trial.TrialTests) ... ok\ntest_real_sdk_request_and_context_isolation (test_trial.TrialTests) ... ok\ntest_status_errors_redacted_and_no_retry (test_trial.TrialTests) ... ok\ntest_timeout_and_connection_redacted (test_trial.TrialTests) ... ok\ntest_tls_and_retry_configuration (test_trial.TrialTests) ... ok\ntest_validation_prevents_network_and_silent_truncation (test_trial.TrialTests) ... ok\ntest_enter_sends_and_work_card_does_not (test_trial.TrialTkTests) ... ok\ntest_plan_approval_and_single_dispatch (test_trial.TrialTkTests) ... ok\ntest_workspace_and_settings_isolated_without_network_on_start (test_trial.TrialTkTests) ... ok\ntest_chat_query_plan_edit_approve_pagination_clipboard (test_ui.DesktopTests) ... ok\ntest_company_error_does_not_use_demo_and_restart_history (test_ui.DesktopTests) ... ok\ntest_cross_workflow_plan_edit_rejected_and_exit_supported (test_ui.DesktopTests) ... ok\ntest_dynamic_custom_fields_plan_and_result (test_ui.DesktopTests) ... ok\ntest_issue_draft_reopen_schedule_and_notifications (test_ui.DesktopTests) ... ok\ntest_malformed_catalog_and_invalid_schedule_remain_readable (test_ui.DesktopTests) ... ok\ntest_navigation_and_minimum_size_keep_actions_visible (test_ui.DesktopTests) ... ok\ntest_normal_close_waits_for_remote_then_releases_on_main_thread (test_ui.DesktopTests) ... ok\ntest_settings_blocked_while_cancelled_worker_drains (test_ui.DesktopTests) ... ok\ntest_settings_cannot_change_destination_of_ready_plan (test_ui.DesktopTests) ... ok\ntest_visible_widget_layout_and_restart (test_ui.DesktopTests) ... ok\ntest_welcome_shortcut_and_readable_plan_are_not_data_mutations (test_ui.DesktopTests) ... ok\ntest_widget_choice_submission_and_clipboard_failure (test_ui.DesktopTests) ... ok\ntest_chat_and_plan_use_existing_gates (test_web.WebTests) ... ok\ntest_clipboard_export_uses_precision_and_formula_protection (test_web.WebTests) ... ok\ntest_close_rejects_further_dispatch (test_web.WebTests) ... ok\ntest_company_intent_uses_form_without_model (test_web.WebTests) ... ok\ntest_deleted_source_invalidates_transfer (test_web.WebTests) ... ok\ntest_initial_state_and_draft_isolation (test_web.WebTests) ... ok\ntest_markdown_cannot_execute_or_fetch (test_web.WebTests) ... ok\ntest_no_arbitrary_commands_or_sensitive_errors (test_web.WebTests) ... ok\ntest_query_preview_requires_confirmation (test_web.WebTests) ... ok\ntest_send_fences_old_draft_and_changed_idempotency_payload (test_web.WebTests) ... ok\ntest_todo_repeated_save_and_source_deletion (test_web.WebTests) ... ok\ntest_transfer_preview_is_pure_and_confirmation_idempotent (test_web.WebTests) ... ok\ntest_trial_rejects_company_config (test_web.WebTests) ... ok\ntest_actual_running_and_failed_steps_retained_and_retry_button_available (test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_one_explicit_confirmation_runs_only_displayed_plan_once (test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_result_window_uses_fixed_snapshot_and_opening_does_not_dispatch (test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_small_workspace_keeps_input_approval_and_step_controls_reachable (test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_unapproved_rows_are_read_only_and_complete_text_remains_selectable (test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_unknown_and_cancelled_are_not_misreported_and_details_do_not_truncate (test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_assistant_id_endpoint_disable_invalidate_capability (test_workflow_profiles.WorkflowProfilesTests) ... ok\ntest_different_ids_and_roles_are_routed_stateless (test_workflow_profiles.WorkflowProfilesTests) ... ok\ntest_unverified_catalog_and_roles (test_workflow_profiles.WorkflowProfilesTests) ... ok\ntest_accepted_discussion_clears_saved_draft_and_fences_late_save (test_workflow_ui.WorkflowUITests) ... ok\ntest_conversation_plan_executes_only_after_consent_and_preserves_chat (test_workflow_ui.WorkflowUITests) ... ok\ntest_followup_discussion_questions_and_revision (test_workflow_ui.WorkflowUITests) ... ok\ntest_mode_restores_per_conversation_without_dispatch (test_workflow_ui.WorkflowUITests) ... ok\ntest_mode_selection_does_not_dispatch_and_attachment_not_silently_sent (test_workflow_ui.WorkflowUITests) ... ok\ntest_retained_workflow_table_paging_copy_and_no_dispatch (test_workflow_ui.WorkflowUITests) ... ok\ntest_unverified_company_catalog_blocked_and_reopen_latest_local_plan (test_workflow_ui.WorkflowUITests) ... ok\ntest_approve_runs_real_sequence_once_with_isolated_inputs (test_workflows.WorkflowTests) ... ok\ntest_cancel_planner_late_reply_and_delete_fence (test_workflows.WorkflowTests) ... ok\ntest_cancel_worker_late_result_and_delete_fence (test_workflows.WorkflowTests) ... ok\ntest_confirmation_transaction_failure_does_not_dispatch (test_workflows.WorkflowTests) ... ok\ntest_cross_midnight_retry_keeps_original_query_date (test_workflows.WorkflowTests) ... ok\ntest_discussion_questions_then_plan_without_dispatch (test_workflows.WorkflowTests) ... ok\ntest_failure_pauses_schedule_and_binding_revision_prevents_call (test_workflows.WorkflowTests) ... ok\ntest_invalid_output_empty_or_unapproved_tool_stops (test_workflows.WorkflowTests) ... ok\ntest_invalid_plan_clears_old_ready_steps_and_duplicate_json_rejected (test_workflows.WorkflowTests) ... ok\ntest_invalid_steps_and_capability (test_workflows.WorkflowTests) ... ok\ntest_no_numeric_query_works_and_stale_deletion_fails (test_workflows.WorkflowTests) ... ok\ntest_numeric_corruption_stops_next_step (test_workflows.WorkflowTests) ... ok\ntest_preview_consent_expiry_and_revision (test_workflows.WorkflowTests) ... ok\ntest_reopen_preserves_no_dispatch (test_workflows.WorkflowTests) ... ok\ntest_restart_interrupted_workflow_pauses_only_active_schedule (test_workflows.WorkflowTests) ... ok\ntest_retry_reuses_only_successful_prefix_and_no_hidden_retry (test_workflows.WorkflowTests) ... ok\ntest_review_failure_retains_query_and_no_compose (test_workflows.WorkflowTests) ... ok\ntest_schedule_cancel_drain_prevents_overlap (test_workflows.WorkflowTests) ... ok\ntest_schedule_needs_success_and_consent_then_tick_dedup (test_workflows.WorkflowTests) ... ok\ntest_scheduled_retry_becomes_latest_and_cannot_fork_twice (test_workflows.WorkflowTests) ... ok\ntest_schema4_migration_backup_and_atomic_failure (test_workflows.WorkflowTests) ... ok\ntest_source_delete_keeps_independent_results_and_schedule (test_workflows.WorkflowTests) ... ok\ntest_composer_reflows_without_edit_on_narrowing (test_workspace.WorkspaceTests) ... ok\ntest_detail_selection_survives_completion_and_source_remains (test_workspace.WorkspaceTests) ... ok\ntest_optional_icons_theme_and_reading_width (test_workspace.WorkspaceTests) ... ok\ntest_plan_task_states_and_detail_stay_bound_to_selection (test_workspace.WorkspaceTests) ... ok\ntest_quick_actions_do_not_dispatch_and_composer_grows (test_workspace.WorkspaceTests) ... ok\ntest_running_cancel_failure_and_no_extra_dispatch (test_workspace.WorkspaceTests) ... ok\ntest_transcript_refresh_preserves_cross_message_selection_and_scroll (test_workspace.WorkspaceTests) ... ok\n\n======================================================================\nERROR: test_long_message_theme_copy_and_close_without_mutation (test_dialogs.DialogTests)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"D:\\unit-helper-spec\\tests\\test_dialogs.py\", line 43, in test_long_message_theme_copy_and_close_without_mutation\n    dialog.copy_message();self.root.update();self.assertEqual(windows_clipboard_text(),text)\n  File \"D:\\unit-helper-spec\\tests\\test_dialogs.py\", line 22, in windows_clipboard_text\n    raise RuntimeError(f'OpenClipboard failed (Windows error {ctypes.get_last_error()}); clipboard readback not verified')\nRuntimeError: OpenClipboard failed (Windows error 5); clipboard readback not verified\n\n----------------------------------------------------------------------\nRan 443 tests in 131.979s\n\nFAILED (errors=1)\n"
+      "output": "test_catalog_dynamic_fields_and_unmapped_schedule_dates (tests.test_action_ui.ActionUITests) ... ok\ntest_confirmation_controls_reachable_at_normal_small_and_maximized (tests.test_action_ui.ActionUITests) ... ok\ntest_copy_in_card_keeps_chat_and_activity_opens_pending_action (tests.test_action_ui.ActionUITests) ... ok\ntest_example_routes_to_local_card_preserves_draft_until_accepted (tests.test_action_ui.ActionUITests) ... ok\ntest_failed_query_retry_only_prepares_new_confirmation (tests.test_action_ui.ActionUITests) ... ok\ntest_immediate_test_double_click_and_busy_are_one_run (tests.test_action_ui.ActionUITests) ... ok\ntest_manual_edit_and_cancel_reject_late_parse (tests.test_action_ui.ActionUITests) ... ok\ntest_navigation_options_selection_and_existing_draft (tests.test_action_ui.ActionUITests) ... ok\ntest_navigation_text_and_query_fields_remain_visible_at_current_dpi (tests.test_action_ui.ActionUITests) ... ok\ntest_plan_approved_in_advanced_tools_shows_real_result (tests.test_action_ui.ActionUITests) ... ok\ntest_plan_stays_in_conversation_and_approves_once (tests.test_action_ui.ActionUITests) ... ok\ntest_repeated_send_reuses_pending_card_and_missing_report_rule_is_explicit (tests.test_action_ui.ActionUITests) ... ok\ntest_report_consent_is_visible_without_scrolling_at_minimum_size (tests.test_action_ui.ActionUITests) ... ok\ntest_report_requires_consent_and_edit_resets_it (tests.test_action_ui.ActionUITests) ... ok\ntest_schedule_source_return_and_deleted_source_label (tests.test_action_ui.ActionUITests) ... ok\ntest_summary_does_not_route_embedded_query_words (tests.test_action_ui.ActionUITests) ... ok\ntest_timeline_refresh_preserves_selection_and_does_not_duplicate (tests.test_action_ui.ActionUITests) ... ok\ntest_trial_auto_parse_is_background_and_stale_manual_edit_is_retained (tests.test_action_ui.ActionUITests) ... ok\ntest_unknown_and_company_queries_do_not_parse (tests.test_action_ui.ActionUITests) ... ok\ntest_atomic_writes_preserve_unrelated_preferences_and_cleanup (tests.test_appearance.AppearancePreferencesTests) ... ok\ntest_missing_corrupt_invalid_and_roundtrip_preferences (tests.test_appearance.AppearancePreferencesTests) ... ok\ntest_invalid_choice_is_rejected_without_changing_preferences (tests.test_appearance.WebAppearanceTests) ... ok\ntest_legacy_theme_toggle_preserves_selected_style (tests.test_appearance.WebAppearanceTests) ... ok\ntest_save_failure_keeps_session_style_and_reports_retry_truthfully (tests.test_appearance.WebAppearanceTests) ... ok\ntest_six_choices_reset_and_reopen_do_not_dispatch_or_touch_connection (tests.test_appearance.WebAppearanceTests) ... ok\ntest_bridge_cannot_schedule_demo_or_unsuccessful_run (tests.test_assistant_briefings.AssistantBriefingTests) ... ok\ntest_cancelled_late_reply_not_success_and_overlap_waits_real_worker (tests.test_assistant_briefings.AssistantBriefingTests) ... ok\ntest_daily_consent_idempotency_immediate_test_and_taipei_clock (tests.test_assistant_briefings.AssistantBriefingTests) ... ok\ntest_expired_preview_bad_clock_and_changed_binding_do_not_send (tests.test_assistant_briefings.AssistantBriefingTests) ... ok\ntest_failed_or_tools_blocked_cannot_enable_and_never_calls_plugin (tests.test_assistant_briefings.AssistantBriefingTests) ... ok\ntest_failure_on_schedule_pauses_and_notifies (tests.test_assistant_briefings.AssistantBriefingTests) ... ok\ntest_preview_no_calls_and_confirmation_idempotent_without_four_roles (tests.test_assistant_briefings.AssistantBriefingTests) ... ok\ntest_reopen_keeps_schedule_and_receipts_without_replay (tests.test_assistant_briefings.AssistantBriefingTests) ... ok\ntest_demo_response_does_not_read_company_credentials (tests.test_assistant_ui.AssistantUITests) ... ok\ntest_edit_other_assistant_plan_does_not_transfer_private_attachment (tests.test_assistant_ui.AssistantUITests) ... ok\ntest_oversize_result_refused_without_truncation_or_task (tests.test_assistant_ui.AssistantUITests) ... ok\ntest_selected_rows_preview_only_double_confirm_and_precision (tests.test_assistant_ui.AssistantUITests) ... ok\ntest_switch_new_conversation_preserves_private_draft_and_attachment (tests.test_assistant_ui.AssistantUITests) ... ok\ntest_transfer_failure_retains_query_and_source (tests.test_assistant_ui.AssistantUITests) ... ok\ntest_active_session_refuses_double_dispatch_but_other_session_works (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_assistant_inspection_is_one_get_not_permission_or_search (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_assistant_inspection_rejects_wrong_id_and_redacts_errors (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_authentication_blank_malformed_and_failed (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_cancellation_late_completed_is_not_success (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_endpoint_and_ca_validation (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_history_and_request_revision_refuse_remote_calls (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_isolation_binding_conversation_and_ephemeral (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_known_run_resume_only_reads (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_overall_deadline_does_not_repeat_remote_mutations (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_real_sdk_request_and_multiturn_no_duplicate_history (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_remote_inspection_does_not_save_a_success_or_reexecute (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_requires_action_never_dispatches_plugin (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_run_correlated_paginated_reply (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_unknown_message_outcome_and_failed_run_never_replay_history (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_unknown_write_outcome_no_retry_after_reopen (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_wrong_run_identity_and_non_text_content_are_rejected (tests.test_assistants_gateway.AssistantsGatewayTests) ... ok\ntest_context_forwarding_workflow_and_regular (tests.test_assistants_profiles.AssistantsProfilesTests) ... ok\ntest_local_inspect_requires_no_key_or_network (tests.test_assistants_profiles.AssistantsProfilesTests) ... ok\ntest_mapping_invalidates_bindings_and_capabilities_once (tests.test_assistants_profiles.AssistantsProfilesTests) ... ok\ntest_ico_sizes_and_png_transparent_corners (tests.test_branding.BrandingTests) ... ok\ntest_icons_load_from_another_working_directory_and_child_inherits (tests.test_branding.BrandingTests) ... ok\ntest_missing_assets_keeps_app_usable_and_names_consistent (tests.test_branding.BrandingTests) ... ok\ntest_missing_light_pack_reports_warning_and_uses_dark_pack (tests.test_branding.BrandingTests) ... ok\ntest_repeated_theme_icons_release_native_handles (tests.test_branding.BrandingTests) ... ok\ntest_saved_theme_and_live_existing_and_future_window_icons (tests.test_branding.BrandingTests) ... ok\ntest_engine_chat_deletion_removes_extra_local_cache (tests.test_company_journey.CompanyJourneyTests) ... ok\ntest_main_chat_true_provider_multiturn_and_switch (tests.test_company_journey.CompanyJourneyTests) ... ok\ntest_plan_confirm_and_graph_multiple_real_sdk_ids (tests.test_company_journey.CompanyJourneyTests) ... ok\ntest_task_suggestions_isolated_and_only_confirm_saves (tests.test_company_journey.CompanyJourneyTests) ... ok\ntest_bridge_state_available_while_probe_waits_and_setting_changes_blocked (tests.test_company_readiness.CompanyReadinessTests) ... ok\ntest_changed_endpoint_revokes_role_readiness (tests.test_company_readiness.CompanyReadinessTests) ... ok\ntest_company_probe_serializes_requests_and_close_fences_result (tests.test_company_readiness.CompanyReadinessTests) ... ok\ntest_configured_is_only_ready_to_test_and_report_is_whitelisted (tests.test_company_readiness.CompanyReadinessTests) ... ok\ntest_declared_roles_are_not_verified_and_disabled_not_counted (tests.test_company_readiness.CompanyReadinessTests) ... ok\ntest_empty_gives_concrete_next_step_without_writes_or_calls (tests.test_company_readiness.CompanyReadinessTests) ... ok\ntest_trial_does_not_read_company_profiles (tests.test_company_readiness.CompanyReadinessTests) ... ok\ntest_documented_cli_can_import_project_and_optimized_mode_refused (tests.test_contract_tools.CompanyCommandTests) ... ok\ntest_load_failure_is_not_company_pass (tests.test_contract_tools.ContractToolsTests) ... ok\ntest_missing_failed_and_passed_are_separate_and_errors_redacted (tests.test_contract_tools.ContractToolsTests) ... ok\ntest_no_hooks_import_without_explicit_execution_and_review (tests.test_contract_tools.ContractToolsTests) ... ok\ntest_result_contract_empty_truncated_precision_and_corruption (tests.test_contract_tools.ContractToolsTests) ... ok\ntest_contract_result (tests.test_contract_tools.DemoContractTests) ... ok\ntest_contract_validation_is_pure (tests.test_contract_tools.DemoContractTests) ... ok\ntest_hook_output_suppressed_and_system_exit_not_passed (tests.test_contract_tools.HookLoggingTests) ... ok\ntest_adopt_plan_uses_existing_gate_and_replay_id (tests.test_conversation_actions.ActionTests) ... ok\ntest_cancelled_real_future_blocks_delete (tests.test_conversation_actions.ActionTests) ... ok\ntest_delete_links_keeps_independent_query_and_schedule (tests.test_conversation_actions.ActionTests) ... ok\ntest_incomplete_unknown_and_modified_preview (tests.test_conversation_actions.ActionTests) ... ok\ntest_new_plan_revision_has_new_card_and_old_confirmation_expires (tests.test_conversation_actions.ActionTests) ... ok\ntest_parser_cancel_change_delete_and_late_return (tests.test_conversation_actions.ActionTests) ... ok\ntest_plan_atomic_rollback_no_dispatch (tests.test_conversation_actions.ActionTests) ... ok\ntest_preview_expiry_and_binding (tests.test_conversation_actions.ActionTests) ... ok\ntest_preview_query_confirmation_double_click_and_model_isolation (tests.test_conversation_actions.ActionTests) ... ok\ntest_query_atomic_rollback_no_dispatch (tests.test_conversation_actions.ActionTests) ... ok\ntest_reopen_preserves_link_and_never_dispatches (tests.test_conversation_actions.ActionTests) ... ok\ntest_report_requires_consent_and_retains_fixed_binding (tests.test_conversation_actions.ActionTests) ... ok\ntest_schedule_atomic_rollback (tests.test_conversation_actions.ActionTests) ... ok\ntest_schedule_confirmation_atomic_pause_and_run_once (tests.test_conversation_actions.ActionTests) ... ok\ntest_schema3_upgrade_backup_and_rollback (tests.test_conversation_actions.ActionTests) ... ok\ntest_capability_and_intent (tests.test_conversation_actions.IntentTests) ... ok\ntest_schema_parse_and_malformed_result (tests.test_conversation_actions.IntentTests) ... ok\ntest_active_and_cancelled_remote_request_block_entire_batch (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_approved_plan_and_task_deleted_together (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_bulk_counts_and_dependent_records_deleted_persistently (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_content_and_title_changes_invalidate_confirmation (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_database_failure_rolls_back_entire_batch (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_deleted_conversation_cannot_receive_reassigned_plan (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_dispatch_after_preview_requires_new_confirmation (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_independent_query_schedule_issue_and_transferred_copy_survive (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_invalid_expired_and_caller_tampered_tokens (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_notification_change_invalidates_preview (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_pending_states_and_concurrent_confirmation_are_service_guarded (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_schedule_occurrence_or_cross_plan_dependency_refuses_deletion (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_selection_validation_and_missing_conversation_are_atomic (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_unrelated_remote_request_does_not_block_deletion (tests.test_conversation_deletion.ConversationDeletionTests) ... ok\ntest_all_selected_source_handoff_windows_close_other_source_and_copy_survive (tests.test_conversation_views.ConversationViewTests) ... ok\ntest_context_menu_targets_clicked_history_without_switching_chat (tests.test_conversation_views.ConversationViewTests) ... ok\ntest_delete_current_then_last_preserves_other_draft_attachment_and_file (tests.test_conversation_views.ConversationViewTests) ... ok\ntest_deleting_other_chat_keeps_live_draft_attachment_selection (tests.test_conversation_views.ConversationViewTests) ... ok\ntest_expired_or_changed_confirmation_shows_error_without_deletion (tests.test_conversation_views.ConversationViewTests) ... ok\ntest_failed_initial_handoff_previews_close_and_late_upload_is_ignored (tests.test_conversation_views.ConversationViewTests) ... ok\ntest_filtered_bulk_selection_and_cancel_defaults_do_not_delete (tests.test_conversation_views.ConversationViewTests) ... ok\ntest_pending_plan_details_result_and_source_dialogs_are_cleared (tests.test_conversation_views.ConversationViewTests) ... ok\ntest_running_and_cancelled_remote_request_refuse_ui_confirmation (tests.test_conversation_views.ConversationViewTests) ... ok\ntest_cancel_before_summary_dispatch_prevents_provider_call (tests.test_core.CoreTests) ... ok\ntest_cancel_fences_late_result (tests.test_core.CoreTests) ... ok\ntest_cancelled_remote_call_remains_inflight_until_drained (tests.test_core.CoreTests) ... ok\ntest_conversation_busy_and_context_isolation (tests.test_core.CoreTests) ... ok\ntest_daily_occurrence_once_and_previous_day_by_scheduled_time (tests.test_core.CoreTests) ... ok\ntest_expired_and_cancelled_plan_never_calls_runner (tests.test_core.CoreTests) ... ok\ntest_general_query_summary_validates_and_deduplicates_without_plan (tests.test_core.CoreTests) ... ok\ntest_history_and_issue_survive_reopen (tests.test_core.CoreTests) ... ok\ntest_issue_draft_can_reopen_edit_but_local_saved_cannot (tests.test_core.CoreTests) ... ok\ntest_newer_schema_fails_without_overwrite (tests.test_core.CoreTests) ... ok\ntest_offline_coalesce_latest_and_overlap_skip (tests.test_core.CoreTests) ... ok\ntest_only_transient_readonly_query_retried_three_times (tests.test_core.CoreTests) ... ok\ntest_plan_concurrent_confirmations_one_task (tests.test_core.CoreTests) ... ok\ntest_plan_gate_revision_duplicate_confirmation (tests.test_core.CoreTests) ... ok\ntest_provider_error_does_not_persist_secret (tests.test_core.CoreTests) ... ok\ntest_query_summary_partial_failure_preserves_table (tests.test_core.CoreTests) ... ok\ntest_query_summary_success_calls_only_once_on_snapshot (tests.test_core.CoreTests) ... ok\ntest_restart_marks_interrupted_and_does_not_reexecute (tests.test_core.CoreTests) ... ok\ntest_safe_gateway_error_retained (tests.test_core.CoreTests) ... ok\ntest_same_result_does_not_notify_due_to_fetch_timestamp (tests.test_core.CoreTests) ... ok\ntest_schedule_failure_one_notification (tests.test_core.CoreTests) ... ok\ntest_schedule_is_disabled_until_confirmed_and_validated (tests.test_core.CoreTests) ... ok\ntest_summary_cancel_retains_completed_table_and_discards_late_summary (tests.test_core.CoreTests) ... ok\ntest_task_idempotency_compares_payload (tests.test_core.CoreTests) ... ok\ntest_threshold_only_notifies_crossing (tests.test_core.CoreTests) ... ok\ntest_validator_rejects_before_plan_ready_and_rechecks_confirmation (tests.test_core.CoreTests) ... ok\ntest_wait_closed_requires_closed_engine (tests.test_core.CoreTests) ... ok\ntest_weekly_older_than_24_hours_not_replayed (tests.test_core.CoreTests) ... ok\ntest_accepted_plan_clears_draft_and_late_save_is_rejected (tests.test_daily_work.DailyWorkTests) ... ok\ntest_autosave_reopen_and_attachment_requires_selection (tests.test_daily_work.DailyWorkTests) ... ok\ntest_cards_preserve_existing_draft_binding_and_do_not_dispatch (tests.test_daily_work.DailyWorkTests) ... ok\ntest_deleted_conversation_fences_pending_save_and_keeps_todo (tests.test_daily_work.DailyWorkTests) ... ok\ntest_failed_save_visible_retry_and_failed_send_keeps_draft (tests.test_daily_work.DailyWorkTests) ... ok\ntest_failed_submission_rearms_superseded_autosave_without_more_typing (tests.test_daily_work.DailyWorkTests) ... ok\ntest_name_labels_and_empty_card_visibility (tests.test_daily_work.DailyWorkTests) ... ok\ntest_plan_edit_is_not_autosaved_or_approved_and_original_draft_returns (tests.test_daily_work.DailyWorkTests) ... ok\ntest_query_plan_edit_does_not_discard_ordinary_chat_draft (tests.test_daily_work.DailyWorkTests) ... ok\ntest_switch_preserves_drafts_and_does_not_move_to_other_binding (tests.test_daily_work.DailyWorkTests) ... ok\ntest_confirmation_defaults_cancel_escape_and_explicit_accept (tests.test_dialogs.DialogTests) ... ok\ntest_long_message_theme_copy_and_close_without_mutation (tests.test_dialogs.DialogTests) ... ERROR\ntest_nested_grab_is_restored_and_copy_error_is_inline (tests.test_dialogs.DialogTests) ... ok\ntest_startup_fallback_without_appearance (tests.test_dialogs.DialogTests) ... ok\ntest_titlebar_optional_and_colorref (tests.test_dialogs.DialogTests) ... ok\ntest_cancel_does_not_save_and_invalidates_token (tests.test_dialogue.DialogueTests) ... ok\ntest_duplicate_turn_and_failed_commit_do_not_create_task (tests.test_dialogue.DialogueTests) ... ok\ntest_edit_invalidates_approval (tests.test_dialogue.DialogueTests) ... ok\ntest_mode_and_assistant_switch_start_empty_without_deleting_history (tests.test_dialogue.DialogueTests) ... ok\ntest_multiturn_chat_keeps_context (tests.test_dialogue.DialogueTests) ... ok\ntest_provider_failure_never_falls_back_or_loses_completed_messages (tests.test_dialogue.DialogueTests) ... ok\ntest_schedule_questions_do_not_guess_missing_time (tests.test_dialogue.DialogueTests) ... ok\ntest_source_path_is_text_only (tests.test_dialogue.DialogueTests) ... ok\ntest_stepwise_questions_preview_and_explicit_disabled_save (tests.test_dialogue.DialogueTests) ... ok\ntest_untrusted_reply_cannot_authorize_save (tests.test_dialogue.DialogueTests) ... ok\ntest_validation_rejects_command_unknown_id_and_bad_schedule (tests.test_dialogue.DialogueTests) ... ok\ntest_bridge_allows_state_and_cancel_during_main_send (tests.test_dialogue_concurrency.DialogueConcurrencyTests) ... ok\ntest_cancel_fences_late_result_and_does_not_claim_remote_stopped (tests.test_dialogue_concurrency.DialogueConcurrencyTests) ... ok\ntest_close_fences_and_drains_before_returning (tests.test_dialogue_concurrency.DialogueConcurrencyTests) ... ok\ntest_state_and_new_thread_usable_while_request_waits (tests.test_dialogue_concurrency.DialogueConcurrencyTests) ... ok\ntest_normal_maximized_theme_switch_preserve_point_fonts_and_draft (tests.test_display.DisplayAppTests) ... ok\ntest_simulated_multipliers_keep_chat_inside_page_and_send_reachable (tests.test_display.DisplayAppTests) ... ok\ntest_awareness_preserves_existing_context_without_setting_process (tests.test_display.DisplayPolicyTests) ... ok\ntest_awareness_read_mapping_and_unavailable_are_not_fabricated (tests.test_display.DisplayPolicyTests) ... ok\ntest_common_percentages_convert_logical_pixels_and_pick_exact_icon (tests.test_display.DisplayPolicyTests) ... ok\ntest_older_api_fallback_and_total_failure_are_explicit (tests.test_display.DisplayPolicyTests) ... ok\ntest_small_work_area_clamps_size_and_minimum_at_each_factor (tests.test_display.DisplayPolicyTests) ... ok\ntest_unaware_startup_requests_system_context_and_reports_failure (tests.test_display.DisplayPolicyTests) ... ok\ntest_work_area_api_failure_uses_screen_size (tests.test_display.DisplayPolicyTests) ... ok\ntest_all_packaged_action_icons_have_real_requested_dimensions (tests.test_display.DisplayWidgetTests) ... ok\ntest_dialog_scroll_frame_uses_content_size_and_reveals_bottom_action (tests.test_display.DisplayWidgetTests) ... ok\ntest_fonts_remain_points_and_tk_scaling_is_not_multiplied (tests.test_display.DisplayWidgetTests) ... ok\ntest_scaling_existing_widgets_and_retheme_is_not_cumulative (tests.test_display.DisplayWidgetTests) ... ok\ntest_small_viewport_reveals_focused_action_and_resets_when_large (tests.test_display.DisplayWidgetTests) ... ok\ntest_adapter_restrictions_fail_before_company_calls (tests.test_environment.DiagnosticTests) ... ok\ntest_company_missing_credentials_and_invalid_endpoint (tests.test_environment.DiagnosticTests) ... ok\ntest_invalid_config_does_not_hide_directory_failure (tests.test_environment.DiagnosticTests) ... ok\ntest_profiles_use_data_directory_and_keyring_without_legacy_key (tests.test_environment.DiagnosticTests) ... ok\ntest_share_report_is_whitelisted_and_checks_continue (tests.test_environment.DiagnosticTests) ... ok\ntest_complete_bundle_verifies (tests.test_environment.OfflineBundleTests) ... ok\ntest_corrupt_wheel_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_existing_build_destination_untouched (tests.test_environment.OfflineBundleTests) ... ok\ntest_lock_mismatch_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_missing_wheel_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_unsafe_manifest_path_and_extra_files_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_wrong_target_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_install_is_offline_only_failures_stop_and_lock_is_required (tests.test_environment.OfflineInstallerTests) ... ok\ntest_rejects_existing_environment_and_invalid_bundle_before_creation (tests.test_environment.OfflineInstallerTests) ... ok\ntest_first_run_diagnostic_is_scoped_and_explicit (tests.test_experience.GuidanceDataTests) ... ok\ntest_manual_has_required_workflows_and_all_page_links (tests.test_experience.GuidanceDataTests) ... ok\ntest_preferences_preserve_legacy_theme_and_unknown_fields (tests.test_experience.GuidanceDataTests) ... ok\ntest_work_hints_distinguish_pending_success_failure_and_cancel (tests.test_experience.GuidanceDataTests) ... ok\ntest_current_conversation_plan_and_query_validation_hints_are_scoped (tests.test_experience.GuidanceUITests) ... ok\ntest_editing_context_expiry_and_plan_terminal_states (tests.test_experience.GuidanceUITests) ... ok\ntest_normal_demo_query_approval_selection_and_transfer (tests.test_experience.GuidanceUITests) ... ok\ntest_preference_restart_and_failed_save_keep_current_toggle (tests.test_experience.GuidanceUITests) ... ok\ntest_schedule_result_notice_and_issue_hints_only_read_current_state (tests.test_experience.GuidanceUITests) ... ok\ntest_startup_no_popup_process_or_service_request_and_offline_help (tests.test_experience.GuidanceUITests) ... ok\ntest_toggle_all_pages_preserves_draft_attachment_selection_no_dispatch (tests.test_experience.GuidanceUITests) ... ok\ntest_formula_protection_precision_and_snapshot_not_mutated (tests.test_files.ExportTests) ... ok\ntest_header_formula_and_separator_validation (tests.test_files.ExportTests) ... ok\ntest_invalid_numeric_never_bypasses_guard (tests.test_files.ExportTests) ... ok\ntest_selection_and_cross_page_copy (tests.test_files.ExportTests) ... ok\ntest_special_characters_csv_fallback_and_nul (tests.test_files.ExportTests) ... ok\ntest_bom_chinese_original_and_preview (tests.test_files.UploadTests) ... ok\ntest_csv_bad_headers_rows_and_quoting (tests.test_files.UploadTests) ... ok\ntest_csv_exact_strings_and_metadata (tests.test_files.UploadTests) ... ok\ntest_input_limits_encoding_and_extension (tests.test_files.UploadTests) ... ok\ntest_company_client_options_headers_and_assistant_ref (tests.test_gateways.AssistantTests) ... ok\ntest_configuration_and_context_rejected_before_network (tests.test_gateways.AssistantTests) ... ok\ntest_demo_does_not_claim_ai_work (tests.test_gateways.AssistantTests) ... ok\ntest_rate_limit_and_redirect_do_not_retry_or_follow (tests.test_gateways.AssistantTests) ... ok\ntest_sdk_401_redacts_error_body_and_never_retries (tests.test_gateways.AssistantTests) ... ok\ntest_sdk_empty_malformed_and_tool_response (tests.test_gateways.AssistantTests) ... ok\ntest_sdk_request_and_conversation_isolation (tests.test_gateways.AssistantTests) ... ok\ntest_sdk_timeout_never_retries (tests.test_gateways.AssistantTests) ... ok\ntest_tls_default_and_company_ca_bundle (tests.test_gateways.AssistantTests) ... ok\ntest_bad_template_and_parameters (tests.test_gateways.QueryTests) ... ok\ntest_bounded_rows_and_defensive_copy (tests.test_gateways.QueryTests) ... ok\ntest_company_unconfigured_and_explicit_demo_identity (tests.test_gateways.QueryTests) ... ok\ntest_deterministic_snapshot_and_filters (tests.test_gateways.QueryTests) ... ok\ntest_plan_validation_does_not_execute_query (tests.test_gateways.QueryTests) ... ok\ntest_completed_receipt_prevents_repeat_after_checkpoint_write_failure (tests.test_graph_runner.GraphCheckpointTests) ... ok\ntest_end_checkpoint_missing_store_receipt_stops_without_dispatch (tests.test_graph_runner.GraphCheckpointTests) ... ok\ntest_resume_failed_node_does_not_replay_committed_predecessor (tests.test_graph_runner.GraphCheckpointTests) ... ok\ntest_abandon_cannot_resume (tests.test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_binding_change_blocks_recovery (tests.test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_checkpoint_failure_preserves_receipt_and_resume_skips_query (tests.test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_restart_no_dispatch_and_explicit_resume_once (tests.test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_uncertain_query_never_replayed (tests.test_graph_runner.WorkflowRecoveryTests) ... ok\ntest_compose_example_has_readable_literal_headings (tests.test_instruction_docs.InstructionDocumentTests) ... ok\ntest_documents_are_standalone_and_local_links_resolve (tests.test_instruction_docs.InstructionDocumentTests) ... ok\ntest_guide_synthetic_examples_link_facts_to_source (tests.test_instruction_docs.InstructionDocumentTests) ... ok\ntest_planner_question_example_obeys_live_question_contract (tests.test_instruction_docs.InstructionDocumentTests) ... ok\ntest_role_examples_preserve_exact_facts_and_output_contract (tests.test_instruction_docs.InstructionDocumentTests) ... ok\ntest_search_role_example_does_not_invent_program_facts (tests.test_instruction_docs.InstructionDocumentTests) ... ok\ntest_enter_ctrl_and_shift_newline (tests.test_keyboard.KeyboardTests) ... ok\ntest_ime_empty_and_repeat_guard (tests.test_keyboard.KeyboardTests) ... ok\ntest_ime_shift_does_not_insert_and_focus_loss_releases (tests.test_keyboard.KeyboardTests) ... ok\ntest_missing_asset_fails_before_tk (tests.test_launch_check.LaunchCheckTests) ... ok\ntest_sdk_check_optional_for_relocated_shortcut_fixture (tests.test_launch_check.LaunchCheckTests) ... ok\ntest_tk_and_sdk_failures_are_clear_and_cleanup_root (tests.test_launch_check.LaunchCheckTests) ... ok\ntest_version_architecture_and_platform_fail_closed (tests.test_launch_check.LaunchCheckTests) ... ok\ntest_cancelled_form_cannot_submit (tests.test_local.ChoiceTests) ... ok\ntest_invalid_stale_expired_answers (tests.test_local.ChoiceTests) ... ok\ntest_persistent_answers_owner_and_idempotency (tests.test_local.ChoiceTests) ... ok\ntest_roundtrip_no_secret_keys_and_company_modes (tests.test_local.ConfigTests) ... ok\ntest_single_instance_and_release (tests.test_local.ConfigTests) ... ok\ntest_clear_fences_queued_writer (tests.test_local_work.LocalWorkTests) ... ok\ntest_delete_preview_tracks_drafts_and_preserves_todo_copy (tests.test_local_work.LocalWorkTests) ... ok\ntest_delete_transaction_failure_restores_drafts_and_conversation (tests.test_local_work.LocalWorkTests) ... ok\ntest_draft_cleanup_failure_rolls_back_dispatch_and_plan (tests.test_local_work.LocalWorkTests) ... ok\ntest_drafts_reopen_isolation_and_latest_reservation_wins (tests.test_local_work.LocalWorkTests) ... ok\ntest_invalid_save_keeps_last_saved_text (tests.test_local_work.LocalWorkTests) ... ok\ntest_migration_failure_rolls_back_new_tables_and_version (tests.test_local_work.LocalWorkTests) ... ok\ntest_parallel_create_is_one_record (tests.test_local_work.LocalWorkTests) ... ok\ntest_todo_lifecycle_search_literal_and_source (tests.test_local_work.LocalWorkTests) ... ok\ntest_v2_backup_and_upgrade_is_repeatable_without_extra_backup (tests.test_local_work.LocalWorkTests) ... ok\ntest_validation_and_request_conflict_no_partial_insert (tests.test_local_work.LocalWorkTests) ... ok\ntest_badge_over_99_and_read_notifications_never_popup (tests.test_notifications.NotificationTests) ... ok\ntest_batch_is_one_popup_and_does_not_mark_all_read (tests.test_notifications.NotificationTests) ... ok\ntest_corner_popup_unread_badge_and_repeat_refresh (tests.test_notifications.NotificationTests) ... ok\ntest_deleted_notice_closes_popup_and_stale_click_is_safe (tests.test_notifications.NotificationTests) ... ok\ntest_dismiss_retains_unread_without_redisplay (tests.test_notifications.NotificationTests) ... ok\ntest_existing_unread_does_not_popup_on_start (tests.test_notifications.NotificationTests) ... ok\ntest_long_content_is_preserved_and_close_cancels_timer (tests.test_notifications.NotificationTests) ... ok\ntest_missing_source_keeps_notification_readable (tests.test_notifications.NotificationTests) ... ok\ntest_result_routing_and_error_theme (tests.test_notifications.NotificationTests) ... ok\ntest_single_view_marks_read_and_opens_inbox (tests.test_notifications.NotificationTests) ... ok\ntest_timeout_and_hover (tests.test_notifications.NotificationTests) ... ok\ntest_unread_is_informational_and_cancelled_is_neutral (tests.test_notifications.NotificationTests) ... ok\ntest_failed_feedback_retains_note_and_retry_choice (tests.test_outcome_ui.OutcomeUITests) ... ok\ntest_feedback_background_save_edit_clear_and_no_dispatch (tests.test_outcome_ui.OutcomeUITests) ... ok\ntest_outcome_controls_reachable_in_both_themes_and_sizes (tests.test_outcome_ui.OutcomeUITests) ... ok\ntest_result_opens_outcome_first_and_preserves_draft_selection (tests.test_outcome_ui.OutcomeUITests) ... ok\ntest_bad_query_snapshot_not_compared (tests.test_outcomes.OutcomeTests) ... ok\ntest_changed_binding_and_nondate_parameter_not_compared (tests.test_outcomes.OutcomeTests) ... ok\ntest_compare_exact_and_same_period_without_dispatch (tests.test_outcomes.OutcomeTests) ... ok\ntest_failed_save_keeps_previous_feedback (tests.test_outcomes.OutcomeTests) ... ok\ntest_feedback_cascades_with_task_deletion (tests.test_outcomes.OutcomeTests) ... ok\ntest_feedback_upsert_clear_and_no_dispatch (tests.test_outcomes.OutcomeTests) ... ok\ntest_high_precision_and_date_modes (tests.test_outcomes.OutcomeTests) ... ok\ntest_invalid_feedback_and_running_rejected (tests.test_outcomes.OutcomeTests) ... ok\ntest_partial_and_source_deletion_preserves_feedback (tests.test_outcomes.OutcomeTests) ... ok\ntest_revision_and_schedule_isolation (tests.test_outcomes.OutcomeTests) ... ok\ntest_schedule_retry_keeps_comparison_scope (tests.test_outcomes.OutcomeTests) ... ok\ntest_schema_five_backup_and_transaction_rollback (tests.test_outcomes.OutcomeTests) ... ok\ntest_confirmed_mapping_and_per_request_destination (tests.test_profiles.ProfileTests) ... ok\ntest_environment_not_imported_and_explicit_keyring_takes_over (tests.test_profiles.ProfileTests) ... ok\ntest_key_destination_isolation_and_never_persist_secret (tests.test_profiles.ProfileTests) ... ok\ntest_keyring_error_redacted_no_fallback (tests.test_profiles.ProfileTests) ... ok\ntest_legacy_profile_identity_persisted_before_any_user_edit (tests.test_profiles.ProfileTests) ... ok\ntest_management_revision_disable_default_persistence (tests.test_profiles.ProfileTests) ... ok\ntest_unconfigured_api_does_not_guess_or_dispatch (tests.test_profiles.ProfileTests) ... ok\ntest_conversations_pin_target_and_context (tests.test_profiles.RoutingTests) ... ok\ntest_no_auto_summary_and_legacy_readonly (tests.test_profiles.RoutingTests) ... ok\ntest_plan_zero_dispatch_until_approved_and_changed_target_refused (tests.test_profiles.RoutingTests) ... ok\ntest_v1_backup_and_transactional_migration_preserves_history (tests.test_profiles.RoutingTests) ... ok\ntest_real_windows_credential_roundtrip_isolated (tests.test_profiles.WindowsCredentialTests) ... ok\ntest_catalog_change_blocks_ready_plan_without_running (tests.test_query_schema.CatalogServiceTests) ... ok\ntest_legacy_demo_mapping_only_and_invalid_saved_mode (tests.test_query_schema.CatalogServiceTests) ... ok\ntest_plan_revision_validation_and_no_dispatch_before_confirmation (tests.test_query_schema.CatalogServiceTests) ... ok\ntest_rolling_mapping_literal_and_removed_template (tests.test_query_schema.CatalogServiceTests) ... ok\ntest_bounds_and_invalid_definitions (tests.test_query_schema.QuerySchemaTests) ... ok\ntest_decimal_date_and_integer_limits (tests.test_query_schema.QuerySchemaTests) ... ok\ntest_types_precision_defaults_and_optional (tests.test_query_schema.QuerySchemaTests) ... ok\ntest_ai_failure_preserves_result_and_hides_secret (tests.test_report_engine.ReportTests) ... ok\ntest_cancel_ai_retains_pending_snapshot_but_no_late_report (tests.test_report_engine.ReportTests) ... ok\ntest_cancel_query_and_real_future_blocks_overlap (tests.test_report_engine.ReportTests) ... ok\ntest_clock_restart_previous_day_dedup_disable_and_missed (tests.test_report_engine.ReportTests) ... ok\ntest_close_fences_late_report_and_notifies_once (tests.test_report_engine.ReportTests) ... ok\ntest_confirm_transaction_rollback_and_concurrent_clicks (tests.test_report_engine.ReportTests) ... ok\ntest_empty_and_truncated_skip_ai (tests.test_report_engine.ReportTests) ... ok\ntest_exact_totals_malformed_and_oversized_metadata (tests.test_report_engine.ReportTests) ... ok\ntest_expiration_cancel_binding_and_invalid_input (tests.test_report_engine.ReportTests) ... ok\ntest_expired_binding_at_run_blocks_query_and_notifies (tests.test_report_engine.ReportTests) ... ok\ntest_normal_query_schedule_does_not_summarize (tests.test_report_engine.ReportTests) ... ok\ntest_preview_immutable_and_double_confirmation_no_dispatch (tests.test_report_engine.ReportTests) ... ok\ntest_query_failure_no_retry_or_ai (tests.test_report_engine.ReportTests) ... ok\ntest_recovery_failure_is_not_retried_and_notification_deduplicates (tests.test_report_engine.ReportTests) ... ok\ntest_success_aggregate_only_and_repeat_notification (tests.test_report_engine.ReportTests) ... ok\ntest_bounds_and_intent (tests.test_report_views.DraftTests) ... ok\ntest_invalid_fields_and_secret_error_rejected (tests.test_report_views.DraftTests) ... ok\ntest_schema_and_no_execution (tests.test_report_views.DraftTests) ... ok\ntest_chat_opens_confirmation_without_dispatch_and_preserves_draft (tests.test_report_views.ReportViewTests) ... ok\ntest_close_revokes_preview_and_unapproved_no_schedule (tests.test_report_views.ReportViewTests) ... ok\ntest_late_parse_does_not_replace_edited_request (tests.test_report_views.ReportViewTests) ... ok\ntest_preview_consent_edit_invalidation_approve_and_theme (tests.test_report_views.ReportViewTests) ... ok\ntest_briefing_search_is_zero_until_confirm_then_schedule_keeps_binding (tests.test_search_journey.SearchJourneyTests) ... ok\ntest_engine_chat_deletion_removes_extra_local_cache (tests.test_search_journey.SearchJourneyTests) ... ok\ntest_main_chat_true_provider_multiturn_and_switch (tests.test_search_journey.SearchJourneyTests) ... ok\ntest_main_chat_with_approved_profile_still_cannot_search (tests.test_search_journey.SearchJourneyTests) ... ok\ntest_plan_confirm_and_graph_multiple_real_sdk_ids (tests.test_search_journey.SearchJourneyTests) ... ok\ntest_planner_then_search_analysis_review_compose (tests.test_search_journey.SearchJourneyTests) ... ok\ntest_policy_mutation_holds_dispatch_locks_and_reopen_preserves_removal (tests.test_search_journey.SearchJourneyTests) ... ok\ntest_task_suggestions_isolated_and_only_confirm_saves (tests.test_search_journey.SearchJourneyTests) ... ok\ntest_consent_binds_revision_and_revokes_verified_role_without_dispatch (tests.test_search_tools.SearchPolicyTests) ... ok\ntest_endpoint_id_and_protocol_changes_clear_permissions (tests.test_search_tools.SearchPolicyTests) ... ok\ntest_expired_or_revised_probe_cannot_save (tests.test_search_tools.SearchPolicyTests) ... ok\ntest_rag_only_workflow_authorization (tests.test_search_tools.SearchPolicyTests) ... ok\ntest_unknown_tool_or_no_consent_cannot_save (tests.test_search_tools.SearchPolicyTests) ... ok\ntest_approved_search_uses_fixed_endpoint_and_correlated_submission_and_cached_result (tests.test_search_tools.SearchToolTests) ... ok\ntest_cancel_during_plugin_never_submits_result_or_succeeds (tests.test_search_tools.SearchToolTests) ... ok\ntest_chat_and_planner_keep_tools_off (tests.test_search_tools.SearchToolTests) ... ok\ntest_completed_tools_resume_from_receipt_without_research (tests.test_search_tools.SearchToolTests) ... ok\ntest_description_survives_approval_and_run_override (tests.test_search_tools.SearchToolTests) ... ok\ntest_duplicate_json_keys_and_wrong_types_rejected (tests.test_search_tools.SearchToolTests) ... ok\ntest_empty_response_not_submitted (tests.test_search_tools.SearchToolTests) ... ok\ntest_foreign_thread_stops_before_plugin (tests.test_search_tools.SearchToolTests) ... ok\ntest_four_call_batch_limit (tests.test_search_tools.SearchToolTests) ... ok\ntest_metadata_exposes_schema_without_search_or_verification (tests.test_search_tools.SearchToolTests) ... ok\ntest_mixed_batch_is_rejected_before_first_call (tests.test_search_tools.SearchToolTests) ... ok\ntest_no_policy_cannot_dispatch_even_if_context_requests_it (tests.test_search_tools.SearchToolTests) ... ok\ntest_oversize_response_not_truncated_or_submitted (tests.test_search_tools.SearchToolTests) ... ok\ntest_plugin_unknown_does_not_retry_after_restart (tests.test_search_tools.SearchToolTests) ... ok\ntest_policy_changed_cannot_reuse_cached_request (tests.test_search_tools.SearchToolTests) ... ok\ntest_reused_call_id_with_changed_arguments_rejected (tests.test_search_tools.SearchToolTests) ... ok\ntest_submit_unknown_does_not_retry_after_restart (tests.test_search_tools.SearchToolTests) ... ok\ntest_three_batch_limit (tests.test_search_tools.SearchToolTests) ... ok\ntest_two_batches_pair_multiple_outputs (tests.test_search_tools.SearchToolTests) ... ok\ntest_unknown_arguments_rejected (tests.test_search_tools.SearchToolTests) ... ok\ntest_unsupported_schema_cannot_be_approved (tests.test_search_tools.SearchToolTests) ... ok\ntest_create_and_repeat_update (tests.test_shortcut.ShortcutTests) ... ok\ntest_invalid_destination_is_not_created (tests.test_shortcut.ShortcutTests) ... ok\ntest_missing_assets_do_not_change_existing_shortcut (tests.test_shortcut.ShortcutTests) ... ok\ntest_relocation_updates_managed_shortcut (tests.test_shortcut.ShortcutTests) ... ok\ntest_unrelated_shortcut_is_preserved (tests.test_shortcut.ShortcutTests) ... ok\ntest_all_routes_have_icons_and_no_navigation_dispatch (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_closed_app_releases_interpreter_and_missing_icons_remain_usable (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_collapse_keeps_widgets_drafts_selection_and_attachment (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_collapsed_persistence_and_failed_save_keeps_current_view (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_details_and_edit_reuse_existing_profile_actions (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_more_tools_is_reachable_from_compact_and_theme_preserves_it (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_responsive_cards_and_theme (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_team_chat_creates_new_bound_conversation_preserving_old_draft (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_team_search_and_status_never_fabricate_verification (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_verified_planner_entry_is_explicit_and_never_runs (tests.test_team_navigation.TeamNavigationTests) ... ok\ntest_cli_report_is_scoped_overwritten_and_full_checks_run_once (tests.test_test_runner.RunnerTests) ... ok\ntest_failures_skips_and_expected_failures_never_pass (tests.test_test_runner.RunnerTests) ... ok\ntest_quick_blocks_unexpected_gui_and_socket (tests.test_test_runner.RunnerTests) ... ok\ntest_registry_rejects_new_stale_duplicate_empty_and_import_errors (tests.test_test_runner.RunnerTests) ... ok\ntest_selection_is_explicit_nonempty_and_deduplicated (tests.test_test_runner.RunnerTests) ... ok\ntest_palette_isolation_between_tk_interpreters (tests.test_theme.PaletteInterpreterTests) ... ok\ntest_existing_and_future_dialogs_popup_and_all_pages (tests.test_theme.ThemeTests) ... ok\ntest_minimum_size_actions_fit_both_themes (tests.test_theme.ThemeTests) ... ok\ntest_save_failure_remains_applied_and_restart_preference (tests.test_theme.ThemeTests) ... ok\ntest_switch_preserves_widgets_draft_attachment_selection_and_plan (tests.test_theme.ThemeTests) ... ok\ntest_switch_while_work_is_running_does_not_dispatch_or_cancel (tests.test_theme.ThemeTests) ... ok\ntest_startup_preference_save_failure_and_reset (tests.test_theme_choices_tk.ThemeChoiceTkTests) ... ok\ntest_regular_text_and_status_labels_have_readable_contrast (tests.test_theme_semantics.SemanticPaletteTests) ... ok\ntest_only_action_colors_change_and_unknown_styles_are_rejected (tests.test_theme_semantics.ThemeStylePaletteTests) ... ok\ntest_utc_midnight_boundary_uses_fixed_taipei_offset (tests.test_todo_ui.TaipeiDateTests) ... ok\ntest_cards_transition_and_edit_preserve_source (tests.test_todo_ui.TodoViewTests) ... ok\ntest_delete_cancel_defaults_and_confirmation_preserve_source_and_others (tests.test_todo_ui.TodoViewTests) ... ok\ntest_deleted_source_is_marked_but_independent_todo_survives (tests.test_todo_ui.TodoViewTests) ... ok\ntest_each_column_uses_its_own_stable_order (tests.test_todo_ui.TodoViewTests) ... ok\ntest_editor_validates_date_and_description_without_creating_rows (tests.test_todo_ui.TodoViewTests) ... ok\ntest_empty_selection_and_overlong_title_never_silently_truncate (tests.test_todo_ui.TodoViewTests) ... ok\ntest_refresh_and_responsive_layout_reuse_cards_and_keep_selection (tests.test_todo_ui.TodoViewTests) ... ok\ntest_search_show_done_preference_and_write_failure_keep_current_view (tests.test_todo_ui.TodoViewTests) ... ok\ntest_selection_copies_all_text_without_dispatch_or_forced_navigation (tests.test_todo_ui.TodoViewTests) ... ok\ntest_show_link_is_explicit_navigation_and_filters_do_not_hide_target (tests.test_todo_ui.TodoViewTests) ... ok\ntest_taipei_clock_controls_overdue_and_date_shortcuts (tests.test_todo_ui.TodoViewTests) ... ok\ntest_title_opens_editor_and_completed_action_uses_clear_label (tests.test_todo_ui.TodoViewTests) ... ok\ntest_bad_env_never_discloses_content (tests.test_trial.TrialTests) ... ok\ntest_empty_malformed_incomplete_and_tools_rejected (tests.test_trial.TrialTests) ... ok\ntest_env_literal_and_no_environment_side_effect (tests.test_trial.TrialTests) ... ok\ntest_missing_key_fails_without_demo_fallback (tests.test_trial.TrialTests) ... ok\ntest_profiles_readonly_and_stale_binding (tests.test_trial.TrialTests) ... ok\ntest_real_sdk_request_and_context_isolation (tests.test_trial.TrialTests) ... ok\ntest_status_errors_redacted_and_no_retry (tests.test_trial.TrialTests) ... ok\ntest_timeout_and_connection_redacted (tests.test_trial.TrialTests) ... ok\ntest_tls_and_retry_configuration (tests.test_trial.TrialTests) ... ok\ntest_validation_prevents_network_and_silent_truncation (tests.test_trial.TrialTests) ... ok\ntest_enter_sends_and_work_card_does_not (tests.test_trial.TrialTkTests) ... ok\ntest_plan_approval_and_single_dispatch (tests.test_trial.TrialTkTests) ... ok\ntest_workspace_and_settings_isolated_without_network_on_start (tests.test_trial.TrialTkTests) ... ok\ntest_chat_query_plan_edit_approve_pagination_clipboard (tests.test_ui.DesktopTests) ... ok\ntest_company_error_does_not_use_demo_and_restart_history (tests.test_ui.DesktopTests) ... ok\ntest_cross_workflow_plan_edit_rejected_and_exit_supported (tests.test_ui.DesktopTests) ... ok\ntest_dynamic_custom_fields_plan_and_result (tests.test_ui.DesktopTests) ... ok\ntest_issue_draft_reopen_schedule_and_notifications (tests.test_ui.DesktopTests) ... ok\ntest_malformed_catalog_and_invalid_schedule_remain_readable (tests.test_ui.DesktopTests) ... ok\ntest_navigation_and_minimum_size_keep_actions_visible (tests.test_ui.DesktopTests) ... ok\ntest_normal_close_waits_for_remote_then_releases_on_main_thread (tests.test_ui.DesktopTests) ... ok\ntest_settings_blocked_while_cancelled_worker_drains (tests.test_ui.DesktopTests) ... ok\ntest_settings_cannot_change_destination_of_ready_plan (tests.test_ui.DesktopTests) ... ok\ntest_visible_widget_layout_and_restart (tests.test_ui.DesktopTests) ... ok\ntest_welcome_shortcut_and_readable_plan_are_not_data_mutations (tests.test_ui.DesktopTests) ... ok\ntest_widget_choice_submission_and_clipboard_failure (tests.test_ui.DesktopTests) ... ok\ntest_chat_and_plan_use_existing_gates (tests.test_web.WebTests) ... ok\ntest_clipboard_export_uses_precision_and_formula_protection (tests.test_web.WebTests) ... ok\ntest_close_rejects_further_dispatch (tests.test_web.WebTests) ... ok\ntest_company_intent_uses_form_without_model (tests.test_web.WebTests) ... ok\ntest_deleted_source_invalidates_transfer (tests.test_web.WebTests) ... ok\ntest_initial_state_and_draft_isolation (tests.test_web.WebTests) ... ok\ntest_markdown_cannot_execute_or_fetch (tests.test_web.WebTests) ... ok\ntest_no_arbitrary_commands_or_sensitive_errors (tests.test_web.WebTests) ... ok\ntest_query_preview_requires_confirmation (tests.test_web.WebTests) ... ok\ntest_send_fences_old_draft_and_changed_idempotency_payload (tests.test_web.WebTests) ... ok\ntest_todo_repeated_save_and_source_deletion (tests.test_web.WebTests) ... ok\ntest_transfer_preview_is_pure_and_confirmation_idempotent (tests.test_web.WebTests) ... ok\ntest_trial_rejects_company_config (tests.test_web.WebTests) ... ok\ntest_all_accent_variants_keep_button_and_selection_readable (tests.test_web_palette.WebPaletteTests) ... ok\ntest_text_and_status_contrast_in_both_themes (tests.test_web_palette.WebPaletteTests) ... ok\ntest_actual_running_and_failed_steps_retained_and_retry_button_available (tests.test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_one_explicit_confirmation_runs_only_displayed_plan_once (tests.test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_result_window_uses_fixed_snapshot_and_opening_does_not_dispatch (tests.test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_small_workspace_keeps_input_approval_and_step_controls_reachable (tests.test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_unapproved_rows_are_read_only_and_complete_text_remains_selectable (tests.test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_unknown_and_cancelled_are_not_misreported_and_details_do_not_truncate (tests.test_workflow_presentation.WorkflowPresentationTests) ... ok\ntest_assistant_id_endpoint_disable_invalidate_capability (tests.test_workflow_profiles.WorkflowProfilesTests) ... ok\ntest_different_ids_and_roles_are_routed_stateless (tests.test_workflow_profiles.WorkflowProfilesTests) ... ok\ntest_unverified_catalog_and_roles (tests.test_workflow_profiles.WorkflowProfilesTests) ... ok\ntest_accepted_discussion_clears_saved_draft_and_fences_late_save (tests.test_workflow_ui.WorkflowUITests) ... ok\ntest_conversation_plan_executes_only_after_consent_and_preserves_chat (tests.test_workflow_ui.WorkflowUITests) ... ok\ntest_followup_discussion_questions_and_revision (tests.test_workflow_ui.WorkflowUITests) ... ok\ntest_mode_restores_per_conversation_without_dispatch (tests.test_workflow_ui.WorkflowUITests) ... ok\ntest_mode_selection_does_not_dispatch_and_attachment_not_silently_sent (tests.test_workflow_ui.WorkflowUITests) ... ok\ntest_retained_workflow_table_paging_copy_and_no_dispatch (tests.test_workflow_ui.WorkflowUITests) ... ok\ntest_unverified_company_catalog_blocked_and_reopen_latest_local_plan (tests.test_workflow_ui.WorkflowUITests) ... ok\ntest_approve_runs_real_sequence_once_with_isolated_inputs (tests.test_workflows.WorkflowTests) ... ok\ntest_cancel_planner_late_reply_and_delete_fence (tests.test_workflows.WorkflowTests) ... ok\ntest_cancel_worker_late_result_and_delete_fence (tests.test_workflows.WorkflowTests) ... ok\ntest_confirmation_transaction_failure_does_not_dispatch (tests.test_workflows.WorkflowTests) ... ok\ntest_cross_midnight_retry_keeps_original_query_date (tests.test_workflows.WorkflowTests) ... ok\ntest_discussion_questions_then_plan_without_dispatch (tests.test_workflows.WorkflowTests) ... ok\ntest_failure_pauses_schedule_and_binding_revision_prevents_call (tests.test_workflows.WorkflowTests) ... ok\ntest_invalid_output_empty_or_unapproved_tool_stops (tests.test_workflows.WorkflowTests) ... ok\ntest_invalid_plan_clears_old_ready_steps_and_duplicate_json_rejected (tests.test_workflows.WorkflowTests) ... ok\ntest_invalid_steps_and_capability (tests.test_workflows.WorkflowTests) ... ok\ntest_no_numeric_query_works_and_stale_deletion_fails (tests.test_workflows.WorkflowTests) ... ok\ntest_numeric_corruption_stops_next_step (tests.test_workflows.WorkflowTests) ... ok\ntest_preview_consent_expiry_and_revision (tests.test_workflows.WorkflowTests) ... ok\ntest_reopen_preserves_no_dispatch (tests.test_workflows.WorkflowTests) ... ok\ntest_restart_interrupted_workflow_pauses_only_active_schedule (tests.test_workflows.WorkflowTests) ... ok\ntest_retry_reuses_only_successful_prefix_and_no_hidden_retry (tests.test_workflows.WorkflowTests) ... ok\ntest_review_failure_retains_query_and_no_compose (tests.test_workflows.WorkflowTests) ... ok\ntest_schedule_cancel_drain_prevents_overlap (tests.test_workflows.WorkflowTests) ... ok\ntest_schedule_needs_success_and_consent_then_tick_dedup (tests.test_workflows.WorkflowTests) ... ok\ntest_scheduled_retry_becomes_latest_and_cannot_fork_twice (tests.test_workflows.WorkflowTests) ... ok\ntest_schema4_migration_backup_and_atomic_failure (tests.test_workflows.WorkflowTests) ... ok\ntest_source_delete_keeps_independent_results_and_schedule (tests.test_workflows.WorkflowTests) ... ok\ntest_composer_reflows_without_edit_on_narrowing (tests.test_workspace.WorkspaceTests) ... ok\ntest_detail_selection_survives_completion_and_source_remains (tests.test_workspace.WorkspaceTests) ... ok\ntest_optional_icons_theme_and_reading_width (tests.test_workspace.WorkspaceTests) ... ok\ntest_plan_task_states_and_detail_stay_bound_to_selection (tests.test_workspace.WorkspaceTests) ... ok\ntest_quick_actions_do_not_dispatch_and_composer_grows (tests.test_workspace.WorkspaceTests) ... ok\ntest_running_cancel_failure_and_no_extra_dispatch (tests.test_workspace.WorkspaceTests) ... ok\ntest_transcript_refresh_preserves_cross_message_selection_and_scroll (tests.test_workspace.WorkspaceTests) ... ok\n\n======================================================================\nERROR: test_long_message_theme_copy_and_close_without_mutation (tests.test_dialogs.DialogTests)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"D:\\unit-helper-spec\\tests\\test_dialogs.py\", line 43, in test_long_message_theme_copy_and_close_without_mutation\n    dialog.copy_message();self.root.update();self.assertEqual(windows_clipboard_text(),text)\n  File \"D:\\unit-helper-spec\\tests\\test_dialogs.py\", line 22, in windows_clipboard_text\n    raise RuntimeError(f'OpenClipboard failed (Windows error {ctypes.get_last_error()}); clipboard readback not verified')\nRuntimeError: OpenClipboard failed (Windows error 5); clipboard readback not verified\n\n----------------------------------------------------------------------\nRan 512 tests in 141.243s\n\nFAILED (errors=1)\n",
+      "seconds": 141.2434
     }
-  ]
+  ],
+  "company_real": "not_tested",
+  "webview_smoke": "not_tested",
+  "status": "failed",
+  "discovered": 512,
+  "selected": 512,
+  "result": {
+    "passed": false,
+    "count": 512,
+    "seconds": 141.2434,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 1,
+    "expected_failures": 0,
+    "unexpected_successes": 0,
+    "tests": [
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_catalog_dynamic_fields_and_unmapped_schedule_dates",
+        "seconds": 2.7274
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_confirmation_controls_reachable_at_normal_small_and_maximized",
+        "seconds": 1.102
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_copy_in_card_keeps_chat_and_activity_opens_pending_action",
+        "seconds": 1.0077
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_example_routes_to_local_card_preserves_draft_until_accepted",
+        "seconds": 0.6667
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_failed_query_retry_only_prepares_new_confirmation",
+        "seconds": 0.6254
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_immediate_test_double_click_and_busy_are_one_run",
+        "seconds": 1.3654
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_manual_edit_and_cancel_reject_late_parse",
+        "seconds": 0.5899
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_navigation_options_selection_and_existing_draft",
+        "seconds": 0.4386
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_navigation_text_and_query_fields_remain_visible_at_current_dpi",
+        "seconds": 0.7649
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_plan_approved_in_advanced_tools_shows_real_result",
+        "seconds": 0.5021
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_plan_stays_in_conversation_and_approves_once",
+        "seconds": 0.5717
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_repeated_send_reuses_pending_card_and_missing_report_rule_is_explicit",
+        "seconds": 0.8966
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_report_consent_is_visible_without_scrolling_at_minimum_size",
+        "seconds": 1.252
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_report_requires_consent_and_edit_resets_it",
+        "seconds": 1.0699
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_schedule_source_return_and_deleted_source_label",
+        "seconds": 0.5414
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_summary_does_not_route_embedded_query_words",
+        "seconds": 0.4414
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_timeline_refresh_preserves_selection_and_does_not_duplicate",
+        "seconds": 0.5617
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_trial_auto_parse_is_background_and_stale_manual_edit_is_retained",
+        "seconds": 0.9825
+      },
+      {
+        "id": "tests.test_action_ui.ActionUITests.test_unknown_and_company_queries_do_not_parse",
+        "seconds": 0.4196
+      },
+      {
+        "id": "tests.test_appearance.AppearancePreferencesTests.test_atomic_writes_preserve_unrelated_preferences_and_cleanup",
+        "seconds": 0.0136
+      },
+      {
+        "id": "tests.test_appearance.AppearancePreferencesTests.test_missing_corrupt_invalid_and_roundtrip_preferences",
+        "seconds": 0.0057
+      },
+      {
+        "id": "tests.test_appearance.WebAppearanceTests.test_invalid_choice_is_rejected_without_changing_preferences",
+        "seconds": 0.0502
+      },
+      {
+        "id": "tests.test_appearance.WebAppearanceTests.test_legacy_theme_toggle_preserves_selected_style",
+        "seconds": 0.0409
+      },
+      {
+        "id": "tests.test_appearance.WebAppearanceTests.test_save_failure_keeps_session_style_and_reports_retry_truthfully",
+        "seconds": 0.0559
+      },
+      {
+        "id": "tests.test_appearance.WebAppearanceTests.test_six_choices_reset_and_reopen_do_not_dispatch_or_touch_connection",
+        "seconds": 0.1897
+      },
+      {
+        "id": "tests.test_assistant_briefings.AssistantBriefingTests.test_bridge_cannot_schedule_demo_or_unsuccessful_run",
+        "seconds": 0.0248
+      },
+      {
+        "id": "tests.test_assistant_briefings.AssistantBriefingTests.test_cancelled_late_reply_not_success_and_overlap_waits_real_worker",
+        "seconds": 0.1999
+      },
+      {
+        "id": "tests.test_assistant_briefings.AssistantBriefingTests.test_daily_consent_idempotency_immediate_test_and_taipei_clock",
+        "seconds": 0.2667
+      },
+      {
+        "id": "tests.test_assistant_briefings.AssistantBriefingTests.test_expired_preview_bad_clock_and_changed_binding_do_not_send",
+        "seconds": 0.0287
+      },
+      {
+        "id": "tests.test_assistant_briefings.AssistantBriefingTests.test_failed_or_tools_blocked_cannot_enable_and_never_calls_plugin",
+        "seconds": 0.0954
+      },
+      {
+        "id": "tests.test_assistant_briefings.AssistantBriefingTests.test_failure_on_schedule_pauses_and_notifies",
+        "seconds": 0.1793
+      },
+      {
+        "id": "tests.test_assistant_briefings.AssistantBriefingTests.test_preview_no_calls_and_confirmation_idempotent_without_four_roles",
+        "seconds": 0.1137
+      },
+      {
+        "id": "tests.test_assistant_briefings.AssistantBriefingTests.test_reopen_keeps_schedule_and_receipts_without_replay",
+        "seconds": 0.234
+      },
+      {
+        "id": "tests.test_assistant_ui.AssistantUITests.test_demo_response_does_not_read_company_credentials",
+        "seconds": 0.4061
+      },
+      {
+        "id": "tests.test_assistant_ui.AssistantUITests.test_edit_other_assistant_plan_does_not_transfer_private_attachment",
+        "seconds": 0.6342
+      },
+      {
+        "id": "tests.test_assistant_ui.AssistantUITests.test_oversize_result_refused_without_truncation_or_task",
+        "seconds": 0.4685
+      },
+      {
+        "id": "tests.test_assistant_ui.AssistantUITests.test_selected_rows_preview_only_double_confirm_and_precision",
+        "seconds": 0.9043
+      },
+      {
+        "id": "tests.test_assistant_ui.AssistantUITests.test_switch_new_conversation_preserves_private_draft_and_attachment",
+        "seconds": 0.4144
+      },
+      {
+        "id": "tests.test_assistant_ui.AssistantUITests.test_transfer_failure_retains_query_and_source",
+        "seconds": 0.505
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_active_session_refuses_double_dispatch_but_other_session_works",
+        "seconds": 0.094
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_assistant_inspection_is_one_get_not_permission_or_search",
+        "seconds": 0.0253
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_assistant_inspection_rejects_wrong_id_and_redacts_errors",
+        "seconds": 0.0301
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_authentication_blank_malformed_and_failed",
+        "seconds": 0.135
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_cancellation_late_completed_is_not_success",
+        "seconds": 0.051
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_endpoint_and_ca_validation",
+        "seconds": 0.0105
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_history_and_request_revision_refuse_remote_calls",
+        "seconds": 0.055
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_isolation_binding_conversation_and_ephemeral",
+        "seconds": 0.2393
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_known_run_resume_only_reads",
+        "seconds": 0.1539
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_overall_deadline_does_not_repeat_remote_mutations",
+        "seconds": 0.038
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_real_sdk_request_and_multiturn_no_duplicate_history",
+        "seconds": 0.1004
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_remote_inspection_does_not_save_a_success_or_reexecute",
+        "seconds": 0.1142
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_requires_action_never_dispatches_plugin",
+        "seconds": 0.0865
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_run_correlated_paginated_reply",
+        "seconds": 0.0678
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_unknown_message_outcome_and_failed_run_never_replay_history",
+        "seconds": 0.1009
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_unknown_write_outcome_no_retry_after_reopen",
+        "seconds": 0.0632
+      },
+      {
+        "id": "tests.test_assistants_gateway.AssistantsGatewayTests.test_wrong_run_identity_and_non_text_content_are_rejected",
+        "seconds": 0.097
+      },
+      {
+        "id": "tests.test_assistants_profiles.AssistantsProfilesTests.test_context_forwarding_workflow_and_regular",
+        "seconds": 0.0108
+      },
+      {
+        "id": "tests.test_assistants_profiles.AssistantsProfilesTests.test_local_inspect_requires_no_key_or_network",
+        "seconds": 0.0197
+      },
+      {
+        "id": "tests.test_assistants_profiles.AssistantsProfilesTests.test_mapping_invalidates_bindings_and_capabilities_once",
+        "seconds": 0.0093
+      },
+      {
+        "id": "tests.test_branding.BrandingTests.test_ico_sizes_and_png_transparent_corners",
+        "seconds": 0.0529
+      },
+      {
+        "id": "tests.test_branding.BrandingTests.test_icons_load_from_another_working_directory_and_child_inherits",
+        "seconds": 0.1489
+      },
+      {
+        "id": "tests.test_branding.BrandingTests.test_missing_assets_keeps_app_usable_and_names_consistent",
+        "seconds": 0.4256
+      },
+      {
+        "id": "tests.test_branding.BrandingTests.test_missing_light_pack_reports_warning_and_uses_dark_pack",
+        "seconds": 0.0879
+      },
+      {
+        "id": "tests.test_branding.BrandingTests.test_repeated_theme_icons_release_native_handles",
+        "seconds": 0.1673
+      },
+      {
+        "id": "tests.test_branding.BrandingTests.test_saved_theme_and_live_existing_and_future_window_icons",
+        "seconds": 0.5933
+      },
+      {
+        "id": "tests.test_company_journey.CompanyJourneyTests.test_engine_chat_deletion_removes_extra_local_cache",
+        "seconds": 0.1289
+      },
+      {
+        "id": "tests.test_company_journey.CompanyJourneyTests.test_main_chat_true_provider_multiturn_and_switch",
+        "seconds": 0.1582
+      },
+      {
+        "id": "tests.test_company_journey.CompanyJourneyTests.test_plan_confirm_and_graph_multiple_real_sdk_ids",
+        "seconds": 0.4785
+      },
+      {
+        "id": "tests.test_company_journey.CompanyJourneyTests.test_task_suggestions_isolated_and_only_confirm_saves",
+        "seconds": 0.1852
+      },
+      {
+        "id": "tests.test_company_readiness.CompanyReadinessTests.test_bridge_state_available_while_probe_waits_and_setting_changes_blocked",
+        "seconds": 0.041
+      },
+      {
+        "id": "tests.test_company_readiness.CompanyReadinessTests.test_changed_endpoint_revokes_role_readiness",
+        "seconds": 0.0033
+      },
+      {
+        "id": "tests.test_company_readiness.CompanyReadinessTests.test_company_probe_serializes_requests_and_close_fences_result",
+        "seconds": 0.0023
+      },
+      {
+        "id": "tests.test_company_readiness.CompanyReadinessTests.test_configured_is_only_ready_to_test_and_report_is_whitelisted",
+        "seconds": 0.002
+      },
+      {
+        "id": "tests.test_company_readiness.CompanyReadinessTests.test_declared_roles_are_not_verified_and_disabled_not_counted",
+        "seconds": 0.0033
+      },
+      {
+        "id": "tests.test_company_readiness.CompanyReadinessTests.test_empty_gives_concrete_next_step_without_writes_or_calls",
+        "seconds": 0.0006
+      },
+      {
+        "id": "tests.test_company_readiness.CompanyReadinessTests.test_trial_does_not_read_company_profiles",
+        "seconds": 0.0005
+      },
+      {
+        "id": "tests.test_contract_tools.CompanyCommandTests.test_documented_cli_can_import_project_and_optimized_mode_refused",
+        "seconds": 0.2316
+      },
+      {
+        "id": "tests.test_contract_tools.ContractToolsTests.test_load_failure_is_not_company_pass",
+        "seconds": 0.0029
+      },
+      {
+        "id": "tests.test_contract_tools.ContractToolsTests.test_missing_failed_and_passed_are_separate_and_errors_redacted",
+        "seconds": 0.0079
+      },
+      {
+        "id": "tests.test_contract_tools.ContractToolsTests.test_no_hooks_import_without_explicit_execution_and_review",
+        "seconds": 0.0024
+      },
+      {
+        "id": "tests.test_contract_tools.ContractToolsTests.test_result_contract_empty_truncated_precision_and_corruption",
+        "seconds": 0.0008
+      },
+      {
+        "id": "tests.test_contract_tools.DemoContractTests.test_contract_result",
+        "seconds": 0.0007
+      },
+      {
+        "id": "tests.test_contract_tools.DemoContractTests.test_contract_validation_is_pure",
+        "seconds": 0.0004
+      },
+      {
+        "id": "tests.test_contract_tools.HookLoggingTests.test_hook_output_suppressed_and_system_exit_not_passed",
+        "seconds": 0.0022
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_adopt_plan_uses_existing_gate_and_replay_id",
+        "seconds": 0.0886
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_cancelled_real_future_blocks_delete",
+        "seconds": 0.0688
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_delete_links_keeps_independent_query_and_schedule",
+        "seconds": 0.0756
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_incomplete_unknown_and_modified_preview",
+        "seconds": 0.0446
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_new_plan_revision_has_new_card_and_old_confirmation_expires",
+        "seconds": 0.1308
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_parser_cancel_change_delete_and_late_return",
+        "seconds": 0.0855
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_plan_atomic_rollback_no_dispatch",
+        "seconds": 0.0925
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_preview_expiry_and_binding",
+        "seconds": 0.0416
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_preview_query_confirmation_double_click_and_model_isolation",
+        "seconds": 0.0801
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_query_atomic_rollback_no_dispatch",
+        "seconds": 0.0325
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_reopen_preserves_link_and_never_dispatches",
+        "seconds": 0.0725
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_report_requires_consent_and_retains_fixed_binding",
+        "seconds": 0.0774
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_schedule_atomic_rollback",
+        "seconds": 0.0342
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_schedule_confirmation_atomic_pause_and_run_once",
+        "seconds": 0.0977
+      },
+      {
+        "id": "tests.test_conversation_actions.ActionTests.test_schema3_upgrade_backup_and_rollback",
+        "seconds": 0.0368
+      },
+      {
+        "id": "tests.test_conversation_actions.IntentTests.test_capability_and_intent",
+        "seconds": 0.0001
+      },
+      {
+        "id": "tests.test_conversation_actions.IntentTests.test_schema_parse_and_malformed_result",
+        "seconds": 0.0038
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_active_and_cancelled_remote_request_block_entire_batch",
+        "seconds": 0.071
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_approved_plan_and_task_deleted_together",
+        "seconds": 0.0518
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_bulk_counts_and_dependent_records_deleted_persistently",
+        "seconds": 0.1114
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_content_and_title_changes_invalidate_confirmation",
+        "seconds": 0.1921
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_database_failure_rolls_back_entire_batch",
+        "seconds": 0.0855
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_deleted_conversation_cannot_receive_reassigned_plan",
+        "seconds": 0.0441
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_dispatch_after_preview_requires_new_confirmation",
+        "seconds": 0.1237
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_independent_query_schedule_issue_and_transferred_copy_survive",
+        "seconds": 0.1235
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_invalid_expired_and_caller_tampered_tokens",
+        "seconds": 0.0412
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_notification_change_invalidates_preview",
+        "seconds": 0.055
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_pending_states_and_concurrent_confirmation_are_service_guarded",
+        "seconds": 0.0757
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_schedule_occurrence_or_cross_plan_dependency_refuses_deletion",
+        "seconds": 0.0809
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_selection_validation_and_missing_conversation_are_atomic",
+        "seconds": 0.0315
+      },
+      {
+        "id": "tests.test_conversation_deletion.ConversationDeletionTests.test_unrelated_remote_request_does_not_block_deletion",
+        "seconds": 0.0647
+      },
+      {
+        "id": "tests.test_conversation_views.ConversationViewTests.test_all_selected_source_handoff_windows_close_other_source_and_copy_survive",
+        "seconds": 1.3428
+      },
+      {
+        "id": "tests.test_conversation_views.ConversationViewTests.test_context_menu_targets_clicked_history_without_switching_chat",
+        "seconds": 0.5553
+      },
+      {
+        "id": "tests.test_conversation_views.ConversationViewTests.test_delete_current_then_last_preserves_other_draft_attachment_and_file",
+        "seconds": 0.8351
+      },
+      {
+        "id": "tests.test_conversation_views.ConversationViewTests.test_deleting_other_chat_keeps_live_draft_attachment_selection",
+        "seconds": 0.7572
+      },
+      {
+        "id": "tests.test_conversation_views.ConversationViewTests.test_expired_or_changed_confirmation_shows_error_without_deletion",
+        "seconds": 0.6448
+      },
+      {
+        "id": "tests.test_conversation_views.ConversationViewTests.test_failed_initial_handoff_previews_close_and_late_upload_is_ignored",
+        "seconds": 0.8472
+      },
+      {
+        "id": "tests.test_conversation_views.ConversationViewTests.test_filtered_bulk_selection_and_cancel_defaults_do_not_delete",
+        "seconds": 0.8559
+      },
+      {
+        "id": "tests.test_conversation_views.ConversationViewTests.test_pending_plan_details_result_and_source_dialogs_are_cleared",
+        "seconds": 0.884
+      },
+      {
+        "id": "tests.test_conversation_views.ConversationViewTests.test_running_and_cancelled_remote_request_refuse_ui_confirmation",
+        "seconds": 1.2432
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_cancel_before_summary_dispatch_prevents_provider_call",
+        "seconds": 0.0393
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_cancel_fences_late_result",
+        "seconds": 0.0336
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_cancelled_remote_call_remains_inflight_until_drained",
+        "seconds": 0.0579
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_conversation_busy_and_context_isolation",
+        "seconds": 0.1111
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_daily_occurrence_once_and_previous_day_by_scheduled_time",
+        "seconds": 0.1242
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_expired_and_cancelled_plan_never_calls_runner",
+        "seconds": 0.0333
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_general_query_summary_validates_and_deduplicates_without_plan",
+        "seconds": 0.0675
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_history_and_issue_survive_reopen",
+        "seconds": 0.1186
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_issue_draft_can_reopen_edit_but_local_saved_cannot",
+        "seconds": 0.0464
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_newer_schema_fails_without_overwrite",
+        "seconds": 0.0162
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_offline_coalesce_latest_and_overlap_skip",
+        "seconds": 0.1005
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_only_transient_readonly_query_retried_three_times",
+        "seconds": 0.0434
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_plan_concurrent_confirmations_one_task",
+        "seconds": 0.0642
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_plan_gate_revision_duplicate_confirmation",
+        "seconds": 0.0651
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_provider_error_does_not_persist_secret",
+        "seconds": 0.0447
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_query_summary_partial_failure_preserves_table",
+        "seconds": 0.0934
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_query_summary_success_calls_only_once_on_snapshot",
+        "seconds": 0.0477
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_restart_marks_interrupted_and_does_not_reexecute",
+        "seconds": 0.0316
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_safe_gateway_error_retained",
+        "seconds": 0.0459
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_same_result_does_not_notify_due_to_fetch_timestamp",
+        "seconds": 0.1311
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_schedule_failure_one_notification",
+        "seconds": 0.0967
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_schedule_is_disabled_until_confirmed_and_validated",
+        "seconds": 0.0917
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_summary_cancel_retains_completed_table_and_discards_late_summary",
+        "seconds": 0.0411
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_task_idempotency_compares_payload",
+        "seconds": 0.0332
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_threshold_only_notifies_crossing",
+        "seconds": 0.1771
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_validator_rejects_before_plan_ready_and_rechecks_confirmation",
+        "seconds": 0.0229
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_wait_closed_requires_closed_engine",
+        "seconds": 0.0172
+      },
+      {
+        "id": "tests.test_core.CoreTests.test_weekly_older_than_24_hours_not_replayed",
+        "seconds": 0.0515
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_accepted_plan_clears_draft_and_late_save_is_rejected",
+        "seconds": 0.4966
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_autosave_reopen_and_attachment_requires_selection",
+        "seconds": 1.9186
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_cards_preserve_existing_draft_binding_and_do_not_dispatch",
+        "seconds": 0.4715
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_deleted_conversation_fences_pending_save_and_keeps_todo",
+        "seconds": 0.4529
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_failed_save_visible_retry_and_failed_send_keeps_draft",
+        "seconds": 0.7457
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_failed_submission_rearms_superseded_autosave_without_more_typing",
+        "seconds": 0.4048
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_name_labels_and_empty_card_visibility",
+        "seconds": 0.4337
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_plan_edit_is_not_autosaved_or_approved_and_original_draft_returns",
+        "seconds": 0.6705
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_query_plan_edit_does_not_discard_ordinary_chat_draft",
+        "seconds": 0.8666
+      },
+      {
+        "id": "tests.test_daily_work.DailyWorkTests.test_switch_preserves_drafts_and_does_not_move_to_other_binding",
+        "seconds": 0.5145
+      },
+      {
+        "id": "tests.test_dialogs.DialogTests.test_confirmation_defaults_cancel_escape_and_explicit_accept",
+        "seconds": 0.2839
+      },
+      {
+        "id": "tests.test_dialogs.DialogTests.test_long_message_theme_copy_and_close_without_mutation",
+        "seconds": 0.1055
+      },
+      {
+        "id": "tests.test_dialogs.DialogTests.test_nested_grab_is_restored_and_copy_error_is_inline",
+        "seconds": 0.0953
+      },
+      {
+        "id": "tests.test_dialogs.DialogTests.test_startup_fallback_without_appearance",
+        "seconds": 0.0685
+      },
+      {
+        "id": "tests.test_dialogs.DialogTests.test_titlebar_optional_and_colorref",
+        "seconds": 0.0775
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_cancel_does_not_save_and_invalidates_token",
+        "seconds": 0.0376
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_duplicate_turn_and_failed_commit_do_not_create_task",
+        "seconds": 0.0307
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_edit_invalidates_approval",
+        "seconds": 0.03
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_mode_and_assistant_switch_start_empty_without_deleting_history",
+        "seconds": 0.0145
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_multiturn_chat_keeps_context",
+        "seconds": 0.0131
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_provider_failure_never_falls_back_or_loses_completed_messages",
+        "seconds": 0.0108
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_schedule_questions_do_not_guess_missing_time",
+        "seconds": 0.0242
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_source_path_is_text_only",
+        "seconds": 0.0288
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_stepwise_questions_preview_and_explicit_disabled_save",
+        "seconds": 0.0547
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_untrusted_reply_cannot_authorize_save",
+        "seconds": 0.0144
+      },
+      {
+        "id": "tests.test_dialogue.DialogueTests.test_validation_rejects_command_unknown_id_and_bad_schedule",
+        "seconds": 0.036
+      },
+      {
+        "id": "tests.test_dialogue_concurrency.DialogueConcurrencyTests.test_bridge_allows_state_and_cancel_during_main_send",
+        "seconds": 0.0367
+      },
+      {
+        "id": "tests.test_dialogue_concurrency.DialogueConcurrencyTests.test_cancel_fences_late_result_and_does_not_claim_remote_stopped",
+        "seconds": 0.0088
+      },
+      {
+        "id": "tests.test_dialogue_concurrency.DialogueConcurrencyTests.test_close_fences_and_drains_before_returning",
+        "seconds": 0.0817
+      },
+      {
+        "id": "tests.test_dialogue_concurrency.DialogueConcurrencyTests.test_state_and_new_thread_usable_while_request_waits",
+        "seconds": 0.0606
+      },
+      {
+        "id": "tests.test_display.DisplayAppTests.test_normal_maximized_theme_switch_preserve_point_fonts_and_draft",
+        "seconds": 1.6411
+      },
+      {
+        "id": "tests.test_display.DisplayAppTests.test_simulated_multipliers_keep_chat_inside_page_and_send_reachable",
+        "seconds": 6.6213
+      },
+      {
+        "id": "tests.test_display.DisplayPolicyTests.test_awareness_preserves_existing_context_without_setting_process",
+        "seconds": 0.001
+      },
+      {
+        "id": "tests.test_display.DisplayPolicyTests.test_awareness_read_mapping_and_unavailable_are_not_fabricated",
+        "seconds": 0.002
+      },
+      {
+        "id": "tests.test_display.DisplayPolicyTests.test_common_percentages_convert_logical_pixels_and_pick_exact_icon",
+        "seconds": 0.0002
+      },
+      {
+        "id": "tests.test_display.DisplayPolicyTests.test_older_api_fallback_and_total_failure_are_explicit",
+        "seconds": 0.0014
+      },
+      {
+        "id": "tests.test_display.DisplayPolicyTests.test_small_work_area_clamps_size_and_minimum_at_each_factor",
+        "seconds": 0.0023
+      },
+      {
+        "id": "tests.test_display.DisplayPolicyTests.test_unaware_startup_requests_system_context_and_reports_failure",
+        "seconds": 0.0009
+      },
+      {
+        "id": "tests.test_display.DisplayPolicyTests.test_work_area_api_failure_uses_screen_size",
+        "seconds": 0.0005
+      },
+      {
+        "id": "tests.test_display.DisplayWidgetTests.test_all_packaged_action_icons_have_real_requested_dimensions",
+        "seconds": 0.1183
+      },
+      {
+        "id": "tests.test_display.DisplayWidgetTests.test_dialog_scroll_frame_uses_content_size_and_reveals_bottom_action",
+        "seconds": 0.1481
+      },
+      {
+        "id": "tests.test_display.DisplayWidgetTests.test_fonts_remain_points_and_tk_scaling_is_not_multiplied",
+        "seconds": 0.0802
+      },
+      {
+        "id": "tests.test_display.DisplayWidgetTests.test_scaling_existing_widgets_and_retheme_is_not_cumulative",
+        "seconds": 0.0825
+      },
+      {
+        "id": "tests.test_display.DisplayWidgetTests.test_small_viewport_reveals_focused_action_and_resets_when_large",
+        "seconds": 0.1347
+      },
+      {
+        "id": "tests.test_environment.DiagnosticTests.test_adapter_restrictions_fail_before_company_calls",
+        "seconds": 0.3832
+      },
+      {
+        "id": "tests.test_environment.DiagnosticTests.test_company_missing_credentials_and_invalid_endpoint",
+        "seconds": 0.0885
+      },
+      {
+        "id": "tests.test_environment.DiagnosticTests.test_invalid_config_does_not_hide_directory_failure",
+        "seconds": 0.0435
+      },
+      {
+        "id": "tests.test_environment.DiagnosticTests.test_profiles_use_data_directory_and_keyring_without_legacy_key",
+        "seconds": 0.0917
+      },
+      {
+        "id": "tests.test_environment.DiagnosticTests.test_share_report_is_whitelisted_and_checks_continue",
+        "seconds": 0.0197
+      },
+      {
+        "id": "tests.test_environment.OfflineBundleTests.test_complete_bundle_verifies",
+        "seconds": 0.0041
+      },
+      {
+        "id": "tests.test_environment.OfflineBundleTests.test_corrupt_wheel_rejected",
+        "seconds": 0.0037
+      },
+      {
+        "id": "tests.test_environment.OfflineBundleTests.test_existing_build_destination_untouched",
+        "seconds": 0.0026
+      },
+      {
+        "id": "tests.test_environment.OfflineBundleTests.test_lock_mismatch_rejected",
+        "seconds": 0.0027
+      },
+      {
+        "id": "tests.test_environment.OfflineBundleTests.test_missing_wheel_rejected",
+        "seconds": 0.0027
+      },
+      {
+        "id": "tests.test_environment.OfflineBundleTests.test_unsafe_manifest_path_and_extra_files_rejected",
+        "seconds": 0.0065
+      },
+      {
+        "id": "tests.test_environment.OfflineBundleTests.test_wrong_target_rejected",
+        "seconds": 0.0024
+      },
+      {
+        "id": "tests.test_environment.OfflineInstallerTests.test_install_is_offline_only_failures_stop_and_lock_is_required",
+        "seconds": 0.0182
+      },
+      {
+        "id": "tests.test_environment.OfflineInstallerTests.test_rejects_existing_environment_and_invalid_bundle_before_creation",
+        "seconds": 0.0054
+      },
+      {
+        "id": "tests.test_experience.GuidanceDataTests.test_first_run_diagnostic_is_scoped_and_explicit",
+        "seconds": 0.0008
+      },
+      {
+        "id": "tests.test_experience.GuidanceDataTests.test_manual_has_required_workflows_and_all_page_links",
+        "seconds": 0.0203
+      },
+      {
+        "id": "tests.test_experience.GuidanceDataTests.test_preferences_preserve_legacy_theme_and_unknown_fields",
+        "seconds": 0.0115
+      },
+      {
+        "id": "tests.test_experience.GuidanceDataTests.test_work_hints_distinguish_pending_success_failure_and_cancel",
+        "seconds": 0.0
+      },
+      {
+        "id": "tests.test_experience.GuidanceUITests.test_current_conversation_plan_and_query_validation_hints_are_scoped",
+        "seconds": 0.627
+      },
+      {
+        "id": "tests.test_experience.GuidanceUITests.test_editing_context_expiry_and_plan_terminal_states",
+        "seconds": 0.7508
+      },
+      {
+        "id": "tests.test_experience.GuidanceUITests.test_normal_demo_query_approval_selection_and_transfer",
+        "seconds": 1.0656
+      },
+      {
+        "id": "tests.test_experience.GuidanceUITests.test_preference_restart_and_failed_save_keep_current_toggle",
+        "seconds": 0.8153
+      },
+      {
+        "id": "tests.test_experience.GuidanceUITests.test_schedule_result_notice_and_issue_hints_only_read_current_state",
+        "seconds": 0.763
+      },
+      {
+        "id": "tests.test_experience.GuidanceUITests.test_startup_no_popup_process_or_service_request_and_offline_help",
+        "seconds": 2.0989
+      },
+      {
+        "id": "tests.test_experience.GuidanceUITests.test_toggle_all_pages_preserves_draft_attachment_selection_no_dispatch",
+        "seconds": 2.4675
+      },
+      {
+        "id": "tests.test_files.ExportTests.test_formula_protection_precision_and_snapshot_not_mutated",
+        "seconds": 0.0003
+      },
+      {
+        "id": "tests.test_files.ExportTests.test_header_formula_and_separator_validation",
+        "seconds": 0.0001
+      },
+      {
+        "id": "tests.test_files.ExportTests.test_invalid_numeric_never_bypasses_guard",
+        "seconds": 0.0001
+      },
+      {
+        "id": "tests.test_files.ExportTests.test_selection_and_cross_page_copy",
+        "seconds": 0.0006
+      },
+      {
+        "id": "tests.test_files.ExportTests.test_special_characters_csv_fallback_and_nul",
+        "seconds": 0.0001
+      },
+      {
+        "id": "tests.test_files.UploadTests.test_bom_chinese_original_and_preview",
+        "seconds": 0.0011
+      },
+      {
+        "id": "tests.test_files.UploadTests.test_csv_bad_headers_rows_and_quoting",
+        "seconds": 0.0042
+      },
+      {
+        "id": "tests.test_files.UploadTests.test_csv_exact_strings_and_metadata",
+        "seconds": 0.001
+      },
+      {
+        "id": "tests.test_files.UploadTests.test_input_limits_encoding_and_extension",
+        "seconds": 0.0074
+      },
+      {
+        "id": "tests.test_gateways.AssistantTests.test_company_client_options_headers_and_assistant_ref",
+        "seconds": 0.012
+      },
+      {
+        "id": "tests.test_gateways.AssistantTests.test_configuration_and_context_rejected_before_network",
+        "seconds": 0.0008
+      },
+      {
+        "id": "tests.test_gateways.AssistantTests.test_demo_does_not_claim_ai_work",
+        "seconds": 0.0005
+      },
+      {
+        "id": "tests.test_gateways.AssistantTests.test_rate_limit_and_redirect_do_not_retry_or_follow",
+        "seconds": 0.0029
+      },
+      {
+        "id": "tests.test_gateways.AssistantTests.test_sdk_401_redacts_error_body_and_never_retries",
+        "seconds": 0.0013
+      },
+      {
+        "id": "tests.test_gateways.AssistantTests.test_sdk_empty_malformed_and_tool_response",
+        "seconds": 0.0048
+      },
+      {
+        "id": "tests.test_gateways.AssistantTests.test_sdk_request_and_conversation_isolation",
+        "seconds": 0.0023
+      },
+      {
+        "id": "tests.test_gateways.AssistantTests.test_sdk_timeout_never_retries",
+        "seconds": 0.0011
+      },
+      {
+        "id": "tests.test_gateways.AssistantTests.test_tls_default_and_company_ca_bundle",
+        "seconds": 0.0094
+      },
+      {
+        "id": "tests.test_gateways.QueryTests.test_bad_template_and_parameters",
+        "seconds": 0.0003
+      },
+      {
+        "id": "tests.test_gateways.QueryTests.test_bounded_rows_and_defensive_copy",
+        "seconds": 0.0124
+      },
+      {
+        "id": "tests.test_gateways.QueryTests.test_company_unconfigured_and_explicit_demo_identity",
+        "seconds": 0.0
+      },
+      {
+        "id": "tests.test_gateways.QueryTests.test_deterministic_snapshot_and_filters",
+        "seconds": 0.0007
+      },
+      {
+        "id": "tests.test_gateways.QueryTests.test_plan_validation_does_not_execute_query",
+        "seconds": 0.0002
+      },
+      {
+        "id": "tests.test_graph_runner.GraphCheckpointTests.test_completed_receipt_prevents_repeat_after_checkpoint_write_failure",
+        "seconds": 0.03
+      },
+      {
+        "id": "tests.test_graph_runner.GraphCheckpointTests.test_end_checkpoint_missing_store_receipt_stops_without_dispatch",
+        "seconds": 0.0152
+      },
+      {
+        "id": "tests.test_graph_runner.GraphCheckpointTests.test_resume_failed_node_does_not_replay_committed_predecessor",
+        "seconds": 0.0193
+      },
+      {
+        "id": "tests.test_graph_runner.WorkflowRecoveryTests.test_abandon_cannot_resume",
+        "seconds": 0.0502
+      },
+      {
+        "id": "tests.test_graph_runner.WorkflowRecoveryTests.test_binding_change_blocks_recovery",
+        "seconds": 0.0522
+      },
+      {
+        "id": "tests.test_graph_runner.WorkflowRecoveryTests.test_checkpoint_failure_preserves_receipt_and_resume_skips_query",
+        "seconds": 0.2018
+      },
+      {
+        "id": "tests.test_graph_runner.WorkflowRecoveryTests.test_restart_no_dispatch_and_explicit_resume_once",
+        "seconds": 0.1866
+      },
+      {
+        "id": "tests.test_graph_runner.WorkflowRecoveryTests.test_uncertain_query_never_replayed",
+        "seconds": 0.0729
+      },
+      {
+        "id": "tests.test_instruction_docs.InstructionDocumentTests.test_compose_example_has_readable_literal_headings",
+        "seconds": 0.0006
+      },
+      {
+        "id": "tests.test_instruction_docs.InstructionDocumentTests.test_documents_are_standalone_and_local_links_resolve",
+        "seconds": 0.0031
+      },
+      {
+        "id": "tests.test_instruction_docs.InstructionDocumentTests.test_guide_synthetic_examples_link_facts_to_source",
+        "seconds": 0.0005
+      },
+      {
+        "id": "tests.test_instruction_docs.InstructionDocumentTests.test_planner_question_example_obeys_live_question_contract",
+        "seconds": 0.0004
+      },
+      {
+        "id": "tests.test_instruction_docs.InstructionDocumentTests.test_role_examples_preserve_exact_facts_and_output_contract",
+        "seconds": 0.0007
+      },
+      {
+        "id": "tests.test_instruction_docs.InstructionDocumentTests.test_search_role_example_does_not_invent_program_facts",
+        "seconds": 0.0002
+      },
+      {
+        "id": "tests.test_keyboard.KeyboardTests.test_enter_ctrl_and_shift_newline",
+        "seconds": 0.0001
+      },
+      {
+        "id": "tests.test_keyboard.KeyboardTests.test_ime_empty_and_repeat_guard",
+        "seconds": 0.0002
+      },
+      {
+        "id": "tests.test_keyboard.KeyboardTests.test_ime_shift_does_not_insert_and_focus_loss_releases",
+        "seconds": 0.0001
+      },
+      {
+        "id": "tests.test_launch_check.LaunchCheckTests.test_missing_asset_fails_before_tk",
+        "seconds": 0.0044
+      },
+      {
+        "id": "tests.test_launch_check.LaunchCheckTests.test_sdk_check_optional_for_relocated_shortcut_fixture",
+        "seconds": 0.0042
+      },
+      {
+        "id": "tests.test_launch_check.LaunchCheckTests.test_tk_and_sdk_failures_are_clear_and_cleanup_root",
+        "seconds": 0.0042
+      },
+      {
+        "id": "tests.test_launch_check.LaunchCheckTests.test_version_architecture_and_platform_fail_closed",
+        "seconds": 0.0034
+      },
+      {
+        "id": "tests.test_local.ChoiceTests.test_cancelled_form_cannot_submit",
+        "seconds": 0.0122
+      },
+      {
+        "id": "tests.test_local.ChoiceTests.test_invalid_stale_expired_answers",
+        "seconds": 0.0127
+      },
+      {
+        "id": "tests.test_local.ChoiceTests.test_persistent_answers_owner_and_idempotency",
+        "seconds": 0.0145
+      },
+      {
+        "id": "tests.test_local.ConfigTests.test_roundtrip_no_secret_keys_and_company_modes",
+        "seconds": 0.0024
+      },
+      {
+        "id": "tests.test_local.ConfigTests.test_single_instance_and_release",
+        "seconds": 0.0013
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_clear_fences_queued_writer",
+        "seconds": 0.0256
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_delete_preview_tracks_drafts_and_preserves_todo_copy",
+        "seconds": 0.0464
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_delete_transaction_failure_restores_drafts_and_conversation",
+        "seconds": 0.0274
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_draft_cleanup_failure_rolls_back_dispatch_and_plan",
+        "seconds": 0.0454
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_drafts_reopen_isolation_and_latest_reservation_wins",
+        "seconds": 0.0452
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_invalid_save_keeps_last_saved_text",
+        "seconds": 0.0197
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_migration_failure_rolls_back_new_tables_and_version",
+        "seconds": 0.0336
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_parallel_create_is_one_record",
+        "seconds": 0.0865
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_todo_lifecycle_search_literal_and_source",
+        "seconds": 0.0976
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_v2_backup_and_upgrade_is_repeatable_without_extra_backup",
+        "seconds": 0.0412
+      },
+      {
+        "id": "tests.test_local_work.LocalWorkTests.test_validation_and_request_conflict_no_partial_insert",
+        "seconds": 0.0255
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_badge_over_99_and_read_notifications_never_popup",
+        "seconds": 1.433
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_batch_is_one_popup_and_does_not_mark_all_read",
+        "seconds": 0.6521
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_corner_popup_unread_badge_and_repeat_refresh",
+        "seconds": 0.531
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_deleted_notice_closes_popup_and_stale_click_is_safe",
+        "seconds": 0.5556
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_dismiss_retains_unread_without_redisplay",
+        "seconds": 0.4819
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_existing_unread_does_not_popup_on_start",
+        "seconds": 0.4289
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_long_content_is_preserved_and_close_cancels_timer",
+        "seconds": 1.5148
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_missing_source_keeps_notification_readable",
+        "seconds": 0.4728
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_result_routing_and_error_theme",
+        "seconds": 0.6325
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_single_view_marks_read_and_opens_inbox",
+        "seconds": 0.5185
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_timeout_and_hover",
+        "seconds": 0.5574
+      },
+      {
+        "id": "tests.test_notifications.NotificationTests.test_unread_is_informational_and_cancelled_is_neutral",
+        "seconds": 0.5746
+      },
+      {
+        "id": "tests.test_outcome_ui.OutcomeUITests.test_failed_feedback_retains_note_and_retry_choice",
+        "seconds": 1.533
+      },
+      {
+        "id": "tests.test_outcome_ui.OutcomeUITests.test_feedback_background_save_edit_clear_and_no_dispatch",
+        "seconds": 2.1618
+      },
+      {
+        "id": "tests.test_outcome_ui.OutcomeUITests.test_outcome_controls_reachable_in_both_themes_and_sizes",
+        "seconds": 1.3233
+      },
+      {
+        "id": "tests.test_outcome_ui.OutcomeUITests.test_result_opens_outcome_first_and_preserves_draft_selection",
+        "seconds": 0.7771
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_bad_query_snapshot_not_compared",
+        "seconds": 0.3264
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_changed_binding_and_nondate_parameter_not_compared",
+        "seconds": 0.3623
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_compare_exact_and_same_period_without_dispatch",
+        "seconds": 0.34
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_failed_save_keeps_previous_feedback",
+        "seconds": 0.2828
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_feedback_cascades_with_task_deletion",
+        "seconds": 0.5801
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_feedback_upsert_clear_and_no_dispatch",
+        "seconds": 0.3683
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_high_precision_and_date_modes",
+        "seconds": 0.6076
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_invalid_feedback_and_running_rejected",
+        "seconds": 0.4038
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_partial_and_source_deletion_preserves_feedback",
+        "seconds": 0.1586
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_revision_and_schedule_isolation",
+        "seconds": 0.4393
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_schedule_retry_keeps_comparison_scope",
+        "seconds": 0.5613
+      },
+      {
+        "id": "tests.test_outcomes.OutcomeTests.test_schema_five_backup_and_transaction_rollback",
+        "seconds": 0.0314
+      },
+      {
+        "id": "tests.test_profiles.ProfileTests.test_confirmed_mapping_and_per_request_destination",
+        "seconds": 0.003
+      },
+      {
+        "id": "tests.test_profiles.ProfileTests.test_environment_not_imported_and_explicit_keyring_takes_over",
+        "seconds": 0.0019
+      },
+      {
+        "id": "tests.test_profiles.ProfileTests.test_key_destination_isolation_and_never_persist_secret",
+        "seconds": 0.0028
+      },
+      {
+        "id": "tests.test_profiles.ProfileTests.test_keyring_error_redacted_no_fallback",
+        "seconds": 0.0004
+      },
+      {
+        "id": "tests.test_profiles.ProfileTests.test_legacy_profile_identity_persisted_before_any_user_edit",
+        "seconds": 0.0011
+      },
+      {
+        "id": "tests.test_profiles.ProfileTests.test_management_revision_disable_default_persistence",
+        "seconds": 0.0032
+      },
+      {
+        "id": "tests.test_profiles.ProfileTests.test_unconfigured_api_does_not_guess_or_dispatch",
+        "seconds": 0.0011
+      },
+      {
+        "id": "tests.test_profiles.RoutingTests.test_conversations_pin_target_and_context",
+        "seconds": 0.0862
+      },
+      {
+        "id": "tests.test_profiles.RoutingTests.test_no_auto_summary_and_legacy_readonly",
+        "seconds": 0.0186
+      },
+      {
+        "id": "tests.test_profiles.RoutingTests.test_plan_zero_dispatch_until_approved_and_changed_target_refused",
+        "seconds": 0.0229
+      },
+      {
+        "id": "tests.test_profiles.RoutingTests.test_v1_backup_and_transactional_migration_preserves_history",
+        "seconds": 0.0329
+      },
+      {
+        "id": "tests.test_profiles.WindowsCredentialTests.test_real_windows_credential_roundtrip_isolated",
+        "seconds": 0.0177
+      },
+      {
+        "id": "tests.test_query_schema.CatalogServiceTests.test_catalog_change_blocks_ready_plan_without_running",
+        "seconds": 0.0182
+      },
+      {
+        "id": "tests.test_query_schema.CatalogServiceTests.test_legacy_demo_mapping_only_and_invalid_saved_mode",
+        "seconds": 0.0439
+      },
+      {
+        "id": "tests.test_query_schema.CatalogServiceTests.test_plan_revision_validation_and_no_dispatch_before_confirmation",
+        "seconds": 0.0482
+      },
+      {
+        "id": "tests.test_query_schema.CatalogServiceTests.test_rolling_mapping_literal_and_removed_template",
+        "seconds": 0.1133
+      },
+      {
+        "id": "tests.test_query_schema.QuerySchemaTests.test_bounds_and_invalid_definitions",
+        "seconds": 0.0003
+      },
+      {
+        "id": "tests.test_query_schema.QuerySchemaTests.test_decimal_date_and_integer_limits",
+        "seconds": 0.0001
+      },
+      {
+        "id": "tests.test_query_schema.QuerySchemaTests.test_types_precision_defaults_and_optional",
+        "seconds": 0.0004
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_ai_failure_preserves_result_and_hides_secret",
+        "seconds": 0.053
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_cancel_ai_retains_pending_snapshot_but_no_late_report",
+        "seconds": 0.0612
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_cancel_query_and_real_future_blocks_overlap",
+        "seconds": 0.0794
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_clock_restart_previous_day_dedup_disable_and_missed",
+        "seconds": 0.1177
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_close_fences_late_report_and_notifies_once",
+        "seconds": 0.0612
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_confirm_transaction_rollback_and_concurrent_clicks",
+        "seconds": 0.0613
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_empty_and_truncated_skip_ai",
+        "seconds": 0.0637
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_exact_totals_malformed_and_oversized_metadata",
+        "seconds": 0.0118
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_expiration_cancel_binding_and_invalid_input",
+        "seconds": 0.0142
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_expired_binding_at_run_blocks_query_and_notifies",
+        "seconds": 0.0213
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_normal_query_schedule_does_not_summarize",
+        "seconds": 0.0593
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_preview_immutable_and_double_confirmation_no_dispatch",
+        "seconds": 0.0198
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_query_failure_no_retry_or_ai",
+        "seconds": 0.0421
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_recovery_failure_is_not_retried_and_notification_deduplicates",
+        "seconds": 0.0358
+      },
+      {
+        "id": "tests.test_report_engine.ReportTests.test_success_aggregate_only_and_repeat_notification",
+        "seconds": 0.0854
+      },
+      {
+        "id": "tests.test_report_views.DraftTests.test_bounds_and_intent",
+        "seconds": 0.0002
+      },
+      {
+        "id": "tests.test_report_views.DraftTests.test_invalid_fields_and_secret_error_rejected",
+        "seconds": 0.0008
+      },
+      {
+        "id": "tests.test_report_views.DraftTests.test_schema_and_no_execution",
+        "seconds": 0.0003
+      },
+      {
+        "id": "tests.test_report_views.ReportViewTests.test_chat_opens_confirmation_without_dispatch_and_preserves_draft",
+        "seconds": 0.9954
+      },
+      {
+        "id": "tests.test_report_views.ReportViewTests.test_close_revokes_preview_and_unapproved_no_schedule",
+        "seconds": 0.6323
+      },
+      {
+        "id": "tests.test_report_views.ReportViewTests.test_late_parse_does_not_replace_edited_request",
+        "seconds": 0.6193
+      },
+      {
+        "id": "tests.test_report_views.ReportViewTests.test_preview_consent_edit_invalidation_approve_and_theme",
+        "seconds": 0.8738
+      },
+      {
+        "id": "tests.test_search_journey.SearchJourneyTests.test_briefing_search_is_zero_until_confirm_then_schedule_keeps_binding",
+        "seconds": 0.1542
+      },
+      {
+        "id": "tests.test_search_journey.SearchJourneyTests.test_engine_chat_deletion_removes_extra_local_cache",
+        "seconds": 0.0965
+      },
+      {
+        "id": "tests.test_search_journey.SearchJourneyTests.test_main_chat_true_provider_multiturn_and_switch",
+        "seconds": 0.1601
+      },
+      {
+        "id": "tests.test_search_journey.SearchJourneyTests.test_main_chat_with_approved_profile_still_cannot_search",
+        "seconds": 0.09
+      },
+      {
+        "id": "tests.test_search_journey.SearchJourneyTests.test_plan_confirm_and_graph_multiple_real_sdk_ids",
+        "seconds": 0.3347
+      },
+      {
+        "id": "tests.test_search_journey.SearchJourneyTests.test_planner_then_search_analysis_review_compose",
+        "seconds": 0.3915
+      },
+      {
+        "id": "tests.test_search_journey.SearchJourneyTests.test_policy_mutation_holds_dispatch_locks_and_reopen_preserves_removal",
+        "seconds": 0.0547
+      },
+      {
+        "id": "tests.test_search_journey.SearchJourneyTests.test_task_suggestions_isolated_and_only_confirm_saves",
+        "seconds": 0.1172
+      },
+      {
+        "id": "tests.test_search_tools.SearchPolicyTests.test_consent_binds_revision_and_revokes_verified_role_without_dispatch",
+        "seconds": 0.0033
+      },
+      {
+        "id": "tests.test_search_tools.SearchPolicyTests.test_endpoint_id_and_protocol_changes_clear_permissions",
+        "seconds": 0.0065
+      },
+      {
+        "id": "tests.test_search_tools.SearchPolicyTests.test_expired_or_revised_probe_cannot_save",
+        "seconds": 0.0024
+      },
+      {
+        "id": "tests.test_search_tools.SearchPolicyTests.test_rag_only_workflow_authorization",
+        "seconds": 0.0024
+      },
+      {
+        "id": "tests.test_search_tools.SearchPolicyTests.test_unknown_tool_or_no_consent_cannot_save",
+        "seconds": 0.0018
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_approved_search_uses_fixed_endpoint_and_correlated_submission_and_cached_result",
+        "seconds": 0.058
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_cancel_during_plugin_never_submits_result_or_succeeds",
+        "seconds": 0.0678
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_chat_and_planner_keep_tools_off",
+        "seconds": 0.1251
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_completed_tools_resume_from_receipt_without_research",
+        "seconds": 0.1156
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_description_survives_approval_and_run_override",
+        "seconds": 0.0627
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_duplicate_json_keys_and_wrong_types_rejected",
+        "seconds": 0.0008
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_empty_response_not_submitted",
+        "seconds": 0.0659
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_foreign_thread_stops_before_plugin",
+        "seconds": 0.059
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_four_call_batch_limit",
+        "seconds": 0.0437
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_metadata_exposes_schema_without_search_or_verification",
+        "seconds": 0.0228
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_mixed_batch_is_rejected_before_first_call",
+        "seconds": 0.0387
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_no_policy_cannot_dispatch_even_if_context_requests_it",
+        "seconds": 0.0382
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_oversize_response_not_truncated_or_submitted",
+        "seconds": 0.0482
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_plugin_unknown_does_not_retry_after_restart",
+        "seconds": 0.0728
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_policy_changed_cannot_reuse_cached_request",
+        "seconds": 0.0798
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_reused_call_id_with_changed_arguments_rejected",
+        "seconds": 0.0525
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_submit_unknown_does_not_retry_after_restart",
+        "seconds": 0.0583
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_three_batch_limit",
+        "seconds": 0.0737
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_two_batches_pair_multiple_outputs",
+        "seconds": 0.1033
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_unknown_arguments_rejected",
+        "seconds": 0.08
+      },
+      {
+        "id": "tests.test_search_tools.SearchToolTests.test_unsupported_schema_cannot_be_approved",
+        "seconds": 0.0015
+      },
+      {
+        "id": "tests.test_shortcut.ShortcutTests.test_create_and_repeat_update",
+        "seconds": 1.6267
+      },
+      {
+        "id": "tests.test_shortcut.ShortcutTests.test_invalid_destination_is_not_created",
+        "seconds": 0.41
+      },
+      {
+        "id": "tests.test_shortcut.ShortcutTests.test_missing_assets_do_not_change_existing_shortcut",
+        "seconds": 0.7204
+      },
+      {
+        "id": "tests.test_shortcut.ShortcutTests.test_relocation_updates_managed_shortcut",
+        "seconds": 1.2961
+      },
+      {
+        "id": "tests.test_shortcut.ShortcutTests.test_unrelated_shortcut_is_preserved",
+        "seconds": 0.7205
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_all_routes_have_icons_and_no_navigation_dispatch",
+        "seconds": 0.6651
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_closed_app_releases_interpreter_and_missing_icons_remain_usable",
+        "seconds": 0.8153
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_collapse_keeps_widgets_drafts_selection_and_attachment",
+        "seconds": 0.4552
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_collapsed_persistence_and_failed_save_keeps_current_view",
+        "seconds": 0.7525
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_details_and_edit_reuse_existing_profile_actions",
+        "seconds": 0.5263
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_more_tools_is_reachable_from_compact_and_theme_preserves_it",
+        "seconds": 0.5398
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_responsive_cards_and_theme",
+        "seconds": 1.3142
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_team_chat_creates_new_bound_conversation_preserving_old_draft",
+        "seconds": 0.488
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_team_search_and_status_never_fabricate_verification",
+        "seconds": 0.4537
+      },
+      {
+        "id": "tests.test_team_navigation.TeamNavigationTests.test_verified_planner_entry_is_explicit_and_never_runs",
+        "seconds": 0.4491
+      },
+      {
+        "id": "tests.test_test_runner.RunnerTests.test_cli_report_is_scoped_overwritten_and_full_checks_run_once",
+        "seconds": 0.0118
+      },
+      {
+        "id": "tests.test_test_runner.RunnerTests.test_failures_skips_and_expected_failures_never_pass",
+        "seconds": 0.0006
+      },
+      {
+        "id": "tests.test_test_runner.RunnerTests.test_quick_blocks_unexpected_gui_and_socket",
+        "seconds": 0.0024
+      },
+      {
+        "id": "tests.test_test_runner.RunnerTests.test_registry_rejects_new_stale_duplicate_empty_and_import_errors",
+        "seconds": 0.0035
+      },
+      {
+        "id": "tests.test_test_runner.RunnerTests.test_selection_is_explicit_nonempty_and_deduplicated",
+        "seconds": 0.0002
+      },
+      {
+        "id": "tests.test_theme.PaletteInterpreterTests.test_palette_isolation_between_tk_interpreters",
+        "seconds": 0.0387
+      },
+      {
+        "id": "tests.test_theme.ThemeTests.test_existing_and_future_dialogs_popup_and_all_pages",
+        "seconds": 0.8862
+      },
+      {
+        "id": "tests.test_theme.ThemeTests.test_minimum_size_actions_fit_both_themes",
+        "seconds": 1.1841
+      },
+      {
+        "id": "tests.test_theme.ThemeTests.test_save_failure_remains_applied_and_restart_preference",
+        "seconds": 0.8444
+      },
+      {
+        "id": "tests.test_theme.ThemeTests.test_switch_preserves_widgets_draft_attachment_selection_and_plan",
+        "seconds": 1.0249
+      },
+      {
+        "id": "tests.test_theme.ThemeTests.test_switch_while_work_is_running_does_not_dispatch_or_cancel",
+        "seconds": 0.5479
+      },
+      {
+        "id": "tests.test_theme_choices_tk.ThemeChoiceTkTests.test_startup_preference_save_failure_and_reset",
+        "seconds": 0.9345
+      },
+      {
+        "id": "tests.test_theme_semantics.SemanticPaletteTests.test_regular_text_and_status_labels_have_readable_contrast",
+        "seconds": 0.001
+      },
+      {
+        "id": "tests.test_theme_semantics.ThemeStylePaletteTests.test_only_action_colors_change_and_unknown_styles_are_rejected",
+        "seconds": 0.0001
+      },
+      {
+        "id": "tests.test_todo_ui.TaipeiDateTests.test_utc_midnight_boundary_uses_fixed_taipei_offset",
+        "seconds": 0.0
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_cards_transition_and_edit_preserve_source",
+        "seconds": 0.2321
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_delete_cancel_defaults_and_confirmation_preserve_source_and_others",
+        "seconds": 0.3225
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_deleted_source_is_marked_but_independent_todo_survives",
+        "seconds": 0.1954
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_each_column_uses_its_own_stable_order",
+        "seconds": 0.187
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_editor_validates_date_and_description_without_creating_rows",
+        "seconds": 0.1738
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_empty_selection_and_overlong_title_never_silently_truncate",
+        "seconds": 0.1701
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_refresh_and_responsive_layout_reuse_cards_and_keep_selection",
+        "seconds": 0.2498
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_search_show_done_preference_and_write_failure_keep_current_view",
+        "seconds": 0.2334
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_selection_copies_all_text_without_dispatch_or_forced_navigation",
+        "seconds": 0.1696
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_show_link_is_explicit_navigation_and_filters_do_not_hide_target",
+        "seconds": 0.245
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_taipei_clock_controls_overdue_and_date_shortcuts",
+        "seconds": 0.1888
+      },
+      {
+        "id": "tests.test_todo_ui.TodoViewTests.test_title_opens_editor_and_completed_action_uses_clear_label",
+        "seconds": 0.2987
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_bad_env_never_discloses_content",
+        "seconds": 0.0021
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_empty_malformed_incomplete_and_tools_rejected",
+        "seconds": 0.0057
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_env_literal_and_no_environment_side_effect",
+        "seconds": 0.0014
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_missing_key_fails_without_demo_fallback",
+        "seconds": 0.0004
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_profiles_readonly_and_stale_binding",
+        "seconds": 0.0006
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_real_sdk_request_and_context_isolation",
+        "seconds": 0.002
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_status_errors_redacted_and_no_retry",
+        "seconds": 0.0035
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_timeout_and_connection_redacted",
+        "seconds": 0.0016
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_tls_and_retry_configuration",
+        "seconds": 0.0092
+      },
+      {
+        "id": "tests.test_trial.TrialTests.test_validation_prevents_network_and_silent_truncation",
+        "seconds": 0.0005
+      },
+      {
+        "id": "tests.test_trial.TrialTkTests.test_enter_sends_and_work_card_does_not",
+        "seconds": 0.7007
+      },
+      {
+        "id": "tests.test_trial.TrialTkTests.test_plan_approval_and_single_dispatch",
+        "seconds": 0.7546
+      },
+      {
+        "id": "tests.test_trial.TrialTkTests.test_workspace_and_settings_isolated_without_network_on_start",
+        "seconds": 1.1936
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_chat_query_plan_edit_approve_pagination_clipboard",
+        "seconds": 0.6273
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_company_error_does_not_use_demo_and_restart_history",
+        "seconds": 0.4398
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_cross_workflow_plan_edit_rejected_and_exit_supported",
+        "seconds": 0.4886
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_dynamic_custom_fields_plan_and_result",
+        "seconds": 0.8726
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_issue_draft_reopen_schedule_and_notifications",
+        "seconds": 0.7905
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_malformed_catalog_and_invalid_schedule_remain_readable",
+        "seconds": 1.1174
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_navigation_and_minimum_size_keep_actions_visible",
+        "seconds": 0.8645
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_normal_close_waits_for_remote_then_releases_on_main_thread",
+        "seconds": 0.5602
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_settings_blocked_while_cancelled_worker_drains",
+        "seconds": 0.4548
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_settings_cannot_change_destination_of_ready_plan",
+        "seconds": 0.5268
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_visible_widget_layout_and_restart",
+        "seconds": 1.3536
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_welcome_shortcut_and_readable_plan_are_not_data_mutations",
+        "seconds": 0.501
+      },
+      {
+        "id": "tests.test_ui.DesktopTests.test_widget_choice_submission_and_clipboard_failure",
+        "seconds": 0.4612
+      },
+      {
+        "id": "tests.test_web.WebTests.test_chat_and_plan_use_existing_gates",
+        "seconds": 0.0771
+      },
+      {
+        "id": "tests.test_web.WebTests.test_clipboard_export_uses_precision_and_formula_protection",
+        "seconds": 0.0436
+      },
+      {
+        "id": "tests.test_web.WebTests.test_close_rejects_further_dispatch",
+        "seconds": 0.0209
+      },
+      {
+        "id": "tests.test_web.WebTests.test_company_intent_uses_form_without_model",
+        "seconds": 0.0332
+      },
+      {
+        "id": "tests.test_web.WebTests.test_deleted_source_invalidates_transfer",
+        "seconds": 0.0312
+      },
+      {
+        "id": "tests.test_web.WebTests.test_initial_state_and_draft_isolation",
+        "seconds": 0.0562
+      },
+      {
+        "id": "tests.test_web.WebTests.test_markdown_cannot_execute_or_fetch",
+        "seconds": 0.0333
+      },
+      {
+        "id": "tests.test_web.WebTests.test_no_arbitrary_commands_or_sensitive_errors",
+        "seconds": 0.0229
+      },
+      {
+        "id": "tests.test_web.WebTests.test_query_preview_requires_confirmation",
+        "seconds": 0.0671
+      },
+      {
+        "id": "tests.test_web.WebTests.test_send_fences_old_draft_and_changed_idempotency_payload",
+        "seconds": 0.0631
+      },
+      {
+        "id": "tests.test_web.WebTests.test_todo_repeated_save_and_source_deletion",
+        "seconds": 0.0422
+      },
+      {
+        "id": "tests.test_web.WebTests.test_transfer_preview_is_pure_and_confirmation_idempotent",
+        "seconds": 0.0504
+      },
+      {
+        "id": "tests.test_web.WebTests.test_trial_rejects_company_config",
+        "seconds": 0.0234
+      },
+      {
+        "id": "tests.test_web_palette.WebPaletteTests.test_all_accent_variants_keep_button_and_selection_readable",
+        "seconds": 0.0011
+      },
+      {
+        "id": "tests.test_web_palette.WebPaletteTests.test_text_and_status_contrast_in_both_themes",
+        "seconds": 0.0012
+      },
+      {
+        "id": "tests.test_workflow_presentation.WorkflowPresentationTests.test_actual_running_and_failed_steps_retained_and_retry_button_available",
+        "seconds": 0.7925
+      },
+      {
+        "id": "tests.test_workflow_presentation.WorkflowPresentationTests.test_one_explicit_confirmation_runs_only_displayed_plan_once",
+        "seconds": 0.6077
+      },
+      {
+        "id": "tests.test_workflow_presentation.WorkflowPresentationTests.test_result_window_uses_fixed_snapshot_and_opening_does_not_dispatch",
+        "seconds": 1.2086
+      },
+      {
+        "id": "tests.test_workflow_presentation.WorkflowPresentationTests.test_small_workspace_keeps_input_approval_and_step_controls_reachable",
+        "seconds": 1.3354
+      },
+      {
+        "id": "tests.test_workflow_presentation.WorkflowPresentationTests.test_unapproved_rows_are_read_only_and_complete_text_remains_selectable",
+        "seconds": 0.6412
+      },
+      {
+        "id": "tests.test_workflow_presentation.WorkflowPresentationTests.test_unknown_and_cancelled_are_not_misreported_and_details_do_not_truncate",
+        "seconds": 0.4298
+      },
+      {
+        "id": "tests.test_workflow_profiles.WorkflowProfilesTests.test_assistant_id_endpoint_disable_invalidate_capability",
+        "seconds": 0.0093
+      },
+      {
+        "id": "tests.test_workflow_profiles.WorkflowProfilesTests.test_different_ids_and_roles_are_routed_stateless",
+        "seconds": 0.0097
+      },
+      {
+        "id": "tests.test_workflow_profiles.WorkflowProfilesTests.test_unverified_catalog_and_roles",
+        "seconds": 0.0027
+      },
+      {
+        "id": "tests.test_workflow_ui.WorkflowUITests.test_accepted_discussion_clears_saved_draft_and_fences_late_save",
+        "seconds": 0.4828
+      },
+      {
+        "id": "tests.test_workflow_ui.WorkflowUITests.test_conversation_plan_executes_only_after_consent_and_preserves_chat",
+        "seconds": 0.6257
+      },
+      {
+        "id": "tests.test_workflow_ui.WorkflowUITests.test_followup_discussion_questions_and_revision",
+        "seconds": 0.6556
+      },
+      {
+        "id": "tests.test_workflow_ui.WorkflowUITests.test_mode_restores_per_conversation_without_dispatch",
+        "seconds": 0.5493
+      },
+      {
+        "id": "tests.test_workflow_ui.WorkflowUITests.test_mode_selection_does_not_dispatch_and_attachment_not_silently_sent",
+        "seconds": 0.4972
+      },
+      {
+        "id": "tests.test_workflow_ui.WorkflowUITests.test_retained_workflow_table_paging_copy_and_no_dispatch",
+        "seconds": 0.4267
+      },
+      {
+        "id": "tests.test_workflow_ui.WorkflowUITests.test_unverified_company_catalog_blocked_and_reopen_latest_local_plan",
+        "seconds": 0.504
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_approve_runs_real_sequence_once_with_isolated_inputs",
+        "seconds": 0.1079
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_cancel_planner_late_reply_and_delete_fence",
+        "seconds": 0.1084
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_cancel_worker_late_result_and_delete_fence",
+        "seconds": 0.1113
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_confirmation_transaction_failure_does_not_dispatch",
+        "seconds": 0.0503
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_cross_midnight_retry_keeps_original_query_date",
+        "seconds": 0.1947
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_discussion_questions_then_plan_without_dispatch",
+        "seconds": 0.1111
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_failure_pauses_schedule_and_binding_revision_prevents_call",
+        "seconds": 0.2549
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_invalid_output_empty_or_unapproved_tool_stops",
+        "seconds": 0.1048
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_invalid_plan_clears_old_ready_steps_and_duplicate_json_rejected",
+        "seconds": 0.1003
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_invalid_steps_and_capability",
+        "seconds": 0.0337
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_no_numeric_query_works_and_stale_deletion_fails",
+        "seconds": 0.1343
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_numeric_corruption_stops_next_step",
+        "seconds": 0.0913
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_preview_consent_expiry_and_revision",
+        "seconds": 0.0445
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_reopen_preserves_no_dispatch",
+        "seconds": 0.1174
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_restart_interrupted_workflow_pauses_only_active_schedule",
+        "seconds": 0.1082
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_retry_reuses_only_successful_prefix_and_no_hidden_retry",
+        "seconds": 0.1392
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_review_failure_retains_query_and_no_compose",
+        "seconds": 0.1065
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_schedule_cancel_drain_prevents_overlap",
+        "seconds": 0.2168
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_schedule_needs_success_and_consent_then_tick_dedup",
+        "seconds": 0.2673
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_scheduled_retry_becomes_latest_and_cannot_fork_twice",
+        "seconds": 0.2441
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_schema4_migration_backup_and_atomic_failure",
+        "seconds": 0.0309
+      },
+      {
+        "id": "tests.test_workflows.WorkflowTests.test_source_delete_keeps_independent_results_and_schedule",
+        "seconds": 0.1432
+      },
+      {
+        "id": "tests.test_workspace.WorkspaceTests.test_composer_reflows_without_edit_on_narrowing",
+        "seconds": 0.8652
+      },
+      {
+        "id": "tests.test_workspace.WorkspaceTests.test_detail_selection_survives_completion_and_source_remains",
+        "seconds": 0.7248
+      },
+      {
+        "id": "tests.test_workspace.WorkspaceTests.test_optional_icons_theme_and_reading_width",
+        "seconds": 1.503
+      },
+      {
+        "id": "tests.test_workspace.WorkspaceTests.test_plan_task_states_and_detail_stay_bound_to_selection",
+        "seconds": 1.2279
+      },
+      {
+        "id": "tests.test_workspace.WorkspaceTests.test_quick_actions_do_not_dispatch_and_composer_grows",
+        "seconds": 0.734
+      },
+      {
+        "id": "tests.test_workspace.WorkspaceTests.test_running_cancel_failure_and_no_extra_dispatch",
+        "seconds": 0.8855
+      },
+      {
+        "id": "tests.test_workspace.WorkspaceTests.test_transcript_refresh_preserves_cross_message_selection_and_scroll",
+        "seconds": 1.304
+      }
+    ],
+    "status": "completed"
+  },
+  "slowest": [
+    {
+      "id": "tests.test_display.DisplayAppTests.test_simulated_multipliers_keep_chat_inside_page_and_send_reachable",
+      "seconds": 6.6213
+    },
+    {
+      "id": "tests.test_action_ui.ActionUITests.test_catalog_dynamic_fields_and_unmapped_schedule_dates",
+      "seconds": 2.7274
+    },
+    {
+      "id": "tests.test_experience.GuidanceUITests.test_toggle_all_pages_preserves_draft_attachment_selection_no_dispatch",
+      "seconds": 2.4675
+    },
+    {
+      "id": "tests.test_outcome_ui.OutcomeUITests.test_feedback_background_save_edit_clear_and_no_dispatch",
+      "seconds": 2.1618
+    },
+    {
+      "id": "tests.test_experience.GuidanceUITests.test_startup_no_popup_process_or_service_request_and_offline_help",
+      "seconds": 2.0989
+    },
+    {
+      "id": "tests.test_daily_work.DailyWorkTests.test_autosave_reopen_and_attachment_requires_selection",
+      "seconds": 1.9186
+    },
+    {
+      "id": "tests.test_display.DisplayAppTests.test_normal_maximized_theme_switch_preserve_point_fonts_and_draft",
+      "seconds": 1.6411
+    },
+    {
+      "id": "tests.test_shortcut.ShortcutTests.test_create_and_repeat_update",
+      "seconds": 1.6267
+    },
+    {
+      "id": "tests.test_outcome_ui.OutcomeUITests.test_failed_feedback_retains_note_and_retry_choice",
+      "seconds": 1.533
+    },
+    {
+      "id": "tests.test_notifications.NotificationTests.test_long_content_is_preserved_and_close_cancels_timer",
+      "seconds": 1.5148
+    }
+  ],
+  "seconds": 144.3115,
+  "deployment_followup": {
+    "installation": {
+      "status": "passed",
+      "environment_created": true,
+      "checks": [
+        {
+          "name": "bundle_integrity",
+          "status": "passed"
+        },
+        {
+          "name": "base_python",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "create_environment",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "offline_install",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "pip_check",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "environment_diagnostic",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "lock_match",
+          "status": "passed"
+        }
+      ],
+      "full_regression": "not_tested",
+      "company_real": "not_tested",
+      "wheels": 69,
+      "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b"
+    },
+    "targeted": {
+      "recorded_at_utc": "2026-09-30T01:39:06.275178+00:00",
+      "environment": "D:\\unit-helper-spec\\.venv\\Scripts\\python.exe",
+      "python": "3.10.4",
+      "architecture_bits": 64,
+      "suite": "targeted",
+      "selectors": [
+        "tests.test_environment.OfflineBundleTests",
+        "tests.test_environment.OfflineInstallerTests",
+        "tests.test_test_runner"
+      ],
+      "passed": true,
+      "commands": [
+        {
+          "command": [
+            "D:\\unit-helper-spec\\.venv\\Scripts\\python.exe",
+            "scripts/test_runner.py",
+            "--suite",
+            "targeted",
+            "--tests",
+            "tests.test_environment.OfflineBundleTests",
+            "tests.test_environment.OfflineInstallerTests",
+            "tests.test_test_runner"
+          ],
+          "exit_code": 0,
+          "output": "test_complete_bundle_verifies (tests.test_environment.OfflineBundleTests) ... ok\ntest_corrupt_wheel_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_existing_build_destination_untouched (tests.test_environment.OfflineBundleTests) ... ok\ntest_lock_mismatch_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_missing_wheel_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_unsafe_manifest_path_and_extra_files_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_wrong_target_rejected (tests.test_environment.OfflineBundleTests) ... ok\ntest_install_is_offline_only_failures_stop_and_lock_is_required (tests.test_environment.OfflineInstallerTests) ... ok\ntest_rejects_existing_environment_and_invalid_bundle_before_creation (tests.test_environment.OfflineInstallerTests) ... ok\ntest_cli_report_is_scoped_overwritten_and_full_checks_run_once (tests.test_test_runner.RunnerTests) ... ok\ntest_failures_skips_and_expected_failures_never_pass (tests.test_test_runner.RunnerTests) ... ok\ntest_quick_blocks_unexpected_gui_and_socket (tests.test_test_runner.RunnerTests) ... ok\ntest_registry_rejects_new_stale_duplicate_empty_and_import_errors (tests.test_test_runner.RunnerTests) ... ok\ntest_selection_is_explicit_nonempty_and_deduplicated (tests.test_test_runner.RunnerTests) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 0.092s\n\nOK\n",
+          "seconds": 0.0917
+        }
+      ],
+      "company_real": "not_tested",
+      "webview_smoke": "not_tested",
+      "status": "passed",
+      "discovered": 512,
+      "selected": 14,
+      "result": {
+        "passed": true,
+        "count": 14,
+        "seconds": 0.0917,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0,
+        "unexpected_successes": 0,
+        "tests": [
+          {
+            "id": "tests.test_environment.OfflineBundleTests.test_complete_bundle_verifies",
+            "seconds": 0.0058
+          },
+          {
+            "id": "tests.test_environment.OfflineBundleTests.test_corrupt_wheel_rejected",
+            "seconds": 0.0039
+          },
+          {
+            "id": "tests.test_environment.OfflineBundleTests.test_existing_build_destination_untouched",
+            "seconds": 0.0027
+          },
+          {
+            "id": "tests.test_environment.OfflineBundleTests.test_lock_mismatch_rejected",
+            "seconds": 0.0032
+          },
+          {
+            "id": "tests.test_environment.OfflineBundleTests.test_missing_wheel_rejected",
+            "seconds": 0.0031
+          },
+          {
+            "id": "tests.test_environment.OfflineBundleTests.test_unsafe_manifest_path_and_extra_files_rejected",
+            "seconds": 0.0084
+          },
+          {
+            "id": "tests.test_environment.OfflineBundleTests.test_wrong_target_rejected",
+            "seconds": 0.0026
+          },
+          {
+            "id": "tests.test_environment.OfflineInstallerTests.test_install_is_offline_only_failures_stop_and_lock_is_required",
+            "seconds": 0.014
+          },
+          {
+            "id": "tests.test_environment.OfflineInstallerTests.test_rejects_existing_environment_and_invalid_bundle_before_creation",
+            "seconds": 0.0064
+          },
+          {
+            "id": "tests.test_test_runner.RunnerTests.test_cli_report_is_scoped_overwritten_and_full_checks_run_once",
+            "seconds": 0.034
+          },
+          {
+            "id": "tests.test_test_runner.RunnerTests.test_failures_skips_and_expected_failures_never_pass",
+            "seconds": 0.0006
+          },
+          {
+            "id": "tests.test_test_runner.RunnerTests.test_quick_blocks_unexpected_gui_and_socket",
+            "seconds": 0.0024
+          },
+          {
+            "id": "tests.test_test_runner.RunnerTests.test_registry_rejects_new_stale_duplicate_empty_and_import_errors",
+            "seconds": 0.0038
+          },
+          {
+            "id": "tests.test_test_runner.RunnerTests.test_selection_is_explicit_nonempty_and_deduplicated",
+            "seconds": 0.0003
+          }
+        ],
+        "status": "completed"
+      },
+      "slowest": [
+        {
+          "id": "tests.test_test_runner.RunnerTests.test_cli_report_is_scoped_overwritten_and_full_checks_run_once",
+          "seconds": 0.034
+        },
+        {
+          "id": "tests.test_environment.OfflineInstallerTests.test_install_is_offline_only_failures_stop_and_lock_is_required",
+          "seconds": 0.014
+        },
+        {
+          "id": "tests.test_environment.OfflineBundleTests.test_unsafe_manifest_path_and_extra_files_rejected",
+          "seconds": 0.0084
+        },
+        {
+          "id": "tests.test_environment.OfflineInstallerTests.test_rejects_existing_environment_and_invalid_bundle_before_creation",
+          "seconds": 0.0064
+        },
+        {
+          "id": "tests.test_environment.OfflineBundleTests.test_complete_bundle_verifies",
+          "seconds": 0.0058
+        },
+        {
+          "id": "tests.test_environment.OfflineBundleTests.test_corrupt_wheel_rejected",
+          "seconds": 0.0039
+        },
+        {
+          "id": "tests.test_test_runner.RunnerTests.test_registry_rejects_new_stale_duplicate_empty_and_import_errors",
+          "seconds": 0.0038
+        },
+        {
+          "id": "tests.test_environment.OfflineBundleTests.test_lock_mismatch_rejected",
+          "seconds": 0.0032
+        },
+        {
+          "id": "tests.test_environment.OfflineBundleTests.test_missing_wheel_rejected",
+          "seconds": 0.0031
+        },
+        {
+          "id": "tests.test_environment.OfflineBundleTests.test_existing_build_destination_untouched",
+          "seconds": 0.0027
+        }
+      ],
+      "seconds": 1.1618
+    },
+    "note": "Final installer config isolation was clean-installed again; targeted deployment contracts passed. Full result remains failed due to Windows clipboard access error 5; company services not tested."
+  }
 }

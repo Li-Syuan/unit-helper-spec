@@ -1,5 +1,7 @@
 # 0.18.2 公司接手入口
 
+**先處理部署缺件（2026-09-30）：**使用核准管道帶入正式 69 套件離線 ZIP，解壓到新資料夾。CMD 執行 `install-offline.bat "C:\approved\Python3104\python.exe"`，成功後執行 `.venv\Scripts\python.exe scripts\verify.py offline-rebuild` 一次。環境通過才設定／實測公司助理；不需要 agent 重寫 adapter 或降版 lock。保留公司現有程式與 `.venv`，差異另行比對。詳細失敗處理見[離線安裝](docs/DEVELOPMENT.md#離線安裝)，本機結果見[驗證紀錄](docs/VALIDATION.md)。
+
 明天先跑「現有搜尋助理 → 財經日報 → 現在試跑 → 核對來源 → 每日08:00」，不需先完成四角色。多代理改以固定合成資料測分析／覆核／彙整；[接手指令](docs/COMPANY-IMPLEMENTATION.md) 提供完整貼上內容與驗收。App 已加本機設定盤點及明確 metadata 檢查；公司已有成功呼叫請先保留，不再重寫整個介面。
 
 先照 [GPT 6 sol 工作指令](docs/COMPANY-IMPLEMENTATION.md) 完成公司文字旅程。公司 Threads/Messages/Runs 接口已依範例實作，LangGraph 已正式接管批准後的順序分工；不用再從零設計 agent 引擎或猜 Assistant ID 映射。

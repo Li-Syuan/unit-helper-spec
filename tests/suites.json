@@ -18,6 +18,7 @@
     "tests.test_dialogue_concurrency.DialogueConcurrencyTests",
     "tests.test_display.DisplayPolicyTests",
     "tests.test_environment.OfflineBundleTests",
+    "tests.test_environment.OfflineInstallerTests",
     "tests.test_experience.GuidanceDataTests",
     "tests.test_files.ExportTests",
     "tests.test_files.UploadTests",

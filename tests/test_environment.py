@@ -17,6 +17,7 @@ def module(name, filename):
 
 doctor = module('environment_doctor', 'doctor.py')
 bundle = module('environment_bundle', 'offline_bundle.py')
+installer = module('environment_installer', 'install-offline.py')
 
 
 class DiagnosticTests(unittest.TestCase):
@@ -164,6 +165,60 @@ class OfflineBundleTests(unittest.TestCase):
         with self.assertRaisesRegex(bundle.BundleError, 'destination_exists'):
             bundle.build_bundle(self.folder, self.lock)
         self.assertTrue(self.wheel.exists())
+
+
+class OfflineInstallerTests(unittest.TestCase):
+    setUp = OfflineBundleTests.setUp
+    save_manifest = OfflineBundleTests.save_manifest
+
+    def test_rejects_existing_environment_and_invalid_bundle_before_creation(self):
+        existing=self.root/'.venv'; existing.mkdir()
+        marker=existing/'keep.txt';marker.write_text('keep')
+        with patch.object(installer.subprocess,'run') as run:
+            with self.assertRaisesRegex(installer.InstallError,'not_overwritten'):
+                installer.install(self.root,self.folder)
+            self.assertEqual(marker.read_text(),'keep');run.assert_not_called()
+            for name in ('../escape','elsewhere','.venv/child'):
+                with self.subTest(name=name),self.assertRaises(installer.InstallError):
+                    installer.install(self.root,self.folder,name)
+            with patch.object(installer.sys,'version_info',(3,10,5)):
+                with self.assertRaisesRegex(installer.InstallError,'python3104'):
+                    installer.install(self.root,self.folder,'.venv-new')
+            self.wheel.unlink()
+            with self.assertRaises(installer.BundleError):
+                installer.install(self.root,self.folder,'.venv-new')
+            self.assertFalse((self.root/'.venv-new').exists());run.assert_not_called()
+
+    def test_install_is_offline_only_failures_stop_and_lock_is_required(self):
+        from contextlib import redirect_stdout
+        import io
+        from types import SimpleNamespace
+        for case in ('success','create','pip','freeze'):
+            report={};commands=[]
+            def run(command,**kw):
+                commands.append(command)
+                self.assertEqual(kw['env']['PIP_CONFIG_FILE'],installer.os.devnull)
+                failure=(case=='create' and 'venv' in command) or (case=='pip' and 'install' in command)
+                return SimpleNamespace(returncode=1 if failure else 0,
+                                       stdout='sample==9.0\n' if case=='freeze' else 'sample==1.0\n')
+            with self.subTest(case=case),patch.object(installer.subprocess,'run',side_effect=run),redirect_stdout(io.StringIO()):
+                if case=='success':
+                    installer.install(self.root,self.folder,'.venv-'+case,progress=report)
+                    self.assertEqual(report['status'],'passed')
+                    self.assertEqual(report['full_regression'],'not_tested')
+                    self.assertEqual(report['company_real'],'not_tested')
+                else:
+                    with self.assertRaises(installer.InstallError):
+                        installer.install(self.root,self.folder,'.venv-'+case,progress=report)
+                    self.assertEqual(report['status'],'failed')
+                self.assertTrue(report['environment_created'])
+                installs=[command for command in commands if 'install' in command]
+                self.assertEqual(len(installs),0 if case=='create' else 1)
+                for command in installs:
+                    for flag in ('--isolated','--no-index','--no-deps','--no-cache-dir','--only-binary=:all:'):
+                        self.assertIn(flag,command)
+                    self.assertEqual(command[command.index('--find-links')+1],str(self.folder))
+                if case=='pip':self.assertEqual(len(commands),3)
 
 
 if __name__ == '__main__':

@@ -2,6 +2,8 @@
 
 請先讀根目錄 AGENTS.md、COMPANY-HANDOFF.md 與本文件。保留公司現有能成功呼叫的程式與設定，不重寫 UI，也不要把 Assistant ID 當 model。
 
+**環境缺件先停止接線修改：**公司2026-09-30報告尚未進入正式full測試，原因是根目錄環境與lock不符。改用核准的完整正式離線ZIP，在新資料夾執行`install-offline.bat "C:\approved\Python3104\python.exe"`，再用新`.venv`執行`scripts/verify.py offline-rebuild`一次。不要覆蓋現有`.venv`、降低Bleach版本或改用lab lock；先保留公司成功程式並比對合併。手動安裝／驗證不需要模型token，詳見[離線步驟](DEVELOPMENT.md#離線安裝)。通過後才繼續下方真實接口試跑。
+
 ## 明天先完成一份可核對的財經日報
 
 使用者已回報：公司 UI 能搜尋，過去本機 App 亦曾排程呼叫並取得回報。請優先比對那份成功程式，不重寫現有成功接線。新入口已完成「選現有助理 → 預覽 → 試跑 → 核對 → 啟用每日08:00」，不要求先建立四個角色。

@@ -20,6 +20,16 @@
 
 ## 開始使用
 
+**公司索引缺少鎖定版本、或 PowerShell 腳本被限制時：**透過核准管道取得完整正式離線 ZIP，解壓到新資料夾，保留公司原專案與 `.venv`。Clone 本身不包含正式 wheels。關閉舊 App，再於新資料夾的 CMD 執行（換成核准的 Python 路徑）：
+
+```bat
+install-offline.bat "C:\approved\Python3104\python.exe"
+.venv\Scripts\python.exe scripts\verify.py offline-rebuild
+start-app.bat
+```
+
+每行成功後才進行下一行；`verify` 已包含一次完整回歸，不再另外跑 full。安裝會驗證完整 69 個 wheels 及鎖檔，不連外、不覆寫既有環境，也不調整 PowerShell 執行政策。詳細步驟與失敗處理見[離線安裝](docs/DEVELOPMENT.md#離線安裝)。
+
 Clone 後，在專案根目錄指定公司核准的 Python **3.10.4** 完整安裝版（含 Tcl/Tk）：
 
 ```powershell

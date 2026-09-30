@@ -70,6 +70,30 @@ setup 建立專屬 `.venv`，拒絕覆寫既有環境，不借用其他專案的
 
 ## 離線安裝
 
+### 公司已取得完整正式 ZIP（建議）
+
+適用於核准索引缺少 Bleach／OpenAI／LangGraph 鎖定版本，或 PowerShell 拒絕執行腳本的環境。不要單獨降版某個套件，也不要把獨立 lab 的 52 套件 lock 套到 App。
+
+1. 由核准管道帶入正式 ZIP，確認來源及交付 SHA-256；完整解壓到**新的資料夾**。保留公司既有修改與 `.venv`，不要直接覆蓋。
+2. 關閉舊 App。準備公司核准的 Python **恰好 3.10.4 x64** 完整安裝（含 Tk）、WebView2 與 .NET。這些系統元件不含在 wheel 包內。
+3. 在新資料夾開啟 CMD，逐行執行，每行成功才繼續：
+
+```bat
+install-offline.bat "C:\approved\Python3104\python.exe"
+.venv\Scripts\python.exe scripts\verify.py offline-rebuild
+start-app.bat
+```
+
+BAT 直接呼叫固定 Python 腳本，不需要 PowerShell。亦可用同一核准 Python 執行 `scripts\install-offline.py --offline-bundle wheelhouse`。路徑以雙引號包住；不需要啟用虛擬環境。`verify` 已包含完整回歸及環境檢查，不必再跑 full。安裝及本機測試不呼叫公司模型。
+
+安裝先驗證根目錄 lock 與全部 69 個 wheels，再新建 `.venv`；使用 `--isolated --no-index --no-deps --no-cache-dir`，完成後執行 doctor、pip check 及精確 lock 比對。已有目標環境一律拒絕覆寫；安裝失敗會保留本次半成品供檢查，不會連外補件或自動刪除。修復套件包後，改在新解壓資料夾重試。安全摘要覆寫 `artifacts/installation/latest.json`。
+
+完整測試先檢查環境，再探索測試。環境不符時，報告保留 `commands`，測試為 `not_run`，探索／選取數為 null；不能標記 full 通過。`pip check` 單独成功不代表 lock 已齊全，啟動器 `--check` 也不是完整依賴驗收。
+
+不同專案副本預設仍使用 `%LOCALAPPDATA%\UnitHelperLocal`，務必先關閉舊 App，避免雙跑；安裝器不搬移或清除使用者資料。公司已修改的 adapter 應先由公司 agent 比對合併，不直接以交付包覆蓋。完整測試報告可能含機器路徑，分享前需去識別。
+
+### 自行準備／沿用 PowerShell 安裝
+
 在可信且有網路的準備機，以合格 `.venv` 下載現有鎖檔的完整 wheelhouse：
 
 ```powershell
