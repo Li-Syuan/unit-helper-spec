@@ -56,6 +56,29 @@ class ProfileDialogueProvider:
         context=dict(context,conversation_id=context['conversation_id']+':task:'+context['request_id'])
         return json_object(self.profiles.respond(messages,'chat',binding,context=context))
 
+    def inspect_context(self,mode,assistant_id,context,remote=False):
+        binding=self.validate_assistant(assistant_id)
+        if not isinstance(binding,dict):return {'state':'unsupported','recoverable':False,'remote_checked':False}
+        if mode=='task':context=dict(context,conversation_id=context['conversation_id']+':task:'+context['request_id'])
+        return self.profiles.inspect_request(binding,context,remote=remote)
+
+    def deletion_ledger(self,threads):
+        """Only deterministic sessions belonging to these local threads; no HTTP."""
+        from .assistants_gateway import session_context
+        keys=[]
+        for thread in threads:
+            aid=thread['assistant_id']
+            if not aid.startswith('company:'):continue
+            try:
+                _,pid,revision=aid.split(':');binding={'profile_id':pid,'revision':int(revision)}
+            except (ValueError,TypeError):raise ValueError('對話助理綁定無效，未刪除。') from None
+            request_ids=thread['request_ids'] if thread['mode']=='task' else ['unused']
+            for rid in request_ids:
+                cid='dialogue:'+thread['id']
+                if thread['mode']=='task':cid+=':task:'+rid
+                keys.append(session_context(binding,'chat',{'conversation_id':cid,'request_id':rid})[0])
+        return self.profiles.path.parent/'assistant-sessions.sqlite3',sorted(set(keys))
+
 
 def parse_schedule(text):
     normalized=text.replace('早上八點','08:00').replace('上午八點','08:00')

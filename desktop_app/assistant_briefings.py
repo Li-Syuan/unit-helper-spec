@@ -78,8 +78,10 @@ class AssistantBriefings:
                 row=db.execute("SELECT id FROM schedules WHERE query_id='ASSISTANT_BRIEFING' AND json_extract(parameters,'$.trial_task')=?",(tid,)).fetchone()
             task=dict(task,schedule_id=row['id'] if row else None)
         if task['schedule_id']:
-            s=self.store.schedule(task['schedule_id'])
-            task=dict(task,schedule={'enabled':bool(s['enabled']),'time_hhmm':s['time_hhmm'],'next_fire':s['next_fire']})
+            with self.store.connection() as db:
+                s=db.execute('SELECT * FROM schedules WHERE id=?',(task['schedule_id'],)).fetchone()
+            if s is None:task=dict(task,schedule_deleted=True)
+            else:task=dict(task,schedule={'enabled':bool(s['enabled']),'time_hhmm':s['time_hhmm'],'next_fire':s['next_fire']})
         return task
 
     def work(self,tid):

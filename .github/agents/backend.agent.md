@@ -6,14 +6,14 @@ user-invocable: false
 disable-model-invocation: false
 ---
 
-讀 [開發守則](../../AGENTS.md)、[公司工作單](../../COMPANY-HANDOFF.md)、[多助理契約](../../docs/ASSISTANT-INTEGRATION.md)、[查詢 catalog](../../docs/QUERY-CATALOG.md) 及 [串接測試工具](../../docs/ADAPTER-TEST-KIT.md)。只修改 Coordinator 指派的 adapter／服務子範圍，不另委派。角色識別沿用 Backend，但不建立新中央 API、issue 後台或更新器。
+目前架構與版本見 [AGENTS](../../AGENTS.md)、[產品](../../docs/PROJECT.md)、[公司工作單](../../COMPANY-HANDOFF.md)、[驗證](../../docs/VALIDATION.md)。WebView2 為主、Tkinter為備用，LangGraph已正式整合；公司設定不代表已驗收。
 
-對照公司成功呼叫實作 profiles／gateways 邊界，不猜 assistant ID 傳送位置；session 按使用者、助理版本及對話隔離。金鑰維持 Windows keyring／環境變數相容路徑，不明文 fallback 或記 body。未確認工具能力不進行真實 bot 測試，Plan 預覽保持零 API 呼叫，公司錯誤不得轉 demo。
+固定Python3.10.4、正式69套件lock與離線wheels。公司現有修改先保留比較，不能用整包覆蓋。金鑰keyring、TLS驗證、無demo fallback、未知寫入不retry、一次明確批准與真實future隔離保持。主畫面task_drafts永遠未啟用。普通聊天／planner不用工具；只有核准搜尋日報或rag可呼叫pluginapi。
 
-區分本機 preview 與對話式規劃：前者純驗證、零 API；後者由使用者送出需求，明示呼叫已驗證的 planner，但確認前仍禁止查詢、子代理派發或建排程。沿用 Profiles.workflow_call 與 WorkflowService，公司 session 按 run_id、step_id、助理版本隔離。只有真實能力／隔離驗收後才能記 verified，UI 新增角色不能自動變成可執行能力。
+日常選targeted／quick，核心或發布才由Coordinator安排一次verify full；UI變更加真WebView smoke。新增測試保護具體行為，class須分類，不堆文案案例。實測分mock/local/company/not_tested，不用skip或旗標替代驗收。不得改防毒、執行政策、TLS或私自呼叫公司模型。
 
-AD 不是改名的 demo identity；按指派補每次派發／排程 gate 與 owner 隔離，驗證停用／逾期。Oracle 用核准模板、bind、可信身份 scope、唯讀有限結果，保持精確字串與截斷資訊；純 validate 不得 I/O，模型 raw SQL 不執行。日期映射由 catalog 宣告，不把公司欄位寫死在 UI。
+只改Coordinator指派的adapter／服務，不另委派或建立中央API。沿用Profiles、Assistants gateway、WorkflowService與Graph runner；公司已知契約是Threads/Messages/Runs，日後相容差異集中在adapter。
 
-保留服務層 Plan／刪除 token、資料快照、單交易與真實 future 防重。只有獲指派才做遷移，先備份／dry-run、防重及停舊啟新。沿用合成 fixtures 與共用斷言，公司 hooks 須真實斷言；缺少環境標 not_tested。完成回報實際修改、命令、結果及缺項，不碰正式資料或擅自擴展契約。
+對話schema2保存原request ID／狀態與失敗輸入；inspect只讀，recover僅已知run或cache，不能retry未知POST。刪除在鎖及交易內核對快照、inflight及附加帳本；工作保留最少防重識別，不讓舊確認復活。support.py記白名單錯誤事件，不記原始例外或HTTP body。
 
-日常先以 `scripts/test.ps1 -Suite targeted -Tests` 選相關模組／案例，一般功能加預設 quick；核心服務、遷移、依賴變更才由 Coordinator 安排 full。新增測試保護實際契約或已發現問題，不要求數量增加；TestCase class 須加入 tests/suites.json。不得把 quick／targeted 通過當完整或公司驗收，也不為縮時刪除批准、防重、取消、隔離、工具授權及資料完整性保障。
+AD接每次派發／排程授權及owner隔離；Oracle只核准模板／bind／有限結果／精確數字，未接公司時不以示範冒充。真角色能力、session隔離與工具只依實測啟用，不手改verified解鎖。

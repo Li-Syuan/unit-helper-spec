@@ -1,3 +1,13 @@
+# 0.19.0 部署、恢复與資料清理（優先於舊版說明）
+
+公司登入：company_auth.py 固定 authenticate(employee_id,password) 由公司提供；未接線拒絕。authentication.py只接受authenticated/allowed=true及有限身分/期限，密碼不保存/記錄；不得接受單一True冒充完整授權。identity_mode=company在Web/Tk啟動前顯示原生登入頁，未成功不開Store/scheduler。每穩定subject使用users/SHA256資料夾，不搬移舊本機資料；到期阻止新派發，重新啟動登入，不宣稱即時AD撤權或Windows ACL。--login-preview零驗證/零工作區。publisher.example.json留空，私人publisher.json被忽略；about.py提供登入、Web/Tk關於共用三欄純文字。
+
+WebView主要交付，Tk備用。主Store仍schema6；獨立DialogueStore升schema2，先SQLite backup、交易遷移，保留task_drafts CHECK=0。DialogueService保存失敗原request；inspect只讀、recover沿同ID用已知run/cache，unknown POST/取消不可重送。另開對話預設僅草稿；明確預覽確認才複製歷史。新恢復入口的I/O不持有bridge全域鎖。
+
+DataCleanup管理本機工作／成果、計畫、流程、停用排程、回報、通知與表單；DialogueService管理主對話／草稿。刪除10分鐘一次token、快照、鎖、交易、真future／session guard，忙碌整批拒絕。tasks刪內容但留deleted tombstone防舊request重派發，Store.tasks不列出。來源排程已刪須明示，不把它誤當手動成果。company remote／獨立副本／備份保留，系統支援log無UI刪除。
+
+support.py白名單logs/events.jsonl輪替與ZIP匯出；嚴禁原始exception／HTTP body／金鑰／URL／絕對路徑。錯誤編號可分享，不代表已確認原因。正式離線69wheels保持原lock，Python/WebView2/.NET不含於wheel包。check-launch新增LangGraph匯入检查；full仍依doctor/pip/lock先驗環境。本機合成恢復通過不能宣稱公司多ID或搜尋已實测。
+
 # 0.18.2 外觀選擇
 
 部署補充（2026-09-30）：正式離線包沿用根目錄69套件lock。`install-offline.bat`／`scripts/install-offline.py`直接以核准Python建立新環境，不需PowerShell；已有環境拒絕覆写，失敗不連外、不降版、不套lab lock。full先doctor／pip／lock，再探索測試；環境失敗保留commands並明示not_run，不能宣稱部分測試已通過。公司現有修改留存，比對後再合併，不以完整ZIP覆蓋。

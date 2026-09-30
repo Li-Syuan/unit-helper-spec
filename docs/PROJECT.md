@@ -1,10 +1,17 @@
-## 開發驗證入口
+# QA agent 0.19.0 現行架構
 
-正式部署提供不依賴PowerShell的`install-offline.bat`／`scripts/install-offline.py`：先驗69個正式wheels及lock，僅新建環境，再檢查依賴。full改為先檢查環境，缺件時停止且明示測試未執行。公司核准索引缺版時使用完整離線包，不改公司索引或以lab套件取代。詳見[離線安裝](DEVELOPMENT.md#離線安裝)。本輪產品仍為0.18.2，schema、執行契約及依賴版本不變。
+WebView主要交付，Tk備用。主Store仍schema6；獨立DialogueStore升schema2，先SQLite backup、交易遷移，保留task_drafts CHECK=0。DialogueService保存失敗原request；inspect只讀、recover沿同ID用已知run/cache，unknown POST/取消不可重送。另開對話預設僅草稿；明確預覽確認才複製歷史。新恢復入口的I/O不持有bridge全域鎖。
 
-日常`test.ps1`預設quick；`-Suite targeted -Tests tests.test_appearance`只跑指定範圍，`-Suite full`才跑全部及環境檢查。交付用`verify.py development`取代full，不兩次重跑。共用`scripts/test_runner.py`及`tests/suites.json`，新TestCase需分類；結果與耗時見[驗證紀錄](VALIDATION.md)。本次只整理測試，產品0.18.2、schema與依賴不變。
+DataCleanup管理本機工作／成果、計畫、流程、停用排程、回報、通知與表單；DialogueService管理主對話／草稿。刪除10分鐘一次token、快照、鎖、交易、真future／session guard，忙碌整批拒絕。tasks刪內容但留deleted tombstone防舊request重派發，Store.tasks不列出。來源排程已刪須明示，不把它誤當手動成果。company remote／獨立副本／備份保留，系統支援log無UI刪除。
 
-# 0.18.2 可選風格與公司核准搜尋
+support.py白名單logs/events.jsonl輪替與ZIP匯出；嚴禁原始exception／HTTP body／金鑰／URL／絕對路徑。錯誤編號可分享，不代表已確認原因。正式離線69wheels保持原lock，Python/WebView2/.NET不含於wheel包。check-launch新增LangGraph匯入检查；full仍依doctor/pip/lock先驗環境。本機合成恢復通過不能宣稱公司多ID或搜尋已實测。
+
+
+## 開發驗證
+
+正式離線入口install-offline.bat不需PowerShell；全部69wheels與lock核對後新建環境。日常targeted/quick，交付verify.py development一次full；真WebView smoke及公司實測分開記錄。
+
+## 外觀與公司核准搜尋
 
 設定→外觀提供深海青藍、星霧紫、森林青綠預覽卡，與深淺外觀獨立保存；失敗保留本次選擇並提示重試，恢復預設只重設dark/ocean。WebBridge appearance只接受theme/color_style白名單，ui-preferences保存兩值，不修改公司設定或工作。Tk備用提供同名選擇。
 
@@ -24,7 +31,7 @@
 
 WorkflowService 保留需求討論、純本機預覽、十分鐘確認、版本綁定與 task 狀態。graph_runner 將已驗證的最多六個順序步驟編譯為 StateGraph，沒有循環、平行、工具節點、自動 retry 或雲端 tracing。checkpoint 僅保存工作／步驟識別及定義指紋；業務成果仍以主 Store 為準。重開不自動呼叫，恢復前核對步驟收據與 checkpoint；任一不一致停止。
 
-AssistantsGateway 使用 Threads/Messages/Runs。Profiles.respond 增加可選 context；workflow_call 傳遞 run_id、step_id、取消檢查與明確 resume。assistant-sessions.sqlite3(schema1) 保存遠端 ID、請求收據、歷史雜湊及回覆快取，不存金鑰或 endpoint。訊息／run 建立前先保存結果可能不明的狀態；未知寫入不重送，已知 run 可明確查詢及恢復。獨立資料庫首次建立，不變更主 Store schema6 或 dialogue schema1。
+AssistantsGateway 使用 Threads/Messages/Runs。Profiles.respond 增加可選 context；workflow_call 傳遞 run_id、step_id、取消檢查與明確 resume。assistant-sessions.sqlite3(schema1) 保存遠端 ID、請求收據、歷史雜湊及回覆快取，不存金鑰或 endpoint。訊息／run 建立前先保存結果可能不明的狀態；未知寫入不重送，已知 run 可明確查詢及恢復。獨立資料庫首次建立，主 Store 維持schema6；獨立dialogue目前schema2。
 
 ProfileDialogueProvider 讓主畫面明確選擇示範／公司；一般聊天沿用對話 thread。建立任務每輪帶完整已顯示歷史與草稿，使用獨立遠端 thread，避免 JSON 原文與 UI 顯示訊息混用；只有 confirm 能存未啟用草稿。主畫面有對話紀錄與取消入口；I/O 不持有 bridge 全域鎖，關閉先阻止寫回並等待請求收尾。
 
@@ -40,7 +47,7 @@ ProfileDialogueProvider 讓主畫面明確選擇示範／公司；一般聊天�
 
 主入口是 pywebview + WebView2，HTML/CSS/JS 全部隨專案提供，無 CDN／遠端字型／遠端頁面。`web_app.py` 管宿主，`web_bridge.py` 僅允許列舉命令，`web_session.py` 組合既有 Engine／Profiles／Store。`web_render.py` 使用 markdown-it-py 與 bleach，回覆移除腳本、屬性、圖片及連結，不執行模型 HTML。Tkinter 保留 `--ui tk`／start-tk.bat。
 
-新主畫面是無附件的兩模式對話，預設示範、公司助理須明確選取。`dialogue_provider.py` 提供服務 Protocol、本機示範及 ProfileDialogueProvider；`dialogue_contracts.py` 驗證助理、草稿和每日／每週／指定日期格式；`dialogue_service.py` 管多輪、修訂、十分鐘預覽及明確確認；`dialogue_store.py` 保存獨立 `dialogue-v1.sqlite3`（schema1）。Assistants wire contract 已依提供範例實作；公司部署、可信 CA 與角色能力仍需現場驗證，失敗不自動換示範。
+新主畫面是無附件的兩模式對話，預設示範、公司助理須明確選取。`dialogue_provider.py` 提供服務 Protocol、本機示範及 ProfileDialogueProvider；`dialogue_contracts.py` 驗證助理、草稿和每日／每週／指定日期格式；`dialogue_service.py` 管多輪、修訂、十分鐘預覽及明確確認；`dialogue_store.py` 保存獨立 `dialogue-v1.sqlite3`（schema2，升級前備份）。Assistants wire contract 已依提供範例實作；公司部署、可信 CA 與角色能力仍需現場驗證，失敗不自動換示範。
 
 新任務的 enabled 固定0且有資料庫 CHECK，既有 Engine／排程器不讀這個資料庫，因此『儲存』不代表能執行。正文中的檔案路徑或命令只是文字，不觸發檔案讀取或 shell。改模式／助理開始新thread，不永久刪歷史。錯誤不寫入半套訊息、草稿或任務；確認失敗可重試，同修訂只存一次。
 
@@ -145,7 +152,7 @@ ActionService 的 report 確認強制每日前一日、三項合成模板及 Gro
 
 0.12.1 通知呈現由 `notifications.py` 管理：側欄常駐紅色未讀徽章、新通知右下角非模態彈窗，八秒逾時、滑鼠停留暫停，多則合併。讀取既有通知與真實 task 狀態；關閉不標已讀，明確查看才標讀。啟動只恢復未讀數，不重播舊通知。不新增依賴、schema 或 Windows 背景服務，不改排程通知條件。
 
-獨立 `local-v1.sqlite3`、schema user_version=5、WAL；本應用 schema 1／2／3／4 升級前以 SQLite backup 備份，再以交易遷移。無可靠助理歸屬的舊對話保留閱讀／轉交，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
+獨立 `local-v1.sqlite3`、schema user_version=6、WAL；本應用 schema 1／2／3／4／5 升級前以 SQLite backup 備份，再以交易遷移。無可靠助理歸屬的舊對話保留閱讀／轉交，不接觸舊公司 SQLite。較新 schema 拒絕開啟。單一資料目錄只能一個程式使用；不把本機檔案當授權系統。
 回報 draft 可讀取修改，local_saved 只表示保存在此電腦；編號 LOCAL-*。不自動附加對話、資料或檔案，不冒稱管理者已收到。未實作處理狀態同步／修正版本管理。
 公司舊資料移轉、中央 API、AD、Oracle、簽章更新及 EXE 打包均另列交接；未接線或未實測項目不得記成已通過。
 
@@ -211,3 +218,9 @@ OutcomeService（outcomes.py）只讀既有 task／workflow_steps，提供 read�
 比較選此前完成且較早建立的成功工作，嚴格同流程／修訂／planner及子助理綁定／步驟與非日期條件；排程僅同 schedule_id，手動僅手動。前一日使用 catalog 日期映射忽略變動日期，固定日期全比對。各步從快照重新取得精確合計與筆數；不混來源、不比較自由文字、不送模型、不產生異常恢復判斷。截斷、空結果、來源欄位不符或無效數值明示不可比較。
 
 成果文字保留完整原文，Instruction 使用結論／需要注意／待確認與決策標題；不依任意模型文字推定結構。覆核顯示「流程覆核通過」仍需核對來源。部分成果和成功分開，僅已結束且有文字的工作可評價。
+
+## 登入入口與身分界線
+
+identity_mode=company時，WebView/Tk啟動前共用login_view.py；authentication.py驗證公司函數回傳、登入期限與每subject資料目錄。company_auth.py仍是拒絕的接線stub，不含LDAP連線或假成功。Profiles/查詢/Engine/bridge檢查登入期限；App關閉清除記憶體session。舊demo模式保持既有資料與入口。--login-preview只顯示畫面，沒有驗證或工作區。
+
+about.py讀本機publisher.json，供兩介面及登入頁顯示作者工號、姓名、電話；缺失或損壞顯示未設定。檔案不進Git，範例全空。公司AD/伺服器ACL/停權即時撤銷仍not_tested。

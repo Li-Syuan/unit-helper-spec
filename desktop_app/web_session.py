@@ -16,17 +16,23 @@ from .outcomes import OutcomeService
 
 
 class WebSession:
-    def __init__(self, directory=None, config=None, config_path=None, groq_trial=False):
+    def __init__(self, directory=None, config=None, config_path=None, groq_trial=False, login_session=None):
         if groq_trial and (config is not None or config_path is not None):
             raise ValueError('試用不能載入公司設定。')
         self.directory=Path(directory or data_directory())
         if groq_trial:self.directory /= 'groq-trial'
         self.trial=groq_trial
         self.config=copy.deepcopy(DEFAULT) if groq_trial else config or load_config(config_path or self.directory/'config.json')
+        self.login_session=login_session
+        if self.config['identity_mode']=='company':
+            self.identity=CompanyIdentity(login_session).current()
+            self.directory=login_session.directory(self.directory)
+        else:
+            if login_session is not None:raise ValueError('登入身分與工作區模式不符。')
+            self.identity=DemoIdentity().current()
         self.lock=InstanceLock(self.directory)
         self.stop=threading.Event();self.closed=False;self.engine=None
         try:
-            self.identity=(DemoIdentity() if self.config['identity_mode']=='demo' else CompanyIdentity()).current()
             self.store=Store(self.directory/'local-v1.sqlite3')
             if groq_trial:
                 from .trial import TrialProfiles
@@ -35,12 +41,19 @@ class WebSession:
             else:
                 self.profiles=Profiles(self.directory/'assistants.json',self.config['assistant']);engine_class=Engine
             self.queries=DemoQueries() if self.config['query_mode']=='demo' else OracleQueries()
+            if self.login_session:
+                from .authentication import AuthorizedQueries
+                self.profiles.authorization=self.login_session.current
+                self.queries=AuthorizedQueries(self.queries,self.login_session)
             self.engine=engine_class(self.store,self.queries.run,None,query_validator=self.queries.validate,
                 query_catalog=self.queries.catalog,assistant_router=self.profiles.respond,binding_validator=self.profiles.validate)
+            self.engine.authorization=self.assert_identity
             self.actions=ActionService(self.engine);self.workflows=WorkflowService(self.engine,self.profiles)
             from .assistant_briefings import AssistantBriefings
             self.briefings=AssistantBriefings(self.engine,self.profiles)
             self.outcomes=OutcomeService(self.workflows);self.forms=ChoiceForms(self.store.path)
+            from .data_cleanup import DataCleanup
+            self.cleanup=DataCleanup(self.engine)
             self.preferences_path=self.directory/'ui-preferences.json'
             from .dialogue_store import DialogueStore
             from .dialogue_service import DialogueService
@@ -54,9 +67,14 @@ class WebSession:
             if self.engine:self.engine.close(wait=True)
             self.lock.close();raise
 
+    def assert_identity(self):
+        if self.login_session:self.login_session.current()
+
     def _tick(self):
         while not self.stop.wait(3):
-            try:self.engine.tick()
+            try:
+                self.assert_identity()
+                self.engine.tick()
             except Exception:self.scheduler_error=True
 
     def close(self):
@@ -69,4 +87,6 @@ class WebSession:
             try:self.dialogue.close(wait=True)
             finally:
                 try:self.company_probe.close(wait=True)
-                finally:self.lock.close()
+                finally:
+                    self.lock.close()
+                    if self.login_session:self.login_session.close()

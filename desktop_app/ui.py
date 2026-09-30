@@ -88,7 +88,7 @@ from .workflow_views import WorkflowViews
 
 
 class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoViews, AssistantViews, ExperienceMixin, WorkspaceViews, GuidanceViews, ConversationViews):
-    def __init__(self, root, config=None, directory=None, config_path=None, groq_trial=False):
+    def __init__(self, root, config=None, directory=None, config_path=None, groq_trial=False, login_session=None):
         self.drafts={}; self.next_binding=None
         self.groq_trial=groq_trial
         if groq_trial:
@@ -99,9 +99,15 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
             config=copy.deepcopy(DEFAULT)
         self.root=root; self.directory=Path(directory or data_directory()); self.config_path=config_path or self.directory/'config.json'
         self.config=config or load_config(self.config_path);
+        self.login_session=login_session
+        if self.config['identity_mode']=='company':
+            self.identity=CompanyIdentity(login_session).current()
+            self.directory=login_session.directory(self.directory)
+        else:
+            if login_session is not None:raise ValueError('登入身分與工作區模式不符。')
+            self.identity=DemoIdentity().current()
         self.lock=InstanceLock(self.directory)
         try:
-            self.identity=(DemoIdentity() if self.config['identity_mode']=='demo' else CompanyIdentity()).current()
             self.store=Store(self.directory/'local-v1.sqlite3'); self.forms=ChoiceForms(self.store.path)
             if groq_trial:
                 from .trial import TrialProfiles
@@ -109,6 +115,10 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
             else:
                 self.profiles=Profiles(self.directory/'assistants.json',self.config['assistant'])
             self.queries=DemoQueries() if self.config['query_mode']=='demo' else OracleQueries()
+            if self.login_session:
+                from .authentication import AuthorizedQueries
+                self.profiles.authorization=self.login_session.current
+                self.queries=AuthorizedQueries(self.queries,self.login_session)
             self.assistant=None; self.adapter_error=''
             try: self.assistant=self.make_assistant(self.config)
             except GatewayError as exc: self.adapter_error=str(exc)
@@ -117,6 +127,7 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
                 from .report_engine import ReportEngine
                 engine_class=ReportEngine
             self.engine=engine_class(self.store,self.queries.run,self.respond,query_validator=self.queries.validate,query_catalog=self.queries.catalog,assistant_router=self.profiles.respond,binding_validator=self.profiles.validate)
+            if self.login_session:self.engine.authorization=self.login_session.current
         except BaseException:
             self.lock.close(); raise
         self.actions=ActionService(self.engine)
@@ -871,16 +882,31 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
         for variable in gc.get_objects():
             if isinstance(variable,tk.Variable) and variable._tk is self.root.tk:
                 for modes,command in variable.trace_info():variable.trace_remove(modes,command)
-        self.lock.close(); self.root.destroy()
+        self.lock.close()
+        if self.login_session:self.login_session.close()
+        self.root.destroy()
 
 
 def launch(config_path=None, groq_trial=False):
     initialize_dpi()
     set_windows_identity()
-    root=tk.Tk()
-    try: app=App(root,config_path=config_path,groq_trial=groq_trial)
+    login_session=None
+    root=None
+    try:
+        if not groq_trial:
+            config=load_config(config_path or data_directory()/'config.json')
+            if config['identity_mode']=='company':
+                from .login_view import show_login
+                login_session=show_login(data_directory())
+                if login_session is None:return True
+        root=tk.Tk()
+        app=App(root,config_path=config_path,groq_trial=groq_trial,login_session=login_session)
     except Exception as exc:
-        messagebox.showerror('無法啟動',str(exc) if isinstance(exc,(ValueError,OSError)) else '本機初始化失敗。',parent=root); root.destroy(); return False
+        if login_session:login_session.close()
+        if root is None:
+            root=tk.Tk();root.withdraw()
+        messagebox.showerror('無法啟動',str(exc) if isinstance(exc,GatewayError) else '設定或登入初始化失敗，請確認本機設定格式與使用權限。',parent=root)
+        root.destroy(); return False
     root.mainloop()
     del app, root
     import gc

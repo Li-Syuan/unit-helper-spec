@@ -1,4 +1,4 @@
-# 給公司 GPT 6 sol：0.18.0 接手指令
+# 給公司 GPT 6 sol：0.19.0 接手指令
 
 請先讀根目錄 AGENTS.md、COMPANY-HANDOFF.md 與本文件。保留公司現有能成功呼叫的程式與設定，不重寫 UI，也不要把 Assistant ID 當 model。
 

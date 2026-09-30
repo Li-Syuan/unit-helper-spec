@@ -1,5 +1,7 @@
 {
   "quick": [
+    "tests.test_about.PublisherInfoTests",
+    "tests.test_authentication.AuthenticationTests",
     "tests.test_appearance.AppearancePreferencesTests",
     "tests.test_appearance.WebAppearanceTests",
     "tests.test_assistant_briefings.AssistantBriefingTests",
@@ -14,8 +16,10 @@
     "tests.test_conversation_actions.IntentTests",
     "tests.test_conversation_deletion.ConversationDeletionTests",
     "tests.test_core.CoreTests",
+    "tests.test_data_cleanup.DataCleanupTests",
     "tests.test_dialogue.DialogueTests",
     "tests.test_dialogue_concurrency.DialogueConcurrencyTests",
+    "tests.test_dialogue_recovery.DialogueRecoveryTests",
     "tests.test_display.DisplayPolicyTests",
     "tests.test_environment.OfflineBundleTests",
     "tests.test_environment.OfflineInstallerTests",
@@ -42,6 +46,7 @@
     "tests.test_search_journey.SearchJourneyTests",
     "tests.test_search_tools.SearchPolicyTests",
     "tests.test_search_tools.SearchToolTests",
+    "tests.test_support.SupportTests",
     "tests.test_test_runner.RunnerTests",
     "tests.test_theme_semantics.SemanticPaletteTests",
     "tests.test_theme_semantics.ThemeStylePaletteTests",
@@ -53,6 +58,8 @@
     "tests.test_workflows.WorkflowTests"
   ],
   "integration": [
+    "tests.test_about.PublisherTkTests",
+    "tests.test_authentication.LoginViewTests",
     "tests.test_action_ui.ActionUITests",
     "tests.test_assistant_ui.AssistantUITests",
     "tests.test_branding.BrandingTests",

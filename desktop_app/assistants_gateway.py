@@ -139,7 +139,15 @@ class AssistantsGateway:
         remaining = deadline - self.clock()
         if remaining <= 0:
             raise GatewayError('公司工作等待逾時；未自動重送，請檢查遠端狀態。')
-        return function(**kwargs, timeout=min(self.timeout, remaining))
+        try:
+            return function(**kwargs, timeout=min(self.timeout, remaining))
+        except Exception as exc:
+            from .support import record
+            stage={'Threads.create':'thread_create','Messages.create':'message_create','Messages.list':'messages_read',
+                   'Runs.create':'run_create','Runs.retrieve':'run_poll','Assistants.retrieve':'assistant_metadata',
+                   'Runs.submit_tool_outputs':'tool_submit'}.get(getattr(function,'__qualname__',''),'remote_request')
+            record(self.ledger.path.parent,stage,exc)
+            raise
 
     @staticmethod
     def _id(value):

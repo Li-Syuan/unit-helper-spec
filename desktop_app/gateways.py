@@ -35,7 +35,12 @@ class DemoIdentity:
 
 
 class CompanyIdentity:
+    def __init__(self, session=None):
+        self.session = session
+
     def current(self) -> dict:
+        if self.session is not None:
+            return self.session.current()
         raise GatewayError("公司 AD 與使用名單尚未配置，無法啟用正式身分。")
 
 

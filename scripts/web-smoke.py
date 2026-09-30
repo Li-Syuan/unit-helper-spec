@@ -120,6 +120,30 @@ def main():
                 assert window.evaluate_js("document.getElementById('dialogue-input').value")=='服務錯誤時保留這段輸入','error_lost_input'
                 assert window.evaluate_js("document.querySelectorAll('#dialogue-messages .message').length")==4,'error_lost_history'
                 session.dialogue.provider=provider
+                assert window.evaluate_js("document.getElementById('dialogue-send').disabled"),'unresolved_request_not_fenced'
+                window.evaluate_js("Array.from(document.querySelectorAll('#dialogue-result button')).find(b=>b.textContent==='檢查原請求').click()")
+                wait_script("Array.from(document.querySelectorAll('#dialogue-result button')).some(b=>b.textContent==='檢查原請求'&&!b.disabled)")
+                capture('dialogue-recovery.png')
+                window.evaluate_js("Array.from(document.querySelectorAll('#dialogue-result button')).find(b=>b.textContent==='另開對話保留內容').click()")
+                time.sleep(.15)
+                assert not window.evaluate_js("document.querySelector('#modal-body input[type=checkbox]').checked"),'history_copied_without_choice'
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='建立新對話').click()")
+                wait_script("!document.getElementById('modal').open&&!document.getElementById('dialogue-send').disabled")
+                assert window.evaluate_js("document.getElementById('dialogue-input').value")=='服務錯誤時保留這段輸入','fork_lost_failed_draft'
+                assert window.evaluate_js("document.querySelectorAll('#dialogue-messages .message').length")==0,'fork_shared_history_by_default'
+                dialogue_send('新對話可以繼續，合成測試')
+                assert window.evaluate_js("document.querySelectorAll('#dialogue-messages .message').length")==2,'fork_cannot_continue'
+                window.evaluate_js("document.getElementById('dialogue-history').click()")
+                time.sleep(.2)
+                window.evaluate_js("document.querySelector('#modal-body input').value='新對話可以繼續';document.querySelector('#modal-body input').dispatchEvent(new Event('input'))")
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-body button')).find(b=>b.textContent==='刪除').click()")
+                wait_script("document.getElementById('modal-title').textContent.includes('永久刪除')")
+                assert window.evaluate_js('document.activeElement.textContent')=='取消','delete_default_not_cancel'
+                capture('dialogue-delete.png')
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='永久刪除').click()")
+                wait_script("!document.getElementById('modal').open&&!document.getElementById('dialogue-send').disabled")
+                assert not any('新對話可以繼續' in (r['title'] or '') for r in session.dialogue.history()),'dialogue_not_deleted'
+                report['checks'].append('failed_request_fenced_inspect_fork_and_explicit_delete')
                 report['checks'].append('provider_failure_preserves_input_and_messages_no_fallback')
                 window.evaluate_js("document.getElementById('dialogue-task-mode').click()")
                 time.sleep(.3)
@@ -334,6 +358,30 @@ def main():
                 assert not session.store.schedule(schedules[0]['id'])['enabled'],'briefing_pause_failed'
                 assert not window.evaluate_js("document.getElementById('modal-body').innerText.includes('已啟用每日')"),'stale_enabled_label'
                 report['checks'].append('briefing_dom_preview_trial_review_schedule_pause_mock')
+                window.evaluate_js("document.getElementById('modal-close').click();document.querySelector('[data-page=activity]').click()")
+                time.sleep(.3);click_button('管理／批次刪除');wait_text('資料類別')
+                window.evaluate_js("document.querySelector('#modal-body input:not([type=checkbox])').value='assistant_briefing';document.querySelector('#modal-body input:not([type=checkbox])').dispatchEvent(new Event('input'))")
+                time.sleep(.2);capture('manage-data.png')
+                # At least one briefing task exists; cancel first, then confirm through the same UI.
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='全選目前搜尋結果').click()")
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='刪除選取項目').click()")
+                wait_script("document.getElementById('modal-title').textContent.startsWith('永久刪除')")
+                assert window.evaluate_js('document.activeElement.textContent')=='取消','cleanup_default_not_cancel'
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='取消').click()")
+                assert session.store.task(briefings[0]['id'])['state']=='succeeded','cancel_cleanup_deleted_task'
+                click_button('管理／批次刪除');wait_text('資料類別')
+                window.evaluate_js("document.querySelector('#modal-body input:not([type=checkbox])').value='assistant_briefing';document.querySelector('#modal-body input:not([type=checkbox])').dispatchEvent(new Event('input'))")
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='全選目前搜尋結果').click()")
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='刪除選取項目').click()")
+                wait_script("document.getElementById('modal-title').textContent.startsWith('永久刪除')")
+                click_button('確認刪除');wait_script("!document.getElementById('modal').open")
+                assert not any(t['id']==briefings[0]['id'] for t in session.store.tasks()),'cleanup_kept_visible_task'
+                assert session.store.schedule(schedules[0]['id']),'cleanup_removed_independent_schedule'
+                assert len(company_mock.runs)==count+1,'cleanup_dispatched_model'
+                window.evaluate_js("document.querySelector('[data-page=query]').click()")
+                time.sleep(.3);capture('query-entry.png')
+                assert window.evaluate_js("document.documentElement.scrollWidth<=innerWidth"),'query_horizontal_overflow'
+                report['checks'].append('cleanup_cancel_confirm_no_dispatch_preserves_schedule_query_entry')
                 report['checks'].append('company_setup_and_metadata_probe_no_model_dispatch')
                 report['checks'].append('search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search')
                 report['viewport']=window.evaluate_js("({width:innerWidth,height:innerHeight,devicePixelRatio})")

@@ -51,6 +51,9 @@ class LaunchCheckTests(unittest.TestCase):
             with self.assertRaisesRegex(launch.LaunchCheckError, '^OPENAI_SDK_UNAVAILABLE$'):
                 launch.check_environment(self.project, check_sdk=True)
         tk_module.Tk.return_value.destroy.assert_called_once()
+        with patch.object(launch.importlib, 'import_module', side_effect=[Mock(), Mock(), ImportError('private path')]):
+            with self.assertRaisesRegex(launch.LaunchCheckError, '^LANGGRAPH_MISSING_USE_OFFLINE_INSTALLER$'):
+                launch.check_environment(self.project, check_sdk=True)
 
     def test_sdk_check_optional_for_relocated_shortcut_fixture(self):
         tk_module = Mock()

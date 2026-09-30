@@ -35,6 +35,11 @@ class ProfileTests(unittest.TestCase):
         reopened=Profiles(self.p.path,vault=self.vault)
         self.assertEqual(reopened.items()[1]['notes'],'')
         self.assertEqual(reopened.default_binding()['profile_id'],'demo')
+        latest=reopened.snapshot(pid)
+        with self.assertRaises(GatewayError):reopened.remove(pid,latest['revision']-1)
+        reopened.remove(pid,latest['revision'])
+        with self.assertRaises(GatewayError):reopened.validate(latest)
+        self.assertTrue(any(p['id']==pid and p['revision']==latest['revision'] for p in reopened.data['history']))
     def test_key_destination_isolation_and_never_persist_secret(self):
         self.p.set_endpoint('https://company.invalid/v1');self.p.save_key('secret-test')
         self.assertEqual(self.p.key(),'secret-test')
@@ -141,4 +146,3 @@ class RoutingTests(unittest.TestCase):
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],1)
             self.assertEqual(db.execute('SELECT title FROM conversations').fetchone()[0],'歷史')
         Store(path);self.assertEqual(len(list(self.root.glob('old.sqlite.pre-v6-*.bak'))),1)
-

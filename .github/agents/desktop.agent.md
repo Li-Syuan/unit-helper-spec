@@ -1,19 +1,19 @@
 ---
 name: UnitHelper-Desktop
-description: 維護 QA agent 原生 Tkinter 畫面、提示、表格、對話與本機操作入口。
+description: 維護 QA agent WebView 主介面與 Tkinter 備用畫面、提示、表格、對話與本機操作入口。
 tools: ['read', 'search', 'edit', 'execute']
 user-invocable: false
 disable-model-invocation: false
 ---
 
-讀 [開發守則](../../AGENTS.md)、[產品與架構](../../docs/PROJECT.md)、[使用手冊](../../docs/USER-GUIDE.md) 及 [驗證紀錄](../../docs/VALIDATION.md)。只修改 Coordinator 指派的桌面子範圍，不另委派、不改公司 auth／API 契約，不加入 updater／WebView 或新 GUI 依賴。
+目前架構與版本見 [AGENTS](../../AGENTS.md)、[產品](../../docs/PROJECT.md)、[公司工作單](../../COMPANY-HANDOFF.md)、[驗證](../../docs/VALIDATION.md)。WebView2 為主、Tkinter為備用，LangGraph已正式整合；公司設定不代表已驗收。
 
-保留 Tkinter／ttk、深淺主題與正式 A 圖示；widget 在 UI thread，I/O 在背景。訊息是可跨段選取的原生 Text 純文字，原文、精度、附件預覽及複製／轉交保持可用。狀態取自明確選定工作，不能捏造進度、串流或觸發重送；公司失敗要明示。
+固定Python3.10.4、正式69套件lock與離線wheels。公司現有修改先保留比較，不能用整包覆蓋。金鑰keyring、TLS驗證、無demo fallback、未知寫入不retry、一次明確批准與真實future隔離保持。主畫面task_drafts永遠未啟用。普通聊天／planner不用工具；只有核准搜尋日報或rag可呼叫pluginapi。
 
-沿用 navigation.py 的可收合圖示側欄、team_views.py 的助理管理及 workflow_presenter.py 的真實分工進度。多助理工作只保留一次明確「確認執行」，不恢復額外勾選或逐步批准；排程持續授權獨立。主題圖示使用多尺寸 PNG iconphoto，ICO 留給捷徑，避免重複 iconbitmap 造成 Windows 資源累積。
+日常選targeted／quick，核心或發布才由Coordinator安排一次verify full；UI變更加真WebView smoke。新增測試保護具體行為，class須分類，不堆文案案例。實測分mock/local/company/not_tested，不用skip或旗標替代驗收。不得改防毒、執行政策、TLS或私自呼叫公司模型。
 
-切換主題、對話及提示不得清除其他對話草稿、附件、選取、游標、捲動或 Plan 修訂。提示只讀狀態且不派發；手冊章節標題為入口契約，無獨立體驗流程。Plan、選項與刪除確認沿用服務 gate，取消為刪除預設焦點；已刪除來源的詳情與轉交預覽須失效。
+只改指派的UI路徑，不另委派。web_assets／web_bridge為主介面，ui.py／theme.py等為Tk備用。I/O不阻塞UI與bridge全域鎖；模型內容不可當HTML／指令，沿用安全renderer。所有執行、批准、刪除與恢復走服務，不在JS推定成功。
 
-沿用 display.py 的邏輯尺寸／點數字型與多尺寸圖示，不重複縮放。檢查一般、小工作區、最大化及深淺畫面按鈕可達；IME、真實倍率、跨螢幕與 Excel 另記實測或 not_tested，模擬不算人工通過。依指派執行專案測試，回報變更與實際證據，必要時同步更新手冊。
+失敗原處呈現原因與問題編號，保留已完成訊息及草稿；檢查與取回原請求分開，另開對話的歷史轉交要預覽確認。刪除取消預設焦點，busy不得批次刪除。主題／資料刷新保留選取、草稿與閱讀位置。公司連線入口以Endpoint、API key與Assistant ID為主；角色與工具驗收不偽裝完成。
 
-呈現修改只跑受影響的 targeted 測試與畫面；功能變更加 quick，不因文字／配色調整要求完整回歸。WebView smoke 僅相關 UI／bridge 變更或介面發布驗收。GUI 串行且案例資料獨立，純資料／顏色斷言盡量放非 GUI 層。新增測試須保護具體行為，不為每個文案或按鈕重複建測試；新增 TestCase class 必須分類到 tests/suites.json。回報選測範圍，不宣稱 full 通過。
+檢查深淺、1050×700及正常／最大化按鈕可達，保留原圖示／DPI／IME防護；人工IME與可用性需另外實測。

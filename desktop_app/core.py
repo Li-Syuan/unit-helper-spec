@@ -172,10 +172,12 @@ class Store(LocalWorkStore):
         return record_id
 
     def tasks(self):
-        return self._list("tasks")
+        return self._list("tasks", "WHERE state!='deleted'")
 
     def task(self, task_id):
-        return self._get("tasks", task_id)
+        task=self._get("tasks", task_id)
+        if task['state']=='deleted':raise ValueError('工作內容已刪除；舊請求不會重新執行。')
+        return task
 
     def plans(self):
         return self._list("plans")
@@ -271,6 +273,7 @@ class Engine:
             db.execute("UPDATE occurrences SET state='failed' WHERE state IN ('queued','running')")
 
     def _ensure_open(self):
+        if getattr(self,'authorization',None):self.authorization()
         if self._closed:
             raise ValueError("應用程式正在關閉。")
 
@@ -432,6 +435,7 @@ class Engine:
                 self._assistant_dispatching.discard(task_id)
 
     def _validate(self, kind, payload):
+        if getattr(self,'authorization',None):self.authorization()
         if kind not in {"query", "query_summarize", "chat", "summarize", "rewrite"} or not isinstance(payload, dict):
             raise ValueError("不支援此工作流程。")
         if kind == "query_summarize" and self.assistant_router is not None:
@@ -833,6 +837,7 @@ class Engine:
         return task_id
 
     def tick(self, now=None):
+        if getattr(self,'authorization',None):self.authorization()
         now = now or utcnow()
         if now.tzinfo is None:
             raise ValueError("排程時鐘必須包含時區。")

@@ -4,6 +4,7 @@ import json
 import threading
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from . import __version__
 from .gateways import GatewayError
@@ -27,22 +28,32 @@ class WebBridge:
             if len(json.dumps(payload or {},ensure_ascii=False))>250000:raise ValueError('操作內容過長。')
             with self._lock:
                 if self._s.closed:raise ValueError('程式正在關閉。')
+                if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel'}:
+                    self._s.assert_identity()
                 if self._closing and name not in {'state','save_draft'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                if name not in {'dialogue_send','workflow_inspect','workflow_resume','company_probe'}:
+                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','workflow_inspect','workflow_resume','company_probe'}:
                     return {'ok':True,'data':handler(payload or {})}
             # Provider I/O must not block theme/state/cancellation/close commands.
             return {'ok':True,'data':handler(payload or {})}
         except (ValueError,GatewayError) as exc:
-            return {'ok':False,'error':str(exc)}
-        except Exception:
-            return {'ok':False,'error':'本機操作未完成；資料已保留，請檢查設定或回報問題。'}
+            from .support import record
+            saved=record(self._s.directory,'ui',exc)
+            return {'ok':False,'error':str(exc),'incident':saved}
+        except Exception as exc:
+            from .support import record
+            saved=record(self._s.directory,'ui',exc)
+            return {'ok':False,'error':'本機操作未完成；請查看除錯紀錄。','incident':saved}
 
     def _handlers(self):
         s=self._s
         return {
+            'about':self._about,
             'state':self._state,'new_chat':self._new_chat,'save_draft':self._draft,'send':self._send,
+            'cleanup_preview':lambda p:s.cleanup.preview(p['kind'],p['ids']),
+            'cleanup_catalog':lambda p:s.cleanup.catalog(),
+            'cleanup_confirm':self._cleanup_confirm,'support_export':self._support_export,
             'workflow_discuss':self._discuss,'workflow_update':lambda p:s.workflows.update(p['wid'],p['revision'],p['steps']),
             'workflow_preview':lambda p:s.workflows.preview(p['wid'],p['revision']),
             'workflow_confirm':lambda p:s.workflows.confirm(p['wid'],p['revision'],True),
@@ -77,6 +88,7 @@ class WebBridge:
             'issue_submit':lambda p:s.store.submit_issue(p['id']),
             'theme':self._theme,'appearance':self._set_appearance,'sidebar':self._sidebar,'help':self._help,
             'profile_save':self._profile_save,'profile_default':self._profile_default,
+            'profile_delete':self._profile_delete,
             'profile_roles':self._profile_roles,'connection_save':self._connection_save,'key_remove':self._key_remove,
             'company_readiness':self._company_readiness,
             'company_probe':self._company_probe,
@@ -103,7 +115,16 @@ class WebBridge:
             'dialogue_cancel':lambda p:s.dialogue.cancel(p['id']),
             'dialogue_saved':lambda p:s.dialogue.list_saved(),
             'dialogue_history':lambda p:s.dialogue.history(),
+            'dialogue_inspect':lambda p:s.dialogue.inspect(p['id']),
+            'dialogue_recover':lambda p:s.dialogue.recover(p['id']),
+            'dialogue_fork':lambda p:s.dialogue.fork(p['id'],p.get('include_history',False)),
+            'dialogue_delete_preview':lambda p:s.dialogue.preview_delete(p['kind'],p['ids']),
+            'dialogue_delete_confirm':lambda p:s.dialogue.confirm_delete(p['token']),
         }
+
+    def _about(self,p):
+        from .about import publisher_info, about_text
+        return dict(author=publisher_info(),text=about_text(),version=__version__)
 
     def _dialogue_catalog(self,p):
         from .dialogue_contracts import ASSISTANTS,TASK_TYPES
@@ -113,6 +134,20 @@ class WebBridge:
                 'mode_label':'示範模式 · 完全離線','company_enabled':any(r['id'].startswith('company:') for r in rows),
                 'company_fields':['endpoint','API key','assistant_id'],
                 'company_note':'設定公司 Assistants 連線後，選取公司助理才會傳送內容；工具尚未開放。'}
+
+    def _cleanup_confirm(self,p):
+        result=self._s.cleanup.confirm(p['token'])
+        self._transfers.clear();self._previews.clear()
+        return result
+
+    def _support_export(self,p):
+        import webview
+        from .support import export_bundle
+        paths=self._window.create_file_dialog(webview.FileDialog.SAVE,save_filename='QA-agent-support-'+uuid.uuid4().hex[:8]+'.zip')
+        if not paths:return {'saved':False}
+        path=paths if isinstance(paths,str) else paths[0]
+        result=export_bundle(self._s.directory,path)
+        return dict(result,path=path)
 
     def _state(self,p):
         s=self._s;conversations=s.store.conversations();cid=p.get('cid')
@@ -282,6 +317,14 @@ class WebBridge:
         if self._s.trial:raise ValueError('試用與公司設定隔離，請使用正式工作區設定助理。')
         if self._s.engine.has_inflight() or self._s.dialogue.has_inflight() or self._s.company_probe.has_inflight():raise ValueError('請等背景工作完全結束後再修改連線。')
 
+    @contextmanager
+    def _profile_mutation(self):
+        # A request must not start between the idle check and a binding change.
+        # Local configuration writes only; no network I/O under these locks.
+        with self._s.engine._lock,self._s.dialogue.lock,self._s.company_probe.condition:
+            self._profile_guard()
+            yield
+
     def _company_probe(self,p):
         if self._s.trial:raise ValueError('請使用正式工作區設定公司助理。')
         return self._s.company_probe.inspect(p['profile_id'])
@@ -309,22 +352,26 @@ class WebBridge:
         return inspect_company(self._s.profiles,trial=self._s.trial)
 
     def _profile_save(self,p):
-        self._profile_guard();return self._s.profiles.save(p['name'],p['assistant_id'],p.get('notes',''),p.get('id'),p.get('enabled',True))
+        with self._profile_mutation():return self._s.profiles.save(p['name'],p['assistant_id'],p.get('notes',''),p.get('id'),p.get('enabled',True))
+
+    def _profile_delete(self,p):
+        with self._profile_mutation():return self._s.profiles.remove(p['id'],p['revision'])
 
     def _profile_default(self,p):
-        self._profile_guard();return self._s.profiles.set_default(p['id'])
+        with self._profile_mutation():return self._s.profiles.set_default(p['id'])
 
     def _profile_roles(self,p):
-        self._profile_guard();return self._s.profiles.set_workflow_capability(p['id'],p['roles'],verified=False)
+        with self._profile_mutation():return self._s.profiles.set_workflow_capability(p['id'],p['roles'],verified=False)
 
     def _connection_save(self,p):
-        self._profile_guard();self._s.profiles.set_endpoint(p['endpoint'])
-        if 'wire_mode' in p and p['wire_mode']!=self._s.profiles.data.get('wire_mode'):
-            self._s.profiles.set_wire_mode(p['wire_mode'])
-        if p.get('key'):self._s.profiles.save_key(p['key'])
+        with self._profile_mutation():
+            self._s.profiles.set_endpoint(p['endpoint'])
+            if 'wire_mode' in p and p['wire_mode']!=self._s.profiles.data.get('wire_mode'):
+                self._s.profiles.set_wire_mode(p['wire_mode'])
+            if p.get('key'):self._s.profiles.save_key(p['key'])
 
     def _key_remove(self,p):
-        self._profile_guard();return self._s.profiles.remove_key()
+        with self._profile_mutation():return self._s.profiles.remove_key()
 
     def _delete(self,p):
         value=self._s.engine.delete_conversations(p['token'])
@@ -400,6 +447,7 @@ class WebBridge:
             step=next(v for v in self._s.workflows.get_task_steps(task['id']) if v['step_id']==p['step_id'])
             result=step['output']['query_result']
         else:result=task['result']
+        result=(result or {}).get('query_result',result)
         fmt=p['format']
         if fmt not in {'csv','tsv'}:raise ValueError('匯出格式無效。')
         if fmt=='tsv':

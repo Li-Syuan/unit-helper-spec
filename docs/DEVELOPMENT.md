@@ -1,6 +1,14 @@
+## 本機問題紀錄
+
+預設 `%LOCALAPPDATA%\UnitHelperLocal\logs\events.jsonl`（有 UNITHELPER_DATA_DIR 時跟隨指定目錄），單檔1MiB、最多3份輪替。只記安全代碼與專案檔名／行號；不記raw exception、對話、API key、URL或HTTP body。UI錯誤會給問題編號；網路階段與UI事件可能是不同編號，按時間相鄰事件比對。
+
+「說明與關於 → 匯出除錯包」使用白名單再次過濾。沒有GUI時可執行 `.venv\Scripts\python.exe scripts/export-support.py --output QA-agent-support.zip`；目的檔須尚不存在，不讀公司服務或任意資料檔。這份包只供錯誤定位，不替代doctor與公司驗收；分享前依公司規定審查。
+
+LangGraph正式依賴已在69個wheels中。更新原始碼不會更新已有venv；doctor lock比對通過則不需重裝，不通過請用完整正式包建立新環境，比對公司修改後再切换。不要讓agent反覆單獨安裝缺件，或用lab lock降版。
+
 # 0.16.0 依賴與恢復驗證
 
-正式 App 加入 LangGraph 與 SQLite checkpoint，requirements.lock 是 App 的完整 69 套件鎖檔，不能用獨立 lab lock 覆蓋。既有 .venv 升級前請關閉 App，再以該環境 Python 執行 `-m pip install -r requirements.lock`；公司離線使用核對過的完整 wheelhouse 與 `--no-index`，不連外補件。首次建立仍使用 setup.ps1，不覆蓋既有環境。
+正式 App 加入 LangGraph 與 SQLite checkpoint，requirements.lock 是 App 的完整 69 套件鎖檔，不能用獨立 lab lock 覆蓋。既有 .venv 升級前請關閉 App，再以該環境 Python 執行 `-m pip install -r requirements.lock`；公司離線使用核對過的完整 wheelhouse 與 `--no-index`，不連外補件。公司首次建立優先使用 install-offline.bat，不覆蓋既有環境。
 
 新增回歸：tests.test_graph_runner、tests.test_assistants_gateway、tests.test_assistants_profiles、tests.test_company_journey、tests.test_dialogue_concurrency。完整回歸使用 `scripts/test.ps1 -Suite full`；日常依下方分層測試規則選測。scripts/web-smoke.py 使用臨時資料及實際 SDK MockTransport，涵蓋主畫面公司模式、多輪與小視窗；不代表公司真實 API 或人工 IME 驗收。
 
@@ -13,7 +21,7 @@ mock-assistants.py 只綁定 127.0.0.1，無真實金鑰。正式 App 不允許 
 
 Windows需 WebView2 Runtime、.NET Framework 4.6.2以上，依公司流程提供；wheels不包含Windows元件。doctor新增唯讀偵測。缺元件時明示錯誤並提供Tk入口，不降回IE、不改TLS或防毒設定。
 
-已有本機環境更新：`.venv/Scripts/python.exe -m pip install -r requirements.lock`；有核准CA依下方既有方式設定。離線先執行 `scripts/offline_bundle.py verify --directory wheelhouse`，通過後以 `--no-index --no-deps --find-links wheelhouse -r requirements.lock` 安裝。新機仍用setup.ps1建乾淨環境，不能覆寫既有venv。
+已有本機環境更新：`.venv/Scripts/python.exe -m pip install -r requirements.lock`；有核准CA依下方既有方式設定。離線先執行 `scripts/offline_bundle.py verify --directory wheelhouse`，通過後以 `--no-index --no-deps --find-links wheelhouse -r requirements.lock` 安裝。新機優先用install-offline.bat建乾淨環境，不能覆寫既有venv。
 
 prepare-offline現只對沒有wheel發行的固定proxy_tools==0.1.0建立純Python wheel，其餘使用Windows相容binary wheels；全部納入manifest及lock指紋，安裝不編譯、不連外補件。
 
@@ -21,7 +29,7 @@ prepare-offline現只對沒有wheel發行的固定proxy_tools==0.1.0建立純Pyt
 
 # 開發與部署指南
 
-QA agent 0.13.0。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
+QA agent；版本以 README 為準。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
 
 ## 個人 Groq 試用
 

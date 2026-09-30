@@ -37,6 +37,11 @@ def check_environment(project, check_sdk=False, check_web=False):
             importlib.import_module('openai')
         except Exception as exc:
             raise LaunchCheckError('OPENAI_SDK_UNAVAILABLE') from exc
+        try:
+            importlib.import_module('langgraph.graph')
+            importlib.import_module('langgraph.checkpoint.sqlite')
+        except Exception as exc:
+            raise LaunchCheckError('LANGGRAPH_MISSING_USE_OFFLINE_INSTALLER') from exc
     if check_web:
         try:
             for module in ('webview','markdown_it','bleach','dotenv'):importlib.import_module(module)

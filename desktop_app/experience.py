@@ -7,7 +7,7 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 
-from . import __version__
+from .about import about_text
 from .branding import APP_NAME, apply_child_icons
 from .display import scroll_frame
 
@@ -71,7 +71,7 @@ class ExperienceMixin:
         content.pack(fill='both',expand=True)
         content.configure(yscrollcommand=scroll.set)
         sections = manual_sections()
-        sections.append(('關於', f'{APP_NAME} {__version__}\n\nWindows 本機桌面應用。\n維護聯絡方式：尚未設定。請使用問題回報保存紀錄，再依單位指定管道提供。\n\n回報目前只存本機，不會自動送給維護者。\n環境診斷不呼叫模型或資料庫；通過不代表公司接線完成。\n\n第三方授權：請選左側「第三方套件授權」，完整文字存於程式 docs/licenses。'))
+        sections.append(('關於', about_text()))
         for title, _ in sections:
             toc.insert('end', title)
         def render(event=None):

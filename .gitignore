@@ -26,6 +26,7 @@ ui-preferences.json
 
 wheelhouse*/
 assistants.json
+publisher.json
 *.pre-v2-*.bak
 *.pre-v3-*.bak
 *.pre-v4-*.bak

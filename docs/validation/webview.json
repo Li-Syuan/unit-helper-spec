@@ -1,0 +1,49 @@
+{
+  "version": "0.19.0",
+  "scope": "real_webview2_synthetic",
+  "status": "passed",
+  "checks": [
+    "bridge_ready",
+    "six_style_modes_preserve_form_semantic_colors_save_retry_reset_zero_dispatch",
+    "semantic_theme_keeps_draft_selection_and_zero_dispatch",
+    "failed_request_fenced_inspect_fork_and_explicit_delete",
+    "provider_failure_preserves_input_and_messages_no_fallback",
+    "offline_multiturn_mode_reset_questions_preview_cancel_and_disabled_save",
+    "assistant_switch_starts_empty_view",
+    "chat_sent_from_dom",
+    "three_click_query_zero_dispatch_before_confirm",
+    "workflow_explicit_approval_and_outcome_feedback_mock",
+    "attention_running_success_failure_distinct_in_both_themes",
+    "notification_unread_is_informational_explicit_view_only_and_state_retained",
+    "untrusted_navigation_blocked",
+    "company_sdk_mock_multiturn_main_ui_badge_small_controls",
+    "briefing_dom_preview_trial_review_schedule_pause_mock",
+    "cleanup_cancel_confirm_no_dispatch_preserves_schedule_query_entry",
+    "company_setup_and_metadata_probe_no_model_dispatch",
+    "search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search"
+  ],
+  "focused": {
+    "status": "passed",
+    "checks": [
+      "search_clears_hidden_selection_in_both_managers",
+      "per_assistant_trial_only_prepares_correct_target_and_draft"
+    ]
+  },
+  "viewport": {
+    "width": 942,
+    "height": 603,
+    "devicePixelRatio": 1.6500000953674316
+  },
+  "company_real": "not_tested",
+  "human_usability": "not_tested",
+  "ime": "not_tested",
+  "author_ui": {
+    "status": "passed",
+    "scope": "synthetic_webview_about",
+    "checks": [
+      "three_author_fields_safe_text",
+      "small_viewport_dark_light",
+      "zero_dispatch"
+    ]
+  }
+}

@@ -6,14 +6,14 @@ user-invocable: true
 disable-model-invocation: false
 ---
 
-讀 [開發守則](../../AGENTS.md)、[產品與架構](../../docs/PROJECT.md)、[公司工作單](../../COMPANY-HANDOFF.md) 與 [驗證紀錄](../../docs/VALIDATION.md)。預設唯讀，不修改程式、不執行測試、不另委派；需要執行的驗證交 Coordinator。
+目前架構與版本見 [AGENTS](../../AGENTS.md)、[產品](../../docs/PROJECT.md)、[公司工作單](../../COMPANY-HANDOFF.md)、[驗證](../../docs/VALIDATION.md)。WebView2 為主、Tkinter為備用，LangGraph已正式整合；公司設定不代表已驗收。
 
-依實際 diff 與輸出查核：Plan 未批准零派發、過期綁定／重複確認、取消後晚到結果、對話刪除整批交易及未結束 future、其他資料保留、跨對話／登入者隔離、憑證洩漏、模型任意 SQL、純 validate I/O、排程雙跑、精度／公式防護、離線安裝不得連外補件，以及範圍擴張。
+固定Python3.10.4、正式69套件lock與離線wheels。公司現有修改先保留比較，不能用整包覆蓋。金鑰keyring、TLS驗證、無demo fallback、未知寫入不retry、一次明確批准與真實future隔離保持。主畫面task_drafts永遠未啟用。普通聊天／planner不用工具；只有核准搜尋日報或rag可呼叫pluginapi。
 
-檢查現行手冊入口與操作提示相符；GUI 狀態來自真實工作、主題不丟草稿／選取、DPI 不重複縮放。分清 mock、local_real、company_real、not_tested；沒有公司／GUI／Excel／IME／真實倍率證據就標未驗證，不把 skip、canned True、文字斷言或閱讀程式當通過。
+日常選targeted／quick，核心或發布才由Coordinator安排一次verify full；UI變更加真WebView smoke。新增測試保護具體行為，class須分類，不堆文案案例。實測分mock/local/company/not_tested，不用skip或旗標替代驗收。不得改防毒、執行政策、TLS或私自呼叫公司模型。
 
-對話式規劃可以在送出需求後呼叫已驗證主代理；未確認禁止的是查詢、子代理與排程派發，勿把它誤報成所有模型呼叫都必須先批准。核對一次確認只授權當下可見修訂、失敗不自動重試、綁定失效拒絕，以及助理團隊不捏造能力驗證。環境受阻的實測仍須列未通過，不要求 Coordinator 移除或 mock 測試補綠。
+預設唯讀審查，不修改、不執行測試、不另委派；驗證交Coordinator執行。每項finding附可重現條件、位置、影響與必要修正，無證據不製造問題。
 
-每個 finding 要有具體觸發條件、檔案位置、影響及建議，避免推測性問題。公司授權／資料政策尚缺時說明缺項，不要求本輪新增中央平台、updater 或打包。沒有實際問題不要製造 findings。
+核對對話與工作request ID、防重、cancel晚到結果、助理版本隔離、核准工具、刪除交易及快取、草稿未啟用、schema備份回復。檢查離線包所有wheels/hash/lock，新環境真安裝與公司測試分開。公司說普通聊天可用不能推論四角色已驗收；單個助理失敗也不能推論所有服務不可用。
 
-核對選測範圍與修改風險相符，不因純文案／配色缺少 full 就要求重跑。quick／targeted 通過不等於完整回歸，公司實測界線不變。審查合併前後的關鍵覆蓋及 tests/suites.json 分類，不以固定項數或新增數量判定品質；注意批准、防重、取消、隔離、工具授權、遷移、刪除案例未丟失。正式交付 verify 已執行 full 時，不要求再跑 test full。
+UI文字與服務實際狀態一致；新刪除不能保留可見敏感成果或丟掉防重，日誌不能洩漏正文。檢查未完成限制如實記錄；full失敗不得改成skip或用mock補綠。

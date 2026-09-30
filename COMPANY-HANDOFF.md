@@ -1,4 +1,16 @@
-# 0.18.2 公司接手入口
+# 0.19.0 公司試用修正
+
+本輪完成一般聊天失敗恢復、本機刪除與白名單錯誤紀錄。先用完整正式離線包建立新環境，保留公司成功程式与設定，再手動測每個助理；不要先派 agent 重寫整套功能。
+
+1. 安裝／完整驗證：依下方離線步驟。69個wheels和根lock一致，失敗不連外補件；Python、WebView2、.NET由公司另提供。
+2. 設定頁保存Endpoint與API key，再新增Assistant ID。普通聊天不需先驗收四角色。對每個ID分別測三輪合成追問，記錄是哪一輪、按哪個入口失敗。
+3. 中斷時按「檢查原請求」，有可恢复結果才按「取回原回覆」。不明寫入或已取消不可重送；可「另開對話保留內容」，歷史是否帶入由人決定，不自動送出。
+4. 「說明與關於 → 匯出除錯包」提供白名單ZIP；請附版本、操作步驟與畫面問題編號。不附key、內部網址、完整對話或資料庫。原始事件在使用者資料目錄logs。
+5. 「活動紀錄 → 管理／批次刪除」或「說明 → 管理本機資料」清理本機成果；主對話歷史和任務草稿有各自刪除入口。執行中不可刪，自動工作需先暫停。
+
+普通聊天／metadata成功不代表搜尋或四角色已驗收。主畫面「整理任務草稿」不會自動執行；「規劃與分工」仍需完成公司角色試跑後啟用能力。本版未取得公司服務實測，不能宣稱所有助理只填ID便能使用進階功能。公司需要回報時先看安全錯誤代碼及階段，對照成功範例修adapter，不猜故障原因。
+
+# 0.19.0 公司接手入口
 
 **先處理部署缺件（2026-09-30）：**使用核准管道帶入正式 69 套件離線 ZIP，解壓到新資料夾。CMD 執行 `install-offline.bat "C:\approved\Python3104\python.exe"`，成功後執行 `.venv\Scripts\python.exe scripts\verify.py offline-rebuild` 一次。環境通過才設定／實測公司助理；不需要 agent 重寫 adapter 或降版 lock。保留公司現有程式與 `.venv`，差異另行比對。詳細失敗處理見[離線安裝](docs/DEVELOPMENT.md#離線安裝)，本機結果見[驗證紀錄](docs/VALIDATION.md)。
 
@@ -25,7 +37,7 @@
 
 # QA agent 公司接手工作單
 
-目前版本 **0.18.2**，本機桌面、核准搜尋連接器與接手工具可沿用。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。已取得 Threads/Runs＋pluginapi 官方契約，但沒有公司測試憑證及真實搜尋結果，不能保證任意端點只填三個參數就全部接通。
+目前版本 **0.19.0**，本機桌面、核准搜尋連接器與接手工具可沿用。公司 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。已取得 Threads/Runs＋pluginapi 官方契約，但沒有公司測試憑證及真實搜尋結果，不能保證任意端點只填三個參數就全部接通。
 
 交付給一般同仁的目標：公司接線者先配置共用 endpoint、請求／session 映射與核准助理能力；同仁只需設定個人 API key、加入已核准 assistant ID，說需求並按一次「確認執行」。不要要求同仁編輯程式、填驗證證據或理解 adapter。新增未核准 ID 仍顯示待驗證，不能偽裝可自動協作。
 
@@ -197,3 +209,38 @@ UI 已備妥的入口：助理團隊卡片直接沿用新增／編輯／停用�
 從 [建立指南](docs/assistant-instructions/README.md) 取得 planner／analysis／review／compose 四份完整指示。使用公司核准的 Luna 選項建立四個助理；名稱、桌面 profile ID、公司 assistant ID 與模型識別分開，不猜 API 映射。能力/session 驗證通過後才能啟用。
 
 新成果 UI 與本機比較／回饋不需公司 API 變更。請用正常、空資料、缺條件、故意矛盾與資料內夾指令案例核對 JSON 和自由文字；Instruction 不能代替服務端權限與數值驗證，同模型覆核不代表獨立正確性保證。公司 Luna／多 ID 結果仍為 not_tested。
+
+## AD 登入與作者資訊
+
+已提供原生登入頁（WebView與Tk共用啟動前入口），公司驗證函數尚未提供，正式登入 **not_tested**。目前本機模式沿用既有入口，不冒充AD；公司部署請在設定檔將 `identity_mode` 改為 `company`。此時未成功登入不能開工作區，沒有退回本機的按鈕。先看畫面可執行：
+
+```bat
+.venv\Scripts\python.exe -m desktop_app --login-preview
+```
+
+它不呼叫AD或啟動資料服務。修改 `desktop_app/company_auth.py` 的 `authenticate(employee_id, password)` 並在接線完成後使 `is_configured()` 回傳True。公司函數若僅回True/False，請在此處補查可信員工資料及單位/名單授權，再映射為下列字典，不能由使用者輸入或模型提供身分：
+
+```python
+{
+    "authenticated": True,  # AD帳密有效
+    "allowed": True,        # 單位/名單也已核准且未停用
+    "subject": "穩定且唯一的公司員工識別",
+    "employee_id": "驗證後的工號",
+    "name": "可信員工資料中的姓名",
+    "expires_at": "含時區的ISO日期時間，由公司設定，不超過8小時"
+}
+```
+
+失敗回傳明確拒絕或拋例外；介面不顯示原始例外。函數必須限制連線/讀取timeout、使用核准TLS/CA且不記密碼。密碼只在該次驗證留於記憶體，不存keyring/JSON/SQLite/log；Python記憶體不宣稱安全抹除。尚未加入LDAP套件，待確認你函數依賴後才更新正式lock和離線包。
+
+通過後資料存 `使用者資料目錄/users/<subject的SHA256>/`。不同登入身分不共用對話/排程/助理設定，舊本機資料不自動搬移。公司首次登入須重新設定該身分的API key與Assistant ID。登入期限到達後禁止新助理/查詢/排程派發，請關閉再登入；已送出的遠端呼叫不保證停止。本機分資料夾不等同Windows檔案ACL；共用Windows帳號、即時撤權、Oracle伺服器授權仍須公司驗收。
+
+驗證命令：
+
+```bat
+.venv\Scripts\python.exe scripts\test_runner.py --suite targeted --tests tests.test_authentication tests.test_about
+```
+
+公司再測有效/錯誤帳密、非名單、停用、到期、服務斷線、兩位員工隔離與排程期限；本機合成通過不可代替公司通過。
+
+作者資訊：複製根目錄 `publisher.example.json` 為 `publisher.json`，填 `author.employee_id`、`author.name`、`author.phone`。登入頁與「說明與關於」共用；未填顯示尚未設定。此檔不進Git，也不自動放進正式離線交付包；由公司確認顯示內容後隨內部分發放置。

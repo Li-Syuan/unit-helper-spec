@@ -2,6 +2,7 @@
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 from desktop_app.dialogue_store import DialogueStore
 from desktop_app.dialogue_service import DialogueService
@@ -87,6 +88,68 @@ class DialogueConcurrencyTests(unittest.TestCase):
             self.assertEqual(session.dialogue.state(tid)['messages'],[])
         finally:
             self.provider.release.set();session.close()
+
+    def test_finishing_request_retains_guard_until_cleanup(self):
+        # Pause immediately before the finally block acquires its condition.
+        # A subsequent send/delete must still see the original request in flight.
+        for operation in ('send','inspect'):
+            with self.subTest(operation=operation):
+                service=DialogueService(DialogueStore(Path(self.tmp.name)/(operation+'.sqlite')))
+                tid=service.start()['id']
+                if operation=='inspect':
+                    with patch.object(service.provider,'respond',side_effect=ValueError('synthetic')):
+                        with self.assertRaises(ValueError):service.send(tid,'first','first')
+                entered=threading.Event();release=threading.Event();actual=service._condition;result=[]
+                class PauseCondition:
+                    def __enter__(self):
+                        entered.set()
+                        if not release.wait(3):raise AssertionError('cleanup pause expired')
+                        return actual.__enter__()
+                    def __exit__(self,*args):return actual.__exit__(*args)
+                    def notify_all(self):return actual.notify_all()
+                def work():
+                    try:result.append(service.send(tid,'first','first') if operation=='send' else service.inspect(tid))
+                    except Exception as exc:result.append(exc)
+                worker=threading.Thread(target=work)
+                try:
+                    with patch.object(service,'_condition',PauseCondition()):
+                        worker.start();self.assertTrue(entered.wait(2))
+                        self.assertTrue(service.has_inflight())
+                        with self.assertRaisesRegex(ValueError,'處理中'):service.send(tid,'second','second')
+                        with self.assertRaisesRegex(ValueError,'處理中'):service.preview_delete('threads',[tid])
+                        release.set();worker.join(2)
+                    self.assertIsInstance(result[0],dict)
+                    self.assertFalse(service.has_inflight())
+                finally:
+                    release.set();worker.join(3);service.close()
+
+    def test_profile_delete_serializes_idle_check_with_new_request(self):
+        session=WebSession(directory=Path(self.tmp.name)/'profile-race')
+        worker=None;started=threading.Event();entered=threading.Event();results=[]
+        try:
+            session.profiles.set_endpoint('https://synthetic.example.test/v1')
+            session.profiles.set_wire_mode('assistants')
+            pid=session.profiles.save('合成助理','asst_synthetic')
+            revision=session.profiles.snapshot(pid)['revision']
+            tid=session.dialogue.start('chat',f'company:{pid}:{revision}')['id']
+            original=session.profiles.remove
+            def request():
+                started.set()
+                try:session.dialogue.send(tid,'合成測試','race')
+                except Exception as exc:results.append(exc)
+            def remove(*args):
+                nonlocal worker
+                worker=threading.Thread(target=request);worker.start();self.assertTrue(started.wait(1))
+                self.assertFalse(entered.wait(.1))
+                return original(*args)
+            def remote(*args,**kwargs):entered.set();return 'unexpected'
+            with patch.object(session.profiles,'remove',side_effect=remove),patch.object(session.profiles,'respond',side_effect=remote):
+                result=WebBridge(session).call('profile_delete',{'id':pid,'revision':revision})
+                self.assertTrue(result['ok'],result);worker.join(2)
+            self.assertFalse(entered.is_set());self.assertEqual(len(results),1)
+        finally:
+            if worker:worker.join(3)
+            session.close()
 
 
 if __name__=='__main__':unittest.main()

@@ -93,6 +93,7 @@ class Profiles:
         if p is None: raise GatewayError('找不到助理。')
         return {'profile_id':p['id'],'revision':p['revision']}
     def validate(self,binding):
+        if getattr(self,'authorization',None):self.authorization()
         with self.lock:
             if not isinstance(binding,dict): raise GatewayError('舊版對話沒有助理歸屬；請選擇內容轉交至新對話。')
             p=next((p for p in self.items() if p['id']==binding.get('profile_id')),None)
@@ -298,6 +299,17 @@ class Profiles:
         p=next((p for p in self.workflow_catalog() if p['id']==profile_id),None)
         if p is None: raise GatewayError('此助理尚未完成自動協作能力驗證。')
         return dict(self.snapshot(profile_id),capability_revision=p['workflow']['revision'])
+
+    def remove(self,profile_id,revision):
+        with self.lock:
+            current=next((p for p in self.data['profiles'] if p['id']==profile_id),None)
+            if not current or current['revision']!=revision:raise GatewayError('助理設定已變更，請重新確認。')
+            data=copy.deepcopy(self.data);data['profiles']=[p for p in data['profiles'] if p['id']!=profile_id]
+            if not any(p['id']==profile_id and p['revision']==revision for p in data.get('history',[])):
+                data.setdefault('history',[]).append(copy.deepcopy(dict(current,endpoint=data['endpoint'])))
+            if data['default']==profile_id:data['default']='demo'
+            self._write(data)
+            return {'deleted':True}
 
     def validate_workflow(self,binding,role):
         p=self.validate(binding)
