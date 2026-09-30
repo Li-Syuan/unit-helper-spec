@@ -59,6 +59,13 @@ async function deleteDialogue(kind,ids){
  body.append(make('p','muted',Object.entries(p.counts).map(([k,v])=>(names[k]||k)+' '+v).join(' · ')));
  const cancel=btn('取消',dismiss);actions(cancel,btn('永久刪除',async()=>{await api('dialogue_delete_confirm',{token:p.token});dismiss();if(kind==='threads'&&ids.includes(D.thread?.id)){D.thread=null;await start();}else if(D.thread)paint(await api('dialogue_state',{id:D.thread.id}));status('選定資料已刪除。');},'button danger'));cancel.focus();
 }
+document.addEventListener('qa-dialogue-open',async event=>{
+ try{
+  if(D.busy)throw Error('請先等待目前請求結束，再開啟待辦來源。');
+  if($('dialogue-input').value.trim())throw Error('輸入框仍有未送出內容；請先處理或清空，再回待辦開啟來源。');
+  const t=await api('dialogue_state',{id:event.detail.id});++D.generation;paint(t,true);$('dialogue-input').value=t.request?.pending_text||'';resize();
+ }catch(e){error(e.message);}
+});
 async function history(){
  if(D.busy){error('請先等待目前請求結束。');return;}
  const rows=await api('dialogue_history'),body=modal('對話紀錄');

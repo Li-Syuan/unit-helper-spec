@@ -1,28 +1,23 @@
-# QA agent 0.20.0 驗證紀錄
+# 本次待辦與一鍵交付驗證
 
-本版為達哥接口修正候選版，完成未送出重試、明確的新連線轉交、個別金鑰、聊天搜尋核准及安全錯誤分類。正式69套件lock、主schema6、dialogue schema2、Assistants ledger schema1不變。
+2026-09-30，0.21.0登入與待辦版，基於0.20.0/e189eda工作樹；發布依使用者後續明確授權另行執行。主schema6、dialogue schema2、69套件lock未變。
 
-## 目前結果
-
-| 範圍 | 實測結果 |
+| 範圍 | 本次實際結果 |
 |---|---|
-| 正式完整回歸 | **local_real_passed / mock_passed**，561/561、0失敗、0錯誤、0skip；測試157.94秒，連環境共160.34秒。[完整證據](validation/development.json) |
-| Python與依賴 | 恰好3.10.4 x64、doctor、Tk8.6.12、WebView2/.NET、pip check與根lock精確一致。 |
-| WebView2 | **local_real_passed**，22組合成旅程；深淺、1050×700、一般／最大化、未送出重試、搜尋往返、新連線轉交。[UI證據](validation/webview.json) |
-| Assistants協定 | 真SDK＋MockTransport；兩個不同assistant ID各十輪、同thread追問、GET失敗恢復、未知POST零重送、舊批准與晚到取消隔離。**mock_passed**。 |
-| 個別金鑰 | MemoryVault合成保存／更換／移除／共用回切，受影響revision撤銷、失敗保留原來源、残留清理警示、bridge無索引外洩與inflight guard。真Windows認證管理員的既有測試另包含於full，真實組織key未使用。 |
-| 搜尋授權 | 普通聊天需獨立opt-in；舊policy不擴權，草稿／規劃停用，批次驗證／大小／取消／未知提交保護仍通過。來源與事實未驗收。 |
-| 離線包 | 根lock及69個既有wheels不變；打包重新核對完整性。未重建環境，先前乾淨安裝證據見[離線安裝](validation/offline-install.json)，不可冒充本版新建環境。 |
-| 真實達哥／多ID權限／搜尋 | **not_tested**。`check-assistants.py --live`為明確現場驗收入口，這裡只測合成傳輸。 |
+| 乾淨離線安裝 | **local_real_passed**；正式69wheels逐檔雜湊及lock通過，Python3.10.4 x64、doctor、pip check、freeze精確相符。[證據](validation/todo-offline-install.json) |
+| 正式完整回歸 | **566/566、0failure、0error、0skip**；測試164.488秒，含環境168.92秒。SDK／公司協定為mock_passed；SQLite、Tk及Windows本機為local_real_passed。[證據](validation/development.json) |
+| 一鍵入口 | 乾淨環境 `test-company.bat` 實際exit0：語法、566項full、25項WebView通過；之後補登出草稿關閉與原生登入生命週期入口，僅重跑ui與受影響檢查。company_real仍not_tested。版本／打包文字不另重跑full。 |
+| WebView2 | **最終25/25合成旅程通過**；深／淺、小視窗與最大化、主對話草稿保留、來源刪除副本、重複保存／空值／取消／搜尋核准均通過。MSI真本機WebView2，provider及公司SDK均合成。[證據](validation/todo-webview.json) |
+| DVC | 全文讀取官方Assistant API2719802/v68、插件2720034及DSE2719790，逐項對照實作；[核對紀錄](DVC-REVIEW.md)。文件閱讀不是公司服務通過。 |
+| lint／型別／build | 專案無獨立lint／typecheck／編譯build設定；Python AST語法檢查及application_html產生、JS／CSS在真WebView2載入由一鍵與UI驗證涵蓋，未宣稱另跑mypy／ruff。 |
+| 真公司Assistant API／搜尋 | **not_tested**；未讀取key，未執行--live；來源、日期、工具副作用、部署相容仍需公司核對。 |
 
-完整檢查曾發現登入到期例外分類被包裝及一處舊按鈕測試定位；已修正後重新完整驗證。獨立檢查另發現inspect隱藏retry、修正key後fork沿舊版本，已補實際操作測試。初次失敗紀錄留本機artifacts，不將失敗改成通過；公開檔案只保留目前完整證據。
+第一次乾淨安裝因開發機舊20wheels與根lock指紋不符而**失敗**，尚未建立環境；沒有繞過驗證。改用既有正式v0.20.0 ZIP的根wheelhouse69wheels後才安裝通過；登入版再次新建驗證環境安裝亦通過，原有.venv及舊wheelhouse保持。初次新增測試fixture與UI等待／基準斷言問題曾失敗；最終新增來源刪除檢查曾因測試直接刪除目前對話且未同步目前ID而失敗，修正測試先移開對話後通過，修正後上述通過；沒有刪測試、skip或放寬安全規則。登入版新增測試曾誤用不存在的方法及只讀catalog作派發斷言，修正後26項受影響測試通過；新增UI測試曾嘗試被封鎖的重新載入，改用既有新增對話流程後通過。完整證據不得引用先前561／563項報告當登入版結果。
 
-先前Windows剪貼簿error5案例本輪完整檢查通過，沒有刪除／skip／放寬斷言；這不等於已完成所有Excel或IME人工驗收。GUI均串行，沒有付費模型或組織網路請求。
+公司仍需核准Python3.10.4完整安裝、WebView2、.NET、CA與公司endpoint、各Assistant ID及Windows認證管理員key。多ID權限、搜尋來源品質、AD／Oracle／舊資料、IME／Excel人工操作、跨螢幕DPI均not_tested。使用者的市場日報排程沒有啟用；UI中的排程測試僅存在即用即棄的合成工作區。
 
-## 交付界線
+交付到新目錄安裝，再用 `test-company.bat`；詳細失敗訊息、報告位置與公司實測入口見 [操作](ONE-CLICK-TEST.md)。不含Python／WebView2／.NET安裝器或憑證。
 
-lock SHA256：`cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b`。常駐只有.venv，保留其基礎.runtime/python3104；沒有新增依賴或環境。離線ZIP由已提交來源產生，含69正式wheels；不含Python/WebView2/.NET安裝器、金鑰、publisher.json或使用者資料。雜湊是完整性檢查，不是數位簽章。
+登入展示：原生登入錯誤／空值／成功／公司禁用由tests.test_authentication驗證；實際原生登入→WebView→有草稿登出→暫存清除另有 [生命週期證據](validation/demo-login-launch.json)。展示不是公司權限，人事App使用資格仍未接線。
 
-正式服務TLS／權限／工具副作用、四角色品質、AD／Oracle／舊資料、人工使用性、IME、Excel、跨螢幕DPI與PyInstaller均 **not_tested**。Norton成效 **未能確認**，未調整防毒、TLS或執行政策。App關閉不執行本機排程，取消不保證遠端立即停止。
-
-儲存庫及候選Release公開；證據僅遮蔽本機絕對路徑，不改狀態、數量或耗時。介面圖片全為合成資料。不能將本機測試通過解讀為正式上線完成。
+最終 `test-company.bat ui` exit0，Python語法、25/25 WebView旅程與3/3實際登入生命週期檢查全部通過；[入口證據](validation/company-test-ui.json)。沒有公司服務呼叫。

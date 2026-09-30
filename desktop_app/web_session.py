@@ -16,20 +16,32 @@ from .outcomes import OutcomeService
 
 
 class WebSession:
-    def __init__(self, directory=None, config=None, config_path=None, groq_trial=False, login_session=None):
+    def __init__(self, directory=None, config=None, config_path=None, groq_trial=False, login_session=None, demo_session=None):
         if groq_trial and (config is not None or config_path is not None):
             raise ValueError('試用不能載入連線設定。')
+        if demo_session is not None and (config_path is not None or config is None
+                or config != DEFAULT or groq_trial or login_session is not None):
+            raise ValueError('展示登入不能載入公司或使用者設定。')
         self.directory=Path(directory or data_directory())
         if groq_trial:self.directory /= 'groq-trial'
         self.trial=groq_trial
         self.config=copy.deepcopy(DEFAULT) if groq_trial else config or load_config(config_path or self.directory/'config.json')
+        self.demo_session=demo_session
+        if demo_session is not None:
+            from .demo_login import DemoLoginSession
+            if (type(demo_session) is not DemoLoginSession or groq_trial or login_session is not None
+                    or self.config != DEFAULT or config_path is not None
+                    or self.directory.resolve() != demo_session.directory
+                    or any(self.directory.iterdir())):
+                raise ValueError('展示登入只能開啟空白暫存工作區及離線預設；禁止公司連線。')
+            demo_session.current()
         self.login_session=login_session
         if self.config['identity_mode']=='company':
             self.identity=CompanyIdentity(login_session).current()
             self.directory=login_session.directory(self.directory)
         else:
             if login_session is not None:raise ValueError('登入身分與工作區模式不符。')
-            self.identity=DemoIdentity().current()
+            self.identity=demo_session.current() if demo_session else DemoIdentity().current()
         self.lock=InstanceLock(self.directory)
         self.stop=threading.Event();self.closed=False;self.engine=None
         try:
@@ -41,10 +53,12 @@ class WebSession:
             else:
                 self.profiles=Profiles(self.directory/'assistants.json',self.config['assistant']);engine_class=Engine
             self.queries=DemoQueries() if self.config['query_mode']=='demo' else OracleQueries()
-            if self.login_session:
+            if self.demo_session:
+                self.profiles.authorization=self.demo_session.current
+            if self.login_session or self.demo_session:
                 from .authentication import AuthorizedQueries
-                self.profiles.authorization=self.login_session.current
-                self.queries=AuthorizedQueries(self.queries,self.login_session)
+                self.profiles.authorization=(self.login_session or self.demo_session).current
+                self.queries=AuthorizedQueries(self.queries,self.login_session or self.demo_session)
             self.engine=engine_class(self.store,self.queries.run,None,query_validator=self.queries.validate,
                 query_catalog=self.queries.catalog,assistant_router=self.profiles.respond,binding_validator=self.profiles.validate)
             self.engine.authorization=self.assert_identity
@@ -68,6 +82,7 @@ class WebSession:
             self.lock.close();raise
 
     def assert_identity(self):
+        if self.demo_session:self.demo_session.current()
         if self.login_session:self.login_session.current()
 
     def _tick(self):
@@ -90,3 +105,4 @@ class WebSession:
                 finally:
                     self.lock.close()
                     if self.login_session:self.login_session.close()
+                    if self.demo_session:self.demo_session.close()

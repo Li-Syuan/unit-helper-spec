@@ -32,6 +32,37 @@ class WebTests(unittest.TestCase):
             time.sleep(.01)
         return self.session.store.task(tid)
 
+    def test_work_inbox_reads_real_pending_plans_without_dispatch(self):
+        cid = self.call('state')['conversation']['id']
+        other = self.session.store.create_conversation('另一件工作', self.session.profiles.default_binding())
+        tid = self.call('send', cid=other, text='待確認查詢', purpose='chat', planned=True, seq=1, request_id='inbox-plan')
+        self.assertIn("plan_id", tid)
+        before = self.session.store.tasks()
+        inbox = self.call('state', cid=cid)['work_inbox']
+        plans = [row for row in inbox if row['kind'] == 'plans']
+        self.assertTrue(plans, inbox)
+        self.assertEqual(plans[0]['conversation_id'], other)
+        self.assertEqual(plans[0]['source'], '另一件工作')
+        self.assertEqual(self.session.store.tasks(), before)
+        self.call('plan_cancel', plan_id=plans[0]['id'])
+        self.assertFalse(any(row['id'] == plans[0]['id'] for row in self.call('state', cid=cid)['work_inbox']))
+
+    def test_work_inbox_latest_main_request_and_source_deletion(self):
+        cid = self.call('state')['conversation']['id']
+        thread = self.call('dialogue_start', mode='chat', assistant_id='demo-general')
+        from desktop_app.assistant_errors import AssistantFailure
+        with patch.object(self.session.dialogue.provider, 'respond_context', side_effect=AssistantFailure('LOCAL_SETUP','preflight',sent=False)):
+            self.assertFalse(self.api.call('dialogue_send', {'id':thread['id'], 'text':'需要處理的主對話', 'request_id':'inbox-failure'})['ok'])
+        inbox = self.call('state', cid=cid)['work_inbox']
+        self.assertTrue(any(row['kind'] == 'dialogue' and row['id'] == thread['id'] for row in inbox))
+        self.assertFalse(self.api.call('dialogue_retry_unsent', {'id':thread['id'], 'request_id':'inbox-failure'})['ok'])
+        preview = self.call('dialogue_delete_preview', kind='threads', ids=[thread['id']])
+        self.call('dialogue_delete_confirm', token=preview['token'])
+        self.assertFalse(any(row['kind'] == 'dialogue' and row['id'] == thread['id'] for row in self.call('state', cid=cid)['work_inbox']))
+        todo = self.call('todo_save', title='獨立副本', description='阻塞紀錄', source_conversation_id=cid, request_id='inbox-todo')
+        self.call('todo_state', id=todo['id'], state='done')
+        self.assertEqual(self.session.store.tasks(), [])
+
     def test_initial_state_and_draft_isolation(self):
         state = self.call('state')
         cid = state['conversation']['id']

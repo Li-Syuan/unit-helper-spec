@@ -1,3 +1,5 @@
+本次重新全文讀取官方2719802第68版，以及目前插件2720034／DSE2719790。要求、實作證據、舊頁失效與示範安全差異見 [DVC核對](DVC-REVIEW.md)。目前來源：[插件](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2720034)、[DSE](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2719790)；下方舊站任務管理只作歷史參考，本次無遠端任務接線或循環能力宣稱。
+
 # 0.20.0 官方契約與核准搜尋接線
 
 2026-09-30 重新核對使用者提供的 [Assistant API 介紹](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2719802/Assistant+API)（公開 Confluence 頁面 2719802）。範例是協定參考，不是本機或組織驗收結果。

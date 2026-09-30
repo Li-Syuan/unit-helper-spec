@@ -368,6 +368,7 @@ def main():
                 company_mock.reply='【合成財經日報，非真實新聞】\n台股、美股、總經：此處僅展示回覆與排程流程。\n來源：https://example.test/synthetic'
                 time.sleep(.3);click_button('預覽試跑');wait_text('尚未執行')
                 assert len(company_mock.runs)==count,'briefing_preview_dispatched_model'
+                wait_script("Array.from(document.querySelectorAll('#modal button')).some(b=>b.textContent==='現在試跑'&&!b.disabled)")
                 click_button('現在試跑');wait_text('我已核對日報內容')
                 briefings=[t for t in session.store.tasks() if t['kind']=='assistant_briefing']
                 assert len(briefings)==1 and briefings[0]['state']=='succeeded','briefing_trial_failed'
@@ -450,9 +451,125 @@ def main():
                 assert window.evaluate_js("document.getElementById('dialogue-input').value")=='更換金鑰後要保留的合成草稿','revision_fork_lost_draft'
                 assert len(company_mock.runs)==before_fork,'revision_fork_dispatched'
                 report['checks'].append('credential_revision_fork_explicit_destination_and_preserved_draft_zero_dispatch')
+                # Real desktop WebView2, synthetic personal work only; never user data.
+                inbox_baseline={t['id'] for t in session.store.tasks()}
+                from datetime import datetime, timezone, timedelta
+                today=(datetime.now(timezone.utc)+timedelta(hours=8)).date()
+                source=session.store.create_conversation('合成待辦來源',session.profiles.default_binding())
+                overdue=session.store.create_todo('核對出貨清單','等待 QA 確认後記錄結論',(today-timedelta(days=1)).isoformat(),source,'smoke-todo-1')
+                future=session.store.create_todo('整理下週規格','附件仍待提供',(today+timedelta(days=3)).isoformat(),None,'smoke-todo-2')
+                completed=session.store.create_todo('已完成合成事項','已保存核對結論',None,None,'smoke-todo-3')
+                session.store.set_todo_state(completed['id'],'done')
+                plan=api.call('send',{'cid':source,'text':'合成待確認工作','purpose':'chat','planned':True,'request_id':'smoke-inbox-plan','seq':1})
+                assert plan['ok'], 'inbox_plan_creation_failed'
+                window.evaluate_js("if(document.body.dataset.theme!=='dark')document.getElementById('theme-toggle').click()")
+                wait_script("document.body.dataset.theme==='dark'")
+                window.evaluate_js("document.querySelector('[data-page=todo]').click()")
+                wait_script("document.querySelector('[data-todo-id]')!==null")
+                wait_script("document.getElementById('page-content').textContent.includes('核對出貨清單')")
+                assert window.evaluate_js("document.getElementById('page-content').textContent.includes('逾期')"),'overdue_missing'
+                assert not window.evaluate_js("Array.from(document.querySelectorAll('[data-todo-id]')).some(e=>e.textContent.includes('已完成合成事項'))"),'done_not_hidden'
+                capture('todos-dark.png')
+                def todo_script(script):window.evaluate_js(script)
+                todo_script("window.todoSearch=document.querySelector('#page-content .toolbar input');todoSearch.value='附件';todoSearch.dispatchEvent(new Event('input'))")
+                assert window.evaluate_js("document.querySelectorAll('[data-todo-id]').length")==1,'description_search_wrong'
+                todo_script("todoSearch.value='';todoSearch.dispatchEvent(new Event('input'));window.todoScope=document.querySelector('#page-content .toolbar select');todoScope.value='due';todoScope.dispatchEvent(new Event('change'))")
+                assert window.evaluate_js("document.querySelectorAll('[data-todo-id]').length")==1,'due_filter_wrong'
+                todo_script("Array.from(document.querySelectorAll('[data-todo-id] button')).find(b=>b.textContent==='開始處理').click()")
+                wait_script("Array.from(document.querySelectorAll('[data-todo-id] button')).some(b=>b.textContent==='完成')")
+                assert session.store.todo(overdue['id'])['state']=='ongoing','start_not_persisted'
+                todo_script("Array.from(document.querySelectorAll('[data-todo-id] button')).find(b=>b.textContent==='完成').click()")
+                wait_script("document.querySelectorAll('[data-todo-id]').length===0")
+                assert session.store.todo(overdue['id'])['state']=='done','completion_not_persisted'
+                window.evaluate_js("document.querySelector('[data-page=activity]').click();document.querySelector('[data-page=todo]').click()")
+                assert window.evaluate_js("document.querySelector('#page-content .toolbar select').value")=='due','filter_navigation_reset'
+                todo_script("document.querySelector('#page-content .toolbar select').value='all';document.querySelector('#page-content .toolbar select').dispatchEvent(new Event('change'))")
+                todo_script("Array.from(document.querySelectorAll('#page-content .work-inbox button')).find(b=>b.textContent==='回來源處理').click()")
+                wait_script("!document.getElementById('chat-page').hidden")
+                assert window.evaluate_js("document.getElementById('workflow-panel').textContent.includes('待確認計畫')"),'inbox_source_plan_missing'
+                assert {t['id'] for t in session.store.tasks()}==inbox_baseline,'inbox_navigation_dispatched'
+                window.evaluate_js("document.querySelector('[data-page=todo]').click()")
+                time.sleep(.2)
+                window.resize(850,650);time.sleep(.3);capture('todos-small.png')
+                assert window.evaluate_js("document.getElementById('page-content').scrollWidth<=document.getElementById('page-content').clientWidth+2"),'todo_horizontal_overflow'
+                window.evaluate_js("document.querySelector('[data-page=settings]').click()")
+                window.evaluate_js("document.querySelector('[data-theme-choice=light]').click()")
+                wait_script("document.body.dataset.theme==='light'")
+                window.evaluate_js("document.querySelector('[data-page=todo]').click()")
+                time.sleep(.2);capture('todos-light.png')
+                window.resize(1280,860);window.maximize();time.sleep(.3);capture('todos-maximized.png')
+                # Cancel and invalid submission preserve input and never create records.
+                window.evaluate_js("Array.from(document.querySelectorAll('#page-actions button')).find(b=>b.textContent==='新增待辦').click()")
+                before_todos=len(session.store.todos())
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='保存').click()")
+                assert len(session.store.todos())==before_todos,'empty_todo_saved'
+                window.evaluate_js("document.querySelector('#modal-body input').value='合成新待辦';Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='保存').click();Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='保存').click()")
+                wait_script("!document.getElementById('modal').open")
+                assert len(session.store.todos())==before_todos+1,'duplicate_todo_save'
+                window.evaluate_js("Array.from(document.querySelectorAll('#page-actions button')).find(b=>b.textContent==='新增待辦').click();Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='取消').click()")
+                assert len(session.store.todos())==before_todos+1,'cancel_created_todo'
+                inbox_row=next(row for row in api.call('state',{})['data']['work_inbox'] if row['kind']=='dialogue')
+                target=inbox_row['id'];pending=session.dialogue.state(target)['request']['pending_text']
+                window.evaluate_js("document.getElementById('dialogue-input').value='尚未送出的合成草稿'")
+                source_button="document.querySelector('[data-inbox-id=\""+target+"\"] button').click()"
+                window.evaluate_js(source_button)
+                wait_script("document.getElementById('dialogue-status').textContent.includes('輸入框仍有未送出內容')")
+                assert window.evaluate_js("document.getElementById('dialogue-input').value")=='尚未送出的合成草稿','inbox_overwrote_main_draft'
+                window.evaluate_js("document.getElementById('dialogue-input').value='';document.querySelector('[data-page=todo]').click()")
+                window.evaluate_js(source_button)
+                wait_script("document.getElementById('dialogue-input').value==="+json.dumps(pending))
+                assert {t['id'] for t in session.store.tasks()}==inbox_baseline,'main_inbox_dispatched'
+                window.evaluate_js("document.querySelector('[data-page=todo]').click()")
+                # Move off the source first, as the real delete UI updates its active cid.
+                window.evaluate_js("document.getElementById('new-chat').click()")
+                wait_script("!document.getElementById('chat-page').hidden && document.getElementById('page-title').textContent!=='我的待辦'")
+                time.sleep(.3)
+                p=api.call('delete_preview',{'ids':[source]});assert p['ok'], 'todo_source_delete_preview_failed'
+                deleted=api.call('delete_confirm',{'token':p['data']['token']});assert deleted['ok'], 'todo_source_delete_failed'
+                window.evaluate_js("document.querySelector('[data-page=activity]').click();document.querySelector('[data-page=todo]').click()")
+                wait_script("document.getElementById('page-content').textContent.includes('來源對話已刪除')")
+                assert session.store.todo(overdue['id'])['state']=='done','deleted_source_removed_todo'
+                report['checks'].append('todo_real_inbox_source_zero_dispatch_description_search_due_filters_transitions_duplicate_save_empty_cancel_small_light_maximized')
+                report['checks'].append('todo_main_source_navigation_preserves_unsent_draft_and_deleted_source_keeps_copy_zero_dispatch')
                 report['viewport']=window.evaluate_js("({width:innerWidth,height:innerHeight,devicePixelRatio})")
                 report['text']=window.evaluate_js('document.body.innerText')
                 report['state']=api.call('state',{})
+                # A separate empty offline fixture; normal/company data never reused.
+                from desktop_app.demo_login import authenticate_demo
+                from desktop_app.config import DEFAULT
+                with tempfile.TemporaryDirectory(prefix='qa-login-ui-') as demo_folder:
+                    grant=authenticate_demo('admin','admin',demo_folder)
+                    demo=WebSession(directory=demo_folder,config=DEFAULT,demo_session=grant)
+                    original_api=api
+                    try:
+                        # Keep the real window open long enough to verify its logged-out veil.
+                        # pywebview keeps the original exposed object; route its fixture session.
+                        api._s=demo;api._closing=False
+                        window.evaluate_js("document.getElementById('new-chat').click()")
+                        wait_script("document.getElementById('logout') && !document.getElementById('logout').hidden && document.getElementById('identity').textContent.includes('離線展示已登入')")
+                        window.evaluate_js("document.querySelector('[data-page=settings]').click();window.demoDenied=null;window.pywebview.api.call('connection_save',{endpoint:'https://blocked.example.test/v1'}).then(r=>window.demoDenied=r)")
+                        wait_script("window.demoDenied && !window.demoDenied.ok")
+                        assert demo.profiles.data.get('endpoint','')=='','demo_changed_endpoint'
+                        window.evaluate_js("document.querySelector('[data-page=todo]').click()")
+                        wait_script("document.getElementById('page-title').textContent==='我的待辦'")
+                        capture('demo-login-workspace.png')
+                        window.evaluate_js("document.getElementById('message-input').value='登出前的合成草稿';document.getElementById('message-input').dispatchEvent(new Event('input'))")
+                        api._window=None
+                        window.evaluate_js("document.getElementById('logout').click()")
+                        wait_script("document.getElementById('modal').open")
+                        window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='登出').click()")
+                        wait_script("document.body.textContent.includes('已登出。請重新啟動並登入。')")
+                        window.evaluate_js("window.demoBypass=null;window.pywebview.api.call('state',{}).then(r=>window.demoBypass=r)")
+                        wait_script("window.demoBypass && !window.demoBypass.ok")
+                        assert window.evaluate_js("document.querySelector('.app-shell').hidden && document.querySelector('.app-shell').inert"),'logout_navigation_remained'
+                        snapshot=window.evaluate_js('window.qaDraftSnapshot()')
+                        assert snapshot and snapshot['text']=='登出前的合成草稿','logout_lost_close_snapshot'
+                        assert api.call('save_draft',snapshot)['ok'],'logout_drain_failed'
+                        capture('demo-logout.png')
+                        report['checks'].append('offline_demo_login_workspace_network_settings_denied_logout_veil_and_bridge_navigation_bypass_rejected')
+                    finally:
+                        api._s=session;api._closing=False;api._window=window
+                        demo.close()
                 report['status']='passed'
             except Exception as e:
                 report['error_type']=type(e).__name__

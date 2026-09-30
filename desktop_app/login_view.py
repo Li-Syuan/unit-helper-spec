@@ -12,8 +12,11 @@ from .theme import Appearance
 
 
 class LoginView:
-    def __init__(self, root, directory, *, preview=False, provider=None):
+    def __init__(self, root, directory, *, preview=False, provider=None, demo=False):
         from .about import publisher_info
+        if demo and (preview or provider is not None):
+            raise ValueError('展示模式不可套用公司驗證或預覽。')
+        self.demo, self.directory = demo, directory
         self.root, self.preview, self.provider = root, preview, provider
         self.result = None
         self.pending = False
@@ -32,10 +35,10 @@ class LoginView:
             ttk.Label(brand, image=self.icon).pack(side='left', padx=(0, 12))
         ttk.Label(brand, text=APP_NAME, style='Section.TLabel').pack(side='left')
         ttk.Label(body, text='登入你的工作區', style='Section.TLabel').pack(anchor='w')
-        ttk.Label(body, text='使用組織工號與密碼。成功驗證身分與使用資格後，\n才會開啟你的資料與自動工作。', wraplength=440).pack(anchor='w', pady=(8, 20))
+        ttk.Label(body, text=('離線登入展示：帳號 admin，密碼 admin。\n只開暫存合成工作區，不連公司服務、不授予公司權限。' if demo else '使用組織工號與密碼。成功驗證身分與使用資格後，\n才會開啟你的資料與自動工作。'), wraplength=440).pack(anchor='w', pady=(8, 20))
         self.employee = tk.StringVar()
         self.password = tk.StringVar()
-        ttk.Label(body, text='工號').pack(anchor='w', pady=(0, 6))
+        ttk.Label(body, text='展示帳號' if demo else '工號').pack(anchor='w', pady=(0, 6))
         self.employee_entry = ttk.Entry(body, textvariable=self.employee)
         self.employee_entry.pack(fill='x')
         ttk.Label(body, text='密碼').pack(anchor='w', pady=(16, 6))
@@ -44,7 +47,7 @@ class LoginView:
         self.visible = tk.BooleanVar(value=False)
         ttk.Checkbutton(body, text='顯示密碼', variable=self.visible,
                         command=lambda: self.password_entry.configure(show='' if self.visible.get() else '●')).pack(anchor='w', pady=8)
-        self.status = tk.StringVar(value='畫面預覽：不會驗證 AD，也不會開啟工作區。' if preview else 'AD 密碼不會保存於設定、資料庫或日誌。')
+        self.status = tk.StringVar(value='畫面預覽：不會驗證 AD，也不會開啟工作區。' if preview else '展示資料關閉後清除；這不是 AD 或管理員登入。' if demo else 'AD 密碼不會保存於設定、資料庫或日誌。')
         ttk.Label(body, textvariable=self.status, wraplength=440).pack(anchor='w', pady=(6, 12))
         self.progress = ttk.Progressbar(body, mode='indeterminate',style='Workspace.Horizontal.TProgressbar')
         actions = ttk.Frame(body)
@@ -52,7 +55,7 @@ class LoginView:
         actions.pack(fill='x')
         self.submit_button = ttk.Button(actions, text='登入工作區', style='Primary.TButton', command=self.submit)
         self.submit_button.pack(side='left')
-        if not preview and provider is None:
+        if not preview and not demo and provider is None:
             from .company_auth import is_configured
             if not is_configured():
                 self.submit_button.configure(state='disabled')
@@ -77,7 +80,7 @@ class LoginView:
             self.password.set('')
             self.status.set('這是畫面預覽，未驗證身分。接好 AD 函數並啟用登入後才能進入。')
             return
-        if self.provider is None:
+        if not self.demo and self.provider is None:
             from .company_auth import is_configured
             if not is_configured():
                 self.password.set('')
@@ -95,7 +98,12 @@ class LoginView:
         self.progress.start(12)
         def work(employee, password):
             try:
-                self.events.put((authenticate(employee, password, provider=self.provider), None))
+                if self.demo:
+                    from .demo_login import authenticate_demo
+                    result=authenticate_demo(employee, password, self.directory)
+                else:
+                    result=authenticate(employee, password, provider=self.provider)
+                self.events.put((result, None))
             except AuthenticationError as exc:
                 self.events.put((None, str(exc)))
             except Exception:
@@ -146,11 +154,11 @@ class LoginView:
         self.root.quit()
 
 
-def show_login(directory, *, preview=False):
+def show_login(directory, *, preview=False, demo=False):
     initialize_dpi()
     set_windows_identity()
     root = tk.Tk()
-    view = LoginView(root, directory, preview=preview)
+    view = LoginView(root, directory, preview=preview, demo=demo)
     root.mainloop()
     result = view.result
     root.destroy()

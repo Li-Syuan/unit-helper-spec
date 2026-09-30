@@ -25,22 +25,35 @@ def application_html():
     return html
 
 
-def launch(config_path=None, groq_trial=False):
+def launch(config_path=None, groq_trial=False, *, demo_login=False):
     from .branding import set_windows_identity
     from .display import initialize_dpi
     set_windows_identity();initialize_dpi()
+    if demo_login and (config_path is not None or groq_trial):
+        raise ValueError('離線展示不能載入公司設定或外部試用。')
+    import tempfile
+    temporary=tempfile.TemporaryDirectory(prefix='qa-login-demo-') if demo_login else None
     session=None
     login_session=None
+    demo_session=None
     try:
         import webview
         html=application_html()
         from .config import load_config, data_directory
-        config=None if groq_trial else load_config(config_path or data_directory()/'config.json')
+        if demo_login:
+            from .config import DEFAULT
+            from .login_view import show_login
+            directory=Path(temporary.name)
+            demo_session=show_login(directory,demo=True)
+            if demo_session is None:return True
+            config=DEFAULT
+        else:
+            config=None if groq_trial else load_config(config_path or data_directory()/'config.json')
         if config and config['identity_mode']=='company':
             from .login_view import show_login
             login_session=show_login(data_directory())
             if login_session is None:return True
-        session=WebSession(config=config,groq_trial=groq_trial,login_session=login_session)
+        session=WebSession(directory=Path(temporary.name) if temporary else None,config=config,groq_trial=groq_trial,login_session=login_session,demo_session=demo_session)
         api=WebBridge(session)
         webview.settings['ALLOW_DOWNLOADS']=False
         webview.settings['OPEN_EXTERNAL_LINKS_IN_BROWSER']=False
@@ -85,7 +98,7 @@ def launch(config_path=None, groq_trial=False):
     except Exception as exc:
         from .support import record
         from .config import data_directory
-        record(session.directory if session else data_directory(),'startup',exc)
+        record(session.directory if session else Path(temporary.name) if temporary else data_directory(),'startup',exc)
         # A missing WebView2 runtime must not silently switch data or renderers.
         import tkinter as tk
         from tkinter import messagebox
@@ -95,3 +108,5 @@ def launch(config_path=None, groq_trial=False):
     finally:
         if session:session.close()
         elif login_session:login_session.close()
+        if demo_session:demo_session.close()
+        if temporary:temporary.cleanup()

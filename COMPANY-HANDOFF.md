@@ -1,3 +1,13 @@
+## 本次新增的離線登入展示
+
+執行 `start-demo-login.bat`，admin/admin 僅用於暫存離線fixture，禁止公司連線設定；不能作公司帳號或授權。原公司登入早已存在但未接AD，identity_mode=company拒絕回退。人事資料用途為App使用資格，核准名單／部門待定，尚未配置。詳見 [登入與資格邊界](docs/LOGIN-AND-APP-ACCESS.md)。
+
+# 本次待辦與一鍵接手
+
+使用本次可攜包的69正式wheels，不使用開發機舊wheelhouse或lab lock；解壓新目錄，保留公司既有修改。核准Python3.10.4 x64安裝：`install-offline.bat "C:\approved\Python3104\python.exe"`；再執行 **`test-company.bat`**，一次完整本機與WebView驗證。不必另重跑full。公司Assistant API／搜尋仍需独立核准與人工來源驗收，本次沒有live或啟用使用者排程。
+
+待辦頁可回原流程確認、檢查主對話失敗及查看部分成果；手動完成不改AI狀態。詳見 [操作](docs/ONE-CLICK-TEST.md)、[DVC核對](docs/DVC-REVIEW.md)及[最新驗證](docs/VALIDATION.md)。下方歷史日報接手流程不是本次自動執行授權。
+
 # 0.20.0 組織試用修正
 
 本次對照 [Assistant API 手冊](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2719802/Assistant+API)，提供安全未送出重試、分階段錯誤、每助理可選獨立金鑰及普通聊天搜尋核准。請先從 UI 完成一位助理無工具試聊，再測第二個 ID，最後核准搜尋；不要一次啟用所有角色與排程。

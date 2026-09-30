@@ -26,8 +26,10 @@ class LoginSession:
         now = now or datetime.now(timezone.utc)
         if not isinstance(response, dict):
             raise AuthenticationError('驗證服務回傳格式不符，請聯絡維護者。')
-        if response.get('authenticated') is not True or response.get('allowed') is not True:
+        if response.get('authenticated') is not True:
             raise AuthenticationError('無法登入：請確認工號、密碼及使用權限。')
+        if response.get('allowed') is not True:
+            raise AuthenticationError('尚未開通使用權限；請聯絡系統維護者。')
         try:
             expires = datetime.fromisoformat(response['expires_at'].replace('Z', '+00:00'))
             if expires.tzinfo is None or not 0 < (expires-now).total_seconds() <= 8*3600:

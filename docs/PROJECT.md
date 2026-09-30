@@ -1,3 +1,13 @@
+## 離線登入展示與現有AD閘門
+
+`demo_login.py` 僅記憶體fixture；`--demo-login`／`start-demo-login.bat` 先原生登入，再建立空白暫存WebSession，禁公司設定／probe，登出撤銷並關閉。company_auth既有可信hook不變；人事資格尚未接線。詳細邊界見 LOGIN-AND-APP-ACCESS.md。
+
+# 本次待辦與交付更新
+
+WebView「我的待辦」使用 work_inbox.py 聚合既有 plans／workflows／conversation_actions／tasks及主對話最新未完成request；唯讀、不另存工作狀態、不派發。導回原流程确认或查看成果；主對話有未送出文字時拒絕切換。個人todos仍獨立，支援台北到期篩選、說明搜尋、紀錄與來源失效提示。Tk備用維持既有看板。
+
+test-company.bat／scripts/company-test.py 為離線單一驗證入口，隔離診斷設定、語法檢查、一次full及真WebView2合成旅程。沒有依賴／schema／角色權限改動。公司真實服務仍not_tested。操作與DVC核對見 ONE-CLICK-TEST.md、DVC-REVIEW.md。
+
 # QA agent 0.20.0 現行架構
 
 Assistants 連接依官方頁面 2719802 核對；assistant_errors.py 提供安全分類，config 接受單次30秒／總工作600秒預設。DialogueService 只對持久化的未派發 preflight 失敗提供 retry_unsent；缺少遠端紀錄不是證據。Profiles 提供共用／個別 keyring 金鑰與連線修訂，聊天搜尋另需 chat_search_enabled，不因已有搜尋 policy 自動開放。無新依賴或資料庫遷移。

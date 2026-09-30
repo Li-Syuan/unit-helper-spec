@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "company_real": "not_tested",
+  "steps": [
+    {
+      "name": "python_syntax",
+      "status": "passed"
+    },
+    {
+      "name": "webview_synthetic",
+      "exit_code": 0,
+      "status": "passed"
+    },
+    {
+      "name": "demo_login_lifecycle",
+      "exit_code": 0,
+      "status": "passed"
+    }
+  ]
+}

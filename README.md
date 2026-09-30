@@ -1,3 +1,7 @@
+## 離線登入展示
+
+新增 `start-demo-login.bat`，admin/admin 只進入即用即棄的離線合成工作區；公司登入仍需 AD 接線並拒絕展示登入。詳見 [登入與App使用資格](docs/LOGIN-AND-APP-ACCESS.md)。
+
 # QA agent
 
 **0.20.0 環境試跑候選版 · Windows x64 · Python 3.10.4 · WebView2 主介面／Tkinter 備用**
@@ -21,6 +25,12 @@
 ![QA agent 深色工作區](docs/images/workspace-dark.png)
 
 本版可在對話失敗後檢查／取回原請求，並由「管理本機資料」刪除成果等內容。每位AI 助理可從團隊卡片準備合成試聊，不自動送出。問題編號及安全日誌可從「說明與關於」匯出。
+
+## 本次待辦與一鍵驗證
+
+「我的待辦」增加真實未完成工作／主對話失敗入口，回來源補齊或查看阻塞與部分結果；個人下一步支援到期／說明搜尋，完成仍由人確認。
+
+帶到公司請用本次完整可攜包，在新目錄安裝後執行 **`test-company.bat`**。它只做本機完整回歸與 WebView2 合成操作，真實公司服務仍須獨立驗收。詳細見 [一鍵操作](docs/ONE-CLICK-TEST.md) 與 [DVC契約核對](docs/DVC-REVIEW.md)。
 
 ## 開始使用
 

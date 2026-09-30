@@ -28,6 +28,9 @@ class WebBridge:
             if len(json.dumps(payload or {},ensure_ascii=False))>250000:raise ValueError('操作內容過長。')
             with self._lock:
                 if self._s.closed:raise ValueError('程式正在關閉。')
+                if self._s.demo_session and (name.startswith('profile_') or name.startswith('search_policy_')
+                        or name in {'connection_save','key_remove','company_probe'}):
+                    raise ValueError('離線登入展示禁止公司連線、金鑰與工具設定；請關閉並改用公司登入。')
                 if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel'}:
                     self._s.assert_identity()
                 if self._closing and name not in {'state','save_draft'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
@@ -49,7 +52,7 @@ class WebBridge:
     def _handlers(self):
         s=self._s
         return {
-            'about':self._about,
+            'about':self._about,'logout':self._logout,
             'state':self._state,'new_chat':self._new_chat,'save_draft':self._draft,'send':self._send,
             'cleanup_preview':lambda p:s.cleanup.preview(p['kind'],p['ids']),
             'cleanup_catalog':lambda p:s.cleanup.catalog(),
@@ -125,6 +128,15 @@ class WebBridge:
             'dialogue_delete_confirm':lambda p:s.dialogue.confirm_delete(p['token']),
         }
 
+    def _logout(self,p):
+        if not (self._s.demo_session or self._s.login_session):
+            raise ValueError('本機模式沒有登入階段。')
+        if self._s.demo_session:self._s.demo_session.close()
+        if self._s.login_session:self._s.login_session.close()
+        self._closing=True
+        if self._window:threading.Timer(.2,self._window.destroy).start()
+        return {'logged_out':True}
+
     def _about(self,p):
         from .about import publisher_info, about_text
         return dict(author=publisher_info(),text=about_text(),version=__version__)
@@ -163,13 +175,14 @@ class WebBridge:
         fields={'id','name','assistant_id','notes','enabled','revision','workflow','search_policy','credential_mode','chat_search_enabled'}
         profiles=[{k:v for k,v in r.items() if k in fields} for r in profiles]
         prefs=load_preferences(s.preferences_path)
+        from .work_inbox import work_inbox
         return dict(version=__version__,mode='Groq 外部 AI 試用 · 合成資料' if s.trial else '工作區' if s.config['query_mode']!='demo' else '本機示範 · 合成資料',
             **self._appearance,identity={k:s.identity.get(k,'') for k in ('mode','name','employee_id')},appearance_saved=self._appearance_saved,sidebar_collapsed=bool(prefs.get('sidebar_collapsed',False)),
             conversations=conversations,conversation=conversation,messages=messages,profiles=profiles,
             planners=[{k:v for k,v in row.items() if k in fields} for row in s.profiles.workflow_catalog() if 'planner' in row['workflow']['roles']],
             tasks=s.store.tasks(),plans=s.store.plans(),workflows=[s.workflows.snapshot(r['id']) for r in s.workflows.list(cid)],
             actions=[dict(s.actions.snapshot(a['id']),parse_note=self._parse_notes.get(a['id'],'')) for a in s.actions.list(cid)],catalog=s.queries.catalog(),
-            todos=s.store.todos(),schedules=s.store.schedules(),notifications=s.store.notifications(),issues=s.store.issues(),
+            work_inbox=work_inbox(s),todos=s.store.todos(),schedules=s.store.schedules(),notifications=s.store.notifications(),issues=s.store.issues(),
             draft=s.store.draft(cid),attachment=self._attachment_info(cid),busy=s.engine.has_inflight(),
             scheduler_error=s.scheduler_error,settings={'endpoint':s.profiles.data.get('endpoint','') if not s.trial else '',
                 'wire_mode':s.profiles.data.get('wire_mode','unconfigured'),
