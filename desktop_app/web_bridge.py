@@ -133,7 +133,7 @@ class WebBridge:
         return {'assistants':rows,'task_types':TASK_TYPES[:],
                 'mode_label':'示範模式 · 完全離線','company_enabled':any(r['id'].startswith('company:') for r in rows),
                 'company_fields':['endpoint','API key','assistant_id'],
-                'company_note':'設定公司 Assistants 連線後，選取公司助理才會傳送內容；工具尚未開放。'}
+                'company_note':'設定組織 Assistants 連線後，選取AI 助理才會傳送內容；工具尚未開放。'}
 
     def _cleanup_confirm(self,p):
         result=self._s.cleanup.confirm(p['token'])
@@ -159,8 +159,8 @@ class WebBridge:
         profiles=s.profiles.items()
         profiles=[{k:v for k,v in r.items() if k in {'id','name','assistant_id','notes','enabled','revision','workflow','search_policy'}} for r in profiles]
         prefs=load_preferences(s.preferences_path)
-        return dict(version=__version__,mode='Groq 外部 AI 試用 · 合成資料' if s.trial else '公司工作區' if s.config['query_mode']!='demo' else '本機示範 · 合成資料',
-            **self._appearance,appearance_saved=self._appearance_saved,sidebar_collapsed=bool(prefs.get('sidebar_collapsed',False)),
+        return dict(version=__version__,mode='Groq 外部 AI 試用 · 合成資料' if s.trial else '工作區' if s.config['query_mode']!='demo' else '本機示範 · 合成資料',
+            **self._appearance,identity={k:s.identity.get(k,'') for k in ('mode','name','employee_id')},appearance_saved=self._appearance_saved,sidebar_collapsed=bool(prefs.get('sidebar_collapsed',False)),
             conversations=conversations,conversation=conversation,messages=messages,profiles=profiles,
             planners=[v for v in s.profiles.workflow_catalog() if 'planner' in v['workflow']['roles']],
             tasks=s.store.tasks(),plans=s.store.plans(),workflows=[s.workflows.snapshot(r['id']) for r in s.workflows.list(cid)],
@@ -314,7 +314,7 @@ class WebBridge:
         return {'html':render_markdown(text)}
 
     def _profile_guard(self):
-        if self._s.trial:raise ValueError('試用與公司設定隔離，請使用正式工作區設定助理。')
+        if self._s.trial:raise ValueError('試用與連線設定隔離，請使用正式工作區設定助理。')
         if self._s.engine.has_inflight() or self._s.dialogue.has_inflight() or self._s.company_probe.has_inflight():raise ValueError('請等背景工作完全結束後再修改連線。')
 
     @contextmanager
@@ -326,7 +326,7 @@ class WebBridge:
             yield
 
     def _company_probe(self,p):
-        if self._s.trial:raise ValueError('請使用正式工作區設定公司助理。')
+        if self._s.trial:raise ValueError('請使用正式工作區設定 AI 助理。')
         return self._s.company_probe.inspect(p['profile_id'])
 
     def _search_policy_save(self,p):
@@ -344,7 +344,7 @@ class WebBridge:
         return {'prompt':DEFAULT_PROMPT,'time_hhmm':'08:00'}
 
     def _briefing_preview(self,p):
-        if self._s.trial:raise ValueError('財經日報使用公司搜尋助理，請以 start-app.bat 啟動。')
+        if self._s.trial:raise ValueError('財經日報使用組織搜尋助理，請以 start-app.bat 啟動。')
         return self._s.briefings.preview(p['profile_id'],p['prompt'],p.get('time_hhmm','08:00'))
 
     def _company_readiness(self,p):

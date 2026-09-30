@@ -112,10 +112,10 @@ class TrialProfiles(Profiles):
         self.data = {'default':PROFILE_ID, 'wire_mode':'model', 'endpoint':ENDPOINT,
                      'profiles':[{'id':PROFILE_ID, 'revision':1, 'name':'Groq 試用助理',
                      'assistant_id':MODEL, 'enabled':True,
-                     'notes':'外部 AI：可整理與改寫測試文字。請勿傳送公司機密或個資。'}]}
+                     'notes':'外部 AI：可整理與改寫測試文字。請勿傳送組織機密或個資。'}]}
         for role,label in [('planner','主代理／規劃'),('analysis','分析子代理'),('review','覆核子代理'),('compose','日報子代理')]:
             self.data['profiles'].append({'id':'groq-'+role,'revision':1,'name':label+'（Groq）','assistant_id':MODEL,
-                'enabled':True,'notes':'同一 Groq 模型的隔離角色，非公司 assistant ID；僅供合成資料測試。',
+                'enabled':True,'notes':'同一 Groq 模型的隔離角色，非組織 assistant ID；僅供合成資料測試。',
                 'workflow':{'revision':1,'roles':[role],'verified':True,'read_only':True,'evidence':'trial-stateless-no-tools'}})
 
     def key(self):
@@ -129,7 +129,7 @@ class TrialProfiles(Profiles):
             return '未填寫或 .env 格式不正確'
 
     def _readonly(self, *args, **kwargs):
-        raise GatewayError('此入口固定使用 Groq 試用連線；公司設定請使用 start-app.bat。')
+        raise GatewayError('此入口固定使用 Groq 試用連線；連線設定請使用 start-app.bat。')
 
     _write = save = set_default = set_endpoint = save_key = remove_key = _readonly
 

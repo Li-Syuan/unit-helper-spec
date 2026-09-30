@@ -32,12 +32,12 @@ class AssistantUITests(unittest.TestCase):
     def test_switch_new_conversation_preserves_private_draft_and_attachment(self):
         a=self.a;old=a.conversation;a.input.insert('end','private draft')
         a.attachment={'name':'original.txt','text':'private attachment','kind':'txt'}
-        pid=a.profiles.save('公司文字','real-id','文字用途');a.refresh_profiles()
+        pid=a.profiles.save('組織文字','real-id','文字用途');a.refresh_profiles()
         a.profile_picker.current(1);a.switch_assistant()
         self.assertNotEqual(a.conversation,old);self.assertEqual(a.store.messages(a.conversation),[])
         self.assertEqual(a.input.get('1.0','end-1c'),'');self.assertIsNone(a.attachment)
         self.assertEqual(a.store.conversation(a.conversation)['binding']['profile_id'],pid)
-        self.assertIn('公司助理',a.mode_label.cget('text'))
+        self.assertIn('AI 助理',a.mode_label.cget('text'))
         a.history.selection_clear(0,'end');a.history.selection_set(a.conversation_ids.index(old));a.choose_chat()
         self.assertEqual(a.input.get('1.0','end-1c'),'private draft')
         self.assertEqual(a.attachment['text'],'private attachment')
@@ -68,7 +68,7 @@ class AssistantUITests(unittest.TestCase):
     def test_transfer_failure_retains_query_and_source(self):
         a=self.a;tid=a.engine.run_query('DEMO01',{'from_date':'2026-01-01','to_date':'2026-01-02','category':'A'});self.wait(tid)
         before=copy.deepcopy(a.store.task(tid)['result']);a.show_result(tid)
-        def fail(*args):raise GatewayError('公司回覆失敗')
+        def fail(*args):raise GatewayError('組織回覆失敗')
         a.engine.assistant_router=fail;a.open_result_handoff();a.handoff_window.transfer_submit()
         transfer=a.store.tasks()[0];self.assertEqual(self.wait(transfer['id'])['state'],'failed')
         self.assertEqual(a.store.task(tid)['result'],before);self.assertEqual(a.store.conversation(a.conversation)['source']['task_id'],tid)

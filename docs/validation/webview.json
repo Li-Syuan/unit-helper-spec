@@ -4,6 +4,7 @@
   "status": "passed",
   "checks": [
     "bridge_ready",
+    "author_popover_readonly_escape_outside_and_late_reply_fence",
     "six_style_modes_preserve_form_semantic_colors_save_retry_reset_zero_dispatch",
     "semantic_theme_keeps_draft_selection_and_zero_dispatch",
     "failed_request_fenced_inspect_fork_and_explicit_delete",
@@ -43,6 +44,16 @@
     "checks": [
       "three_author_fields_safe_text",
       "small_viewport_dark_light",
+      "zero_dispatch"
+    ]
+  },
+  "author_popover": {
+    "status": "passed",
+    "scope": "synthetic_author_popover",
+    "checks": [
+      "small_dark_light_popover_inside_viewport",
+      "theme_keeps_open_card_and_draft",
+      "close_restores_focus",
       "zero_dispatch"
     ]
   }

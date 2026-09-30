@@ -41,7 +41,7 @@ class CompanyIdentity:
     def current(self) -> dict:
         if self.session is not None:
             return self.session.current()
-        raise GatewayError("公司 AD 與使用名單尚未配置，無法啟用正式身分。")
+        raise GatewayError("組織 AD 與使用名單尚未配置，無法啟用正式身分。")
 
 
 class OracleQueries:
@@ -85,12 +85,12 @@ class DemoAssistant:
         if purpose not in PURPOSES:
             raise GatewayError("不支援的助理操作。")
         content = validated_messages(messages)[-1]["content"]
-        prefix = "【本機示範回應，未呼叫 AI／公司服務】\n"
+        prefix = "【本機示範回應，未呼叫 AI／正式服務】\n"
         if purpose == "summarize":
-            return prefix + f"已提供 {len(content)} 個字元、{len(content.splitlines())} 行。\n這是程式計數，尚未產生語意摘要；接通公司 chatbot 後可整理重點。"
+            return prefix + f"已提供 {len(content)} 個字元、{len(content.splitlines())} 行。\n這是程式計數，尚未產生語意摘要；接通組織 chatbot 後可整理重點。"
         if purpose == "rewrite":
             return prefix + "以下保留原文作為預覽示範，沒有假裝完成 AI 改寫：\n\n" + content
-        return prefix + "已收到你的內容。可使用「查資料」體驗三項合成查詢，或使用整理／改寫預覽。接通公司 chatbot 後才會產生真正的助理回答。"
+        return prefix + "已收到你的內容。可使用「查資料」體驗三項合成查詢，或使用整理／改寫預覽。接通組織 chatbot 後才會產生真正的助理回答。"
 
 
 class CompanyAssistant:
@@ -114,10 +114,10 @@ class CompanyAssistant:
         except (TypeError, ValueError):
             valid = False
         if not valid or parsed.hostname.lower().rstrip(".") in {"api.openai.com", "openai.com"}:
-            raise GatewayError("請設定公司的 HTTPS chatbot 端點；不使用公共預設端點或網址內帳密。")
+            raise GatewayError("請設定組織的 HTTPS chatbot 端點；不使用公共預設端點或網址內帳密。")
         self.model = self.config.get("model")
         if not isinstance(self.model, str) or not self.model.strip():
-            raise GatewayError("請填公司指定的模型／助理名稱。")
+            raise GatewayError("請填組織指定的模型／助理名稱。")
         timeout = self.config.get("timeout_seconds", 30)
         limit = self.config.get("max_context_chars", 50000)
         if isinstance(timeout, bool) or not isinstance(timeout, (float, int)) or not 1 <= timeout <= 120:
@@ -128,7 +128,7 @@ class CompanyAssistant:
         env = self.config.get("api_key_env", "UNIT_HELPER_API_KEY")
         key = api_key if api_key is not None else (os.environ.get(env, "") if isinstance(env, str) else "")
         if not key:
-            raise GatewayError("未設定公司 API 金鑰環境變數。")
+            raise GatewayError("未設定助理 API 金鑰環境變數。")
         headers = {}
         mapping = self.config.get("header_env", {})
         if not isinstance(mapping, dict):
@@ -149,17 +149,17 @@ class CompanyAssistant:
             if (not isinstance(field, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", field)
                     or field in {"messages", "model", "stream", "tools", "tool_choice"}
                     or not isinstance(ref, str) or not ref.strip()):
-                raise GatewayError("助理識別需指定公司文件中的 assistant_ref_field；不可覆蓋核心請求欄位。")
+                raise GatewayError("助理識別需指定組織文件中的 assistant_ref_field；不可覆蓋核心請求欄位。")
             self.extra_body = {field: ref}
         ca_bundle = self.config.get("ca_bundle")
         tls_context = True
         if ca_bundle is not None:
             if not isinstance(ca_bundle, str) or not ca_bundle.strip():
-                raise GatewayError("ca_bundle 需為有效的公司 CA 憑證檔路徑。")
+                raise GatewayError("ca_bundle 需為有效的組織 CA 憑證檔路徑。")
             try:
                 tls_context = ssl.create_default_context(cafile=ca_bundle)
             except (OSError, ssl.SSLError):
-                raise GatewayError("無法載入公司 CA 憑證檔；請確認路徑與 PEM 格式。TLS 驗證不會停用。") from None
+                raise GatewayError("無法載入組織 CA 憑證檔；請確認路徑與 PEM 格式。TLS 驗證不會停用。") from None
         self.client = client or OpenAI(
             base_url=base, api_key=key, timeout=timeout, max_retries=0,
             default_headers=headers,
@@ -180,20 +180,20 @@ class CompanyAssistant:
             # Never execute tool calls or treat them as successful text.
             message = response.choices[0].message
             if getattr(message, "tool_calls", None) or getattr(message, "function_call", None):
-                raise GatewayError("公司服務要求工具操作；此接線僅接受文字，沒有執行工具。")
+                raise GatewayError("正式服務要求工具操作；此接線僅接受文字，沒有執行工具。")
             value = message.content
             if not isinstance(value, str) or not value.strip():
-                raise GatewayError("公司服務回覆空白或非文字格式，請確認串接格式。")
+                raise GatewayError("正式服務回覆空白或非文字格式，請確認串接格式。")
             return value
         except APITimeoutError:
-            raise GatewayError("公司服務逾時；沒有自動重試。遠端是否已完成需另行確認。") from None
+            raise GatewayError("正式服務逾時；沒有自動重試。遠端是否已完成需另行確認。") from None
         except APIStatusError as exc:
             label = "認證失敗" if exc.status_code in {401, 403} else f"HTTP {exc.status_code} 錯誤"
-            raise GatewayError("公司服務" + label + "；請確認設定或聯絡維護者。") from None
+            raise GatewayError("正式服務" + label + "；請確認設定或聯絡維護者。") from None
         except APIConnectionError:
-            raise GatewayError("無法連線公司服務；請檢查內網、憑證及端點。") from None
+            raise GatewayError("無法連線正式服務；請檢查內網、憑證及端點。") from None
         except (APIError, AttributeError, IndexError, TypeError, KeyError):
-            raise GatewayError("公司服務回傳格式不相容；請由公司 agent 調整串接模組。") from None
+            raise GatewayError("正式服務回傳格式不相容；請由組織 agent 調整串接模組。") from None
 
     def close(self):
         self.client.close()
@@ -211,9 +211,9 @@ class DemoQueries:
             "category": {"label": "類別", "type": "single_choice", "options": ["all", "A", "B"], "default": "all"},
         }
         return [
-            {"id": "DEMO01", "name": "示範庫存明細", "description": "合成庫存異動資料，非公司庫存。", "example": "查昨天的 A 類庫存", "parameters": copy.deepcopy(parameters), "date_range": {"start":"from_date", "end":"to_date"},
+            {"id": "DEMO01", "name": "示範庫存明細", "description": "合成庫存異動資料，非組織庫存。", "example": "查昨天的 A 類庫存", "parameters": copy.deepcopy(parameters), "date_range": {"start":"from_date", "end":"to_date"},
              "columns": [_column("record_date", "日期"), _column("item_id", "料號", copy_as_text=True), _column("category", "類別"), _column("quantity", "數量", "integer")]},
-            {"id": "DEMO02", "name": "示範訂單明細", "description": "合成訂單及精確金額字串，非公司訂單。", "example": "查昨天的全部訂單", "parameters": copy.deepcopy(parameters), "date_range": {"start":"from_date", "end":"to_date"},
+            {"id": "DEMO02", "name": "示範訂單明細", "description": "合成訂單及精確金額字串，非組織訂單。", "example": "查昨天的全部訂單", "parameters": copy.deepcopy(parameters), "date_range": {"start":"from_date", "end":"to_date"},
              "columns": [_column("record_date", "日期"), _column("order_id", "訂單編號", copy_as_text=True), _column("category", "類別"), _column("amount", "金額", "decimal", True)]},
             {"id": "DEMO03", "name": "示範數量合計", "description": "以同一批示範庫存異動計算總量，可測門檻通知。", "example": "查昨天 A 類數量合計", "parameters": copy.deepcopy(parameters), "date_range": {"start":"from_date", "end":"to_date"},
              "columns": [_column("quantity", "合計數量", "integer")]},
@@ -258,7 +258,7 @@ class DemoQueries:
         rows = rows[:1000]
         result = {"query_ref": {"id": query_id, "version": 1}, "parameters": copy.deepcopy(parameters),
                   "columns": catalog[query_id]["columns"], "rows": rows, "row_count": len(rows),
-                  "truncated": truncated, "source_label": "本機合成示範資料（非 Oracle／公司資料）",
+                  "truncated": truncated, "source_label": "本機合成示範資料（非 Oracle／組織資料）",
                   "fetched_at_utc": datetime.now(timezone.utc).isoformat()}
         if len(json.dumps(result, ensure_ascii=False).encode("utf-8")) > 2 * 1024 * 1024:
             raise GatewayError("結果超過 2 MiB，請縮小條件。")

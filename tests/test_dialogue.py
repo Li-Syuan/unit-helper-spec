@@ -22,7 +22,7 @@ class DialogueTests(unittest.TestCase):
         return self.service.send(thread['id'],text,str(self.counter))
     def ready(self):
         thread=self.service.start('task')
-        for text in ('我要建立任務','A類庫存','公司核准資料庫','資料追蹤','每天08:00'):
+        for text in ('我要建立任務','A類庫存','組織核准資料庫','資料追蹤','每天08:00'):
             thread=self.send(thread,text)
         return thread
     def test_multiturn_chat_keeps_context(self):
@@ -98,7 +98,7 @@ class DialogueTests(unittest.TestCase):
         self.assertEqual(self.service.list_saved(),[])
     def test_schedule_questions_do_not_guess_missing_time(self):
         thread=self.service.start('task')
-        for text in ('需求','A','公司DB','異常檢查','早點幫我看'):
+        for text in ('需求','A','組織DB','異常檢查','早點幫我看'):
             thread=self.send(thread,text)
         self.assertFalse(thread['complete'])
         with self.assertRaises(ValueError):self.service.preview(thread['id'],thread['revision'])

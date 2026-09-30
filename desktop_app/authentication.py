@@ -72,7 +72,7 @@ def authenticate(employee_id, password, *, provider=None):
         raise AuthenticationError('請輸入工號與密碼。')
     if provider is None:
         if not company_auth.is_configured():
-            raise AuthenticationError('AD 驗證尚未接線，不能登入公司工作區。')
+            raise AuthenticationError('AD 驗證尚未接線，不能登入工作區。')
         provider = company_auth.authenticate
     try:
         response = provider(employee_id, password)

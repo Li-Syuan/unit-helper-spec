@@ -18,7 +18,7 @@ from .outcomes import OutcomeService
 class WebSession:
     def __init__(self, directory=None, config=None, config_path=None, groq_trial=False, login_session=None):
         if groq_trial and (config is not None or config_path is not None):
-            raise ValueError('試用不能載入公司設定。')
+            raise ValueError('試用不能載入連線設定。')
         self.directory=Path(directory or data_directory())
         if groq_trial:self.directory /= 'groq-trial'
         self.trial=groq_trial

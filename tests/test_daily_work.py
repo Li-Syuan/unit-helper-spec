@@ -163,7 +163,7 @@ class DailyWorkTests(TestCase):
         self.assertFalse(any('assistant-one' in x for x in labels))
         a.next_binding = a.profiles.snapshot(p1); a.new_chat()
         self.assertIn('文件整理', a.assistant_usage['text'])
-        self.assertIn('待公司確認', a.assistant_usage['text'])
+        self.assertIn('待組織確認', a.assistant_usage['text'])
         self.assertEqual(a.work_cards_box.winfo_manager(), 'pack')
         a.store.add_message(a.conversation, 'user', 'something'); a.show_chat()
         self.assertEqual(a.work_cards_box.winfo_manager(), '')

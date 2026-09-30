@@ -45,7 +45,7 @@ class Profiles:
                 'credential_source':'environment','api_key_env':a.get('api_key_env','UNITHELPER_API_KEY'),
                 'wire_mode':'unconfigured','model':'','assistant_field':'','default':'demo','profiles':[]}
             if a.get('mode')=='company':
-                self.data['profiles']=[{'id':uuid.uuid4().hex,'revision':1,'name':'既有公司助理','assistant_id':a.get('assistant_ref') or a.get('model',''),'notes':'沿用舊版已設定的請求格式','enabled':True,'legacy':True}]
+                self.data['profiles']=[{'id':uuid.uuid4().hex,'revision':1,'name':'既有AI 助理','assistant_id':a.get('assistant_ref') or a.get('model',''),'notes':'沿用舊版已設定的請求格式','enabled':True,'legacy':True}]
                 self.data['default']=self.data['profiles'][0]['id']
         self._validate_data()
         if not self.path.exists() and self.legacy.get('mode')=='company':
@@ -53,7 +53,7 @@ class Profiles:
     def _validate_data(self):
         d=self.data
         if d.get('credential_source') not in ('environment','keyring'): raise GatewayError('金鑰來源設定不正確。')
-        if d.get('wire_mode') not in ('unconfigured','model','body_field','assistants'): raise GatewayError('公司 API 映射設定不正確。')
+        if d.get('wire_mode') not in ('unconfigured','model','body_field','assistants'): raise GatewayError('助理 API 映射設定不正確。')
         ids=[p['id'] for p in d['profiles']]
         if len(ids)!=len(set(ids)) or 'demo' in ids: raise GatewayError('助理識別重複。')
         for p in d['profiles']:
@@ -70,7 +70,7 @@ class Profiles:
                         or any(not isinstance(r,str) or r not in {'planner','analysis','review','compose','rag'} for r in cap['roles'])
                         or type(cap.get('verified')) is not bool or type(cap.get('read_only')) is not bool
                         or not isinstance(cap.get('evidence'),str) or (cap['verified'] and not cap['evidence'].strip())):
-                    raise GatewayError('助理協作能力設定格式不正確；保留原檔，請由公司維護者核對。')
+                    raise GatewayError('助理協作能力設定格式不正確；保留原檔，請由組織維護者核對。')
     def _write(self,data):
         self.path.parent.mkdir(parents=True,exist_ok=True)
         temp=self.path.with_suffix('.tmp')
@@ -130,7 +130,7 @@ class Profiles:
             try:
                 p=urlsplit(endpoint)
                 if p.scheme!='https' or not p.hostname or p.username or p.password or p.query or p.fragment or p.hostname.lower().rstrip('.') in ('openai.com','api.openai.com'): raise ValueError()
-            except ValueError: raise GatewayError('請填公司 HTTPS endpoint；網址不可含帳密。') from None
+            except ValueError: raise GatewayError('請填組織 HTTPS endpoint；網址不可含帳密。') from None
         with self.lock:
             d=copy.deepcopy(self.data)
             if endpoint!=d['endpoint']:
@@ -171,11 +171,11 @@ class Profiles:
     def set_wire_mode(self, mode, model='', assistant_field=''):
         """Explicit transport selection; changes revoke old bindings/capabilities."""
         if mode not in ('unconfigured','model','body_field','assistants'):
-            raise GatewayError('公司 API 映射設定不正確。')
+            raise GatewayError('助理 API 映射設定不正確。')
         if not isinstance(model,str) or not isinstance(assistant_field,str):
-            raise GatewayError('公司 API 映射欄位不正確。')
+            raise GatewayError('助理 API 映射欄位不正確。')
         if mode=='body_field' and (not model.strip() or not assistant_field.strip()):
-            raise GatewayError('請提供公司核准的 model 與助理欄位名稱。')
+            raise GatewayError('請提供組織核准的 model 與助理欄位名稱。')
         with self.lock:
             d=copy.deepcopy(self.data)
             values=(mode,model.strip() if mode=='body_field' else '',assistant_field.strip() if mode=='body_field' else '')
@@ -206,7 +206,7 @@ class Profiles:
                 config=legacy
                 config['base_url']=d['endpoint']
             else:
-                if d['wire_mode']=='unconfigured': raise GatewayError('待確認公司 API 格式；請由公司提供遮蔽值的成功呼叫範例。')
+                if d['wire_mode']=='unconfigured': raise GatewayError('待確認助理 API 格式；請由組織提供遮蔽值的成功呼叫範例。')
                 config={'base_url':d['endpoint'],'timeout_seconds':30,'max_context_chars':50000}
                 if d['wire_mode']=='model': config['model']=p['assistant_id']
                 else: config.update(model=d['model'],assistant_ref=p['assistant_id'],assistant_ref_field=d['assistant_field'])
@@ -243,7 +243,7 @@ class Profiles:
         with self.lock:
             p=self.validate(binding);d=copy.deepcopy(self.data)
             if p['id']=='demo' or d['wire_mode']!='assistants':
-                raise GatewayError('請先設定公司 Assistants 協定及公司助理 ID。')
+                raise GatewayError('請先設定組織 Assistants 協定及AI 助理 ID。')
             key=self.key()
         client=self._assistants_client(d,p,key,binding)
         try:return client.inspect_assistant()
@@ -261,7 +261,7 @@ class Profiles:
         with self.lock:
             current=self.validate(binding)
             if current['id']=='demo' or self.data['wire_mode']!='assistants':
-                raise GatewayError('僅公司 Assistants 連線可設定搜尋工具。')
+                raise GatewayError('僅組織 Assistants 連線可設定搜尋工具。')
             d=copy.deepcopy(self.data);p=next(p for p in d['profiles'] if p['id']==current['id'])
             d.setdefault('history',[]).append(copy.deepcopy(dict(p,endpoint=d['endpoint'])))
             p['revision']+=1
@@ -326,7 +326,7 @@ class Profiles:
             raise GatewayError('請設定支援的協作角色。')
         if type(verified) is not bool or not isinstance(evidence,str) or len(evidence)>300:
             raise GatewayError('能力驗證紀錄格式無效。')
-        if verified and not evidence.strip(): raise GatewayError('啟用協作前需先完成公司能力與隔離測試，並提供本機證據識別。')
+        if verified and not evidence.strip(): raise GatewayError('啟用協作前需先完成組織能力與隔離測試，並提供本機證據識別。')
         with self.lock:
             d=copy.deepcopy(self.data);p=next((p for p in d['profiles'] if p['id']==profile_id),None)
             if p is None: raise GatewayError('找不到助理。')

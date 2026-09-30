@@ -2,34 +2,34 @@
 
 預設 `%LOCALAPPDATA%\UnitHelperLocal\logs\events.jsonl`（有 UNITHELPER_DATA_DIR 時跟隨指定目錄），單檔1MiB、最多3份輪替。只記安全代碼與專案檔名／行號；不記raw exception、對話、API key、URL或HTTP body。UI錯誤會給問題編號；網路階段與UI事件可能是不同編號，按時間相鄰事件比對。
 
-「說明與關於 → 匯出除錯包」使用白名單再次過濾。沒有GUI時可執行 `.venv\Scripts\python.exe scripts/export-support.py --output QA-agent-support.zip`；目的檔須尚不存在，不讀公司服務或任意資料檔。這份包只供錯誤定位，不替代doctor與公司驗收；分享前依公司規定審查。
+「說明與關於 → 匯出除錯包」使用白名單再次過濾。沒有GUI時可執行 `.venv\Scripts\python.exe scripts/export-support.py --output QA-agent-support.zip`；目的檔須尚不存在，不讀正式服務或任意資料檔。這份包只供錯誤定位，不替代doctor與組織驗收；分享前依組織規定審查。
 
-LangGraph正式依賴已在69個wheels中。更新原始碼不會更新已有venv；doctor lock比對通過則不需重裝，不通過請用完整正式包建立新環境，比對公司修改後再切换。不要讓agent反覆單獨安裝缺件，或用lab lock降版。
+LangGraph正式依賴已在69個wheels中。更新原始碼不會更新已有venv；doctor lock比對通過則不需重裝，不通過請用完整正式包建立新環境，比對組織修改後再切换。不要讓agent反覆單獨安裝缺件，或用lab lock降版。
 
 # 0.16.0 依賴與恢復驗證
 
-正式 App 加入 LangGraph 與 SQLite checkpoint，requirements.lock 是 App 的完整 69 套件鎖檔，不能用獨立 lab lock 覆蓋。既有 .venv 升級前請關閉 App，再以該環境 Python 執行 `-m pip install -r requirements.lock`；公司離線使用核對過的完整 wheelhouse 與 `--no-index`，不連外補件。公司首次建立優先使用 install-offline.bat，不覆蓋既有環境。
+正式 App 加入 LangGraph 與 SQLite checkpoint，requirements.lock 是 App 的完整 69 套件鎖檔，不能用獨立 lab lock 覆蓋。既有 .venv 升級前請關閉 App，再以該環境 Python 執行 `-m pip install -r requirements.lock`；組織離線使用核對過的完整 wheelhouse 與 `--no-index`，不連外補件。組織首次建立優先使用 install-offline.bat，不覆蓋既有環境。
 
-新增回歸：tests.test_graph_runner、tests.test_assistants_gateway、tests.test_assistants_profiles、tests.test_company_journey、tests.test_dialogue_concurrency。完整回歸使用 `scripts/test.ps1 -Suite full`；日常依下方分層測試規則選測。scripts/web-smoke.py 使用臨時資料及實際 SDK MockTransport，涵蓋主畫面公司模式、多輪與小視窗；不代表公司真實 API 或人工 IME 驗收。
+新增回歸：tests.test_graph_runner、tests.test_assistants_gateway、tests.test_assistants_profiles、tests.test_company_journey、tests.test_dialogue_concurrency。完整回歸使用 `scripts/test.ps1 -Suite full`；日常依下方分層測試規則選測。scripts/web-smoke.py 使用臨時資料及實際 SDK MockTransport，涵蓋主畫面正式模式、多輪與小視窗；不代表組織真實 API 或人工 IME 驗收。
 
-mock-assistants.py 只綁定 127.0.0.1，無真實金鑰。正式 App 不允許 HTTP endpoint；單元測試透過注入 client 驗證，不能用公開服務替換 mock。SDK 的公開 Assistants 棄用提示不代表公司私有平台已公告停用。
+mock-assistants.py 只綁定 127.0.0.1，無真實金鑰。正式 App 不允許 HTTP endpoint；單元測試透過注入 client 驗證，不能用公開服務替換 mock。SDK 的公開 Assistants 棄用提示不代表組織私有平台已公告停用。
 
 
 # WebView 開發與部署
 
-直接與間接依賴共 69 個鎖定套件，精確版本以 requirements.lock 為準。主入口 `python -m desktop_app`；備用 `python -m desktop_app --ui tk`。新主畫面兩模式預設離線示範，可明確選公司助理；進階介面沿用原服務。
+直接與間接依賴共 69 個鎖定套件，精確版本以 requirements.lock 為準。主入口 `python -m desktop_app`；備用 `python -m desktop_app --ui tk`。新主畫面兩模式預設離線示範，可明確選AI 助理；進階介面沿用原服務。
 
-Windows需 WebView2 Runtime、.NET Framework 4.6.2以上，依公司流程提供；wheels不包含Windows元件。doctor新增唯讀偵測。缺元件時明示錯誤並提供Tk入口，不降回IE、不改TLS或防毒設定。
+Windows需 WebView2 Runtime、.NET Framework 4.6.2以上，依組織流程提供；wheels不包含Windows元件。doctor新增唯讀偵測。缺元件時明示錯誤並提供Tk入口，不降回IE、不改TLS或防毒設定。
 
 已有本機環境更新：`.venv/Scripts/python.exe -m pip install -r requirements.lock`；有核准CA依下方既有方式設定。離線先執行 `scripts/offline_bundle.py verify --directory wheelhouse`，通過後以 `--no-index --no-deps --find-links wheelhouse -r requirements.lock` 安裝。新機優先用install-offline.bat建乾淨環境，不能覆寫既有venv。
 
 prepare-offline現只對沒有wheel發行的固定proxy_tools==0.1.0建立純Python wheel，其餘使用Windows相容binary wheels；全部納入manifest及lock指紋，安裝不編譯、不連外補件。
 
-驗證：`.\scripts\test.ps1 -Suite targeted -Tests tests.test_dialogue,tests.test_web`；`python scripts/web-smoke.py`用暫存合成資料及明示mock回覆操作真正WebView2，透過CapturePreview存畫面，**不呼叫模型、不讀使用者資料**。完整回歸使用 `scripts/test.ps1 -Suite full`；不要求每次 UI 修改都重跑。真IME、人工使用性與公司多ID另驗收。
+驗證：`.\scripts\test.ps1 -Suite targeted -Tests tests.test_dialogue,tests.test_web`；`python scripts/web-smoke.py`用暫存合成資料及明示mock回覆操作真正WebView2，透過CapturePreview存畫面，**不呼叫模型、不讀使用者資料**。完整回歸使用 `scripts/test.ps1 -Suite full`；不要求每次 UI 修改都重跑。真IME、人工使用性與組織多ID另驗收。
 
 # 開發與部署指南
 
-QA agent；版本以 README 為準。以下命令從專案根目錄執行；公司接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
+QA agent；版本以 README 為準。以下命令從專案根目錄執行；服務接線工作見 [接手工作單](../COMPANY-HANDOFF.md)，產品行為見 [PROJECT](PROJECT.md)。
 
 ## 個人 Groq 試用
 
@@ -43,11 +43,11 @@ start-trial.bat 使用同一 .venv，沒有新依賴或第二個環境。正常�
 .\scripts\test.ps1 -Suite targeted -Tests tests.test_report_engine,tests.test_report_views
 ```
 
-HTTPX 使用 Python 系統預設信任庫（Windows ROOT／CA），保留主機名與憑證驗證；不略過錯誤、不新增憑證或防毒排除。正式公司 CA 設定仍遵循原 adapter 契約。變更試用目的地／模型時須修訂連線版本，舊對話不能默默改送。
+HTTPX 使用 Python 系統預設信任庫（Windows ROOT／CA），保留主機名與憑證驗證；不略過錯誤、不新增憑證或防毒排除。正式組織 CA 設定仍遵循原 adapter 契約。變更試用目的地／模型時須修訂連線版本，舊對話不能默默改送。
 
 ## 環境與啟動
 
-Windows x64、**Python 恰好 3.10.4** 完整安裝版，保留 Tcl/Tk 與 pip。使用公司核准直譯器；需要下載時使用 [Python 官方完整安裝程式](https://www.python.org/downloads/release/python-3104/)，不更改系統預設 Python 或 PATH。
+Windows x64、**Python 恰好 3.10.4** 完整安裝版，保留 Tcl/Tk 與 pip。使用組織核准直譯器；需要下載時使用 [Python 官方完整安裝程式](https://www.python.org/downloads/release/python-3104/)，不更改系統預設 Python 或 PATH。
 
 ```powershell
 .\scripts\setup.ps1 -PythonExe 'C:\approved\Python3104\python.exe'
@@ -61,11 +61,11 @@ setup 建立專屬 `.venv`，拒絕覆寫既有環境，不借用其他專案的
 # 額外乾淨環境，名稱須尚不存在
 .\scripts\setup.ps1 -PythonExe 'C:\approved\Python3104\python.exe' -Environment .venv-verify
 .\scripts\test.ps1 -Suite full -Environment .venv-verify
-# 使用公司可信 PEM，不停用 TLS
+# 使用組織可信 PEM，不停用 TLS
 .\scripts\setup.ps1 -PythonExe 'C:\approved\Python3104\python.exe' -CaBundle 'C:\approved\company-ca.pem'
 ```
 
-套件索引／代理依公司核准設定。CA 選項只影響本次安裝。不要使用 trusted-host 或 verify=False。PowerShell 腳本受限時交 IT 核准；不修改執行政策。已有可用直譯器，也可逐條執行並檢查 exit code：
+套件索引／代理依組織核准設定。CA 選項只影響本次安裝。不要使用 trusted-host 或 verify=False。PowerShell 腳本受限時交 IT 核准；不修改執行政策。已有可用直譯器，也可逐條執行並檢查 exit code：
 
 ```powershell
 & 'C:\approved\Python3104\python.exe' -m venv .venv
@@ -74,16 +74,16 @@ setup 建立專屬 `.venv`，拒絕覆寫既有環境，不借用其他專案的
 .\.venv\Scripts\python.exe -m desktop_app
 ```
 
-公司連線設定與資料放 `%LOCALAPPDATA%\UnitHelperLocal`；測試可用 `UNITHELPER_DATA_DIR` 指定隔離位置。API key 存 Windows keyring，不能寫入 Git。專案搬家時重建虛擬環境，使用者資料不必搬進專案。
+組織連線設定與資料放 `%LOCALAPPDATA%\UnitHelperLocal`；測試可用 `UNITHELPER_DATA_DIR` 指定隔離位置。API key 存 Windows keyring，不能寫入 Git。專案搬家時重建虛擬環境，使用者資料不必搬進專案。
 
 ## 離線安裝
 
-### 公司已取得完整正式 ZIP（建議）
+### 組織已取得完整正式 ZIP（建議）
 
 適用於核准索引缺少 Bleach／OpenAI／LangGraph 鎖定版本，或 PowerShell 拒絕執行腳本的環境。不要單獨降版某個套件，也不要把獨立 lab 的 52 套件 lock 套到 App。
 
-1. 由核准管道帶入正式 ZIP，確認來源及交付 SHA-256；完整解壓到**新的資料夾**。保留公司既有修改與 `.venv`，不要直接覆蓋。
-2. 關閉舊 App。準備公司核准的 Python **恰好 3.10.4 x64** 完整安裝（含 Tk）、WebView2 與 .NET。這些系統元件不含在 wheel 包內。
+1. 由核准管道帶入正式 ZIP，確認來源及交付 SHA-256；完整解壓到**新的資料夾**。保留組織既有修改與 `.venv`，不要直接覆蓋。
+2. 關閉舊 App。準備組織核准的 Python **恰好 3.10.4 x64** 完整安裝（含 Tk）、WebView2 與 .NET。這些系統元件不含在 wheel 包內。
 3. 在新資料夾開啟 CMD，逐行執行，每行成功才繼續：
 
 ```bat
@@ -92,13 +92,13 @@ install-offline.bat "C:\approved\Python3104\python.exe"
 start-app.bat
 ```
 
-BAT 直接呼叫固定 Python 腳本，不需要 PowerShell。亦可用同一核准 Python 執行 `scripts\install-offline.py --offline-bundle wheelhouse`。路徑以雙引號包住；不需要啟用虛擬環境。`verify` 已包含完整回歸及環境檢查，不必再跑 full。安裝及本機測試不呼叫公司模型。
+BAT 直接呼叫固定 Python 腳本，不需要 PowerShell。亦可用同一核准 Python 執行 `scripts\install-offline.py --offline-bundle wheelhouse`。路徑以雙引號包住；不需要啟用虛擬環境。`verify` 已包含完整回歸及環境檢查，不必再跑 full。安裝及本機測試不呼叫組織模型。
 
 安裝先驗證根目錄 lock 與全部 69 個 wheels，再新建 `.venv`；使用 `--isolated --no-index --no-deps --no-cache-dir`，完成後執行 doctor、pip check 及精確 lock 比對。已有目標環境一律拒絕覆寫；安裝失敗會保留本次半成品供檢查，不會連外補件或自動刪除。修復套件包後，改在新解壓資料夾重試。安全摘要覆寫 `artifacts/installation/latest.json`。
 
 完整測試先檢查環境，再探索測試。環境不符時，報告保留 `commands`，測試為 `not_run`，探索／選取數為 null；不能標記 full 通過。`pip check` 單独成功不代表 lock 已齊全，啟動器 `--check` 也不是完整依賴驗收。
 
-不同專案副本預設仍使用 `%LOCALAPPDATA%\UnitHelperLocal`，務必先關閉舊 App，避免雙跑；安裝器不搬移或清除使用者資料。公司已修改的 adapter 應先由公司 agent 比對合併，不直接以交付包覆蓋。完整測試報告可能含機器路徑，分享前需去識別。
+不同專案副本預設仍使用 `%LOCALAPPDATA%\UnitHelperLocal`，務必先關閉舊 App，避免雙跑；安裝器不搬移或清除使用者資料。組織已修改的 adapter 應先由組織 agent 比對合併，不直接以交付包覆蓋。完整測試報告可能含機器路徑，分享前需去識別。
 
 ### 自行準備／沿用 PowerShell 安裝
 
@@ -111,14 +111,14 @@ BAT 直接呼叫固定 Python 腳本，不需要 PowerShell。亦可用同一核
 
 目錄必須不存在。輸出全部 wheel 與 manifest.json，包含 CPython 3.10／Windows x64 目標、名稱／版本、檔案 SHA-256 與 requirements.lock 指紋。失敗的半成品不能使用，請用新目錄重試；雜湊是完整性檢查，並非發布者簽章。
 
-經公司核准管道帶入同一版本專案、完整套件包及 Python 3.10.4 完整安裝程式，再執行：
+經組織核准管道帶入同一版本專案、完整套件包及 Python 3.10.4 完整安裝程式，再執行：
 
 ```powershell
 .\scripts\setup.ps1 -PythonExe 'C:\approved\Python3104\python.exe' -Environment .venv -OfflineBundle 'D:\transfer\wheelhouse-company'
 .\scripts\test.ps1 -Suite full
 ```
 
-安裝前驗證檔案集合、套件版本、雜湊與 lock 指紋；缺件、損壞、額外檔案或版本不符即停止。只用 `--no-index` 本機安裝，不連外補件、不覆寫既有環境。套件包被 Git 忽略。Oracle 驅動、內部憑證與公司服務不是離線包內容。
+安裝前驗證檔案集合、套件版本、雜湊與 lock 指紋；缺件、損壞、額外檔案或版本不符即停止。只用 `--no-index` 本機安裝，不連外補件、不覆寫既有環境。套件包被 Git 忽略。Oracle 驅動、內部憑證與正式服務不是離線包內容。
 
 ## 捷徑與日常啟動
 
@@ -141,11 +141,11 @@ powershell.exe -NoProfile -File .\scripts\create-shortcut.ps1 -Destination 'C:\�
 .\.venv\Scripts\python.exe scripts/display-check.py --output artifacts/diagnostics/display.json
 ```
 
-doctor 檢查 Windows、Python、Tk、依賴／lock、設定、必要變數是否存在、CA 及資料目錄臨時寫入；不讀取使用者 SQLite、不連網。分享報告只含白名單狀態、安全代碼及版本，不含金鑰、帳號、路徑、內部網址或原始錯誤。顯示診斷只收集 DPI、字型、Tk scaling 與視窗尺寸。兩者通過均不等於公司服務已驗收。
+doctor 檢查 Windows、Python、Tk、依賴／lock、設定、必要變數是否存在、CA 及資料目錄臨時寫入；不讀取使用者 SQLite、不連網。分享報告只含白名單狀態、安全代碼及版本，不含金鑰、帳號、路徑、內部網址或原始錯誤。顯示診斷只收集 DPI、字型、Tk scaling 與視窗尺寸。兩者通過均不等於正式服務已驗收。
 
 開發與測試採固定檔案和直接參數，不使用編碼 PowerShell 命令、巢狀 Shell 或非必要程序。Norton 成效目前仍為 **未能確認**；測試通過不能證明防毒不再警告。
 
-若警告再次出現，記錄操作時間、程式路徑及 Norton 警示 ID，對照安全性歷程，停止重跑被阻擋的同一操作並交本人／IT 審核來源；其餘獨立工作可繼續。不關閉防毒、不增設排除、不改執行政策，也不預設是誤報。私有歷程留在 artifacts 或公司核准位置，不推 Git。
+若警告再次出現，記錄操作時間、程式路徑及 Norton 警示 ID，對照安全性歷程，停止重跑被阻擋的同一操作並交本人／IT 審核來源；其餘獨立工作可繼續。不關閉防毒、不增設排除、不改執行政策，也不預設是誤報。私有歷程留在 artifacts 或組織核准位置，不推 Git。
 
 ## 測試與交付
 
@@ -160,7 +160,7 @@ doctor 檢查 Windows、Python、Tk、依賴／lock、設定、必要變數是�
 | WebView UI／bridge 或介面發布驗收 | 另外執行 web-smoke；不是每次修改的常駐步驟 |
 
 ```powershell
-# 日常：非 GUI 核心離線檢查，不開 GUI、不連公司服務
+# 日常：非 GUI 核心離線檢查，不開 GUI、不連正式服務
 .\scripts\test.ps1
 # 指定模組，也可指定 TestCase 或個別 test 方法
 .\scripts\test.ps1 -Suite targeted -Tests tests.test_appearance
@@ -183,7 +183,7 @@ doctor 檢查 Windows、Python、Tk、依賴／lock、設定、必要變數是�
 .\.venv\Scripts\python.exe scripts/manifest.py
 ```
 
-verify 拒絕空測試、非預期 skip、非零 exit code 或 freeze 與 lock 不符。正式證據存 docs/validation，保留時間與實際範圍，區分 mock、本機真實與公司真實驗證。正式交付才更新 [驗證摘要](VALIDATION.md)、[產品狀態](PROJECT.md) 與接手文件；日常選測不建立新的歷史材料。公司／人工 GUI／IME 等未測項目仍記 not_tested。
+verify 拒絕空測試、非預期 skip、非零 exit code 或 freeze 與 lock 不符。正式證據存 docs/validation，保留時間與實際範圍，區分 mock、本機真實與組織真實驗證。正式交付才更新 [驗證摘要](VALIDATION.md)、[產品狀態](PROJECT.md) 與接手文件；日常選測不建立新的歷史材料。組織／人工 GUI／IME 等未測項目仍記 not_tested。
 
 若 Windows 剪貼簿實測出現 `OpenClipboard failed`（舊版統一顯示 `clipboard busy`），保留 Windows 錯誤碼。先在互動桌面確認一般應用可複製／貼上，關閉正在占用剪貼簿的操作，再執行下列單項。錯誤碼 5 表示存取遭拒，不能因此直接判定占用、鎖屏或防毒誤報。不讀取／分享現有剪貼簿私有內容，不改防毒或存取政策。
 
@@ -195,7 +195,7 @@ verify 拒絕空測試、非預期 skip、非零 exit code 或 freeze 與 lock �
 
 本機只保留日常使用的 `.venv`。乾淨重建及離線驗證環境完成驗證、保存紀錄並確認沒有程序使用後即清除；需要再次驗證時依鎖檔重建，不長期累積帶版本的環境。既有驗證 JSON 保留歷史實測結果，不代表對應環境仍存在。
 
-開發機直譯器曾因 Windows Installer 問題，從官方 3.10.4 發行 MSI 解出至被忽略的 `.runtime/python3104`，目前 `.venv/pyvenv.cfg` 仍依賴該路徑，不能當作暫存刪除。這不是公司部署方式，公司仍用核准的完整安裝程式。
+開發機直譯器曾因 Windows Installer 問題，從官方 3.10.4 發行 MSI 解出至被忽略的 `.runtime/python3104`，目前 `.venv/pyvenv.cfg` 仍依賴該路徑，不能當作暫存刪除。這不是組織部署方式，組織仍用核准的完整安裝程式。
 
 ## 圖示來源與重建
 
@@ -212,4 +212,4 @@ powershell.exe -NoProfile -File scripts/export-icon.ps1 -Source desktop_app/asse
 
 ## 多助理合成驗證
 
-`.\scripts\test.ps1 -Suite targeted -Tests tests.test_workflows,tests.test_workflow_profiles,tests.test_workflow_ui` 不使用真實 API。`.venv/Scripts/python.exe scripts/check-workflows.py` 預設 not_tested、零請求；加 `--live` 才對 Groq 發出最多四次合成請求（規劃、分析、覆核、彙整），暫存資料庫結束即清除，不啟用使用者排程。可加 `--output artifacts/workflow-live.json` 保存白名單結果。公司驗收必須獨立完成，不能把此結果改名當公司證據。
+`.\scripts\test.ps1 -Suite targeted -Tests tests.test_workflows,tests.test_workflow_profiles,tests.test_workflow_ui` 不使用真實 API。`.venv/Scripts/python.exe scripts/check-workflows.py` 預設 not_tested、零請求；加 `--live` 才對 Groq 發出最多四次合成請求（規劃、分析、覆核、彙整），暫存資料庫結束即清除，不啟用使用者排程。可加 `--output artifacts/workflow-live.json` 保存白名單結果。組織驗收必須獨立完成，不能把此結果改名當組織證據。

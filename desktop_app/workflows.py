@@ -136,7 +136,7 @@ class WorkflowService:
             messages=[{'role':'user','content':instruction}]+r['discussion']
             try:response=self.profiles.workflow_call(messages,'planner',r['planner'],{'run_id':wid+':'+str(revision),'step_id':'planner'})
             except GatewayError:raise
-            except Exception:raise GatewayError('主代理呼叫未完成，請檢查公司 adapter 或連線。') from None
+            except Exception:raise GatewayError('主代理呼叫未完成，請檢查組織 adapter 或連線。') from None
             obj=json_object(response)
             if set(obj)!={'message','questions','steps'}:raise ValueError('規劃回覆欄位不符；尚未執行。')
             message=bounded_text(obj['message'],'主代理說明',4000)
@@ -334,7 +334,7 @@ class WorkflowService:
                                 'cancelled':lambda: not self._active(tid),
                                 'resume':bool(task['payload'].get('resuming'))})
                     except GatewayError:raise
-                    except Exception:raise GatewayError('子代理呼叫未完成，請檢查公司 adapter 或連線。') from None
+                    except Exception:raise GatewayError('子代理呼叫未完成，請檢查組織 adapter 或連線。') from None
                     result=json_object(text);allowed={'text','facts','verdict'} if role=='review' else {'text','facts'}
                     if set(result)!=allowed:raise ValueError('子代理輸出欄位不符，未繼續交給下一位助理。')
                     bounded_text(result.get('text'),'子代理輸出',12000)

@@ -39,7 +39,7 @@
 
 ## 排程與介面
 
-`Engine(..., query_validator=gateway.validate, query_catalog=gateway.catalog)` 供應目錄。使用 bound `gateway.run` 時也會自動找到 `catalog`；公司接線仍應明確注入兩者。舊有直接注入純函式的 Engine 測試介面保留，但不能拿它當公司模式省略目錄與驗證的理由。
+`Engine(..., query_validator=gateway.validate, query_catalog=gateway.catalog)` 供應目錄。使用 bound `gateway.run` 時也會自動找到 `catalog`；服務接線仍應明確注入兩者。舊有直接注入純函式的 Engine 測試介面保留，但不能拿它當正式模式省略目錄與驗證的理由。
 
 - `date_range` 的 start／end 必須指向不同的 date 欄位。前一日模式依台北的排定日，產生起日含、迄日不含的昨天範圍。其他參數保持原值。
 - 新設定只在明確宣告日期映射時提供「每次前一日」；服務層也限制。沒有映射仍可使用「固定原參數」。
@@ -53,4 +53,4 @@
 .\.venv\Scripts\python.exe -m unittest tests.test_query_schema tests.test_ui tests.test_core -v
 ```
 
-測試包含非日期模板、改名日期、六種欄位、精度、Plan 批准前不執行、失效模板、舊 DEMO 排程及最小視窗。這些為合成資料及本機 Tk 驗證，不代表公司 Oracle 或 Excel 已驗收。
+測試包含非日期模板、改名日期、六種欄位、精度、Plan 批准前不執行、失效模板、舊 DEMO 排程及最小視窗。這些為合成資料及本機 Tk 驗證，不代表組織 Oracle 或 Excel 已驗收。

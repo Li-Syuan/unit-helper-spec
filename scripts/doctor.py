@@ -185,22 +185,22 @@ def main(argv=None):
     if args.human:
         labels = {"python":"Python 3.10.4", "architecture":"64 位元架構", "platform":"Windows 平台", "tk":"Tk 視窗元件",'webview2':'WebView2 與 .NET Framework',
                   "dependencies":"套件與鎖檔", "configuration":"設定格式", "credential_presence":"必要環境變數",
-                  "assistant_profiles":"助理清單", "profile_credential":"助理金鑰", "assistant_mapping":"公司請求格式",
-                  "ca_bundle":"CA 憑證", "data_directory":"資料目錄", "company_chatbot":"公司助理", "company_identity":"AD 與名單",
+                  "assistant_profiles":"助理清單", "profile_credential":"助理金鑰", "assistant_mapping":"組織請求格式",
+                  "ca_bundle":"CA 憑證", "data_directory":"資料目錄", "company_chatbot":"AI 助理", "company_identity":"AD 與名單",
                   "company_queries":"Oracle 查詢", "excel":"Excel 貼上"}
         statuses = {"passed":"通過", "failed":"需修正", "not_tested":"尚未實測", "not_applicable":"無需檢查"}
         remedies = {"python_version_mismatch":"使用 Python 恰好 3.10.4 重建環境。", "requires_x64":"使用 64 位元 Python。",
                     "requires_windows":"請在 Windows 執行。", "tk_unavailable":"確認完整 Python 安裝包含 Tcl/Tk 且可開啟視窗。",
                     "packages_differ_from_lock":"依 requirements.lock 重建乾淨環境。",
-                    "configuration_invalid":"檢查設定檔存在、欄位格式及公司端點；參照 config.example.json。",
-                    "required_environment_missing_or_invalid":"設定公司要求的金鑰與標頭環境變數；標頭不可含換行。",
-                    "ca_bundle_invalid":"確認公司 CA 憑證檔存在且為有效 PEM。", "data_directory_unavailable":"確認資料目錄路徑有效且可寫入。"}
+                    "configuration_invalid":"檢查設定檔存在、欄位格式及服務端點；參照 config.example.json。",
+                    "required_environment_missing_or_invalid":"設定組織要求的金鑰與標頭環境變數；標頭不可含換行。",
+                    "ca_bundle_invalid":"確認組織 CA 憑證檔存在且為有效 PEM。", "data_directory_unavailable":"確認資料目錄路徑有效且可寫入。"}
         print("本機環境：" + statuses[report["local_environment"]])
         for item in report["checks"]:
             print(labels[item["check"]] + "：" + statuses[item["status"]] + " (" + item["code"] + ")")
             if item["status"] == "failed":
                 print("  " + remedies.get(item["code"], "請聯絡維護者。"))
-        print("公司 API／AD／Oracle／Excel 必須另行實測；本機通過不代表公司接線成功。")
+        print("助理 API／AD／Oracle／Excel 必須另行實測；本機通過不代表服務接線成功。")
         print("分享報告不含路徑、內部網址、環境變數名稱或值，以及私人內容。")
     else:
         print(encoded)

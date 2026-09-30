@@ -33,12 +33,12 @@ def session_context(binding, purpose, context=None):
         context['conversation_id'] = uuid.uuid4().hex
     for field in fields:
         if not isinstance(context.get(field), str) or not context[field] or len(context[field]) > 512:
-            raise GatewayError('公司對話缺少有效隔離識別。')
+            raise GatewayError('組織對話缺少有效隔離識別。')
     request_id = context.get('request_id')
     if request_id is None:
         request_id = _digest([context['run_id'], context['step_id']]) if namespace == 'workflow' else uuid.uuid4().hex
     if not isinstance(request_id, str) or not request_id or len(request_id) > 512:
-        raise GatewayError('公司請求識別不正確。')
+        raise GatewayError('組織請求識別不正確。')
     cancelled = context.get('cancelled', lambda: False)
     if not callable(cancelled):
         raise GatewayError('取消狀態檢查格式不正確。')
@@ -59,10 +59,10 @@ class AssistantsGateway:
         except (ValueError, TypeError):
             valid = False
         if not valid:
-            raise GatewayError('請設定公司的 HTTPS Assistants 端點；網址不可含帳密。')
+            raise GatewayError('請設定組織的 HTTPS Assistants 端點；網址不可含帳密。')
         self.assistant_id = config.get('assistant_id')
         if not isinstance(self.assistant_id, str) or not self.assistant_id.strip() or len(self.assistant_id) > 256:
-            raise GatewayError('請設定公司 assistant ID。')
+            raise GatewayError('請設定組織 assistant ID。')
         if not isinstance(api_key, str) or not api_key.strip():
             raise GatewayError('尚未設定共用 API key。')
         self.timeout = config.get('timeout_seconds', 30)
@@ -70,13 +70,13 @@ class AssistantsGateway:
         self.poll_seconds = config.get('poll_seconds', 0.5)
         for value, low, high in ((self.timeout, 1, 120), (self.deadline_seconds, 1, 1800), (self.poll_seconds, 0.01, 10)):
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not low <= value <= high:
-                raise GatewayError('公司請求或輪詢時間設定不正確。')
+                raise GatewayError('組織請求或輪詢時間設定不正確。')
         tls = ssl.create_default_context()
         if config.get('ca_bundle') is not None:
             try:
                 tls.load_verify_locations(cafile=config['ca_bundle'])
             except (OSError, ssl.SSLError, TypeError):
-                raise GatewayError('無法載入公司 CA；TLS 驗證不會停用。') from None
+                raise GatewayError('無法載入組織 CA；TLS 驗證不會停用。') from None
         self.client = client or OpenAI(base_url=base, api_key=api_key, max_retries=0,
             timeout=self.timeout, http_client=httpx.Client(verify=tls, timeout=self.timeout,
                                                           follow_redirects=False))
@@ -96,22 +96,22 @@ class AssistantsGateway:
             assistant=self._call(self.client.beta.assistants.retrieve,
                 self.clock()+self.timeout,assistant_id=self.assistant_id)
             if getattr(assistant,'id',None)!=self.assistant_id:
-                raise GatewayError('公司回傳助理識別不符；尚未執行搜尋。')
+                raise GatewayError('組織回傳助理識別不符；尚未執行搜尋。')
             declared=getattr(assistant,'tools',None)
             if not isinstance(declared,list) or len(declared)>128:
-                raise GatewayError('公司工具設定格式不相容；請維護者核對。')
+                raise GatewayError('組織工具設定格式不相容；請維護者核對。')
             tools=[];candidates=[];unsupported=[];names=set()
             for tool in declared:
                 kind=getattr(tool,'type',None)
                 if not isinstance(kind,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}',kind):
-                    raise GatewayError('公司工具型別格式不相容。')
+                    raise GatewayError('組織工具型別格式不相容。')
                 item={'type':kind}
                 if kind=='function':
                     name=getattr(getattr(tool,'function',None),'name',None)
                     if not isinstance(name,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}',name):
-                        raise GatewayError('公司工具名称格式不相容。')
+                        raise GatewayError('組織工具名称格式不相容。')
                     item['name']=name
-                    if name in names:raise GatewayError('公司工具名稱重複；未提供核准選項。')
+                    if name in names:raise GatewayError('組織工具名稱重複；未提供核准選項。')
                     names.add(name)
                     parameters=getattr(tool.function,'parameters',None)
                     try:
@@ -133,12 +133,12 @@ class AssistantsGateway:
                     if plugins else '已讀取助理設定；未看到函式工具，但不能由此證明助理有即時搜尋能力。')}
         except GatewayError:raise
         except Exception:
-            raise GatewayError('讀取公司助理設定失敗；請核對端點、憑證、CA 或此平台是否支援讀取助理。沒有執行搜尋或重送。') from None
+            raise GatewayError('讀取AI 助理設定失敗；請核對端點、憑證、CA 或此平台是否支援讀取助理。沒有執行搜尋或重送。') from None
 
     def _call(self, function, deadline, **kwargs):
         remaining = deadline - self.clock()
         if remaining <= 0:
-            raise GatewayError('公司工作等待逾時；未自動重送，請檢查遠端狀態。')
+            raise GatewayError('組織工作等待逾時；未自動重送，請檢查遠端狀態。')
         try:
             return function(**kwargs, timeout=min(self.timeout, remaining))
         except Exception as exc:
@@ -153,7 +153,7 @@ class AssistantsGateway:
     def _id(value):
         result = getattr(value, 'id', None)
         if not isinstance(result, str) or not result:
-            raise GatewayError('公司服務缺少遠端識別；結果未明，不會自動重送。')
+            raise GatewayError('正式服務缺少遠端識別；結果未明，不會自動重送。')
         return result
 
     def _cancel(self, key, session, rid, request, deadline):
@@ -178,7 +178,7 @@ class AssistantsGateway:
             raise GatewayError('不支援的助理操作。')
         clean = validated_messages(messages)
         if clean[-1]['role'] != 'user':
-            raise GatewayError('公司對話最後一筆必須是使用者訊息。')
+            raise GatewayError('組織對話最後一筆必須是使用者訊息。')
         key, rid, cancelled, resume = session_context(self.binding, purpose, context)
         approved=self.search_policy['tools'] if (context or {}).get('search_authorized') is True and purpose in ('chat','workflow_step') else []
         policy_hash=fingerprint(approved)
@@ -198,7 +198,7 @@ class AssistantsGateway:
                 if request['state'] in STOPPED:
                     raise GatewayError('此請求已停止或已取消，不能直接恢復或重新送出。')
                 if not resume or not request.get('run_id'):
-                    raise GatewayError('先前公司請求尚未釐清；請檢查遠端狀態，未重新送出。')
+                    raise GatewayError('先前組織請求尚未釐清；請檢查遠端狀態，未重新送出。')
             else:
                 previous = self.ledger.get_request(key, session['active']) if session['active'] else None
                 if previous and previous['state'] != 'completed':
@@ -208,7 +208,7 @@ class AssistantsGateway:
                 if session['history'] != hashes[:len(session['history'])]:
                     raise GatewayError('對話歷史與遠端記憶不一致；請建立新對話，未重送歷史。')
                 if cancelled():
-                    raise GatewayError('工作已取消；未傳送公司請求。')
+                    raise GatewayError('工作已取消；未傳送組織請求。')
                 request = {'digest': digest, 'state': 'prepared', 'run_id': None,
                            'message_ids': [], 'remote_terminal': False,'search_fingerprint':policy_hash,'tool_batches':[]}
                 session['active'] = rid
@@ -249,7 +249,7 @@ class AssistantsGateway:
                     if cancelled():
                         self._cancel(key, session, rid, request, deadline)
                     if getattr(run, 'id', None) != request['run_id'] or getattr(run, 'thread_id', None) != session['thread_id']:
-                        raise GatewayError('公司回覆工作識別不一致，已停止處理。')
+                        raise GatewayError('組織回覆工作識別不一致，已停止處理。')
                     status = getattr(run, 'status', None)
                     if status == 'completed':
                         break
@@ -259,12 +259,12 @@ class AssistantsGateway:
                     if status in ('cancelled', 'failed', 'expired', 'incomplete'):
                         request.update(state='cancelled' if status == 'cancelled' else 'failed', remote_terminal=True)
                         self.ledger.save(key, session, rid, request)
-                        raise GatewayError('公司工作未完成（' + status + '）；未自動重試。')
+                        raise GatewayError('組織工作未完成（' + status + '）；未自動重試。')
                     if status not in ('queued', 'in_progress', 'cancelling'):
-                        raise GatewayError('公司工作狀態不相容；請檢查遠端狀態。')
+                        raise GatewayError('組織工作狀態不相容；請檢查遠端狀態。')
                     remaining = deadline - self.clock()
                     if remaining <= 0:
-                        raise GatewayError('公司工作等待逾時；未自動重送，請檢查遠端狀態。')
+                        raise GatewayError('組織工作等待逾時；未自動重送，請檢查遠端狀態。')
                     self.sleep(min(self.poll_seconds, remaining))
                     run = self._call(self.client.beta.threads.runs.retrieve, deadline,
                                      thread_id=session['thread_id'], run_id=request['run_id'])
@@ -277,13 +277,13 @@ class AssistantsGateway:
                 return result
             except APIStatusError as exc:
                 label = '認證失敗' if exc.status_code in (401, 403) else 'HTTP ' + str(exc.status_code) + ' 錯誤'
-                raise GatewayError('公司服務' + label + '；未自動重試或改用示範。') from None
+                raise GatewayError('正式服務' + label + '；未自動重試或改用示範。') from None
             except APIError:
-                raise GatewayError('公司請求失敗或逾時；結果可能未明，請檢查狀態，未自動重送。') from None
+                raise GatewayError('組織請求失敗或逾時；結果可能未明，請檢查狀態，未自動重送。') from None
             except (AttributeError, TypeError, KeyError, ValueError) as exc:
                 if isinstance(exc, GatewayError):
                     raise
-                raise GatewayError('公司回傳格式不相容；未自動重送或改用示範。') from None
+                raise GatewayError('組織回傳格式不相容；未自動重送或改用示範。') from None
 
     def _search(self,run,approved,key,session,rid,request,deadline,cancelled):
         """Validate the entire batch before dispatch; unknown writes never replay."""
@@ -294,7 +294,7 @@ class AssistantsGateway:
         action=getattr(run,'required_action',None)
         calls=getattr(getattr(action,'submit_tool_outputs',None),'tool_calls',None)
         if not approved or getattr(action,'type',None)!='submit_tool_outputs' or not isinstance(calls,list) or not 1<=len(calls)<=4:
-            blocked('公司助理要求未核准或超過限制的工具；本批沒有呼叫 pluginapi。')
+            blocked('AI 助理要求未核准或超過限制的工具；本批沒有呼叫 pluginapi。')
         by_name={t['name']:t for t in approved};validated=[];ids=set()
         try:
             for call in calls:
@@ -363,9 +363,9 @@ class AssistantsGateway:
                 return text
             after = page.last_id
             if not isinstance(after, str) or not after or after in seen:
-                raise GatewayError('公司訊息分頁格式不相容。')
+                raise GatewayError('組織訊息分頁格式不相容。')
             seen.add(after)
-        raise GatewayError('公司訊息分頁超過上限；未默默截斷。')
+        raise GatewayError('組織訊息分頁超過上限；未默默截斷。')
 
     def inspect_request(self, purpose='chat', context=None, remote=False):
         key, rid, _, _ = session_context(self.binding, purpose, context)

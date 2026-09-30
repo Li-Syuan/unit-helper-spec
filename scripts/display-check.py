@@ -8,7 +8,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from desktop_app.display import initialize_dpi, Display
 
 def main():
-    parser=argparse.ArgumentParser(description='QA agent 顯示縮放診斷（不載入對話或公司設定）')
+    parser=argparse.ArgumentParser(description='QA agent 顯示縮放診斷（不載入對話或連線設定）')
     parser.add_argument('--output',type=Path)
     args=parser.parse_args()
     startup=initialize_dpi();root=tk.Tk();root.withdraw()

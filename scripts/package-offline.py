@@ -41,16 +41,16 @@ def main():
     (package/'OFFLINE-START-HERE.txt').write_text(
         f'QA agent {__version__}\n來源提交：{commit}\n\n'
         '1. 解壓縮完整資料夾，不要直接在ZIP中執行。\n'
-        '2. 公司提供Python恰好3.10.4 x64完整安裝（含Tk）、WebView2 Runtime與.NET Framework 4.6.2以上。\n'
+        '2. 組織提供Python恰好3.10.4 x64完整安裝（含Tk）、WebView2 Runtime與.NET Framework 4.6.2以上。\n'
         '3. 解壓到新的專案資料夾，保留舊專案／環境。關閉App。用CMD執行：install-offline.bat "C:\\approved\\Python3104\\python.exe"。不使用PowerShell；已有.venv拒絕覆寫。\n'
         '   或直接用核准Python執行scripts/install-offline.py --offline-bundle wheelhouse。\n'
         '   安裝後執行 .venv\\Scripts\\python.exe scripts/verify.py offline-rebuild，完整驗證一次；不要接著重跑full。\n'
         '4. 雙擊start-app.bat；WebView2尚未安裝時使用start-tk.bat備用。\n'
-        '5. 主畫面預設示範；公司 Assistants 需另設定與實測。LangGraph 批准後依序執行，任務草稿仍未啟用。公司接線見COMPANY-HANDOFF.md。\n\n'
+        '5. 主畫面預設示範；組織 Assistants 需另設定與實測。LangGraph 批准後依序執行，任務草稿仍未啟用。服務接線見COMPANY-HANDOFF.md。\n\n'
         '含完整已提交原始碼、文件、測試及69個鎖定wheels。沒有Python／WebView2／.NET安裝程式、API key、.env、.venv、對話或SQLite。\n'
         '這是正式App的69套件來源，不使用experiments/langgraph-lab的52套件。Clone本身不含正式wheelhouse。\n'
         '套件缺件、雜湊或lock不符立即停止，不連外補件。不更改執行政策、防毒或TLS。\n'
-        '本機回歸、公司服務及人工驗收狀態分開記錄，請以docs/VALIDATION.md為準；本機通過不代表公司服務已驗收。\n'
+        '本機回歸、正式服務及人工驗收狀態分開記錄，請以docs/VALIDATION.md為準；本機通過不代表正式服務已驗收。\n'
         'MANIFEST.sha256驗證原始碼；wheelhouse/manifest.json驗證wheels；PACKAGE-CONTENTS.sha256驗證整包。雜湊不是數位簽章。\n',encoding='utf-8-sig')
     metadata={'version':__version__,'source_commit':commit,'wheels':len(verified['files']),'lock_sha256':verified['lock_sha256']}
     (package/'PACKAGE-METADATA.json').write_text(json.dumps(metadata,indent=2),encoding='utf-8')

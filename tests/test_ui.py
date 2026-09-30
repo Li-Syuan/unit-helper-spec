@@ -60,7 +60,7 @@ class DesktopTests(unittest.TestCase):
         self.assertEqual(a.config['assistant']['mode'],'demo')
         def fail_company(messages,purpose,binding):
             from desktop_app.gateways import GatewayError
-            raise GatewayError('公司連線失敗')
+            raise GatewayError('組織連線失敗')
         a.engine.assistant_router=fail_company; a.input.insert('end','你好'); a.send_chat(); t=self.wait_task()
         self.assertEqual(t['state'],'failed'); self.assertNotIn('示範',t['error'])
 

@@ -84,7 +84,7 @@ class DataCleanup:
               'plans':'刪除計畫，已完成工作保留。'}.get(kind,'永久刪除選定本機內容。')
         return dict(token=token,kind=kind,label=LABELS[kind],count=len(rows),
                     items=[{'id':r['id'],'title':r.get('title') or r.get('name') or r.get('goal') or r.get('kind') or LABELS[kind]} for r in rows],
-                    notice=note+' 不刪除公司端資料、原始附件、匯出檔或備份；應用無法復原。')
+                    notice=note+' 不刪除服務端資料、原始附件、匯出檔或備份；應用無法復原。')
 
     def confirm(self,token):
         with self.engine._lock:

@@ -11,7 +11,7 @@ from test_support.assistants_mock import AssistantsMock
 
 
 def main():
-    parser = argparse.ArgumentParser(description='QA agent 協定模擬服務：僅合成資料，未連公司')
+    parser = argparse.ArgumentParser(description='QA agent 協定模擬服務：僅合成資料，未連組織')
     parser.add_argument('--port', type=int, default=8765)
     args = parser.parse_args()
     if not 1024 <= args.port <= 65535:
@@ -47,7 +47,7 @@ def main():
 
     server = ThreadingHTTPServer(('127.0.0.1', args.port), Handler)
     print('QA agent SYNTHETIC ONLY http://127.0.0.1:' + str(args.port) + '/v1')
-    print('供 SDK 測試使用；正式 App 保持 HTTPS 檢查，不把本服務當成公司連線。')
+    print('供 SDK 測試使用；正式 App 保持 HTTPS 檢查，不把本服務當成組織連線。')
     try:
         server.serve_forever()
     except KeyboardInterrupt:

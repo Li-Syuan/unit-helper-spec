@@ -35,9 +35,12 @@ class Navigation:
         self.collapsed=load_preferences(app.preferences_path).get('sidebar_collapsed') is True
         side=self.side=tk.Frame(surface,width=224);side._theme_role='sidebar';side.pack(side='left',fill='y');side.pack_propagate(False)
         self.expanded=[];self.buttons=[]
-        self.identity=tk.Label(side,text='本機身分 · 非 AD  /  '+__version__,font=(app.palette.FONT,10),anchor='w')
+        identity=getattr(app,'identity',{})
+        identity_text='已登入 · '+identity['name'] if identity.get('mode')=='company' else '本機身分 · 非 AD'
+        self.identity=tk.Label(side,text=identity_text+'  /  '+__version__,font=(app.palette.FONT,10),anchor='w',wraplength=190)
         self.identity.pack(side='bottom',fill='x',padx=16,pady=(4,12));self.expanded.append(self.identity)
         self.help=self.button(side,'說明與關於','help',lambda:app.show_help('快速開始'));self.help.pack(side='bottom',fill='x',padx=10,pady=2)
+        self.author=self.button(side,'作者','team',lambda:app.show_author(self.author));self.author.pack(side='bottom',fill='x',padx=10,pady=2)
         self.options=self.button(side,'待回答的選項','work',app.resume_form);self.options.pack(side='bottom',fill='x',padx=10,pady=2)
         self.brand=tk.Frame(side);self.brand.pack(fill='x',padx=14,pady=(14,8))
         app.brand_image_label=tk.Label(self.brand,image=app.brand_icon or '');app.brand_image_label.pack(side='left',padx=(0,8))
@@ -83,6 +86,7 @@ class Navigation:
         self.apply()
 
     def toggle_sidebar(self):
+        if hasattr(self.app,'author_popover'):self.app.author_popover.close()
         self.collapsed=not self.collapsed;self.apply()
         try:update_preferences(self.app.preferences_path,{'sidebar_collapsed':self.collapsed})
         except OSError:self.app.status.set('側欄已切換；偏好保存失敗，重開可能恢復原樣。')
@@ -118,4 +122,5 @@ class Navigation:
         if hasattr(a,'notification_presenter'):a.notification_presenter.update(a.store.notifications())
 
     def close(self):
+        if hasattr(self.app,'author_popover'):self.app.author_popover.close()
         for tip in self.tooltips:tip.hide()

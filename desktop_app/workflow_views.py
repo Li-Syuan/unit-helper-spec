@@ -264,7 +264,7 @@ class WorkflowViews:
         if record and (record.get('task') or record['state']=='cancelled'):raise ValueError('此計畫已有執行紀錄；請按「另開計畫」討論新的需求。')
         if not record:
             index=self.workflow_planner.current()
-            if index<0 or index>=len(self.workflow_planners):raise ValueError('尚無已驗證的規劃助理，請先完成公司能力接線。')
+            if index<0 or index>=len(self.workflow_planners):raise ValueError('尚無已驗證的規劃助理，請先完成組織能力接線。')
             binding=self.profiles.workflow_binding(self.workflow_planners[index]['id'])
             record=self.workflows.create(self.conversation,text,binding)
             self.workflow_selected[self.conversation]=record['id']
@@ -508,11 +508,11 @@ class WorkflowViews:
         self.require_profile_edit();pid=self.selected_profile()
         item=next(p for p in self.profiles.items() if p['id']==pid);current=item.get('workflow',{})
         w,body=self.workflow_window('助理分工能力');variables={}
-        ttk.Label(body,text='角色是用途宣告，不代表已驗證能力。修改後需公司重新完成能力驗證，才可參與自動流程。',wraplength=560).pack(anchor='w',pady=8)
+        ttk.Label(body,text='角色是用途宣告，不代表已驗證能力。修改後需組織重新完成能力驗證，才可參與自動流程。',wraplength=560).pack(anchor='w',pady=8)
         for role,label in ROLES.items():
             var=tk.BooleanVar(value=role in current.get('roles',[]));variables[role]=var
             ttk.Checkbutton(body,text=label,variable=var).pack(anchor='w',pady=3)
-        ttk.Label(body,text='目前狀態：'+('已驗證' if current.get('verified') else '待公司驗證'),style='Muted.TLabel').pack(anchor='w',pady=8)
+        ttk.Label(body,text='目前狀態：'+('已驗證' if current.get('verified') else '待組織驗證'),style='Muted.TLabel').pack(anchor='w',pady=8)
         def save():
             self.require_profile_edit();self.profiles.set_workflow_capability(pid,[role for role,var in variables.items() if var.get()],verified=False)
             self.refresh_workflow_catalog();self.refresh_profiles();w.destroy()

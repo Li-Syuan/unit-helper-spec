@@ -23,7 +23,7 @@ class ProfileDialogueProvider:
         from .dialogue_contracts import ASSISTANTS
         rows=copy.deepcopy(ASSISTANTS)
         if getattr(self.profiles,'data',{}).get('wire_mode')=='assistants':
-            rows.extend({'id':f"company:{p['id']}:{p['revision']}",'name':'公司 · '+p['name']}
+            rows.extend({'id':f"company:{p['id']}:{p['revision']}",'name':'組織 · '+p['name']}
                         for p in self.profiles.items(True) if p['id']!='demo')
         return rows
 
@@ -31,7 +31,7 @@ class ProfileDialogueProvider:
         from .dialogue_contracts import assistant
         if not isinstance(value,str):raise ValueError('助理識別無效。')
         if not value.startswith('company:'):return assistant(value)
-        if getattr(self.profiles,'data',{}).get('wire_mode')!='assistants':raise ValueError('請先配置公司 Assistants 連線。')
+        if getattr(self.profiles,'data',{}).get('wire_mode')!='assistants':raise ValueError('請先配置組織 Assistants 連線。')
         try:
             _,pid,revision=value.split(':')
             binding={'profile_id':pid,'revision':int(revision)}
@@ -95,7 +95,7 @@ def parse_schedule(text):
 
 class DemoDialogueProvider:
     QUESTIONS={'target':'你想追蹤什麼對象？例如：A類庫存、某項專案進度。',
-               'source':'資訊會來自哪裡？例如：公司核准資料庫或人工提供的文字。這裡只記錄來源名稱，不會連線或讀檔。',
+               'source':'資訊會來自哪裡？例如：組織核准資料庫或人工提供的文字。這裡只記錄來源名稱，不會連線或讀檔。',
                'task_type':'希望完成哪種任務？請選「資料追蹤／摘要整理／異常檢查」。',
                'schedule':'預計什麼時間？例如「每天08:00」「每週一09:30」或「2026-10-01 08:00」。時間以台北為準。'}
     def respond(self,history,mode,current,assistant_id):

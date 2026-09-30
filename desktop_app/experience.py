@@ -9,7 +9,7 @@ from tkinter import ttk
 
 from .about import about_text
 from .branding import APP_NAME, apply_child_icons
-from .display import scroll_frame
+from .display import scroll_frame, work_area
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCUMENTS = [('使用手冊', 'USER-GUIDE.md'), ('資料使用與功能限制', 'DATA-USAGE.md'),
@@ -46,7 +46,110 @@ def manual_sections():
     return sections
 
 
+class AuthorPopover:
+    """Small anchored identity card; no modal grab or service calls."""
+    def __init__(self, app):
+        self.app = app
+        self.window = None
+        self.bindings = []
+        self.focus_timer = None
+
+    def toggle(self, anchor):
+        if self.window is not None:
+            self.close()
+            return
+        from .about import publisher_info
+        author = publisher_info()
+        self.anchor = anchor
+        window = self.window = tk.Toplevel(self.app.root)
+        window.withdraw()
+        window.overrideredirect(True)
+        window.transient(self.app.root)
+        window.title(APP_NAME + ' · 作者')
+        body = ttk.Frame(window, style='Card.TFrame', padding=16)
+        body.pack(fill='both', expand=True)
+        ttk.Label(body, text='作者與聯絡方式', style='CardTitle.TLabel').pack(anchor='w')
+        self.details = ttk.Label(body, text=f"姓名：{author['name']}\n工號：{author['employee_id']}\n電話：{author['phone']}",
+                                 style='Surface.TLabel', wraplength=300, justify='left')
+        self.details.pack(fill='x', pady=(12, 14))
+        self.close_button = ttk.Button(body, text='關閉', command=self.close)
+        self.close_button.pack(anchor='e')
+        window.bind('<Escape>', self._escape)
+        window.bind('<FocusOut>', self._focus_out, add='+')
+        window.bind('<Destroy>', self._destroyed, add='+')
+        self.bindings.append(('<ButtonPress>', self.app.root.bind('<ButtonPress>', self._outside, add='+')))
+        self.bindings.append(('<Escape>', self.app.root.bind('<Escape>', self._escape, add='+')))
+        self.app.appearance.apply(window)
+        self.position()
+        window.deiconify()
+        self.close_button.focus_set()
+
+    def position(self):
+        if self.window is None:
+            return
+        window = self.window
+        window.update_idletasks()
+        ax, ay, width, height = work_area(self.anchor)
+        margin = self.app.display.px(8)
+        x = self.anchor.winfo_rootx() + self.anchor.winfo_width() + margin
+        y = self.anchor.winfo_rooty()
+        x = max(ax + margin, min(x, ax + width - window.winfo_reqwidth() - margin))
+        y = max(ay + margin, min(y, ay + height - window.winfo_reqheight() - margin))
+        window.geometry(f'+{x}+{y}')
+
+    def _inside(self, widget, parent):
+        while widget is not None:
+            if widget == parent:
+                return True
+            widget = getattr(widget, 'master', None)
+        return False
+
+    def _outside(self, event):
+        if self.window is not None and not self._inside(event.widget, self.window) and not self._inside(event.widget, self.anchor):
+            self.close()
+
+    def _escape(self, event=None):
+        self.close()
+        return 'break'
+
+    def _focus_out(self, event=None):
+        if self.window is not None and self.focus_timer is None:
+            self.focus_timer = self.app.root.after_idle(self._check_focus)
+
+    def _check_focus(self):
+        self.focus_timer = None
+        focused = self.app.root.focus_get()
+        # Main-window clicks are handled by _outside. Do not close between the
+        # author's button press and release, which would reopen the card.
+        if self.window is not None and (focused is None or focused.winfo_toplevel() not in (self.window, self.app.root)):
+            self.close()
+
+    def _destroyed(self, event):
+        if event.widget == self.window:
+            self.window = None
+            self._unbind()
+
+    def _unbind(self):
+        if self.focus_timer is not None:
+            self.app.root.after_cancel(self.focus_timer)
+            self.focus_timer = None
+        for sequence, token in self.bindings:
+            self.app.root.unbind(sequence, token)
+        self.bindings.clear()
+
+    def close(self):
+        window, self.window = self.window, None
+        self._unbind()
+        if window is not None:
+            window.destroy()
+
+
 class ExperienceMixin:
+    def show_author(self, anchor):
+        if not hasattr(self, 'author_popover'):
+            self.author_popover = AuthorPopover(self)
+        self.author_popover.toggle(anchor)
+
     def show_help(self, section='快速開始'):
         window = tk.Toplevel(self.root)
         apply_child_icons(window)
@@ -105,5 +208,5 @@ class ExperienceMixin:
                                     creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
             return result.returncode
         def done(code):
-            self.status.set(('本機診斷完成' if code == 0 else '診斷有項目需修正') + '；報告：' + str(output) + '。公司服務仍需另行驗收。')
+            self.status.set(('本機診斷完成' if code == 0 else '診斷有項目需修正') + '；報告：' + str(output) + '。組織服務仍需另行驗收。')
         self.background(run, done)

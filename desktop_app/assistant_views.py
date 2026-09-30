@@ -36,7 +36,7 @@ class AssistantViews:
         notes=(p or {}).get('notes','') or '用途尚未填寫'
         label='用途（自填）：'+(notes[:80]+'…' if len(notes)>80 else notes)
         if p and p['id']!='demo' and not p.get('legacy') and self.profiles.data['wire_mode']=='unconfigured':
-            label+=' · API 格式待公司確認'
+            label+=' · API 格式待組織確認'
         self.assistant_usage.configure(text=label)
     def switch_assistant(self,event=None):
         index=self.profile_picker.current()
@@ -54,16 +54,16 @@ class AssistantViews:
     def build_profile_settings(self,tab):
         if self.groq_trial:
             from .trial import MODEL
-            self.section(tab,'Groq 外部 AI 試用','獨立試用資料區；不載入公司連線或歷史')
+            self.section(tab,'Groq 外部 AI 試用','獨立試用資料區；不載入組織連線或歷史')
             ttk.Label(tab,text='模型：'+MODEL).pack(anchor='w',pady=8)
             self.key_label=ttk.Label(tab,text='API key：'+self.profiles.key_status())
             self.key_label.pack(anchor='w',pady=8)
             self.button(tab,'重新檢查 .env',lambda:self.key_label.configure(text='API key：'+self.profiles.key_status())).pack(anchor='w',pady=6)
             self.button(tab,'測試 Groq 連線',self.test_trial_connection).pack(anchor='w',pady=6)
-            ttk.Label(tab,text='在專案 .env 填寫 GROQ_API_KEY。只傳送你送出的文字與本段對話。\n請用虛構資料體驗，勿傳送公司機密或個資。\n查詢仍使用合成資料，AD／Oracle 尚未接線。\n免費額度由 Groq 帳戶方案決定；超限會停止，不自動重試或更換方案。',wraplength=650,justify='left',style='Muted.TLabel').pack(anchor='w',pady=12)
+            ttk.Label(tab,text='在專案 .env 填寫 GROQ_API_KEY。只傳送你送出的文字與本段對話。\n請用虛構資料體驗，勿傳送組織機密或個資。\n查詢仍使用合成資料，AD／Oracle 尚未接線。\n免費額度由 Groq 帳戶方案決定；超限會停止，不自動重試或更換方案。',wraplength=650,justify='left',style='Muted.TLabel').pack(anchor='w',pady=12)
             self.button(tab,'試用操作說明',lambda:self.show_help('Groq 外部 AI 試用'),'Quiet.TButton').pack(anchor='w')
             return
-        self.section(tab,'共用連線','所有公司助理共用 endpoint 與 API key')
+        self.section(tab,'共用連線','所有AI 助理共用 endpoint 與 API key')
         self.endpoint_var=tk.StringVar(value=self.profiles.data['endpoint'])
         row=ttk.Frame(tab);row.pack(fill='x',pady=6)
         ttk.Label(row,text='Endpoint',width=14).pack(side='left')
@@ -75,17 +75,17 @@ class AssistantViews:
         self.key_label=ttk.Label(row,text='API key：'+self.profiles.key_status()); self.key_label.pack(side='left')
         self.button(row,'設定／更換',self.edit_key).pack(side='right')
         self.button(row,'移除',self.remove_key,'Quiet.TButton').pack(side='right',padx=6)
-        ttk.Label(tab,text='金鑰存 Windows 認證管理員；公司 API 格式確認前不會呼叫。',style='Muted.TLabel').pack(anchor='w',pady=4)
+        ttk.Label(tab,text='金鑰存 Windows 認證管理員；助理 API 格式確認前不會呼叫。',style='Muted.TLabel').pack(anchor='w',pady=4)
         self.section(tab,'我的助理','每段對話固定一位助理；停用後歷史仍保留')
         holder=ttk.Frame(tab);holder.pack(fill='both',expand=True,pady=5)
         self.profile_table=self.tree(holder,[('name','名稱'),('id','assistant ID'),('notes','備註'),('state','狀態')],4)
         row=ttk.Frame(tab); row.pack(fill='x',pady=6)
         for text,fn in [('新增助理',lambda:self.edit_profile()),('編輯',lambda:self.edit_profile(self.selected_profile())),('設為預設',self.default_profile),('停用／啟用',self.toggle_profile)]:
             self.button(row,text,fn).pack(side='left',padx=(0,6))
-        self.button(row,'使用說明',lambda:self.show_help('設定公司助理'),'Quiet.TButton').pack(side='right')
+        self.button(row,'使用說明',lambda:self.show_help('設定 AI 助理'),'Quiet.TButton').pack(side='right')
         self.profile_connection=self.button(tab,'測試選取助理連線',self.test_profile);self.profile_connection.pack(anchor='w',pady=5)
         self.button(tab,'設定助理分工角色',self.edit_workflow_capability,'Compact.TButton').pack(anchor='w',pady=4)
-        ttk.Label(tab,text='AD／Oracle 尚未接線；測試連線會呼叫公司助理，須先確認其工具副作用。',style='Muted.TLabel',wraplength=750).pack(anchor='w',pady=4)
+        ttk.Label(tab,text='AD／Oracle 尚未接線；測試連線會呼叫AI 助理，須先確認其工具副作用。',style='Muted.TLabel',wraplength=750).pack(anchor='w',pady=4)
         self.refresh_profiles()
     def require_profile_edit(self):
         if self.engine.has_inflight() or self.pending_io: raise GatewayError('請等待目前工作結束再修改連線。')
@@ -121,10 +121,10 @@ class AssistantViews:
 
     def edit_wire_mode(self):
         self.require_profile_edit()
-        w=tk.Toplevel(self.root);apply_child_icons(w);w.title('公司連線協定');w.transient(self.root)
+        w=tk.Toplevel(self.root);apply_child_icons(w);w.title('組織連線協定');w.transient(self.root)
         self.display.size_window(w,560,230,(400,210))
         body=ttk.Frame(w,padding=20);body.pack(fill='both',expand=True)
-        ttk.Label(body,text='公司範例使用 assistants；變更將撤銷舊連線與能力驗證。',wraplength=470).pack(fill='x')
+        ttk.Label(body,text='組織範例使用 assistants；變更將撤銷舊連線與能力驗證。',wraplength=470).pack(fill='x')
         value=tk.StringVar(value=self.profiles.data.get('wire_mode','unconfigured'))
         ttk.Combobox(body,textvariable=value,values=('unconfigured','assistants','model','body_field'),state='readonly').pack(fill='x',pady=12)
         def save():
@@ -147,7 +147,7 @@ class AssistantViews:
         self.appearance.apply(w);entry.focus_set()
     def remove_key(self):
         self.require_profile_edit()
-        if messagebox.askyesno('移除 API key','移除本應用金鑰後，公司助理將無法呼叫。確認移除？',parent=self.root):
+        if messagebox.askyesno('移除 API key','移除本應用金鑰後，AI 助理將無法呼叫。確認移除？',parent=self.root):
             self.profiles.remove_key();self.key_label.configure(text='API key：'+self.profiles.key_status())
     def edit_profile(self,pid=None):
         self.require_profile_edit()
@@ -173,7 +173,7 @@ class AssistantViews:
     def test_profile(self):
         binding=self.profiles.snapshot(self.selected_profile())
         if binding['profile_id']!='demo' and not self.config['assistant'].get('verified_side_effect_free',False):
-            raise GatewayError('公司尚未確認助理副作用能力；請先由維護者完成確認。')
+            raise GatewayError('組織尚未確認助理副作用能力；請先由維護者完成確認。')
         if self.pending_io: raise GatewayError('請等待目前背景工作完成。')
         self.background(lambda:self.profiles.respond([{'role':'user','content':'請僅回覆連線成功。'}],'chat',binding),
             lambda value:messagebox.showinfo('連線回覆',value[:1000],parent=self.root))

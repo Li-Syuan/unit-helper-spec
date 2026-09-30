@@ -94,7 +94,7 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
         if groq_trial:
             from .config import DEFAULT
             if config is not None or config_path is not None:
-                raise GatewayError('Groq 試用不能載入公司設定。')
+                raise GatewayError('Groq 試用不能載入連線設定。')
             directory=Path(directory or data_directory())/'groq-trial'
             config=copy.deepcopy(DEFAULT)
         self.root=root; self.directory=Path(directory or data_directory()); self.config_path=config_path or self.directory/'config.json'
@@ -220,11 +220,11 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
         future.add_done_callback(done)
     def make_assistant(self,config): return DemoAssistant() if config['assistant']['mode']=='demo' else CompanyAssistant(config)
     def respond(self,messages,purpose):
-        if self.assistant is None: raise GatewayError(self.adapter_error or '公司助理尚未設定。')
+        if self.assistant is None: raise GatewayError(self.adapter_error or 'AI 助理尚未設定。')
         return self.assistant.respond(messages,purpose)
     def update_mode(self):
         binding=self.store.conversation(self.conversation)['binding'] if self.conversation else self.profiles.default_binding()
-        mode='舊版對話（唯讀）' if not binding else '示範助理' if binding['profile_id']=='demo' else '公司助理'
+        mode='舊版對話（唯讀）' if not binding else '示範助理' if binding['profile_id']=='demo' else 'AI 助理'
         if self.groq_trial and binding and binding['profile_id']!='demo': mode='Groq 外部 AI 試用'
         self.mode_label.configure(text='●  '+mode+'  ·  '+('合成資料' if self.config['query_mode']=='demo' else 'Oracle 未接線'))
     def scheduler_loop(self):
@@ -812,7 +812,7 @@ class App(TeamViews, WorkflowViews, ActionViews, ReportViews, DraftViews, TodoVi
             self.status.set('外觀已套用，但無法保存偏好；下次開啟可能恢復原設定。')
             messagebox.showwarning('外觀未保存','本次切換仍有效，但無法保存偏好。請確認資料目錄可寫入。',parent=self.root)
     def apply_settings(self):
-        if self.groq_trial: raise GatewayError('試用入口不修改公司設定。')
+        if self.groq_trial: raise GatewayError('試用入口不修改連線設定。')
         if self.pending_io or self.engine.has_inflight(): raise ValueError('請等待工作完成再修改設定。')
         if any(p['state']=='ready' for p in self.store.plans()): raise ValueError('請先完成或取消待批准計畫，再更換助理設定。')
         config=copy.deepcopy(self.config)

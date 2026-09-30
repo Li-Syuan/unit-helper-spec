@@ -66,8 +66,8 @@ class TeamViews:
         self.team_render_key=key
         count=sum(self.team_state(p)[0]=='可參與分工' for p in profiles)
         self.team_summary.configure(text=f'{len(profiles)} 位助理 · {count} 位可參與分工')
-        self.team_message.configure(text=('Groq 試用：同一模型的隔離角色，用於測試分工流程；不是公司不同 assistant ID。' if self.groq_trial else
-            '公司平台建立助理 → 新增 assistant ID 與用途 → 設定分工角色 → 公司驗證後加入 Plan。'))
+        self.team_message.configure(text=('Groq 試用：同一模型的隔離角色，用於測試分工流程；不是組織不同 assistant ID。' if self.groq_trial else
+            '組織平台建立助理 → 新增 assistant ID 與用途 → 設定分工角色 → 組織驗證後加入 Plan。'))
         for child in self.team_body.winfo_children():child.destroy()
         self.team_cards={}
         for p in profiles:
@@ -96,7 +96,7 @@ class TeamViews:
                 self.button(card,'用此助理規劃工作',lambda pid=p['id']:self.team_plan(pid),'Compact.TButton').pack(fill='x',pady=(10,0))
             self.team_cards[p['id']]={'frame':card,'name':name,'notes':notes,'chat':chat,'info':info,'state':state}
         if not self.team_cards:
-            ttk.Label(self.team_body,text='沒有符合條件的助理。請調整搜尋，或新增公司助理。',style='Muted.TLabel').grid(row=0,column=0,pady=30)
+            ttk.Label(self.team_body,text='沒有符合條件的助理。請調整搜尋，或新增AI 助理。',style='Muted.TLabel').grid(row=0,column=0,pady=30)
         self.appearance.apply(self.team_body);self.layout_team()
 
     def layout_team(self):
@@ -133,7 +133,7 @@ class TeamViews:
         roles=p.get('workflow',{}).get('roles',[])
         ttk.Label(body,text='分工角色：'+('、'.join(ROLE_NAMES[r] for r in roles) or '尚未設定'),wraplength=500).pack(anchor='w',pady=10)
         if self.groq_trial or pid=='demo':
-            ttk.Label(body,text='這是固定的試用／示範助理。公司助理請從正式入口新增。',wraplength=500,style='Muted.TLabel').pack(anchor='w')
+            ttk.Label(body,text='這是固定的試用／示範助理。AI 助理請從正式入口新增。',wraplength=500,style='Muted.TLabel').pack(anchor='w')
         else:
             def action(fn):
                 self.profile_table.selection_set(pid);w.destroy();fn()
@@ -142,7 +142,7 @@ class TeamViews:
             row=ttk.Frame(body);row.pack(fill='x',pady=4)
             self.button(row,'設為預設',lambda:action(self.default_profile),'Compact.TButton').pack(side='left')
             self.button(row,'停用' if p['enabled'] else '啟用',lambda:action(self.toggle_profile),'Compact.TButton').pack(side='right')
-            ttk.Label(body,text='新增角色不等於通過驗證。公司接線者須完成 API、隔離與唯讀能力測試。',style='Muted.TLabel',wraplength=500).pack(fill='x',pady=10)
+            ttk.Label(body,text='新增角色不等於通過驗證。服務接線者須完成 API、隔離與唯讀能力測試。',style='Muted.TLabel',wraplength=500).pack(fill='x',pady=10)
         self.button(w,'關閉',w.destroy,'Compact.TButton').pack(side='bottom',pady=10)
         self.appearance.apply(w)
         return w

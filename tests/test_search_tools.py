@@ -80,7 +80,7 @@ class SearchToolTests(unittest.TestCase):
         submitted=[b['tool_outputs'] for m,p,b in self.mock.requests if p.endswith('/submit_tool_outputs')]
         self.assertEqual([[v['tool_call_id'] for v in batch] for batch in submitted],[['a','b'],['c']])
     def test_description_survives_approval_and_run_override(self):
-        tool=copy.deepcopy(SEARCH_TOOL);tool['description']='公司核准的唯讀新聞搜尋'
+        tool=copy.deepcopy(SEARCH_TOOL);tool['description']='組織核准的唯讀新聞搜尋'
         tool['parameters']['properties']['query']['description']='搜尋關鍵字'
         self.mock.assistant_tools=[{'type':'function','function':tool}]
         g=self.gateway();metadata=g.inspect_assistant();g.search_policy=policy({'tools':metadata['search_candidates']})

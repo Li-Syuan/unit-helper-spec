@@ -134,7 +134,7 @@ class GuidanceUITests(TestCase):
         a.from_date.set('2026-01-01');a.to_date.set('2026-01-04');a.validate_query_fields()
         a.query_plan.set(True);a.refresh_page_hint();self.assertIn('批准',a.page_hint.cget('text'))
         self.assertEqual(a.store.tasks(),[])
-        pid=a.profiles.save('公司助理','unmapped');a.profiles.set_endpoint('https://company.invalid/v1')
+        pid=a.profiles.save('AI 助理','unmapped');a.profiles.set_endpoint('https://company.invalid/v1')
         a.next_binding=a.profiles.snapshot(pid);a.new_chat()
         self.assertIn('請求格式',self.select('chat'));self.assertIn('格式仍待確認',self.select('settings'))
     def test_normal_demo_query_approval_selection_and_transfer(self):

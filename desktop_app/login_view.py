@@ -19,7 +19,7 @@ class LoginView:
         self.pending = False
         self.closing = False
         self.events = queue.Queue()
-        root.title(APP_NAME+' · 公司登入'+('（畫面預覽）' if preview else ''))
+        root.title(APP_NAME+' · 登入'+('（畫面預覽）' if preview else ''))
         self.display = Display(root)
         self.display.size_window(root, 560, 690, (480, 550))
         self.appearance = Appearance(root, load_theme(directory/'ui-preferences.json'), load_color_style(directory/'ui-preferences.json'))
@@ -32,7 +32,7 @@ class LoginView:
             ttk.Label(brand, image=self.icon).pack(side='left', padx=(0, 12))
         ttk.Label(brand, text=APP_NAME, style='Section.TLabel').pack(side='left')
         ttk.Label(body, text='登入你的工作區', style='Section.TLabel').pack(anchor='w')
-        ttk.Label(body, text='使用公司工號與密碼。成功驗證身分與使用資格後，\n才會開啟你的資料與自動工作。', wraplength=440).pack(anchor='w', pady=(8, 20))
+        ttk.Label(body, text='使用組織工號與密碼。成功驗證身分與使用資格後，\n才會開啟你的資料與自動工作。', wraplength=440).pack(anchor='w', pady=(8, 20))
         self.employee = tk.StringVar()
         self.password = tk.StringVar()
         ttk.Label(body, text='工號').pack(anchor='w', pady=(0, 6))
@@ -50,13 +50,13 @@ class LoginView:
         actions = ttk.Frame(body)
         self.actions = actions
         actions.pack(fill='x')
-        self.submit_button = ttk.Button(actions, text='登入公司工作區', style='Primary.TButton', command=self.submit)
+        self.submit_button = ttk.Button(actions, text='登入工作區', style='Primary.TButton', command=self.submit)
         self.submit_button.pack(side='left')
         if not preview and provider is None:
             from .company_auth import is_configured
             if not is_configured():
                 self.submit_button.configure(state='disabled')
-                self.status.set('AD 驗證尚未接線，暫時無法登入；請由公司維護者接上驗證函數。')
+                self.status.set('AD 驗證尚未接線，暫時無法登入；請由組織維護者接上驗證函數。')
         ttk.Button(actions, text='關閉預覽' if preview else '取消', command=self.cancel).pack(side='right')
         ttk.Separator(body).pack(fill='x', pady=24)
         info = publisher_info()
@@ -75,7 +75,7 @@ class LoginView:
             return
         if self.preview:
             self.password.set('')
-            self.status.set('這是畫面預覽，未驗證身分。接好 AD 函數並啟用公司登入後才能進入。')
+            self.status.set('這是畫面預覽，未驗證身分。接好 AD 函數並啟用登入後才能進入。')
             return
         if self.provider is None:
             from .company_auth import is_configured

@@ -24,7 +24,7 @@ class AssistantSessions:
         with self.lock, self.connect() as db:
             version = db.execute('PRAGMA user_version').fetchone()[0]
             if version not in (0, 1):
-                raise GatewayError('公司連線紀錄版本不相容；未啟動遠端工作。')
+                raise GatewayError('組織連線紀錄版本不相容；未啟動遠端工作。')
             db.execute('CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, data TEXT NOT NULL)')
             db.execute('CREATE TABLE IF NOT EXISTS requests (session_id TEXT NOT NULL, id TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY(session_id,id))')
             db.execute('PRAGMA user_version=1')
@@ -43,7 +43,7 @@ class AssistantSessions:
         with _GUARD:
             lock = _SESSION_LOCKS.setdefault((str(self.path.resolve()), key), threading.Lock())
         if not lock.acquire(blocking=False):
-            raise GatewayError('公司助理仍有請求處理中，請稍候再試。')
+            raise GatewayError('AI 助理仍有請求處理中，請稍候再試。')
         try:
             yield
         finally:

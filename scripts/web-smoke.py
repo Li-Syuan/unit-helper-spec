@@ -18,6 +18,9 @@ def main():
     destination.mkdir(parents=True,exist_ok=True)
     report={'status':'failed','checks':[]}
     with tempfile.TemporaryDirectory() as tmp:
+        from desktop_app import about
+        publisher_root=about.ROOT;about.ROOT=Path(tmp)
+        (Path(tmp)/'publisher.json').write_text(json.dumps({'author':{'name':'合成作者','employee_id':'SYNTHETIC-001','phone':'SYNTHETIC-EXT'}}),encoding='utf-8')
         session=WebSession(directory=tmp)
         api=WebBridge(session)
         window=webview.create_window('QA agent · 合成介面驗證',html=application_html(),js_api=api,width=1280,height=860,text_select=True)
@@ -44,6 +47,21 @@ def main():
                         if not pending[0].Wait(10000):raise AssertionError('capture_timeout')
                     finally:stream.Dispose()
                 time.sleep(.4);capture('dark.png')
+                window.evaluate_js("document.getElementById('author-toggle').click()")
+                for _ in range(80):
+                    if window.evaluate_js("document.getElementById('author-content').textContent.includes('SYNTHETIC-EXT')"):break
+                    time.sleep(.05)
+                assert window.evaluate_js("document.getElementById('author-content').textContent.includes('合成作者')"),'author_data_missing'
+                assert window.evaluate_js("document.getElementById('author-toggle').getAttribute('aria-expanded')==='true'"),'author_not_open'
+                assert not session.store.tasks(),'author_dispatched'
+                capture('author-dark.png')
+                window.evaluate_js("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))")
+                assert window.evaluate_js("document.getElementById('author-popover').hidden && document.activeElement.id==='author-toggle'"),'author_escape_focus'
+                window.evaluate_js("document.getElementById('author-toggle').click()")
+                window.evaluate_js("document.getElementById('dialogue-input').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))")
+                time.sleep(.1)
+                assert window.evaluate_js("document.getElementById('author-popover').hidden"),'author_late_reply_reopened'
+                report['checks'].append('author_popover_readonly_escape_outside_and_late_reply_fence')
                 # Theme choices use existing widgets; unsaved connection inputs stay local.
                 window.evaluate_js("document.querySelector('[data-page=settings]').click()")
                 time.sleep(.3)
@@ -148,7 +166,7 @@ def main():
                 window.evaluate_js("document.getElementById('dialogue-task-mode').click()")
                 time.sleep(.3)
                 assert window.evaluate_js("document.querySelectorAll('#dialogue-messages .message').length")==0,'mode_not_reset'
-                for text in ('我要建立追蹤任務','A類庫存','公司核准資料庫','資料追蹤','每天08:00'):dialogue_send(text)
+                for text in ('我要建立追蹤任務','A類庫存','組織核准資料庫','資料追蹤','每天08:00'):dialogue_send(text)
                 assert not session.dialogue.list_saved(),'task_saved_before_confirmation'
                 window.evaluate_js("Array.from(document.querySelectorAll('#dialogue-result button')).find(b=>b.textContent==='預覽任務').click()")
                 time.sleep(.2);capture('dialogue-task-preview.png')
@@ -276,7 +294,7 @@ def main():
                 company_mock=SearchMock()
                 profiles=session.profiles
                 profiles.set_endpoint('https://fixture.example.test/v1');profiles.set_wire_mode('assistants')
-                pid=profiles.save('合成公司助理','asst_synthetic')
+                pid=profiles.save('合成AI 助理','asst_synthetic')
                 profiles.key=lambda:'synthetic-test-key'
                 def mock_client(d,p,key,binding):
                     sdk=OpenAI(base_url='https://fixture.example.test/v1',api_key=key,max_retries=0,
@@ -293,7 +311,7 @@ def main():
                 time.sleep(.3)
                 dialogue_send('合成第一題');dialogue_send('接續合成追問')
                 assert len(company_mock.threads)==1 and len(company_mock.runs)==2,'company_thread_continuity'
-                assert window.evaluate_js("document.getElementById('dialogue-mode-label').textContent.includes('公司助理')"),'company_badge'
+                assert window.evaluate_js("document.getElementById('dialogue-mode-label').textContent.includes('AI 助理')"),'company_badge'
                 window.restore();window.resize(1050,700);time.sleep(.3);capture('company-small.png')
                 for control in ('dialogue-send','dialogue-plan','dialogue-stop','dialogue-briefing'):
                     assert window.evaluate_js("(()=>{const e=document.getElementById("+json.dumps(control)+");if(e.hidden)return true;const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;})()"),'company_controls_clipped'
@@ -399,7 +417,8 @@ def main():
                 (destination/'result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
                 window.destroy()
         try:webview.start(inspect,gui='edgechromium',debug=False,private_mode=True)
-        finally:session.close()
+        finally:
+            session.close();about.ROOT=publisher_root
     print(json.dumps({'status':report['status'],'checks':report['checks']}))
     return 0 if report['status']=='passed' else 1
 

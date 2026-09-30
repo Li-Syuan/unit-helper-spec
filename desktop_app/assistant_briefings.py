@@ -25,7 +25,7 @@ class AssistantBriefings:
             raise ValueError('請填寫台北時間 HH:MM。')
         p=self.profiles.validate(spec['binding'])
         if p['id']=='demo' or self.profiles.data.get('wire_mode')!='assistants':
-            raise ValueError('財經日報需要已設定的公司 Assistants 助理；示範不能冒充即時新聞。')
+            raise ValueError('財經日報需要已設定的組織 Assistants 助理；示範不能冒充即時新聞。')
         return p
 
     def preview(self,profile_id,prompt=DEFAULT_PROMPT,time_hhmm='08:00'):
@@ -37,7 +37,7 @@ class AssistantBriefings:
             self.previews[token]={'spec':copy.deepcopy(spec),'expires':time.monotonic()+600}
             return {'token':token,'assistant_name':p['name'],'prompt':prompt,'time_hhmm':time_hhmm,
                 'search_tools':[t['name'] for t in p.get('search_policy',{}).get('tools',[])],
-                'message':'尚未執行。現在試跑會把此需求及當次台北時間傳給所選公司助理，不會啟用排程。'}
+                'message':'尚未執行。現在試跑會把此需求及當次台北時間傳給所選AI 助理，不會啟用排程。'}
 
     def _insert(self,db,spec,request_id,when,schedule_id=None):
         old=db.execute('SELECT id FROM tasks WHERE request_id=?',(request_id,)).fetchone()

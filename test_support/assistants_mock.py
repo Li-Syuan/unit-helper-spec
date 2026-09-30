@@ -6,7 +6,7 @@ import httpx
 
 
 class AssistantsMock:
-    def __init__(self, reply='【協定模擬】這是合成文字，未查詢公司資料。', statuses=None):
+    def __init__(self, reply='【協定模擬】這是合成文字，未查詢組織資料。', statuses=None):
         self.reply = reply
         self.statuses = list(statuses or ['completed'])
         self.requests = []

@@ -1,6 +1,6 @@
-# 公司助理建立與試跑指南
+# AI 助理建立與試跑指南
 
-本包供 QA agent 現行多助理契約使用。四份 Instruction 可各自整份貼入公司平台，無須拼接共用規則。**planner 是主代理，analysis／review／compose 是三位子代理，並非四位子代理。** 可直接貼入的固定資料測試題見 [公司試跑指令](../COMPANY-IMPLEMENTATION.md)。這些規則降低無依據回答風險，**不能保證零幻覺**；同模型覆核不是獨立事實來源。程式的格式與 facts 檢查也不能證明全部自由文字正確。
+本包供 QA agent 現行多助理契約使用。四份 Instruction 可各自整份貼入組織平台，無須拼接共用規則。**planner 是主代理，analysis／review／compose 是三位子代理，並非四位子代理。** 可直接貼入的固定資料測試題見 [環境試跑指令](../COMPANY-IMPLEMENTATION.md)。這些規則降低無依據回答風險，**不能保證零幻覺**；同模型覆核不是獨立事實來源。程式的格式與 facts 檢查也不能證明全部自由文字正確。
 
 ## 建立順序
 
@@ -12,21 +12,21 @@
 | QA 彙整 | compose | [compose.md](compose.md) |
 | QA 搜尋（選用） | rag | [rag.md](rag.md) |
 
-要試真實財經多助理，可加入既有Internet Search助理的工作用副本作為rag角色，沿用新文件的text／facts契約。先在App讀取metadata並人工核准唯讀搜尋，再做公司角色驗收；核准更動會撤銷舊verified。規劃主代理不搜尋，analysis／review／compose不自動取得工具。單助理財經日報可先行試跑，不要求建立五位助理或JSON角色。
+要試真實財經多助理，可加入既有Internet Search助理的工作用副本作為rag角色，沿用新文件的text／facts契約。先在App讀取metadata並人工核准唯讀搜尋，再做組織角色驗收；核准更動會撤銷舊verified。規劃主代理不搜尋，analysis／review／compose不自動取得工具。單助理財經日報可先行試跑，不要求建立五位助理或JSON角色。
 
-1. 在公司平台建立四個助理，各貼入對應文件全文。預計都使用公司提供的 Luna；以公司平台實際名稱與可用設定為準，不把「GPT 6 Luna」猜成 API model ID。
-2. 初次只使用合成資料，停用非必要工具；由公司確認其唯讀文字／RAG 能力，不因 Instruction 寫「不執行」就認定內建工具無副作用。
-3. 在桌面「助理團隊」填名稱、公司 assistant ID 與用途。這不會自動啟用能力。planner 回傳的 profile_id 應取桌面傳入目錄，與公司 assistant ID 不可混用。
-4. 接線者依 [公司工作單](../../COMPANY-HANDOFF.md) 與 [串接契約](../ASSISTANT-INTEGRATION.md) 核對成功呼叫範例，確認 endpoint、assistant ID 傳送位置與回傳文字位置。不要猜 ID 等於 model，也不要將公司資料送到 Groq。
-5. 公司若有 session，依 run_id＋step_id＋助理連線版本隔離；測試不同使用者、工作及角色，確定不串線、不重用無關上下文，且停用／改 ID 後拒絕舊綁定。
-6. 以公司可信 hook 實際斷言四位能力、格式及隔離結果，再呼叫既有 set_workflow_capability 啟用。填 evidence 或 verified=True 不等於實測。公司 API、Luna 與多 ID 目前均為 **not_tested**。
+1. 在組織平台建立四個助理，各貼入對應文件全文。預計都使用組織提供的 Luna；以組織平台實際名稱與可用設定為準，不把「GPT 6 Luna」猜成 API model ID。
+2. 初次只使用合成資料，停用非必要工具；由組織確認其唯讀文字／RAG 能力，不因 Instruction 寫「不執行」就認定內建工具無副作用。
+3. 在桌面「助理團隊」填名稱、組織 assistant ID 與用途。這不會自動啟用能力。planner 回傳的 profile_id 應取桌面傳入目錄，與組織 assistant ID 不可混用。
+4. 接線者依 [組織工作單](../../COMPANY-HANDOFF.md) 與 [串接契約](../ASSISTANT-INTEGRATION.md) 核對成功呼叫範例，確認 endpoint、assistant ID 傳送位置與回傳文字位置。不要猜 ID 等於 model，也不要將組織資料送到 Groq。
+5. 組織若有 session，依 run_id＋step_id＋助理連線版本隔離；測試不同使用者、工作及角色，確定不串線、不重用無關上下文，且停用／改 ID 後拒絕舊綁定。
+6. 以組織可信 hook 實際斷言四位能力、格式及隔離結果，再呼叫既有 set_workflow_capability 啟用。填 evidence 或 verified=True 不等於實測。助理 API、Luna 與多 ID 目前均為 **not_tested**。
 7. 先做一次人工試跑：說明需求 → 補必要條件 → 檢視分工與資料範圍 → 一次「確認執行」→ 核對成果與來源。成功後才另行批准持續排程；App 需開啟。
 
-API key 留在公司認證管理員；本文件、Instruction、Git 及分享報告不填真實金鑰、帳號或公司資料。能力與請求映射修改入口為 profiles.py；本包不改 runtime 契約。
+API key 留在組織認證管理員；本文件、Instruction、Git 及分享報告不填真實金鑰、帳號或組織資料。能力與請求映射修改入口為 profiles.py；本包不改 runtime 契約。
 
 ## 合成測試資料
 
-以下只有虛構內容，供公司測試助理輸入。每次子代理輸入都另由應用明示「facts 必須精確等於以下物件」，本例為 {"quantity":"12.50"}。實際呼叫不能固定使用此範例數值。
+以下只有虛構內容，供組織測試助理輸入。每次子代理輸入都另由應用明示「facts 必須精確等於以下物件」，本例為 {"quantity":"12.50"}。實際呼叫不能固定使用此範例數值。
 
 ```json
 {"goal":"整理本次合成數據，不判斷趨勢","instruction":"列出合計與資料限制","sources":{"s1":{"source":"合成測試","query":"SYNTHETIC","parameters":{"date":"2026-01-01"},"fetched_at_utc":"2026-01-02T00:00:00+00:00","truncated":false,"row_count":2,"numeric_totals":{"quantity":"12.50"}}}}
@@ -72,7 +72,7 @@ API key 留在公司認證管理員；本文件、Instruction、Git 及分享報
 
 ## 驗收與記錄
 
-每個案例記錄輸入摘要、實際輸出是否符合事實、格式／facts 是否通過、是否有意外工具行為及 session 隔離結果。原始內部證據放公司核准位置，分享摘要不含敏感內容；修改 Instruction 後重跑相同案例並記錄實際助理／模型版本。
+每個案例記錄輸入摘要、實際輸出是否符合事實、格式／facts 是否通過、是否有意外工具行為及 session 隔離結果。原始內部證據放組織核准位置，分享摘要不含敏感內容；修改 Instruction 後重跑相同案例並記錄實際助理／模型版本。
 
 本機命令（專案根目錄）：
 
@@ -80,4 +80,4 @@ API key 留在公司認證管理員；本文件、Instruction、Git 及分享報
 .\.venv\Scripts\python.exe -m unittest tests.test_instruction_docs tests.test_workflows tests.test_workflow_profiles -v
 ```
 
-文件測試僅檢查範例與現有格式契約，不呼叫模型，分類為 mock_passed；**不能**代替 company_real_passed 或幻覺驗收。公司實測依 [測試工具包](../ADAPTER-TEST-KIT.md) 的明確執行入口，未配置項目保持 not_tested。不為測試建立真實排程或使用真實敏感資料。
+文件測試僅檢查範例與現有格式契約，不呼叫模型，分類為 mock_passed；**不能**代替 company_real_passed 或幻覺驗收。組織實測依 [測試工具包](../ADAPTER-TEST-KIT.md) 的明確執行入口，未配置項目保持 not_tested。不為測試建立真實排程或使用真實敏感資料。

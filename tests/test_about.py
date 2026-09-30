@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import tkinter as tk
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from desktop_app import about
 
@@ -31,7 +31,7 @@ class PublisherInfoTests(TestCase):
         self.assertNotIn('DO_NOT_EXPOSE', text)
         for label, field in [('工號', 'employee_id'), ('姓名', 'name'), ('電話', 'phone')]:
             self.assertIn(label + '：' + expected[field], text)
-        for notice in ('回報目前只存本機', '不會自動送給維護者', '通過不代表公司接線完成',
+        for notice in ('回報目前只存本機', '不會自動送給維護者', '通過不代表服務接線完成',
                        '第三方套件授權', 'docs/licenses'):
             self.assertIn(notice, text)
 
@@ -67,6 +67,91 @@ class PublisherInfoTests(TestCase):
 
 
 class PublisherTkTests(TestCase):
+    def test_navigation_author_popover_is_local_themed_and_dismissible(self):
+        from tkinter import ttk
+        from desktop_app.display import Display
+        from desktop_app.experience import ExperienceMixin
+        from desktop_app.navigation import Navigation
+        from desktop_app.theme import Appearance
+
+        with tempfile.TemporaryDirectory() as directory, patch.object(about, 'publisher_info', return_value={
+                'employee_id': 'SYNTHETIC-007', 'name': '合成作者', 'phone': 'SYNTHETIC-PHONE'}) as publisher:
+            root = tk.Tk()
+            root.geometry('680x460')
+            helper = ExperienceMixin()
+            helper.root = root
+            helper.display = Display(root)
+            helper.appearance = Appearance(root, 'dark')
+            helper.palette = helper.appearance.colors
+            helper.identity = {'mode': 'company', 'name': '合成登入者'}
+            helper.preferences_path = Path(directory) / 'ui-preferences.json'
+            helper.brand_icon = None
+            helper.ui_images = {}
+            helper.safe = lambda action: action()
+            helper.button = lambda parent, text, command, style: ttk.Button(parent, text=text, command=command, style=style)
+            for name in ('resume_form', 'new_chat', 'toggle_more_tools', 'manage_conversations',
+                         'history_context', 'choose_chat', 'background', 'workspace_theme', 'route_changed'):
+                setattr(helper, name, Mock())
+            surface = ttk.Frame(root)
+            surface.pack(fill='both', expand=True)
+            outside = ttk.Button(surface, text='其他控制項')
+            outside.pack(side='right')
+            navigation = Navigation(helper, surface)
+            try:
+                navigation.initialize()
+                root.update()
+                self.assertIn('合成登入者', navigation.identity['text'])
+                self.assertNotIn('非 AD', navigation.identity['text'])
+                for state, geometry in (('normal', '1024x720'), ('normal', '680x460'), ('zoomed', None)):
+                    root.state(state)
+                    if geometry:
+                        root.geometry(geometry)
+                    root.update()
+                    self.assertTrue(navigation.author.winfo_ismapped())
+                    self.assertGreaterEqual(navigation.author.winfo_y(), 0)
+                    self.assertLessEqual(navigation.author.winfo_y() + navigation.author.winfo_height(), navigation.side.winfo_height())
+                root.state('normal')
+                root.geometry('680x460')
+                root.update()
+                navigation.author.invoke()
+                root.update()
+                popover = helper.author_popover
+                self.assertIsNotNone(popover.window)
+                self.assertIsNone(root.grab_current())
+                for value in ('合成作者', 'SYNTHETIC-007', 'SYNTHETIC-PHONE'):
+                    self.assertIn(value, popover.details['text'])
+                window = popover.window
+                for theme in ('light', 'dark'):
+                    helper.appearance.configure(theme)
+                    root.update()
+                    self.assertIs(popover.window, window)
+                    self.assertEqual(window['background'], helper.appearance.colors.BG)
+                outside.event_generate('<ButtonPress-1>', x=2, y=2)
+                root.update()
+                self.assertIsNone(popover.window)
+                self.assertEqual(popover.bindings, [])
+                navigation.toggle_sidebar()
+                root.update()
+                self.assertTrue(navigation.author.winfo_ismapped())
+                self.assertEqual(navigation.author._nav_title, '作者')
+                navigation.author.invoke()
+                self.assertTrue(popover.window.bind('<Escape>'))
+                self.assertEqual(popover._escape(), 'break')
+                self.assertIsNone(popover.window)
+                navigation.author.invoke()
+                popover.close_button.invoke()
+                self.assertIsNone(popover.window)
+                navigation.author.invoke()
+                navigation.author.invoke()
+                self.assertIsNone(popover.window)
+                self.assertEqual(publisher.call_count, 4)
+                for name in ('resume_form', 'new_chat', 'toggle_more_tools', 'manage_conversations',
+                             'history_context', 'choose_chat', 'background'):
+                    getattr(helper, name).assert_not_called()
+            finally:
+                navigation.close()
+                root.destroy()
+
     def test_about_displays_shared_author_fields_and_keeps_license_entry(self):
         from desktop_app.display import Display
         from desktop_app.experience import ExperienceMixin
