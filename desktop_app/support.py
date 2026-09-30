@@ -11,8 +11,8 @@ from datetime import datetime,timezone
 
 _LOCK=threading.RLock()
 STAGES={'startup','ui','background','cleanup','thread_create','message_create','run_create',
-        'run_poll','messages_read','assistant_metadata','tool_submit','remote_request'}
-CODES={'FAILED','AUTHENTICATION','FORBIDDEN','NOT_FOUND','RATE_LIMIT','TIMEOUT','TRANSPORT','FORMAT','UNKNOWN'}
+        'run_poll','messages_read','assistant_metadata','tool_call','tool_submit','remote_request','preflight'}
+CODES={'FAILED','AUTHENTICATION','FORBIDDEN','NOT_FOUND','RATE_LIMIT','TIMEOUT','TRANSPORT','FORMAT','UNKNOWN','LOCAL_SETUP','RUN_FAILED'}
 ROOT=Path(__file__).resolve().parent
 
 
@@ -27,6 +27,9 @@ def clean_record(value):
     if isinstance(version,str) and re.fullmatch(r'\d{1,3}\.\d{1,3}\.\d{1,3}',version):result['version']=version
     status=value.get('http_status')
     if type(status) is int and 100<=status<=599:result['http_status']=status
+    from .assistant_errors import REMOTE_CODES
+    remote=value.get('provider_code')
+    if isinstance(remote,str) and remote in REMOTE_CODES:result['provider_code']=remote
     result['frames']=[]
     frames=value.get('frames',[])
     if not isinstance(frames,list):return None
@@ -51,6 +54,11 @@ def record(directory,stage,exc=None):
                 entry.update(http_status=status,code={401:'AUTHENTICATION',403:'FORBIDDEN',404:'NOT_FOUND',429:'RATE_LIMIT'}.get(status,'FAILED'))
             elif type(exc).__name__ in ('TimeoutError','APITimeoutError','ReadTimeout','ConnectTimeout'):entry['code']='TIMEOUT'
             elif type(exc).__name__ in ('APIConnectionError','ConnectError'):entry['code']='TRANSPORT'
+            from .assistant_errors import AssistantFailure
+            if isinstance(exc,AssistantFailure):
+                entry.update(code=exc.code,stage=exc.stage)
+                if exc.http_status is not None:entry['http_status']=exc.http_status
+                if exc.remote_code is not None:entry['provider_code']=exc.remote_code
             tb=exc.__traceback__
             while tb:
                 path=Path(tb.tb_frame.f_code.co_filename)

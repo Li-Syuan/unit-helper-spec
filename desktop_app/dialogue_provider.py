@@ -23,7 +23,8 @@ class ProfileDialogueProvider:
         from .dialogue_contracts import ASSISTANTS
         rows=copy.deepcopy(ASSISTANTS)
         if getattr(self.profiles,'data',{}).get('wire_mode')=='assistants':
-            rows.extend({'id':f"company:{p['id']}:{p['revision']}",'name':'組織 · '+p['name']}
+            rows.extend({'id':f"company:{p['id']}:{p['revision']}",'name':'組織 · '+p['name'],
+                         'chat_search_enabled':p.get('chat_search_enabled') is True}
                         for p in self.profiles.items(True) if p['id']!='demo')
         return rows
 
@@ -40,10 +41,14 @@ class ProfileDialogueProvider:
         return binding
 
     def respond_context(self,history,mode,current,assistant_id,context):
-        binding=self.validate_assistant(assistant_id)
+        from .assistant_errors import AssistantFailure
+        from .authentication import AuthenticationError
+        try:binding=self.validate_assistant(assistant_id)
+        except AuthenticationError:raise
+        except ValueError:raise AssistantFailure('LOCAL_SETUP','preflight',sent=False) from None
         if not isinstance(binding,dict):return DemoDialogueProvider().respond(history,mode,current,assistant_id)
         if mode=='chat':
-            return {'text':self.profiles.respond(history,'chat',binding,context=context),'answers':{}}
+            return {'text':self.profiles.respond(history,'chat',binding,context=dict(context,operation='ordinary_chat')),'answers':{}}
         from .workflows import json_object
         # Structured suggestions cannot call confirm() or the scheduler.
         instruction=('僅回覆 JSON，頂層恰好 text、answers。text 是追問或草稿說明；answers 僅可有 '
@@ -53,8 +58,24 @@ class ProfileDialogueProvider:
         import json
         messages=copy.deepcopy(history)
         messages[-1]['content']=instruction+json.dumps(current,ensure_ascii=False)+'\n'+messages[-1]['content']
-        context=dict(context,conversation_id=context['conversation_id']+':task:'+context['request_id'])
+        context=dict(context,operation='task_draft',search_authorized=False,
+                     conversation_id=context['conversation_id']+':task:'+context['request_id'])
         return json_object(self.profiles.respond(messages,'chat',binding,context=context))
+
+    def tools_allowed(self,mode,assistant_id):
+        if mode!='chat':return False
+        try:
+            return next((row.get('chat_search_enabled') is True for row in self.catalog()
+                         if row['id']==assistant_id),False)
+        except (ValueError,AttributeError):return False
+
+    def can_retry_unsent(self,mode,assistant_id,context):
+        try:
+            binding=self.validate_assistant(assistant_id)
+            if not isinstance(binding,dict):return False
+            if mode=='task':context=dict(context,conversation_id=context['conversation_id']+':task:'+context['request_id'])
+            return self.profiles.can_retry_unsent(binding,context) is True
+        except (ValueError,OSError):return False
 
     def inspect_context(self,mode,assistant_id,context,remote=False):
         binding=self.validate_assistant(assistant_id)

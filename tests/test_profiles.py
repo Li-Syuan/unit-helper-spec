@@ -8,7 +8,7 @@ import time
 import unittest
 import uuid
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from desktop_app.profiles import Profiles, CredentialVault
 from desktop_app.core import Store, Engine
 from desktop_app.gateways import GatewayError
@@ -59,9 +59,89 @@ class ProfileTests(unittest.TestCase):
     def test_unconfigured_api_does_not_guess_or_dispatch(self):
         pid=self.p.save('數據','company-id')
         with patch('desktop_app.profiles.CompanyAssistant') as adapter:
-            with self.assertRaisesRegex(GatewayError,'API 格式'):
+            from desktop_app.assistant_errors import AssistantFailure
+            with self.assertRaises(AssistantFailure) as caught:
                 self.p.respond([{'role':'user','content':'hello'}],'chat',self.p.snapshot(pid))
+            self.assertEqual((caught.exception.code,caught.exception.stage,caught.exception.sent),('LOCAL_SETUP','preflight',False))
             adapter.assert_not_called()
+
+    def test_individual_key_isolation_no_fallback_and_shared_change_scope(self):
+        self.p.set_endpoint('https://company.invalid/v1');self.p.save_key('shared-synthetic')
+        one=self.p.save('one','asst_one');two=self.p.save('two','asst_two')
+        old_one=self.p.snapshot(one);old_two=self.p.snapshot(two)
+        self.p.save_profile_key(two,'individual-synthetic');individual=self.p.snapshot(two)
+        self.assertEqual(self.p.key(old_one),'shared-synthetic')
+        self.assertEqual(self.p.key(individual),'individual-synthetic')
+        self.assertEqual(self.p.information(old_two)['credential_mode'],'shared')
+        self.p.save_key('shared-replaced')
+        self.assertEqual(self.p.snapshot(two),individual)
+        with self.assertRaises(GatewayError):self.p.validate(old_one)
+        self.assertEqual(self.p.key(individual),'individual-synthetic')
+        self.p.remove_profile_key(two)
+        with self.assertRaisesRegex(GatewayError,'不會改用共用'):self.p.key(self.p.snapshot(two))
+        self.p.use_shared_key(two);self.assertEqual(self.p.key(self.p.snapshot(two)),'shared-replaced')
+        self.p.save_profile_key(two,'second-individual');self.p.set_endpoint('https://other.invalid/v1')
+        for pid in (one,two):
+            with self.assertRaises(GatewayError):self.p.key(self.p.snapshot(pid))
+        self.assertEqual(self.vault.values,{})
+        self.assertNotIn('synthetic',self.p.path.read_text('utf-8'))
+
+    def test_individual_key_write_failure_preserves_old_binding_and_key(self):
+        pid=self.p.save('one','asst_one');self.p.save_profile_key(pid,'old-value')
+        old=copy.deepcopy(self.p.data);binding=self.p.snapshot(pid)
+        with patch.object(self.p,'_write',side_effect=OSError('synthetic write failure')):
+            with self.assertRaises(OSError):self.p.save_profile_key(pid,'new-value')
+            with self.assertRaises(OSError):self.p.use_shared_key(pid)
+            with self.assertRaises(OSError):self.p.remove_profile_key(pid)
+        self.assertEqual(old,self.p.data);self.assertEqual(self.p.key(binding),'old-value')
+        self.assertEqual(list(self.vault.values.values()),['old-value'])
+        with patch.object(self.vault,'remove',side_effect=RuntimeError('native cleanup detail')):
+            result=self.p.save_profile_key(pid,'replacement')
+        self.assertTrue(result['cleanup_pending']);self.assertNotIn('native',json.dumps(result))
+        self.assertEqual(self.p.key(self.p.snapshot(pid)),'replacement')
+        self.assertNotEqual(binding,self.p.snapshot(pid))
+
+    def test_credential_change_revokes_search_and_verified_workflow(self):
+        from tests.test_search_tools import SEARCH_TOOL
+        self.p.set_wire_mode('assistants');pid=self.p.save('one','asst_one')
+        for action in (lambda:self.p.save_profile_key(pid,'one'),lambda:self.p.remove_profile_key(pid),
+                       lambda:self.p.use_shared_key(pid),lambda:self.p.save_key('shared'),lambda:self.p.remove_key()):
+            self.p.set_search_policy(self.p.snapshot(pid),{'tools':[SEARCH_TOOL]},chat_enabled=True)
+            self.p.set_workflow_capability(pid,['rag'],True,'synthetic evidence');old=self.p.snapshot(pid)
+            action();new=self.p.validate(self.p.snapshot(pid))
+            self.assertGreater(new['revision'],old['revision']);self.assertFalse(new['chat_search_enabled'])
+            self.assertNotIn('search_policy',new);self.assertFalse(new['workflow']['verified'])
+            self.assertTrue(self.p.information(old)['chat_search_enabled'])
+
+    def test_preflight_failure_is_unsent_but_remote_failure_keeps_sent(self):
+        from desktop_app.assistant_errors import AssistantFailure
+        self.p.set_wire_mode('assistants');pid=self.p.save('one','asst_one');binding=self.p.snapshot(pid)
+        with patch.object(self.p,'_assistants_client') as factory:
+            with self.assertRaises(AssistantFailure) as caught:self.p.respond([],'chat',binding)
+            self.assertFalse(caught.exception.sent);factory.assert_not_called()
+        self.p.save_profile_key(pid,'synthetic');binding=self.p.snapshot(pid)
+        with patch.object(self.p,'_assistants_client',side_effect=RuntimeError('PRIVATE')):
+            with self.assertRaises(AssistantFailure) as caught:self.p.respond([],'chat',binding)
+            self.assertFalse(caught.exception.sent);self.assertNotIn('PRIVATE',str(caught.exception))
+        failure=AssistantFailure('FORBIDDEN','run_create',http_status=403);client=Mock()
+        client.respond.side_effect=failure
+        with patch.object(self.p,'_assistants_client',return_value=client):
+            with self.assertRaises(AssistantFailure) as caught:self.p.respond([],'chat',binding)
+        self.assertIs(caught.exception,failure);self.assertTrue(caught.exception.sent);client.close.assert_called_once()
+
+    def test_unsent_retry_checks_current_binding_and_readonly_ledger_absence(self):
+        from desktop_app.assistants_gateway import session_context
+        self.p.set_wire_mode('assistants');pid=self.p.save('one','asst_one');binding=self.p.snapshot(pid)
+        context={'conversation_id':'c','request_id':'r'};path=self.path/'assistant-sessions.sqlite3'
+        self.assertTrue(self.p.can_retry_unsent(binding,context));self.assertFalse(path.exists())
+        self.assertFalse(self.p.can_retry_unsent(binding,{}));self.assertFalse(self.p.can_retry_unsent(dict(binding,revision=99),context))
+        sid,rid,_,_=session_context(binding,'chat',context)
+        with sqlite3.connect(path) as db:
+            db.execute('CREATE TABLE requests(session_id TEXT,id TEXT,data TEXT)')
+            db.execute('INSERT INTO requests VALUES(?,?,?)',(sid,rid,'{}'))
+        before=path.read_bytes()
+        self.assertFalse(self.p.can_retry_unsent(binding,context));self.assertTrue(self.p.can_retry_unsent(binding,dict(context,request_id='other')))
+        self.assertEqual(before,path.read_bytes())
     def test_confirmed_mapping_and_per_request_destination(self):
         self.p.set_endpoint('https://company.invalid/v1');self.p.save_key('secret')
         one=self.p.save('一','one');two=self.p.save('二','two');self.p.data['wire_mode']='model'

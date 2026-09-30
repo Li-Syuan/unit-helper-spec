@@ -1,2 +1,2 @@
 """QA agent local desktop. Company services are explicit adapters."""
-__version__ = "0.19.0"
+__version__ = "0.20.0"

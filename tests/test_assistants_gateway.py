@@ -7,6 +7,7 @@ from openai import OpenAI
 from desktop_app.assistants_gateway import AssistantsGateway
 from desktop_app.gateways import GatewayError
 from test_support.assistants_mock import AssistantsMock
+from desktop_app.assistant_errors import AssistantFailure
 
 
 class AssistantsGatewayTests(unittest.TestCase):
@@ -50,6 +51,76 @@ class AssistantsGatewayTests(unittest.TestCase):
         self.assertEqual(run['assistant_id'], 'asst_fixture')
         self.assertEqual(run['tool_choice'], 'none')
 
+    def test_ten_turns_per_distinct_assistant_no_history_leak_or_replayed_post(self):
+        for aid in ('asst_first','asst_second'):
+            gateway=self.gateway(binding={'profile_id':aid,'revision':1});gateway.assistant_id=aid
+            history=[]
+            for turn in range(10):
+                history.append({'role':'user','content':aid+' synthetic '+str(turn)})
+                context={'conversation_id':'same-local-id','request_id':'turn-'+str(turn)}
+                answer=gateway.respond(history,context=context)
+                before=len(self.mock.requests)
+                self.assertEqual(gateway.respond(history,context=context),answer)
+                self.assertEqual(before,len(self.mock.requests))
+                history.append({'role':'assistant','content':answer})
+        self.assertEqual(len(self.mock.threads),2);self.assertEqual(len(self.mock.runs),20)
+        for record in self.mock.runs.values():
+            run=record['run'];messages=self.mock.threads[run['thread_id']]
+            self.assertEqual(len(messages),20)
+            for message in messages:
+                if message['role']=='user':self.assertTrue(message['content'][0]['text']['value'].startswith(run['assistant_id']))
+
+    def test_http_classification_and_metadata_failure_does_not_block_chat(self):
+        for status,code in ((401,'AUTHENTICATION'),(403,'FORBIDDEN'),(404,'NOT_FOUND'),(429,'RATE_LIMIT')):
+            def transport(request):
+                if '/assistants/' in request.url.path:
+                    return httpx.Response(status,json={'error':{'message':'DO-NOT-LEAK-private-body'}})
+                return self.mock.handle(request)
+            gateway=self.gateway(transport,binding={'profile_id':str(status),'revision':1})
+            with self.assertRaises(AssistantFailure) as caught:gateway.inspect_assistant()
+            self.assertEqual(caught.exception.code,code);self.assertEqual(caught.exception.stage,'assistant_metadata')
+            self.assertEqual(caught.exception.http_status,status)
+            self.assertNotIn('DO-NOT-LEAK',str(caught.exception))
+            self.assertEqual(gateway.respond(self.messages,context=self.ctx),'合成答案')
+
+    def test_total_timeout_config_and_failure_metadata_are_allowlisted(self):
+        from desktop_app.config import validate_config
+        from desktop_app.assistant_errors import decode_failure
+        import json
+        self.assertEqual(validate_config({})['assistant']['run_timeout_seconds'],600)
+        self.assertEqual(validate_config({'assistant':{'run_timeout_seconds':900}})['assistant']['run_timeout_seconds'],900)
+        for value in (True,0,1801,'600'):
+            with self.assertRaises(ValueError):validate_config({'assistant':{'run_timeout_seconds':value}})
+        failure=AssistantFailure('RUN_FAILED','run_poll',remote_code='private body')
+        self.assertIsNone(decode_failure(json.dumps(failure.metadata())).remote_code)
+        self.assertTrue(AssistantFailure('TIMEOUT','preflight',sent=False).sent)
+
+    def test_live_check_requires_explicit_flag_and_uses_temporary_workspace(self):
+        import runpy
+        import copy
+        from unittest.mock import patch
+        from desktop_app.profiles import Profiles
+        from tests.test_profiles import MemoryVault
+        entry=runpy.run_path(str(Path(__file__).resolve().parents[1]/'scripts/check-assistants.py'))
+        with patch('desktop_app.profiles.Profiles',side_effect=AssertionError('must not load settings')):
+            self.assertEqual(entry['main']([]),0)
+        p=Profiles(Path(self.tmp.name)/'source'/'assistants.json',vault=MemoryVault())
+        p.set_endpoint('https://fixture.example.test/v1');p.set_wire_mode('assistants');p.save_key('synthetic')
+        ids=[p.save('合成'+str(i),'asst_distinct_'+str(i)) for i in range(2)]
+        original=p.path;before=original.read_bytes();original_data=copy.deepcopy(p.data)
+        def client(data,profile,key,binding):
+            sdk=OpenAI(api_key=key,base_url=data['endpoint'],max_retries=0,
+                       http_client=httpx.Client(transport=httpx.MockTransport(self.mock.handle)))
+            return AssistantsGateway({'base_url':data['endpoint'],'assistant_id':profile['assistant_id']},
+                key,p.path.parent/'assistant-sessions.sqlite3',binding,client=sdk)
+        with patch.object(p,'_assistants_client',side_effect=client):
+            result=entry['exercise'](p,ids,Path(self.tmp.name)/'isolated')
+        self.assertEqual(result['service'],'company_real_passed') # transport remains synthetic in this unit test
+        self.assertEqual([r['completed_turns'] for r in result['profiles']],[10,10])
+        self.assertEqual(len(self.mock.threads),2);self.assertEqual(original.read_bytes(),before)
+        self.assertNotIn('asst_distinct_',__import__('json').dumps(result))
+        self.assertEqual([v['assistant_id'] for v in original_data['profiles']],['asst_distinct_0','asst_distinct_1'])
+
     def test_assistant_inspection_is_one_get_not_permission_or_search(self):
         self.mock.assistant_tools=[{'type':'function','function':{'name':'synthetic_search','description':'synthetic only','parameters':{'type':'object'}}}]
         result=self.gateway().inspect_assistant()
@@ -63,7 +134,7 @@ class AssistantsGatewayTests(unittest.TestCase):
         def wrong(request):return httpx.Response(200,json={'id':'wrong','object':'assistant','created_at':0,'model':'synthetic','tools':[]})
         with self.assertRaisesRegex(GatewayError,'識別'):self.gateway(wrong).inspect_assistant()
         self.mock.fail_status=403
-        with self.assertRaisesRegex(GatewayError,'沒有執行搜尋'):self.gateway().inspect_assistant()
+        with self.assertRaisesRegex(GatewayError,'權限'):self.gateway().inspect_assistant()
 
     def test_isolation_binding_conversation_and_ephemeral(self):
         self.gateway().respond(self.messages, context=self.ctx)
@@ -139,8 +210,9 @@ class AssistantsGatewayTests(unittest.TestCase):
             self.gateway().respond(self.messages)
         self.mock.fail_status = None
         self.mock.reply = ' '
-        with self.assertRaisesRegex(GatewayError, '沒有可用文字'):
+        with self.assertRaises(AssistantFailure) as blank:
             self.gateway().respond(self.messages)
+        self.assertEqual((blank.exception.code,blank.exception.stage),('FORMAT','messages_read'))
         self.mock.statuses = ['failed']
         with self.assertRaisesRegex(GatewayError, '未完成'):
             self.gateway().respond(self.messages)
@@ -235,8 +307,9 @@ class AssistantsGatewayTests(unittest.TestCase):
                 data['data'][-1]['content']=[{'type':'image_file','image_file':{'file_id':'synthetic'}}]
                 return httpx.Response(200,json=data)
             return response
-        with self.assertRaisesRegex(GatewayError,'不支援'):
+        with self.assertRaises(AssistantFailure) as nontext:
             self.gateway(non_text).respond(self.messages)
+        self.assertEqual((nontext.exception.code,nontext.exception.stage),('FORMAT','messages_read'))
 
     def test_active_session_refuses_double_dispatch_but_other_session_works(self):
         entered, release = threading.Event(), threading.Event()

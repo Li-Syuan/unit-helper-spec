@@ -212,4 +212,18 @@ powershell.exe -NoProfile -File scripts/export-icon.ps1 -Source desktop_app/asse
 
 ## 多助理合成驗證
 
+## 達哥十輪連線測試
+
+`scripts/check-assistants.py` 不加參數時回報 not_tested，不讀設定或金鑰。取得核准後，先用 UI 保存端點、助理與金鑰；關閉 App，再明確執行（路徑與 profile ID 換成本機值；profile ID 是 assistants.json 中 profiles[].id，不是遠端 assistant ID）：
+
+```bat
+.venv\Scripts\python.exe scripts\check-assistants.py --live --profiles "C:\approved-data\assistants.json" --config "C:\approved-data\config.json" --profile LOCAL_PROFILE_ID --output artifacts\assistant-live.json
+```
+
+每個 `--profile` 連續十輪，最多四位助理；有多位可重複給此參數。文字是固定合成內容，不送既有對話。金鑰從原設定的認證管理員／相容環境變數讀取；不得把 key 放命令列或報告。單位有 CA 或 timeout 設定時須提供 `--config`。不自動重試，失敗停止該助理，其餘可分別回報。
+
+搜尋另做一次：先由 UI 核准唯讀工具並勾選允許一般聊天使用，再以上述命令加 `--search`。此時每助理只送一題公開 Python 發布日期查詢，須有完成的搜尋／提交收據才標搜尋執行通過；仍由人核對日期及來源，收到文字不能當成搜尋成功。沒有核准就停止。
+
+真正加 `--live` 可能使用模型額度；不會由 doctor、test 或 App 背景自動執行。只寫暫存帳本，結束清除，不修改原 assistants.json、對話或排程；遠端測試 thread 不自動刪除，依平台保存政策管理。報告只含助理序號、輪數與白名單錯誤，無 ID、URL、回覆或金鑰。此處本機驗證用合成傳輸，真實達哥服務仍 not_tested。
+
 `.\scripts\test.ps1 -Suite targeted -Tests tests.test_workflows,tests.test_workflow_profiles,tests.test_workflow_ui` 不使用真實 API。`.venv/Scripts/python.exe scripts/check-workflows.py` 預設 not_tested、零請求；加 `--live` 才對 Groq 發出最多四次合成請求（規劃、分析、覆核、彙整），暫存資料庫結束即清除，不啟用使用者排程。可加 `--output artifacts/workflow-live.json` 保存白名單結果。組織驗收必須獨立完成，不能把此結果改名當組織證據。

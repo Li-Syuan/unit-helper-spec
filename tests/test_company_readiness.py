@@ -53,6 +53,15 @@ class CompanyReadinessTests(unittest.TestCase):
         self.assertFalse(result['ready_for_company_test'])
         self.assertIn('start-app.bat',result['next_step'])
 
+    def test_individual_reference_is_inventory_only_and_never_falls_back(self):
+        pid=self.setup_company();self.p.save_profile_key(pid,'synthetic')
+        self.p.data['credential_source']='environment'
+        self.assertTrue(inspect_company(self.p)['ready_for_company_test'])
+        self.p.remove_profile_key(pid)
+        self.p.data['credential_source']='keyring'
+        self.assertFalse(inspect_company(self.p)['ready_for_company_test'])
+        self.p.key.assert_not_called();self.p.respond.assert_not_called()
+
     def test_company_probe_serializes_requests_and_close_fences_result(self):
         from desktop_app.company_readiness import CompanyProbe
         pid=self.setup_company();entered=threading.Event();release=threading.Event();errors=[]

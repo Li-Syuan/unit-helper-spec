@@ -9,6 +9,10 @@ from .gateways import GatewayError
 from .display import scroll_frame
 
 class AssistantViews:
+    def profile_cleanup_notice(self,result):
+        if isinstance(result,dict) and result.get('cleanup_pending'):
+            messagebox.showwarning('認證清理未完成','新金鑰來源已生效，舊金鑰不再使用；Windows 認證管理員仍可能保留舊項目，請由維護者完成清理。',parent=self.root)
+
     def build_assistant_bar(self,parent):
         bar=self.assistant_bar=ttk.Frame(parent); bar.pack(fill='x',pady=(0,6))
         controls=self.chat_assistant_controls=ttk.Frame(bar);controls.pack(side='left')
@@ -37,6 +41,8 @@ class AssistantViews:
         label='用途（自填）：'+(notes[:80]+'…' if len(notes)>80 else notes)
         if p and p['id']!='demo' and not p.get('legacy') and self.profiles.data['wire_mode']=='unconfigured':
             label+=' · API 格式待組織確認'
+        if p and p['id']!='demo' and not self.groq_trial:
+            label+=' · 一般聊天搜尋：'+('已核准' if p.get('chat_search_enabled') and p.get('search_policy',{}).get('tools') else '未核准')
         self.assistant_usage.configure(text=label)
     def switch_assistant(self,event=None):
         index=self.profile_picker.current()
@@ -63,7 +69,7 @@ class AssistantViews:
             ttk.Label(tab,text='在專案 .env 填寫 GROQ_API_KEY。只傳送你送出的文字與本段對話。\n請用虛構資料體驗，勿傳送組織機密或個資。\n查詢仍使用合成資料，AD／Oracle 尚未接線。\n免費額度由 Groq 帳戶方案決定；超限會停止，不自動重試或更換方案。',wraplength=650,justify='left',style='Muted.TLabel').pack(anchor='w',pady=12)
             self.button(tab,'試用操作說明',lambda:self.show_help('Groq 外部 AI 試用'),'Quiet.TButton').pack(anchor='w')
             return
-        self.section(tab,'共用連線','所有AI 助理共用 endpoint 與 API key')
+        self.section(tab,'共用連線','助理共用 endpoint；可在編輯助理時改用個別 API key')
         self.endpoint_var=tk.StringVar(value=self.profiles.data['endpoint'])
         row=ttk.Frame(tab);row.pack(fill='x',pady=6)
         ttk.Label(row,text='Endpoint',width=14).pack(side='left')
@@ -108,9 +114,11 @@ class AssistantViews:
         if not ids: raise GatewayError('請先選一位助理。')
         return ids[0]
     def save_endpoint(self):
-        self.require_profile_edit(); self.profiles.set_endpoint(self.endpoint_var.get())
+        with self.engine._lock:
+            self.require_profile_edit(); result=self.profiles.set_endpoint(self.endpoint_var.get())
         self.key_label.configure(text='API key：'+self.profiles.key_status()); self.refresh_profiles()
         self.status.set('Endpoint 已保存；改變目的地後請重新設定 API key。')
+        self.profile_cleanup_notice(result)
 
     def save_wire_mode(self):
         self.require_profile_edit()
@@ -140,15 +148,21 @@ class AssistantViews:
         visible=tk.BooleanVar()
         ttk.Checkbutton(body,text='顯示輸入內容',variable=visible,command=lambda:entry.configure(show='' if visible.get() else '●')).pack(anchor='w')
         def save():
-            self.require_profile_edit(); self.profiles.save_key(value.get());value.set('')
+            with self.engine._lock:
+                self.require_profile_edit(); result=self.profiles.save_key(value.get());value.set('')
+            self.refresh_profiles();self.refresh_workflow_catalog()
             self.key_label.configure(text='API key：'+self.profiles.key_status());w.destroy()
+            self.profile_cleanup_notice(result)
         self.button(body,'保存金鑰',save,'Primary.TButton').pack(pady=10)
         w.protocol('WM_DELETE_WINDOW',lambda:(value.set(''),w.destroy()))
         self.appearance.apply(w);entry.focus_set()
     def remove_key(self):
         self.require_profile_edit()
-        if messagebox.askyesno('移除 API key','移除本應用金鑰後，AI 助理將無法呼叫。確認移除？',parent=self.root):
-            self.profiles.remove_key();self.key_label.configure(text='API key：'+self.profiles.key_status())
+        if messagebox.askyesno('移除 API key','使用共用金鑰的助理將無法呼叫，個別金鑰仍保留。確認移除？',parent=self.root):
+            with self.engine._lock:
+                self.require_profile_edit();result=self.profiles.remove_key()
+            self.key_label.configure(text='API key：'+self.profiles.key_status());self.refresh_profiles();self.refresh_workflow_catalog()
+            self.profile_cleanup_notice(result)
     def edit_profile(self,pid=None):
         self.require_profile_edit()
         if pid=='demo': raise GatewayError('內建示範助理不需編輯。')
@@ -159,10 +173,38 @@ class AssistantViews:
             ttk.Label(body,text=label).pack(anchor='w');v=tk.StringVar(value=p.get(key,''));values[key]=v
             ttk.Entry(body,textvariable=v,width=65).pack(fill='x',pady=(4,12))
         ttk.Label(body,text='修改 assistant ID 會建立新連線版本；舊對話與 Plan 不會轉送。',style='Muted.TLabel').pack()
+        if pid:
+            group=ttk.LabelFrame(body,text='金鑰與聊天搜尋',padding=10);group.pack(fill='x',pady=12)
+            summary=ttk.Label(group,wraplength=620,justify='left');summary.pack(fill='x')
+            key=tk.StringVar();entry=ttk.Entry(group,textvariable=key,show='●');entry.pack(fill='x',pady=8)
+            ttk.Label(group,text='只填新的個別金鑰，不讀回既有值。變更會撤銷搜尋核准與分工驗證。',style='Muted.TLabel',wraplength=620).pack(fill='x')
+            row=ttk.Frame(group);row.pack(fill='x',pady=8)
+            def update_key_status():
+                current=next(x for x in self.profiles.items() if x['id']==pid)
+                summary.configure(text='金鑰來源：'+('個別金鑰' if current.get('credential_mode')=='individual' else '共用金鑰')+' · '+self.profiles.key_status(self.profiles.snapshot(pid))+'\n一般聊天搜尋：'+('已核准' if current.get('chat_search_enabled') and current.get('search_policy',{}).get('tools') else '未核准')+'；任務草稿與規劃停用工具。')
+                remove.configure(state='normal' if current.get('credential_mode')=='individual' else 'disabled')
+            def change_key(action):
+                with self.engine._lock:
+                    self.require_profile_edit()
+                    if action=='save':result=self.profiles.save_profile_key(pid,key.get())
+                    elif action=='shared':result=self.profiles.use_shared_key(pid)
+                    else:result=self.profiles.remove_profile_key(pid)
+                key.set('');update_key_status();self.refresh_profiles();self.refresh_workflow_catalog()
+                self.profile_cleanup_notice(result)
+            save_key=self.button(row,'保存個別金鑰',lambda:change_key('save'));save_key.pack(side='left',padx=3)
+            shared=self.button(row,'改用共用金鑰',lambda:change_key('shared'));shared.pack(side='left',padx=3)
+            remove=self.button(row,'移除個別金鑰',lambda:change_key('remove'));remove.pack(side='left',padx=3)
+            update_key_status()
+            w.profile_credentials={'value':key,'summary':summary,'save':save_key,'shared':shared,'remove':remove}
+            w.protocol('WM_DELETE_WINDOW',lambda:(key.set(''),w.destroy()))
+        else:ttk.Label(body,text='新助理預設使用共用金鑰；保存後可在編輯助理設定個別金鑰。',style='Muted.TLabel',wraplength=650).pack(fill='x',pady=10)
         def save():
-            self.require_profile_edit();self.profiles.save(**{k:v.get() for k,v in values.items()},profile_id=pid,enabled=p.get('enabled',True))
+            with self.engine._lock:
+                self.require_profile_edit();self.profiles.save(**{k:v.get() for k,v in values.items()},profile_id=pid,enabled=p.get('enabled',True))
+            if pid:key.set('')
             self.refresh_profiles();w.destroy()
         self.button(body,'保存助理',save,'Primary.TButton').pack(pady=10);self.appearance.apply(w)
+        return w
     def default_profile(self):
         self.require_profile_edit();self.profiles.set_default(self.selected_profile());self.refresh_profiles()
     def toggle_profile(self):

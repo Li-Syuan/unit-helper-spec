@@ -426,6 +426,7 @@ class Engine:
                     task=self.store.task(task_id)
                     context={'conversation_id':('engine:'+task['conversation_id']) if purpose=='chat' and task['conversation_id'] else 'task:'+task_id,
                              'search_authorized':task['kind']=='assistant_briefing',
+                             'operation':'ordinary_chat' if task['kind']=='chat' else task['kind'],
                              'request_id':task_id,'cancelled':lambda:self._closed or self.store.task(task_id)['state']!='running'}
                     return self.assistant_router(messages,purpose,binding,context=context)
                 return self.assistant_router(messages,purpose,binding)

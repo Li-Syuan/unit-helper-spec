@@ -29,6 +29,29 @@ class AssistantUITests(unittest.TestCase):
             task=a.store.tasks()[0]
             self.assertEqual(self.wait(task['id'])['state'],'succeeded')
         self.assertIn('示範',a.store.messages(a.conversation)[-1]['text'])
+
+    def test_profile_editor_individual_shared_remove_and_search_label_without_dispatch(self):
+        from tests.test_profiles import MemoryVault
+        from tests.test_search_tools import SEARCH_TOOL
+        a=self.a;a.profiles.vault=MemoryVault();a.profiles.save_key('shared-synthetic')
+        a.profiles.set_wire_mode('assistants');pid=a.profiles.save('synthetic','asst_one')
+        a.profiles.set_search_policy(a.profiles.snapshot(pid),{'tools':[SEARCH_TOOL]},chat_enabled=True)
+        w=a.edit_profile(pid);self.root.update();controls=w.profile_credentials
+        self.assertIn('一般聊天搜尋：已核准',controls['summary'].cget('text'))
+        controls['value'].set('individual-synthetic');controls['save'].invoke();self.root.update()
+        self.assertEqual(a.profiles.key(a.profiles.snapshot(pid)),'individual-synthetic')
+        self.assertEqual(controls['value'].get(),'');self.assertIn('一般聊天搜尋：未核准',controls['summary'].cget('text'))
+        with patch.object(a.profiles.vault,'remove',side_effect=RuntimeError('PRIVATE cleanup detail')):
+            with patch('desktop_app.assistant_views.messagebox.showwarning') as warning:
+                controls['remove'].invoke();self.root.update()
+                warning.assert_called_once();self.assertIn('仍可能保留',warning.call_args.args[1])
+                self.assertNotIn('PRIVATE',str(warning.call_args))
+        with self.assertRaises(GatewayError):a.profiles.key(a.profiles.snapshot(pid))
+        controls['shared'].invoke();self.root.update()
+        self.assertEqual(a.profiles.key(a.profiles.snapshot(pid)),'shared-synthetic')
+        self.assertEqual(str(controls['remove'].cget('state')),'disabled')
+        a.change_theme('light');self.root.update();a.change_theme('dark');self.root.update()
+        self.assertEqual(a.store.tasks(),[]);w.destroy()
     def test_switch_new_conversation_preserves_private_draft_and_attachment(self):
         a=self.a;old=a.conversation;a.input.insert('end','private draft')
         a.attachment={'name':'original.txt','text':'private attachment','kind':'txt'}
@@ -84,4 +107,3 @@ class AssistantUITests(unittest.TestCase):
         a.safe=safe;a.open_result_handoff();a.safe=original
         self.assertTrue(errors);self.assertEqual(str(a.handoff_window.transfer_confirm['state']),'disabled')
         self.assertEqual(len(a.store.tasks()),1);a.handoff_window.destroy()
-

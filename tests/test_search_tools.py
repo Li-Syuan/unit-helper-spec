@@ -170,6 +170,7 @@ class SearchPolicyTests(unittest.TestCase):
         old=self.p.snapshot(self.pid);token=self.probe.inspect(self.pid)['policy_token']
         result=self.probe.approve(token,['internet_search'],True)
         self.assertEqual(result['company_search'],'not_tested');self.assertGreater(result['revision'],old['revision'])
+        self.assertFalse(result['chat_search_enabled'])
         self.assertFalse(self.p.workflow_catalog())
         with self.assertRaises(GatewayError):self.p.validate(old)
         with self.assertRaises(ValueError):self.probe.approve(token,['internet_search'],True)
@@ -186,11 +187,33 @@ class SearchPolicyTests(unittest.TestCase):
     def test_endpoint_id_and_protocol_changes_clear_permissions(self):
         for mode in ('id','endpoint','wire'):
             self.p.set_wire_mode('assistants')
-            self.p.set_search_policy(self.p.snapshot(self.pid),{'tools':[SEARCH_TOOL]})
+            self.p.set_search_policy(self.p.snapshot(self.pid),{'tools':[SEARCH_TOOL]},chat_enabled=True)
             if mode=='id':self.p.save('other','asst_other',profile_id=self.pid)
             elif mode=='endpoint':self.p.set_endpoint('https://different.test/v1')
             else:self.p.set_wire_mode('model')
             self.assertNotIn('search_policy',self.p.validate(self.p.snapshot(self.pid)))
+            self.assertFalse(self.p.validate(self.p.snapshot(self.pid))['chat_search_enabled'])
+
+    def test_chat_consent_is_explicit_and_profiles_gate_only_ordinary_chat(self):
+        token=self.probe.inspect(self.pid)['policy_token']
+        with self.assertRaises(ValueError):self.probe.approve(token,['internet_search'],True,chat_enabled='true')
+        self.probe.approve(token,['internet_search'],True,chat_enabled=True)
+        self.p.key=Mock(return_value='synthetic');client=Mock();client.respond.return_value='reply'
+        self.p._assistants_client=Mock(return_value=client)
+        binding=self.p.snapshot(self.pid)
+        for operation,purpose,expected in [('ordinary_chat','chat',True),('ordinary_chat','workflow_plan',False),
+                                           ('task_draft','chat',False),('task_draft','workflow_step',False)]:
+            context={'operation':operation,'search_authorized':not expected}
+            self.p.respond([] ,purpose,binding,context=context)
+            self.assertEqual(client.respond.call_args.kwargs['context']['search_authorized'],expected)
+            self.assertEqual(context['search_authorized'],not expected)
+        self.p.respond([],'chat',binding,context={'operation':'assistant_briefing','search_authorized':True})
+        self.assertTrue(client.respond.call_args.kwargs['context']['search_authorized'])
+        self.p.set_search_policy(binding,{'tools':[SEARCH_TOOL]})
+        self.p.respond([],'chat',self.p.snapshot(self.pid),context={'operation':'ordinary_chat','search_authorized':True})
+        self.assertFalse(client.respond.call_args.kwargs['context']['search_authorized'])
+        self.p.set_search_policy(self.p.snapshot(self.pid),None,chat_enabled=True)
+        self.assertFalse(self.p.validate(self.p.snapshot(self.pid))['chat_search_enabled'])
     def test_rag_only_workflow_authorization(self):
         self.p.set_workflow_capability(self.pid,['planner','analysis','review','compose','rag'],True,'synthetic')
         self.p.respond=Mock(return_value='synthetic')

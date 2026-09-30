@@ -1,4 +1,6 @@
-# QA agent 0.19.0 現行架構
+# QA agent 0.20.0 現行架構
+
+Assistants 連接依官方頁面 2719802 核對；assistant_errors.py 提供安全分類，config 接受單次30秒／總工作600秒預設。DialogueService 只對持久化的未派發 preflight 失敗提供 retry_unsent；缺少遠端紀錄不是證據。Profiles 提供共用／個別 keyring 金鑰與連線修訂，聊天搜尋另需 chat_search_enabled，不因已有搜尋 policy 自動開放。無新依賴或資料庫遷移。
 
 WebView主要交付，Tk備用。主Store仍schema6；獨立DialogueStore升schema2，先SQLite backup、交易遷移，保留task_drafts CHECK=0。DialogueService保存失敗原request；inspect只讀、recover沿同ID用已知run/cache，unknown POST/取消不可重送。另開對話預設僅草稿；明確預覽確認才複製歷史。新恢復入口的I/O不持有bridge全域鎖。
 
@@ -37,7 +39,7 @@ AssistantsGateway 使用 Threads/Messages/Runs。Profiles.respond 增加可選 c
 
 ProfileDialogueProvider 讓主畫面明確選擇示範／組織；一般聊天沿用對話 thread。建立任務每輪帶完整已顯示歷史與草稿，使用獨立遠端 thread，避免 JSON 原文與 UI 顯示訊息混用；只有 confirm 能存未啟用草稿。主畫面有對話紀錄與取消入口；I/O 不持有 bridge 全域鎖，關閉先阻止寫回並等待請求收尾。
 
-搜尋 policy 與助理連線 revision 綁定。只有經確認的 assistant_briefing／rag 步驟使用核准 tools＋auto；其餘呼叫 tool_choice=none。未知工具、錯誤參數整批停止。最多4工具／批、3批／run、600秒、單回覆128KiB。請求與工具回執保存原有 assistant-sessions SQLite JSON，不更改 schema 或依賴；工具POST／submit結果未明不重送。核准變更在派發鎖內完成並拒絕真實請求未結束時修改。來源與事實仍需人核對。
+搜尋 policy 與助理連線 revision 綁定。經確認的 assistant_briefing／rag 步驟與另行勾選 chat_search_enabled 的普通聊天使用核准 tools＋auto；其餘呼叫 tool_choice=none。未知工具、錯誤參數整批停止。最多4工具／批、3批／run、600秒、單回覆128KiB。請求與工具回執保存原有 assistant-sessions SQLite JSON，不更改 schema 或依賴；工具POST／submit結果未明不重送。核准變更在派發鎖內完成並拒絕真實請求未結束時修改。來源與事實仍需人核對。
 
 新增 workflow_inspect、workflow_resume、workflow_abandon 僅由明確 UI 操作呼叫。人工重試不允許繞過未釐清遠端請求。既有結束結果可讀，舊工作不自動遷移為可恢復 graph。正常關閉中的工作仍取消；意外中斷或可查的未明遠端 run 提供人工恢復。
 

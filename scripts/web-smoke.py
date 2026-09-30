@@ -293,9 +293,11 @@ def main():
                 from test_support.search_mock import SearchMock
                 company_mock=SearchMock()
                 profiles=session.profiles
+                from tests.test_profiles import MemoryVault
+                profiles.vault=MemoryVault()
                 profiles.set_endpoint('https://fixture.example.test/v1');profiles.set_wire_mode('assistants')
                 pid=profiles.save('合成AI 助理','asst_synthetic')
-                profiles.key=lambda:'synthetic-test-key'
+                profiles.key=lambda binding=None:'synthetic-test-key'
                 def mock_client(d,p,key,binding):
                     sdk=OpenAI(base_url='https://fixture.example.test/v1',api_key=key,max_retries=0,
                         http_client=httpx.Client(transport=httpx.MockTransport(company_mock.handle)))
@@ -309,7 +311,22 @@ def main():
                 time.sleep(.2)
                 window.evaluate_js("document.getElementById('dialogue-assistant').value="+json.dumps(selection)+";document.getElementById('dialogue-assistant').dispatchEvent(new Event('change'))")
                 time.sleep(.3)
-                dialogue_send('合成第一題');dialogue_send('接續合成追問')
+                dialogue_send('合成第一題')
+                from desktop_app.gateways import GatewayError
+                def unavailable_key(binding=None):raise GatewayError('合成認證儲存暫不可用')
+                profiles.key=unavailable_key
+                dialogue_send('接續合成追問')
+                wait_script("Array.from(document.querySelectorAll('#dialogue-result button')).some(b=>b.textContent==='重試未送出')")
+                assert len(company_mock.runs)==1,'preflight_dispatched'
+                window.evaluate_js("Array.from(document.querySelectorAll('#dialogue-result button')).find(b=>b.textContent==='檢查原請求').click()")
+                wait_script("Array.from(document.querySelectorAll('#dialogue-result button')).some(b=>b.textContent==='檢查原請求'&&!b.disabled)")
+                assert window.evaluate_js("Array.from(document.querySelectorAll('#dialogue-result button')).some(b=>b.textContent==='重試未送出')"),'inspect_hid_unsent_retry'
+                capture('unsent-retry.png')
+                profiles.key=lambda binding=None:'synthetic-test-key'
+                window.evaluate_js("Array.from(document.querySelectorAll('#dialogue-result button')).find(b=>b.textContent==='重試未送出').click()")
+                wait_script("!document.getElementById('dialogue-send').disabled")
+                assert window.evaluate_js("document.getElementById('dialogue-input').value")=='' ,'retry_kept_sent_draft'
+                report['checks'].append('proven_unsent_retry_same_request_preserves_history')
                 assert len(company_mock.threads)==1 and len(company_mock.runs)==2,'company_thread_continuity'
                 assert window.evaluate_js("document.getElementById('dialogue-mode-label').textContent.includes('AI 助理')"),'company_badge'
                 window.restore();window.resize(1050,700);time.sleep(.3);capture('company-small.png')
@@ -402,6 +419,37 @@ def main():
                 report['checks'].append('cleanup_cancel_confirm_no_dispatch_preserves_schedule_query_entry')
                 report['checks'].append('company_setup_and_metadata_probe_no_model_dispatch')
                 report['checks'].append('search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search')
+                # Opting chat in is separate from the existing daily-briefing permission.
+                assert profiles.validate(profiles.snapshot(pid)).get('chat_search_enabled') is not True,'old_policy_widened'
+                result=api.call('company_probe',{'profile_id':pid})
+                assert result['ok'],'chat_probe_failed'
+                token=result['data']['policy_token']
+                result=api.call('search_policy_save',{'token':token,'names':['internet_search'],'consent':True,'chat_enabled':True})
+                assert result['ok'],'chat_approval_failed'
+                before_search=len(company_mock.plugin_requests)
+                window.evaluate_js("document.querySelector('[data-page=dialogue]').click()")
+                time.sleep(.4)
+                selection='company:'+pid+':'+str(profiles.snapshot(pid)['revision'])
+                window.evaluate_js("document.getElementById('dialogue-assistant').value="+json.dumps(selection)+";document.getElementById('dialogue-assistant').dispatchEvent(new Event('change'))")
+                time.sleep(.3);dialogue_send('使用核准搜尋的合成測試')
+                assert len(company_mock.plugin_requests)==before_search+1,'chat_search_not_dispatched_once'
+                assert window.evaluate_js("document.getElementById('dialogue-mode-label').textContent.includes('搜尋')"),'chat_search_not_labeled'
+                capture('chat-search.png')
+                report['checks'].append('chat_search_separate_opt_in_and_single_mock_tool_roundtrip')
+                profiles.key=unavailable_key
+                dialogue_send('更換金鑰後要保留的合成草稿')
+                profiles.save_profile_key(pid,'synthetic-new-key');profiles.key=lambda binding=None:'synthetic-new-key'
+                before_fork=len(company_mock.runs)
+                window.evaluate_js("Array.from(document.querySelectorAll('#dialogue-result button')).find(b=>b.textContent==='另開對話保留內容').click()")
+                wait_text('原連線已失效')
+                target='company:'+pid+':'+str(profiles.snapshot(pid)['revision'])
+                assert window.evaluate_js("document.querySelector('#modal-body select').value")==target,'fork_destination_not_current_revision'
+                assert not window.evaluate_js("document.querySelector('#modal-body input[type=checkbox]').checked"),'fork_history_default_changed'
+                capture('new-connection-preview.png')
+                click_button('建立新對話');wait_script("!document.getElementById('modal').open")
+                assert window.evaluate_js("document.getElementById('dialogue-input').value")=='更換金鑰後要保留的合成草稿','revision_fork_lost_draft'
+                assert len(company_mock.runs)==before_fork,'revision_fork_dispatched'
+                report['checks'].append('credential_revision_fork_explicit_destination_and_preserved_draft_zero_dispatch')
                 report['viewport']=window.evaluate_js("({width:innerWidth,height:innerHeight,devicePixelRatio})")
                 report['text']=window.evaluate_js('document.body.innerText')
                 report['state']=api.call('state',{})
@@ -413,6 +461,10 @@ def main():
                 report['error_line']=traceback.extract_tb(e.__traceback__)[-1].lineno
                 report['runner_line']=[frame.lineno for frame in traceback.extract_tb(e.__traceback__)
                                        if Path(frame.filename).resolve()==Path(__file__).resolve()][-1]
+                report['runner_trace']=[frame.lineno for frame in traceback.extract_tb(e.__traceback__)
+                                       if Path(frame.filename).resolve()==Path(__file__).resolve()]
+                try:capture('failure.png')
+                except Exception:pass
             finally:
                 (destination/'result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
                 window.destroy()

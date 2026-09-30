@@ -1,5 +1,6 @@
 import json
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -41,6 +42,24 @@ class WebTests(unittest.TestCase):
         self.assertIsNone(self.call('state',cid=other)['draft'])
         self.assertEqual(self.session.store.tasks(),[])
 
+    def test_failed_chat_can_fork_explicitly_to_new_credential_revision_without_dispatch(self):
+        from desktop_app.assistant_errors import AssistantFailure
+        from tests.test_profiles import MemoryVault
+        p=self.session.profiles;p.vault=MemoryVault()
+        p.set_endpoint('https://fixture.example.test/v1');p.set_wire_mode('assistants')
+        pid=p.save('合成助理','asst_fixture');old=f"company:{pid}:{p.snapshot(pid)['revision']}"
+        state=self.call('dialogue_start',mode='chat',assistant_id=old)
+        with patch.object(p,'respond',side_effect=AssistantFailure('LOCAL_SETUP','preflight',sent=False)) as sent:
+            failed=self.api.call('dialogue_send',{'id':state['id'],'text':'需保留的草稿','request_id':'unsent'})
+            self.assertFalse(failed['ok'])
+            p.save_profile_key(pid,'synthetic-private')
+            target=f"company:{pid}:{p.snapshot(pid)['revision']}"
+            self.assertFalse(self.api.call('dialogue_fork',{'id':state['id']})['ok'])
+            new=self.call('dialogue_fork',id=state['id'],assistant_id=target,include_history=False)
+            self.assertEqual(new['assistant_id'],target);self.assertEqual(new['draft_text'],'需保留的草稿')
+            self.assertEqual(new['messages'],[]);self.assertEqual(sent.call_count,1)
+            self.assertEqual(self.call('dialogue_state',id=state['id'])['assistant_id'],old)
+
     def test_chat_and_plan_use_existing_gates(self):
         cid = self.call('new_chat')
         result = self.call('send',cid=cid,text='hello',purpose='chat',planned=True,request_id='p1',seq=1)
@@ -68,6 +87,34 @@ class WebTests(unittest.TestCase):
             result=self.api.call('state',{})
         self.assertFalse(result['ok'])
         self.assertNotIn('SECRET',json.dumps(result))
+
+    def test_profile_credentials_are_guarded_and_private_references_not_published(self):
+        from tests.test_profiles import MemoryVault
+        profiles=self.session.profiles;profiles.vault=MemoryVault()
+        saved=self.api.call('profile_save',{'name':'synthetic','assistant_id':'asst_one'})
+        self.assertTrue(saved['ok'],saved);pid=saved['data']
+        with patch.object(self.session.dialogue,'has_inflight',return_value=True):
+            self.assertFalse(self.api.call('profile_key_save',{'id':pid,'key':'synthetic-private'})['ok'])
+        self.assertEqual(profiles.vault.values,{})
+        self.call('profile_key_save',id=pid,key='synthetic-private')
+        profiles.set_workflow_capability(pid,['planner'],True,'synthetic')
+        state=self.call('state');encoded=json.dumps(state)
+        self.assertNotIn('credential_id',encoded);self.assertNotIn('synthetic-private',encoded)
+        self.assertEqual(next(p for p in state['profiles'] if p['id']==pid)['credential_mode'],'individual')
+        self.assertEqual(state['planners'][0]['credential_mode'],'individual')
+        self.call('profile_key_remove',id=pid)
+        self.call('profile_key_shared',id=pid)
+        self.assertEqual(profiles.validate(profiles.snapshot(pid))['credential_mode'],'shared')
+
+    def test_retry_unsent_does_not_hold_bridge_lock(self):
+        entered=threading.Event();release=threading.Event();results=[]
+        def retry(tid,rid):entered.set();release.wait(3);return {'id':tid,'request_id':rid}
+        with patch.object(self.session.dialogue,'retry_unsent',side_effect=retry):
+            worker=threading.Thread(target=lambda:results.append(self.api.call('dialogue_retry_unsent',{'id':'synthetic','request_id':'original'})))
+            worker.start();self.assertTrue(entered.wait(2))
+            try:self.assertTrue(self.api.call('state')['ok'])
+            finally:release.set();worker.join(3)
+        self.assertEqual(results,[{'ok':True,'data':{'id':'synthetic','request_id':'original'}}])
 
     def test_markdown_cannot_execute_or_fetch(self):
         output=render_markdown('<script>alert(1)</script>\n\n[x](javascript:alert(1)) ![x](https://evil/x)\n\n**粗體**\n\n|A|B|\n|-|-|\n|1|2|')

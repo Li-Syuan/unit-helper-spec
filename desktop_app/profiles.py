@@ -57,6 +57,12 @@ class Profiles:
         ids=[p['id'] for p in d['profiles']]
         if len(ids)!=len(set(ids)) or 'demo' in ids: raise GatewayError('助理識別重複。')
         for p in d['profiles']:
+            p.setdefault('credential_mode','shared')
+            p.setdefault('chat_search_enabled',False)
+            if p['credential_mode'] not in ('shared','individual') or type(p['chat_search_enabled']) is not bool:
+                raise GatewayError('助理金鑰來源或聊天搜尋設定不正確。')
+            if 'credential_id' in p and (not isinstance(p['credential_id'],str) or not p['credential_id']):
+                raise GatewayError('助理金鑰索引不正確。')
             if 'search_policy' in p:
                 from .search_tools import policy
                 p['search_policy']=policy(p['search_policy'])
@@ -106,6 +112,27 @@ class Profiles:
         if p and p['revision']==binding.get('revision'): return p
         return next((copy.deepcopy(p) for p in self.data.get('history',[]) if p['id']==binding.get('profile_id') and p['revision']==binding.get('revision')),None)
 
+    @staticmethod
+    def _revoke(data, profile, *, endpoint=None, drop_legacy=False):
+        data.setdefault('history',[]).append(copy.deepcopy(dict(profile,endpoint=data['endpoint'] if endpoint is None else endpoint)))
+        profile['revision']+=1
+        profile.pop('search_policy',None)
+        profile['chat_search_enabled']=False
+        if drop_legacy:profile.pop('legacy',None)
+        if 'workflow' in profile:profile['workflow']['verified']=False
+
+    def _cleanup_key(self, account):
+        if account:
+            try:self.vault.remove(account)
+            except Exception:return False  # Metadata is authoritative; report residual credentials safely.
+        return True
+
+    @staticmethod
+    def _profile(data, profile_id):
+        profile=next((p for p in data['profiles'] if p['id']==profile_id),None)
+        if profile is None:raise GatewayError('找不到可設定金鑰的助理。')
+        return profile
+
     def save(self,name,assistant_id,notes='',profile_id=None,enabled=True):
         if not name.strip() or not assistant_id.strip(): raise GatewayError('助理名稱與 assistant ID 必填。')
         if len(name)>80 or len(assistant_id)>256 or len(notes)>2000: raise GatewayError('助理欄位超過長度限制。')
@@ -113,11 +140,9 @@ class Profiles:
             d=copy.deepcopy(self.data); p=next((p for p in d['profiles'] if p['id']==profile_id),None)
             if profile_id and p is None: raise GatewayError('找不到可編輯助理。')
             if p is None:
-                p={'id':uuid.uuid4().hex,'revision':1,'enabled':bool(enabled)}; d['profiles'].append(p)
+                p={'id':uuid.uuid4().hex,'revision':1,'enabled':bool(enabled),'credential_mode':'shared','chat_search_enabled':False}; d['profiles'].append(p)
             elif p['assistant_id']!=assistant_id.strip():
-                d.setdefault('history',[]).append(dict(p,endpoint=d['endpoint']))
-                p['revision']+=1; p.pop('legacy',None);p.pop('search_policy',None)
-                if 'workflow' in p:p['workflow']['verified']=False
+                self._revoke(d,p,drop_legacy=True)
             p.update(name=name.strip(),assistant_id=assistant_id.strip(),notes=notes.strip(),enabled=bool(enabled))
             self._write(d); return p['id']
     def set_default(self,profile_id):
@@ -133,40 +158,91 @@ class Profiles:
             except ValueError: raise GatewayError('請填組織 HTTPS endpoint；網址不可含帳密。') from None
         with self.lock:
             d=copy.deepcopy(self.data)
+            old_accounts=[]
             if endpoint!=d['endpoint']:
                 d['endpoint']=endpoint
                 # Credentials are destination-specific. Do not forward an old key to a new endpoint.
+                if d['credential_source']=='keyring':old_accounts.append(d['credential_id'])
                 d['credential_id']=uuid.uuid4().hex; d['credential_source']='keyring'
                 for p in d['profiles']:
-                    d.setdefault('history',[]).append(dict(p,endpoint=self.data['endpoint']))
-                    p['revision']+=1; p.pop('legacy',None);p.pop('search_policy',None)
-                    if 'workflow' in p:p['workflow']['verified']=False
+                    self._revoke(d,p,endpoint=self.data['endpoint'],drop_legacy=True)
+                    if p.get('credential_mode','shared')=='individual':
+                        old_accounts.append(p.get('credential_id'))
+                        p.pop('credential_id',None)
             self._write(d)
+            cleaned=[self._cleanup_key(account) for account in old_accounts]
+            return {'cleanup_pending':not all(cleaned)}
     def save_key(self,key):
         with self.lock:
             d=copy.deepcopy(self.data); d['credential_source']='keyring'
             account=uuid.uuid4().hex
             self.vault.set(account,key); d['credential_id']=account
             old_account=self.data['credential_id'] if self.data['credential_source']=='keyring' else None
+            for p in d['profiles']:
+                if p.get('credential_mode','shared')=='shared':self._revoke(d,p)
             try: self._write(d)
             except Exception:
-                self.vault.remove(account); raise
-            if old_account and old_account!=account:
-                try: self.vault.remove(old_account)
-                except GatewayError: pass  # New key is usable; never expose native error text.
+                self._cleanup_key(account); raise
+            return {'cleanup_pending':not self._cleanup_key(old_account)}
     def remove_key(self):
         with self.lock:
             d=copy.deepcopy(self.data)
-            if d['credential_source']=='keyring': self.vault.remove(d['credential_id'])
-            d['credential_source']='keyring'; self._write(d)
-    def key(self):
+            old_account=d['credential_id'] if d['credential_source']=='keyring' else None
+            d.update(credential_source='keyring',credential_id=uuid.uuid4().hex)
+            for p in d['profiles']:
+                if p.get('credential_mode','shared')=='shared':self._revoke(d,p)
+            self._write(d)
+            return {'cleanup_pending':not self._cleanup_key(old_account)}
+
+    def save_profile_key(self,profile_id,key):
         with self.lock:
-            if self.data['credential_source']=='keyring': value=self.vault.get(self.data['credential_id'])
-            else: value=os.environ.get(self.data['api_key_env'],'')
-        if not value: raise GatewayError('尚未設定共用 API key。')
+            d=copy.deepcopy(self.data);p=self._profile(d,profile_id)
+            old=p.get('credential_id') if p.get('credential_mode','shared')=='individual' else None
+            account=uuid.uuid4().hex
+            self.vault.set(account,key)
+            self._revoke(d,p);p.update(credential_mode='individual',credential_id=account)
+            try:self._write(d)
+            except Exception:
+                self._cleanup_key(account);raise
+            cleaned=self._cleanup_key(old)
+            return dict(self.snapshot(profile_id),cleanup_pending=not cleaned)
+
+    def use_shared_key(self,profile_id):
+        with self.lock:
+            d=copy.deepcopy(self.data);p=self._profile(d,profile_id)
+            if p.get('credential_mode','shared')=='shared':return self.snapshot(profile_id)
+            old=p.get('credential_id')
+            self._revoke(d,p);p['credential_mode']='shared';p.pop('credential_id',None)
+            self._write(d);cleaned=self._cleanup_key(old)
+            return dict(self.snapshot(profile_id),cleanup_pending=not cleaned)
+
+    def remove_profile_key(self,profile_id):
+        with self.lock:
+            d=copy.deepcopy(self.data);p=self._profile(d,profile_id)
+            if p.get('credential_mode','shared')!='individual':raise GatewayError('此助理使用共用金鑰，沒有個別金鑰可移除。')
+            old=p.get('credential_id')
+            self._revoke(d,p);p.pop('credential_id',None)
+            self._write(d);cleaned=self._cleanup_key(old)
+            return dict(self.snapshot(profile_id),cleanup_pending=not cleaned)
+
+    def key(self,binding=None):
+        with self.lock:
+            p=self.validate(binding) if binding is not None else None
+            if p and p['id']=='demo':raise GatewayError('示範助理不使用 API key。')
+            individual=p is not None and p.get('credential_mode','shared')=='individual'
+            if individual:value=self.vault.get(p['credential_id']) if p.get('credential_id') else None
+            elif self.data['credential_source']=='keyring':value=self.vault.get(self.data['credential_id'])
+            else:value=os.environ.get(self.data['api_key_env'],'')
+        if not value:raise GatewayError('尚未設定此助理的個別 API key；不會改用共用金鑰。' if individual else '尚未設定共用 API key。')
         return value
-    def key_status(self):
-        try: self.key(); return '已設定（'+('Windows 認證管理員' if self.data['credential_source']=='keyring' else '舊環境變數')+'）'
+    def key_status(self,binding=None):
+        try:
+            with self.lock:
+                p=self.validate(binding) if binding is not None else None
+                if p and p['id']=='demo':return '示範助理不使用金鑰'
+                self.key(binding)
+                individual=p is not None and p.get('credential_mode','shared')=='individual'
+                return '已設定（'+('個別金鑰' if individual else '共用 · '+('Windows 認證管理員' if self.data['credential_source']=='keyring' else '舊環境變數'))+'）'
         except GatewayError: return '尚未設定或無法讀取'
     def set_wire_mode(self, mode, model='', assistant_field=''):
         """Explicit transport selection; changes revoke old bindings/capabilities."""
@@ -182,9 +258,7 @@ class Profiles:
             old=(d['wire_mode'],d.get('model',''),d.get('assistant_field',''))
             if values!=old:
                 for p in d['profiles']:
-                    d.setdefault('history',[]).append(dict(p,endpoint=d['endpoint']))
-                    p['revision']+=1;p.pop('legacy',None);p.pop('search_policy',None)
-                    if 'workflow' in p:p['workflow']['verified']=False
+                    self._revoke(d,p,drop_legacy=True)
                 d['wire_mode'],d['model'],d['assistant_field']=values
             self._write(d)
 
@@ -196,28 +270,58 @@ class Profiles:
         return AssistantsGateway(config,key,self.path.parent/'assistant-sessions.sqlite3',binding)
 
     def respond(self,messages,purpose,binding,context=None):
-        with self.lock:
-            p=self.validate(binding)
-            if p['id']=='demo': return DemoAssistant().respond(messages,purpose)
-            d=copy.deepcopy(self.data); legacy=copy.deepcopy(self.legacy)
-            if d['wire_mode']=='assistants':
-                config=None
-            elif p.get('legacy'):
-                config=legacy
-                config['base_url']=d['endpoint']
-            else:
-                if d['wire_mode']=='unconfigured': raise GatewayError('待確認助理 API 格式；請由組織提供遮蔽值的成功呼叫範例。')
-                config={'base_url':d['endpoint'],'timeout_seconds':30,'max_context_chars':50000}
-                if d['wire_mode']=='model': config['model']=p['assistant_id']
-                else: config.update(model=d['model'],assistant_ref=p['assistant_id'],assistant_ref_field=d['assistant_field'])
-                for field in ('ca_bundle','header_env','verified_side_effect_free'):
-                    if field in legacy: config[field]=legacy[field]
-            key=self.key()
-        client=self._assistants_client(d,p,key,binding) if config is None else CompanyAssistant(config,api_key=key)
+        from .assistant_errors import AssistantFailure
+        from .authentication import AuthenticationError
+        try:
+            with self.lock:
+                p=self.validate(binding)
+                if p['id']=='demo': return DemoAssistant().respond(messages,purpose)
+                d=copy.deepcopy(self.data); legacy=copy.deepcopy(self.legacy)
+                if d['wire_mode']=='assistants':
+                    config=None
+                elif p.get('legacy'):
+                    config=legacy
+                    config['base_url']=d['endpoint']
+                else:
+                    if d['wire_mode']=='unconfigured': raise GatewayError('待確認助理 API 格式。')
+                    config={'base_url':d['endpoint'],'timeout_seconds':30,'max_context_chars':50000}
+                    if d['wire_mode']=='model': config['model']=p['assistant_id']
+                    else: config.update(model=d['model'],assistant_ref=p['assistant_id'],assistant_ref_field=d['assistant_field'])
+                    for field in ('ca_bundle','header_env','verified_side_effect_free'):
+                        if field in legacy: config[field]=legacy[field]
+                key=self.key(binding)
+                context=dict(context or {})
+                if context.get('operation')=='ordinary_chat':
+                    context['search_authorized']=bool(purpose=='chat' and p.get('chat_search_enabled') is True
+                        and p.get('search_policy',{}).get('tools'))
+                elif context.get('operation')=='task_draft' or purpose=='workflow_plan':
+                    context['search_authorized']=False
+            client=self._assistants_client(d,p,key,binding) if config is None else CompanyAssistant(config,api_key=key)
+        except AuthenticationError:raise
+        except Exception:
+            raise AssistantFailure('LOCAL_SETUP','preflight',sent=False) from None
         try:
             if config is None:return client.respond(messages,purpose,context=context)
             return client.respond(messages,purpose)
         finally: client.close()
+
+    def can_retry_unsent(self,binding,context):
+        """No dispatch and no ledger initialization: absence is required for an unsent retry."""
+        import sqlite3
+        try:
+            with self.lock:
+                profile=self.validate(binding)
+                if profile['id']=='demo' or self.data['wire_mode']!='assistants':return False
+                if not isinstance(context,dict) or not context.get('request_id'):return False
+                if not context.get('conversation_id') and not (context.get('run_id') and context.get('step_id')):return False
+                from .assistants_gateway import session_context
+                session_id,request_id,_,_=session_context(binding,'chat',context)
+                path=self.path.parent/'assistant-sessions.sqlite3'
+                if not path.exists():return True
+                db=sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True)
+                try:return db.execute('SELECT 1 FROM requests WHERE session_id=? AND id=?',(session_id,request_id)).fetchone() is None
+                finally:db.close()
+        except (GatewayError,ValueError,TypeError,OSError,sqlite3.Error):return False
 
     def inspect_request(self,binding,context,remote=False):
         """Explicit status check, never sends a new message or creates a run."""
@@ -234,7 +338,7 @@ class Profiles:
                 return {'state':request['state'],'recoverable':bool(request.get('run_id')) and request['state'] not in
                         ('failed','cancelled','cancel_requested','tools_blocked','tool_outcome_unknown','tool_submit_unknown'),
                         'remote_checked':False,'remote_terminal':request.get('remote_terminal',False)}
-            api_key=self.key()
+            api_key=self.key(binding)
         client=self._assistants_client(d,p,api_key,binding)
         try:return client.inspect_request(context=context,remote=True)
         finally:client.close()
@@ -244,7 +348,7 @@ class Profiles:
             p=self.validate(binding);d=copy.deepcopy(self.data)
             if p['id']=='demo' or d['wire_mode']!='assistants':
                 raise GatewayError('請先設定組織 Assistants 協定及AI 助理 ID。')
-            key=self.key()
+            key=self.key(binding)
         client=self._assistants_client(d,p,key,binding)
         try:return client.inspect_assistant()
         finally:client.close()
@@ -254,9 +358,10 @@ class Profiles:
         return [p for p in self.items(True) if p.get('workflow',{}).get('verified') is True
                 and p['workflow'].get('roles') and p['workflow'].get('read_only') is True]
 
-    def set_search_policy(self,binding,value):
+    def set_search_policy(self,binding,value,chat_enabled=False):
         """Local authorization only; metadata and consent never verify capabilities."""
         from .search_tools import policy
+        if type(chat_enabled) is not bool:raise GatewayError('聊天搜尋授權格式無效。')
         approved=policy(value)
         with self.lock:
             current=self.validate(binding)
@@ -267,9 +372,11 @@ class Profiles:
             p['revision']+=1
             if approved['tools']:p['search_policy']=approved
             else:p.pop('search_policy',None)
+            p['chat_search_enabled']=bool(chat_enabled and approved['tools'])
             if 'workflow' in p:p['workflow']['verified']=False
             self._write(d)
-            return dict(profile_id=p['id'],revision=p['revision'],names=[t['name'] for t in approved['tools']],company_search='not_tested')
+            return dict(profile_id=p['id'],revision=p['revision'],names=[t['name'] for t in approved['tools']],
+                        chat_search_enabled=p['chat_search_enabled'],company_search='not_tested')
 
     def forget_conversations_tx(self,db,ids):
         """Remove additional local response copies with the existing deletion transaction.

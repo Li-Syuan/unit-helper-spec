@@ -8,7 +8,7 @@ from pathlib import Path
 DEFAULT = {
     "identity_mode": "demo", "query_mode": "demo",
     "assistant": {"mode": "demo", "base_url": "", "model": "",
-                  "api_key_env": "UNITHELPER_API_KEY", "timeout_seconds": 30,
+                  "api_key_env": "UNITHELPER_API_KEY", "timeout_seconds": 30, "run_timeout_seconds": 600,
                   "max_context_chars": 50000, "verified_side_effect_free": False},
 }
 
@@ -36,6 +36,8 @@ def validate_config(source):
         raise ValueError("Timeout 須為 1 至 120 秒。")
     if type(a["max_context_chars"]) is not int or not 1 <= a["max_context_chars"] <= 50000:
         raise ValueError("文字上限須為 1 至 50,000。")
+    if isinstance(a["run_timeout_seconds"], bool) or not isinstance(a["run_timeout_seconds"], (float,int)) or not 1 <= a["run_timeout_seconds"] <= 1800:
+        raise ValueError("工作總等待時間須為 1 至 1,800 秒。")
     return config
 
 

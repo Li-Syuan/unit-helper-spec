@@ -33,7 +33,7 @@ class WebBridge:
                 if self._closing and name not in {'state','save_draft'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','workflow_inspect','workflow_resume','company_probe'}:
+                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe'}:
                     return {'ok':True,'data':handler(payload or {})}
             # Provider I/O must not block theme/state/cancellation/close commands.
             return {'ok':True,'data':handler(payload or {})}
@@ -89,6 +89,8 @@ class WebBridge:
             'theme':self._theme,'appearance':self._set_appearance,'sidebar':self._sidebar,'help':self._help,
             'profile_save':self._profile_save,'profile_default':self._profile_default,
             'profile_delete':self._profile_delete,
+            'profile_key_save':self._profile_key_save,'profile_key_shared':self._profile_key_shared,
+            'profile_key_remove':self._profile_key_remove,
             'profile_roles':self._profile_roles,'connection_save':self._connection_save,'key_remove':self._key_remove,
             'company_readiness':self._company_readiness,
             'company_probe':self._company_probe,
@@ -117,7 +119,8 @@ class WebBridge:
             'dialogue_history':lambda p:s.dialogue.history(),
             'dialogue_inspect':lambda p:s.dialogue.inspect(p['id']),
             'dialogue_recover':lambda p:s.dialogue.recover(p['id']),
-            'dialogue_fork':lambda p:s.dialogue.fork(p['id'],p.get('include_history',False)),
+            'dialogue_retry_unsent':lambda p:s.dialogue.retry_unsent(p['id'],p['request_id']),
+            'dialogue_fork':lambda p:s.dialogue.fork(p['id'],p.get('include_history',False),p.get('assistant_id')),
             'dialogue_delete_preview':lambda p:s.dialogue.preview_delete(p['kind'],p['ids']),
             'dialogue_delete_confirm':lambda p:s.dialogue.confirm_delete(p['token']),
         }
@@ -133,7 +136,7 @@ class WebBridge:
         return {'assistants':rows,'task_types':TASK_TYPES[:],
                 'mode_label':'示範模式 · 完全離線','company_enabled':any(r['id'].startswith('company:') for r in rows),
                 'company_fields':['endpoint','API key','assistant_id'],
-                'company_note':'設定組織 Assistants 連線後，選取AI 助理才會傳送內容；工具尚未開放。'}
+                'company_note':'設定 Assistants 連線後才會傳送內容；一般聊天僅可使用另行核准的搜尋工具，任務草稿停用工具。'}
 
     def _cleanup_confirm(self,p):
         result=self._s.cleanup.confirm(p['token'])
@@ -157,12 +160,13 @@ class WebBridge:
         conversation=s.store.conversation(cid)
         messages=[dict(m,html=render_markdown(m['text'])) for m in s.store.messages(cid)]
         profiles=s.profiles.items()
-        profiles=[{k:v for k,v in r.items() if k in {'id','name','assistant_id','notes','enabled','revision','workflow','search_policy'}} for r in profiles]
+        fields={'id','name','assistant_id','notes','enabled','revision','workflow','search_policy','credential_mode','chat_search_enabled'}
+        profiles=[{k:v for k,v in r.items() if k in fields} for r in profiles]
         prefs=load_preferences(s.preferences_path)
         return dict(version=__version__,mode='Groq 外部 AI 試用 · 合成資料' if s.trial else '工作區' if s.config['query_mode']!='demo' else '本機示範 · 合成資料',
             **self._appearance,identity={k:s.identity.get(k,'') for k in ('mode','name','employee_id')},appearance_saved=self._appearance_saved,sidebar_collapsed=bool(prefs.get('sidebar_collapsed',False)),
             conversations=conversations,conversation=conversation,messages=messages,profiles=profiles,
-            planners=[v for v in s.profiles.workflow_catalog() if 'planner' in v['workflow']['roles']],
+            planners=[{k:v for k,v in row.items() if k in fields} for row in s.profiles.workflow_catalog() if 'planner' in row['workflow']['roles']],
             tasks=s.store.tasks(),plans=s.store.plans(),workflows=[s.workflows.snapshot(r['id']) for r in s.workflows.list(cid)],
             actions=[dict(s.actions.snapshot(a['id']),parse_note=self._parse_notes.get(a['id'],'')) for a in s.actions.list(cid)],catalog=s.queries.catalog(),
             todos=s.store.todos(),schedules=s.store.schedules(),notifications=s.store.notifications(),issues=s.store.issues(),
@@ -332,7 +336,7 @@ class WebBridge:
     def _search_policy_save(self,p):
         with self._s.engine._lock,self._s.dialogue.lock,self._s.company_probe.condition:
             self._profile_guard()
-            return self._s.company_probe.approve(p.get('token'),p.get('names'),p.get('consent'))
+            return self._s.company_probe.approve(p.get('token'),p.get('names'),p.get('consent'),p.get('chat_enabled',False))
 
     def _search_policy_clear(self,p):
         with self._s.engine._lock,self._s.dialogue.lock,self._s.company_probe.condition:
@@ -357,6 +361,15 @@ class WebBridge:
     def _profile_delete(self,p):
         with self._profile_mutation():return self._s.profiles.remove(p['id'],p['revision'])
 
+    def _profile_key_save(self,p):
+        with self._profile_mutation():return self._s.profiles.save_profile_key(p['id'],p['key'])
+
+    def _profile_key_shared(self,p):
+        with self._profile_mutation():return self._s.profiles.use_shared_key(p['id'])
+
+    def _profile_key_remove(self,p):
+        with self._profile_mutation():return self._s.profiles.remove_profile_key(p['id'])
+
     def _profile_default(self,p):
         with self._profile_mutation():return self._s.profiles.set_default(p['id'])
 
@@ -365,10 +378,13 @@ class WebBridge:
 
     def _connection_save(self,p):
         with self._profile_mutation():
-            self._s.profiles.set_endpoint(p['endpoint'])
+            result=self._s.profiles.set_endpoint(p['endpoint'])
             if 'wire_mode' in p and p['wire_mode']!=self._s.profiles.data.get('wire_mode'):
                 self._s.profiles.set_wire_mode(p['wire_mode'])
-            if p.get('key'):self._s.profiles.save_key(p['key'])
+            if p.get('key'):
+                saved=self._s.profiles.save_key(p['key'])
+                result['cleanup_pending']=result['cleanup_pending'] or saved['cleanup_pending']
+            return result
 
     def _key_remove(self,p):
         with self._profile_mutation():return self._s.profiles.remove_key()

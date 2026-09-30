@@ -97,7 +97,7 @@ class TeamNavigationTests(unittest.TestCase):
         a=self.app;pid=self.add();w=a.team_details(pid);self.root.update()
         def children(w):
             for c in w.winfo_children():yield c;yield from children(c)
-        edit=next(c for c in children(w) if 'text' in c.keys() and c.cget('text')=='編輯名稱、ID 與用途')
+        edit=next(c for c in children(w) if 'text' in c.keys() and c.cget('text')=='編輯名稱、ID、用途與金鑰')
         with patch.object(a,'edit_profile') as call:edit.invoke();call.assert_called_once_with(pid)
         self.assertEqual(a.profile_table.selection(),(pid,))
 

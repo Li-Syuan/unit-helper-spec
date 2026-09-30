@@ -1,4 +1,8 @@
-# 0.19.0 組織試用修正
+# 0.20.0 組織試用修正
+
+本次對照 [Assistant API 手冊](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2719802/Assistant+API)，提供安全未送出重試、分階段錯誤、每助理可選獨立金鑰及普通聊天搜尋核准。請先從 UI 完成一位助理無工具試聊，再測第二個 ID，最後核准搜尋；不要一次啟用所有角色與排程。
+
+可交给接手 agent：沿用目前 adapter，先核對 docs/VALIDATION.md；執行環境診斷後，由使用者在 UI 保存 endpoint／key／assistant ID。不要讀出或記錄金鑰，不重寫協定。依 docs/DEVELOPMENT.md「達哥十輪連線測試」逐助理明確執行 --live；失敗收集安全分類與階段，不自動 retry 未知寫入。metadata 與聊天／搜尋各自驗收；核准普通聊天搜尋後再獨立執行 --search，人工核對來源。舊對話遇到修訂失效，先保留歷史，再另開新對話。不可手改 verified 解鎖多助理。
 
 本輪完成一般聊天失敗恢復、本機刪除與白名單錯誤紀錄。先用完整正式離線包建立新環境，保留組織成功程式与設定，再手動測每個助理；不要先派 agent 重寫整套功能。
 
@@ -10,7 +14,7 @@
 
 普通聊天／metadata成功不代表搜尋或四角色已驗收。主畫面「整理任務草稿」不會自動執行；「規劃與分工」仍需完成組織角色試跑後啟用能力。本版未取得正式服務實測，不能宣稱所有助理只填ID便能使用進階功能。組織需要回報時先看安全錯誤代碼及階段，對照成功範例修adapter，不猜故障原因。
 
-# 0.19.0 組織接手入口
+# 0.20.0 組織接手入口
 
 **先處理部署缺件（2026-09-30）：**使用核准管道帶入正式 69 套件離線 ZIP，解壓到新資料夾。CMD 執行 `install-offline.bat "C:\approved\Python3104\python.exe"`，成功後執行 `.venv\Scripts\python.exe scripts\verify.py offline-rebuild` 一次。環境通過才設定／實測AI 助理；不需要 agent 重寫 adapter 或降版 lock。保留組織現有程式與 `.venv`，差異另行比對。詳細失敗處理見[離線安裝](docs/DEVELOPMENT.md#離線安裝)，本機結果見[驗證紀錄](docs/VALIDATION.md)。
 
@@ -18,7 +22,7 @@
 
 先照 [GPT 6 sol 工作指令](docs/COMPANY-IMPLEMENTATION.md) 完成組織文字旅程。組織 Threads/Messages/Runs 接口已依範例實作，LangGraph 已正式接管批准後的順序分工；不用再從零設計 agent 引擎或猜 Assistant ID 映射。
 
-本版已接通有限 pluginapi 搜尋往返。先讀取助理 metadata，核對 function 名稱／參數及唯讀用途，再在 UI 明確核准；不用重寫通用協定。搜尋開放於已確認日報及 rag 步驟，其餘角色／一般聊天不派發工具。核准會更新版本並撤銷角色 verified，所以應先完成搜尋核准，再做角色驗收。組織部署、CA、服務端副作用、真實多 ID 與格式仍須實測。AD／Oracle／舊資料仍另列待辦。
+本版已接通有限 pluginapi 搜尋往返。先讀取助理 metadata，核對 function 名稱／參數及唯讀用途，再在 UI 明確核准；不用重寫通用協定。搜尋開放於已確認日報及 rag 步驟；普通聊天需額外勾選核准，其餘角色不派發工具。核准會更新版本並撤銷角色 verified，所以應先完成搜尋核准，再做角色驗收。組織部署、CA、服務端副作用、真實多 ID 與格式仍須實測。AD／Oracle／舊資料仍另列待辦。
 
 
 # WebView 與組織既有修改
@@ -37,7 +41,7 @@
 
 # QA agent 組織接手工作單
 
-目前版本 **0.19.0**，本機桌面、核准搜尋連接器與接手工具可沿用。助理 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。已取得 Threads/Runs＋pluginapi 官方契約，但沒有組織測試憑證及真實搜尋結果，不能保證任意端點只填三個參數就全部接通。
+目前版本 **0.20.0**，本機桌面、核准搜尋連接器與接手工具可沿用。助理 API、AD、Oracle 與現場 Excel／IME 驗收仍為 **not_tested**。已取得 Threads/Runs＋pluginapi 官方契約，但沒有組織測試憑證及真實搜尋結果，不能保證任意端點只填三個參數就全部接通。
 
 交付給一般同仁的目標：服務接線者先配置共用 endpoint、請求／session 映射與核准助理能力；同仁只需設定個人 API key、加入已核准 assistant ID，說需求並按一次「確認執行」。不要要求同仁編輯程式、填驗證證據或理解 adapter。新增未核准 ID 仍顯示待驗證，不能偽裝可自動協作。
 

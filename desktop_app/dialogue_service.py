@@ -7,6 +7,7 @@ import hashlib
 from datetime import datetime,timezone
 from .dialogue_contracts import ASSISTANTS,TASK_TYPES,assistant,answers,draft
 from .dialogue_provider import DemoDialogueProvider
+from .assistant_errors import AssistantFailure, decode_failure
 
 
 def stamp():return datetime.now(timezone.utc).isoformat()
@@ -75,6 +76,20 @@ class DialogueService:
                 'recoverable':bool(request['recoverable']) and request['status'] not in ('cancelled','completed'),
                 'remote_state':request['remote_state'],'error_code':request['error_code']}
             thread['busy']=tid in self._pending
+            thread['tools_allowed']=bool(getattr(self.provider,'tools_allowed',lambda *a:False)(thread['mode'],thread['assistant_id']))
+            if request is not None:
+                failure=decode_failure(request['error_code'])
+                unsent=(request['status']=='failed' and failure is not None and not failure.sent
+                        and thread['revision']==request['revision'] and not thread['busy'])
+                check=getattr(self.provider,'can_retry_unsent',None)
+                retry=bool(unsent and check and check(thread['mode'],thread['assistant_id'],
+                    {'conversation_id':'dialogue:'+tid,'request_id':request['request_id']}))
+                thread['request'].update(retry_unsent=retry,error_stage=failure.stage if failure else None,
+                    error_http_status=failure.http_status if failure else None,
+                    error_provider_code=failure.remote_code if failure else None,
+                    error_code=failure.code if failure else request['error_code'],
+                    recovery_action='retry_unsent' if retry else ('recover' if thread['request']['recoverable'] else
+                        ('inspect_or_fork' if request['status']!='completed' else 'none')))
             return thread
 
     def list_saved(self):
@@ -140,10 +155,11 @@ class DialogueService:
                     db.execute("UPDATE requests SET status='completed',recoverable=0,error_code='',remote_state='completed',updated_at=? WHERE request_id=?",(stamp(),request_id))
                 self.previews.pop(tid,None)
                 return dict(self.state(tid),busy=False)
-        except Exception:
+        except Exception as exc:
+            failure=encode(exc.metadata()) if isinstance(exc,AssistantFailure) else 'request_failed'
             with self.lock,self.store.connect() as db:
                 db.execute("UPDATE requests SET status=?,recoverable=0,error_code=?,updated_at=? WHERE request_id=? AND status!='completed'",
-                    ('cancelled' if event.is_set() else 'failed','cancelled' if event.is_set() else 'request_failed',stamp(),request_id))
+                    ('cancelled' if event.is_set() else 'failed','cancelled' if event.is_set() else failure,stamp(),request_id))
             raise
         finally:
             with self._condition:
@@ -178,13 +194,13 @@ class DialogueService:
                 if event.is_set():raise ValueError('檢查已取消，未恢復回覆。')
                 db.execute('UPDATE requests SET remote_state=?,recoverable=?,updated_at=? WHERE request_id=?',
                     (remote_state,int(result.get('recoverable') is True and request['status']!='cancelled'),stamp(),request['request_id']))
-            result_state=self.state(tid);result_state['busy']=False
-            result_state['remote_checked']=result.get('remote_checked') is True
-            return result_state
         finally:
             with self._condition:
                 if self._pending.get(tid,{}).get('cancelled') is event:self._pending.pop(tid,None)
                 self._condition.notify_all()
+        result_state=self.state(tid)
+        result_state['remote_checked']=result.get('remote_checked') is True
+        return result_state
 
     def recover(self,tid):
         with self.lock:
@@ -197,10 +213,30 @@ class DialogueService:
             if state['revision']!=request['revision']:raise ValueError('對話條件已變更，請另開對話。')
             self.validate_assistant(state['assistant_id'])
             state['answers']=json.loads(request['answers']);event=threading.Event()
-            self._pending[tid]={'request_id':request['request_id'],'cancelled':event}
             with self.store.connect() as db:
                 db.execute("UPDATE requests SET status='pending',updated_at=? WHERE request_id=?",(stamp(),request['request_id']))
+            self._pending[tid]={'request_id':request['request_id'],'cancelled':event}
         return self._perform(tid,request['text'],request['request_id'],state,json.loads(request['history']),event,True)
+
+    def retry_unsent(self,tid,request_id):
+        """Explicit retry of proven local preflight failure, never inferred from absence."""
+        with self.lock:
+            self._ensure_open();state=self.state(tid)
+            if tid in self._pending:raise ValueError('此對話仍有請求處理中。')
+            request=self._latest_request(tid)
+            if request_id!=request['request_id']:raise ValueError('原請求已改變，請重新查看對話。')
+            if request['status']=='completed':return state
+            if not state['request']['retry_unsent']:
+                raise ValueError('不能確認此請求尚未送出；請檢查原請求或另開對話。')
+            history=[{'role':m['role'],'content':m['text']} for m in state['messages']]+[{'role':'user','content':request['text']}]
+            if (history!=json.loads(request['history']) or state['answers']!=json.loads(request['answers'])):
+                raise ValueError('對話內容已改變，未重新送出。')
+            self.validate_assistant(state['assistant_id'])
+            event=threading.Event()
+            with self.store.connect() as db:
+                db.execute("UPDATE requests SET status='pending',error_code='',updated_at=? WHERE request_id=?",(stamp(),request['request_id']))
+            self._pending[tid]={'request_id':request['request_id'],'cancelled':event}
+        return self._perform(tid,request['text'],request['request_id'],state,history,event,False)
 
     def fork(self,tid,include_history=False,assistant_id=None):
         """New remote context; copying history requires an explicit UI confirmation."""

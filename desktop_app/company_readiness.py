@@ -43,8 +43,9 @@ class CompanyProbe:
             self.closed=True
             while wait and self.pending:self.condition.wait()
 
-    def approve(self,token,names,consent):
+    def approve(self,token,names,consent,chat_enabled=False):
         with self.condition:
+            if type(chat_enabled) is not bool:raise ValueError('聊天搜尋授權格式無效。')
             saved=self.approval
             if (self.closed or self.pending or not saved or token!=saved['token'] or
                     time.monotonic()>saved['expires'] or consent is not True):
@@ -54,7 +55,7 @@ class CompanyProbe:
                 raise ValueError('請選擇已檢查的搜尋工具。')
             tools={t['name']:t for t in saved['tools']}
             if set(names)-set(tools):raise ValueError('包含未檢查的工具；未核准任何工具。')
-            result=self.profiles.set_search_policy(saved['binding'],{'tools':[tools[n] for n in names]})
+            result=self.profiles.set_search_policy(saved['binding'],{'tools':[tools[n] for n in names]},chat_enabled=chat_enabled)
             self.approval=None
             return result
 
@@ -82,9 +83,10 @@ def inspect_company(profiles, *, trial=False):
     add('protocol','Threads／Runs 協定','ready' if wire_ok else 'missing',
         '已選 Assistants；Assistant ID 會放在 run 的 assistant_id。' if wire_ok else '組織提供的範例使用 assistants，請在連線協定中選取。','settings')
     source=data.get('credential_source')
-    reference_ok=(source=='keyring' and bool(data.get('credential_id'))) or (source=='environment' and data.get('api_key_env') in os.environ)
+    shared_reference=(source=='keyring' and bool(data.get('credential_id'))) or (source=='environment' and data.get('api_key_env') in os.environ)
+    reference_ok=any(bool(p.get('credential_id')) if p.get('credential_mode','shared')=='individual' else shared_reference for p in entries)
     add('credential','API key 來源','not_tested' if reference_ok else 'missing',
-        '已指定金鑰來源；本檢查沒有讀取金鑰，是否存在及可讀仍需連線試跑。' if reference_ok else '尚無可用的金鑰來源設定；請在設定頁保存 API key。','settings')
+        '至少一位助理已指定共用或個別金鑰來源；本檢查沒有讀取金鑰，是否存在及可讀仍需試跑。' if reference_ok else '尚無助理的金鑰來源設定；請保存共用或個別 API key。','settings')
     add('assistants','可選AI 助理','ready' if entries else 'missing',
         f'已設定 {len(entries)} 位啟用中的AI 助理；不代表已接通。' if entries else '請在助理團隊新增名稱及 Assistant ID。','team')
     for role,label in ROLES.items():
@@ -97,7 +99,8 @@ def inspect_company(profiles, *, trial=False):
     add('tls','TLS 與組織 CA','not_tested',
         '已指定組織 CA 檔案；本次未讀取或驗證。' if ca_configured else '使用系統信任庫；若組織憑證不受信任，需設定核准 CA，不能關閉 TLS。','settings')
     approved=sum(len(p.get('search_policy',{}).get('tools',[])) for p in entries)
-    add('tools','組織查資料／插件','not_tested',f'已核准 {approved} 項搜尋工具；僅已確認日報／搜尋步驟可呼叫 pluginapi。核准不代表搜尋已實測。','settings')
+    chats=sum(p.get('chat_search_enabled') is True and bool(p.get('search_policy',{}).get('tools')) for p in entries)
+    add('tools','組織查資料／插件','not_tested',f'已核准 {approved} 項搜尋工具，其中 {chats} 位助理另獲一般聊天搜尋授權；已確認日報／搜尋步驟維持原授權。核准不代表搜尋已實測。','settings')
     add('drafts','建立任務與排程','ready','建立任務只存未啟用草稿；規劃工作試跑成功後才能另行授權排程。','plan')
     missing=next((c for c in checks[:4] if c['state']=='missing'),None)
     next_step=(missing['detail'] if missing else

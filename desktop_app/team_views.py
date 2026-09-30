@@ -85,6 +85,8 @@ class TeamViews:
             name=ttk.Label(top,text=p['name'],style='CardTitle.TLabel',wraplength=270);name.pack(side='left',fill='x',expand=True)
             ttk.Label(card,text=state,style=style).pack(anchor='w',pady=(8,3))
             ttk.Label(card,text=role_text,style='CardMuted.TLabel').pack(anchor='w')
+            if p['id']!='demo' and not self.groq_trial:
+                ttk.Label(card,text=('個別金鑰' if p.get('credential_mode')=='individual' else '共用金鑰')+' · 聊天搜尋：'+('已核准' if p.get('chat_search_enabled') and p.get('search_policy',{}).get('tools') else '未核准'),style='CardMuted.TLabel').pack(anchor='w')
             preview=p['notes'] or '用途尚未填寫，建議補上專長與適用情境。'
             notes=ttk.Label(card,text=preview[:140]+('…（查看完整設定）' if len(preview)>140 else ''),style='Surface.TLabel',wraplength=300,justify='left')
             notes.pack(fill='x',pady=(10,12))
@@ -137,7 +139,7 @@ class TeamViews:
         else:
             def action(fn):
                 self.profile_table.selection_set(pid);w.destroy();fn()
-            self.button(body,'編輯名稱、ID 與用途',lambda:action(lambda:self.edit_profile(pid))).pack(fill='x',pady=4)
+            self.button(body,'編輯名稱、ID、用途與金鑰',lambda:action(lambda:self.edit_profile(pid))).pack(fill='x',pady=4)
             self.button(body,'設定分工角色',lambda:action(self.edit_workflow_capability)).pack(fill='x',pady=4)
             row=ttk.Frame(body);row.pack(fill='x',pady=4)
             self.button(row,'設為預設',lambda:action(self.default_profile),'Compact.TButton').pack(side='left')

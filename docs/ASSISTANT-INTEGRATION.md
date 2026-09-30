@@ -1,11 +1,28 @@
-# 0.18.0 官方契約與核准搜尋接線
+# 0.20.0 官方契約與核准搜尋接線
+
+2026-09-30 重新核對使用者提供的 [Assistant API 介紹](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2719802/Assistant+API)（公開 Confluence 頁面 2719802）。範例是協定參考，不是本機或組織驗收結果。
+
+| 文件契約／相容問題 | 本機實作 | 驗證位置 |
+|---|---|---|
+| 一段對話沿用 thread，messages.create 後建立 run | AssistantsGateway＋AssistantSessions 只補新訊息；不同助理／修訂隔離 | test_assistants_gateway：兩個不同 ID 各十輪、重複確認零 POST |
+| requires_action → 同源 pluginapi(tid/aid/pid) → submit_tool_outputs | search_tools＋Gateway 完整批次驗證、收據、防未知重送 | test_search_tools：多工具／多批、參數及取消 |
+| 分享助理須配合有效 key 與權限 | Profiles 共用／個別 keyring 憑證；401/403/404/429分別呈現 | test_profiles、test_assistants_gateway |
+| 讀取本次 run 的回覆 | 明確 run_id、assistant role、分頁；不取第一筆當答案 | test_assistants_gateway：分頁、其他 run、空／非文字 |
+| 失敗及 last_error | AssistantFailure 白名單 code/stage/status；不顯示原始本文 | test_assistants_gateway、test_support |
+| 連線中斷續談 | DialogueService 原 request、已知 run 恢復；只允許有證據的本機未送出重試 | test_dialogue_recovery |
+
+本程式不採範例的 verify=False，不因範例使用短 timeout 就限制長工作，不盲取 msgs.data[0]，也不隨關閉 App 刪遠端 thread。metadata GET 是額外能力盤點，失敗不直接阻止無工具聊天；實際聊天需另外試。HTTP寫入出錯仍可能已被接受，不能因401等分類自動重送。
+
+普通聊天可在核准工具表單另外勾選「一般聊天使用核准搜尋」。預設關閉，歷史核准不自動擴權。Profiles 以本機 operation 與保存的 policy 決定授權，不接受模型自己開工具。任務草稿與規劃／分析／覆核／彙整維持無工具。
+
+設定檔 assistant.timeout_seconds 控制單次請求（預設30，1..120），run_timeout_seconds 控制整個工作（預設600，1..1800）；搜尋仍最多600秒。逾時不等於遠端取消，也不自動重送。
 
 查證日期：2026-09-29。使用者已批准僅核准搜尋；下列往返已實作並以合成 HTTP 驗證，公開文件與本機測試不代表組織部署已實測。
 
 | 官方來源 | 已確認內容 |
 |---|---|
 | [官方網站文件入口](https://dvcbot.net/docs) | 平台區分助理、插件與 DSE 文件檢索 |
-| [Assistant API](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/200671332/MediaTek+Assistant+API) | 提供 Python 範例、Threads/Messages/Runs，以及 requires_action 後呼叫 pluginapi 並提交工具結果 |
+| [Assistant API](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2719802/Assistant+API) | 提供 Python 範例、Threads/Messages/Runs，以及 requires_action 後呼叫 pluginapi 並提交工具結果 |
 | [Plugin Chat](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/3309569/Plugin+Chat) | Internet Search 是預設插件；插件也可能具備程式執行等其他能力，不能把所有插件都當搜尋 |
 | [智能檢索 SE](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/173408275/Search+Engine+SE) | 上傳文件轉為檢索插件，由助理使用；與網際網路新聞搜尋不同 |
 | [任務管理](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/223084553/Task+Management) | 描述代使用者與指定同仁討論的分身型任務；此頁不能證明循環排程能力 |
@@ -19,7 +36,7 @@
 已配置 Internet Search 的AI 助理可走「核准工具 → 搜尋試跑 → 查看來源 → 另行確認每日執行」，也可使用既有 rag 角色加入批准後的多助理流程。預設仍沒有核准工具；不開放任意插件。
 
 1. **組織搜尋設定**：沿用 endpoint／key／Assistant ID，新增管理者核准的搜尋工具識別與參數契約，綁定該助理及連線版本。從官方 metadata 讀取候選設定後仍須核對實際用途；普通使用者不編寫程式，未核准助理保持工具停用。
-2. **派發範圍**：planner 的需求討論與草稿建議保持 tool_choice=none。只有明確預覽／確認過的搜尋試跑或流程搜尋步驟可使用該策略；分析、覆核、彙整不因此自動取得工具能力。新搜尋步驟可沿用既有 rag 角色及 JSON 契約，不另加隱藏主代理。
+2. **派發範圍**：planner 的需求討論與草稿建議保持 tool_choice=none。明確預覽／確認過的搜尋試跑、流程搜尋步驟或另行勾選核准的一般聊天可使用該策略；分析、覆核、彙整不因此自動取得工具能力。新搜尋步驟可沿用既有 rag 角色及 JSON 契約，不另加隱藏主代理。
 3. **Gateway 處理**：在 assistants_gateway.py 的 requires_action 分支驗證同一 thread/run、call ID、function 白名單與參數型別。先驗完整批次，再 POST 組織固定 pluginapi；不接受模型指定 endpoint、headers 或本機檔案路徑。不符合核准策略即停止，不執行其他插件。
 4. **有限執行**：每輪最多4個工具呼叫、每run最多3輪，工作總期限最多600秒及原單次timeout；回覆最多128KiB，超限明示失敗，不靜默截斷。SDK目前先完整接收HTTP回覆再檢查大小，非串流記憶體上限。TLS及零自動重試保持。
 5. **收據與恢復**：assistant_sessions.py 請求記錄增加每個call的識別、參數雜湊、策略指紋、傳送前狀態及已取得結果。工具送出／工具結果提交前先記錄；結果不明時停止。已取得结果使用快取、不重搜；只在遠端run與工具批次完全一致時允許明確恢復，不宣稱 exactly-once。取消後不提交晚到結果，不復活已取消任務。
@@ -39,7 +56,7 @@ metadata／核准不執行工具，也不等於多助理能力驗收。核准tok
 
 傳輸在 assistants_gateway.py、隔離與請求收據在 assistant_sessions.py、路由仍在 Profiles。respond 的可選 context 支援 conversation_id／request_id；workflow_call 以 run_id／step_id 隔離。已完成收據回傳快取，已知未完成 run 必須明確 resume，結果不明不重送。
 
-普通聊天與規劃使用 tool_choice=none；僅上述核准日報／rag步驟傳入受限tools與auto。CA 使用本機 config.json 的 assistant.ca_bundle；不關閉 TLS。組織測試仍須確認平台遵守tools限制、服務端是否有其他原生副作用及session保留政策。
+普通聊天預設使用 tool_choice=none，另外核准 chat_search_enabled 後才可用搜尋；規劃仍無工具。核准日報／rag步驟沿用受限tools與auto。CA 使用本機 config.json 的 assistant.ca_bundle；不關閉 TLS。組織測試仍須確認平台遵守tools限制、服務端是否有其他原生副作用及session保留政策。
 
 來源為使用者提供的組織去金鑰範例；Git 不保存內部 endpoint。沒有正式 API server，scripts/mock-assistants.py 只供 loopback 合成協定測試。
 

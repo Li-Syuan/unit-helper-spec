@@ -1,4 +1,14 @@
-# 0.19.0 部署、恢复與資料清理（優先於舊版說明）
+# 0.20.0 官方契約修正（優先於下方舊版限制）
+
+依 [Assistant API](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2719802/Assistant+API) 的 Threads/Messages/Runs/pluginapi 契約整合，不能照抄 verify=False、短 timeout、第一則訊息或每次刪 thread。普通聊天只有保存的 chat_search_enabled=true 與核准 policy 同時成立，Profiles 才由 trusted operation=ordinary_chat 派發工具；task_draft、planner、analysis/review/compose 保持停用。既有日報與已驗收 rag 規則不變；舊 policy 不自動放寬，修改憑證／連線撤銷核准與能力。
+
+每助理 credential_mode 預設 shared，可選 individual，檔案只存 keyring 索引。金鑰修改提升受影響助理 revision，保持 inflight guard；endpoint 更換清除所有舊目的地憑證索引。不得把 credential_id 暴露在 bridge／workflow catalog。AssistantFailure 只保留白名單代碼／階段／HTTP status／provider code，不存 body。
+
+dialogue_retry_unsent 只接受已持久化的 LOCAL_SETUP/preflight/sent=false，且原 revision、內容、真實 future 與遠端帳本均符合；缺少帳本本身不是未派發證據。保留原 request ID，未知 POST 不重送。已知 run／快取以 inspect/recover 讀取。metadata GET 成功與十輪聊天／搜尋／角色驗收分開，不能以 metadata 失敗推定聊天一定不可用。assistant.run_timeout_seconds 預設600、範圍1..1800；核准搜尋仍最多600秒。
+
+scripts/check-assistants.py 預設零請求，--live 才讀取指定本機設定並逐助理十輪合成試聊；--search 是另一次明確啟動、只用既有核准搜尋的單輪測試。暫存帳本不改正式歷史；遠端測試 thread 保留，來源仍須人工核對。不新增依賴或 schema；正式 lock 69套件與 .venv 不重建，離線交付包重新驗雜湊。
+
+# 0.19.0 部署、恢复與資料清理
 
 儲存庫依使用者確認維持公開；允許在 GitHub Release 發布去識別完整離線 ZIP，正式 wheels 仍不進 Git tree。發布前排除金鑰、publisher.json、個人設定與使用者資料，公開驗證紀錄遮蔽本機絕對路徑；原始證據留 artifacts，不能改掉失敗結果。介面採中性工作區文案，既有 company 識別保持相容。作者資訊在 WebView 右上角及 Tk 側欄以非模態小卡提供，只讀白名單資料，Esc／點外關閉，不派發工作。
 

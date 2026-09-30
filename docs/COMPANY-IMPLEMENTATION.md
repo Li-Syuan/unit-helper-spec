@@ -1,4 +1,4 @@
-# 給組織 GPT 6 sol：0.19.0 接手指令
+# 給組織 GPT 6 sol：0.20.0 接手指令
 
 請先讀根目錄 AGENTS.md、COMPANY-HANDOFF.md 與本文件。保留組織現有能成功呼叫的程式與設定，不重寫 UI，也不要把 Assistant ID 當 model。
 
@@ -20,7 +20,7 @@
 
 不必重建搜尋引擎。助理配置 Internet Search 可能由服務端自行完成，也可能回 `requires_action`，要求呼叫端把指定 function 送到組織 `/pluginapi` 再回填結果。使用者提供的成功範例包含後者，但該搜尋助理實際走哪條路仍待組織實測。
 
-本版已實作核准搜尋 pluginapi 往返。先由「連線啟用檢查」讀取 metadata，核對唯讀搜尋名稱與參數，再保存核准；只有日報／rag步驟使用核准tools＋auto。其他呼叫仍 `tool_choice=none`。不得直接允許所有模型指定 function，也不能由核准勾選宣稱組織實測通過。
+本版已實作核准搜尋 pluginapi 往返。先由「連線啟用檢查」讀取 metadata，核對唯讀搜尋名稱與參數，再保存核准；日報／rag步驟使用核准tools＋auto，普通聊天需另外勾選才可用搜尋。任務草稿及規劃／分析／覆核／彙整仍 `tool_choice=none`。不得直接允許所有模型指定 function，也不能由核准勾選宣稱組織實測通過。
 
 **2026-09-29 官方查證：**[Assistant API 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/200671332/MediaTek+Assistant+API) 公開 pluginapi 往返範例；[Plugin Chat 手冊](https://dvcbot.atlassian.net/wiki/spaces/DW/pages/3309569/Plugin+Chat) 確認 Internet Search 為插件。通用接線已完成，不再把重新取得整套 API 規格當作前置阻礙。組織需核對特定搜尋工具識別、參數／權限及部署差異。完整來源與限制見 [搜尋接線契約](ASSISTANT-INTEGRATION.md#已實作的核准範圍)。
 

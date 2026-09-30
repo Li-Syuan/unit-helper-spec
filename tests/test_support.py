@@ -26,6 +26,12 @@ class SupportTests(unittest.TestCase):
         value=json.loads(text);self.assertEqual(value['code'],'FORBIDDEN');self.assertEqual(value['http_status'],403)
         self.assertEqual(value['id'],result['id']);self.assertIn('version',value)
         self.assertEqual(value['frames'],[])  # The test module is outside the permitted app source directory.
+        from desktop_app.assistant_errors import AssistantFailure
+        support.record(self.root,'ui',AssistantFailure('RUN_FAILED','run_poll',remote_code='server_error'))
+        value=json.loads((self.root/'logs/events.jsonl').read_text('utf-8').splitlines()[-1])
+        self.assertEqual((value['code'],value['stage'],value['provider_code']),('RUN_FAILED','run_poll','server_error'))
+        value['provider_code']=self.secret
+        self.assertNotIn('provider_code',support.clean_record(value))
 
     def test_export_revalidates_whitelist_and_ignores_corrupted_records(self):
         support.record(self.root,'ui',ValueError(self.secret))

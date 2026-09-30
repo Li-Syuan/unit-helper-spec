@@ -14,6 +14,7 @@ from desktop_app.dialogue_provider import ProfileDialogueProvider
 from desktop_app.dialogue_service import DialogueService
 from desktop_app.dialogue_store import DialogueStore
 from test_support.assistants_mock import AssistantsMock
+from desktop_app.assistant_errors import AssistantFailure
 
 
 class SyntheticProfiles:
@@ -34,6 +35,14 @@ class SyntheticProfiles:
         client=self.client(binding)
         try:return client.inspect_request(context=context,remote=remote)
         finally:client.close()
+    def can_retry_unsent(self,binding,context):
+        self.validate(binding)
+        from desktop_app.assistants_gateway import session_context
+        path=self.path.parent/'assistant-sessions.sqlite3'
+        if not path.exists():return True
+        key,rid,_,_=session_context(binding,'chat',context)
+        with sqlite3.connect(path) as db:
+            return db.execute('SELECT 1 FROM requests WHERE session_id=? AND id=?',(key,rid)).fetchone() is None
 
 
 class DialogueRecoveryTests(unittest.TestCase):
@@ -53,6 +62,44 @@ class DialogueRecoveryTests(unittest.TestCase):
         self.service.provider=provider
         return provider
     def posts(self):return len([r for r in self.mock.requests if r[0]=='POST'])
+
+    def test_proven_unsent_retries_same_request_once_and_survives_reopen(self):
+        provider=self.company();tid=self.service.start(assistant_id='company:fixture:1')['id']
+        self.service.send(tid,'第一輪','first')
+        with patch.object(provider.profiles,'respond',side_effect=AssistantFailure('LOCAL_SETUP','preflight',sent=False)):
+            with self.assertRaises(AssistantFailure):self.service.send(tid,'第二輪','second')
+        self.service.close();self.service=DialogueService(DialogueStore(self.path),provider)
+        state=self.service.state(tid)
+        self.assertTrue(state['request']['retry_unsent']);self.assertEqual(len(state['messages']),2)
+        inspected=self.service.inspect(tid)
+        self.assertFalse(inspected['busy']);self.assertTrue(inspected['request']['retry_unsent'])
+        with self.assertRaises(ValueError):self.service.retry_unsent(tid,'stale-request')
+        before=self.posts();result=self.service.retry_unsent(tid,'second')
+        self.assertEqual(len(result['messages']),4);self.assertEqual(self.posts()-before,2)
+        self.assertEqual(self.service.retry_unsent(tid,'second'),result);self.assertEqual(self.posts()-before,2)
+        self.service.send(tid,'第三輪','third')
+        self.assertEqual(len(self.mock.threads),1)
+
+    def test_unknown_or_cancelled_failure_never_promoted_by_missing_ledger(self):
+        provider=self.company();tid=self.service.start(assistant_id='company:fixture:1')['id']
+        for error in (ValueError('synthetic before dispatch'),AssistantFailure('TIMEOUT','run_create')):
+            with patch.object(provider.profiles,'respond',side_effect=error):
+                with self.assertRaises(Exception):self.service.send(tid,'不能推斷未送出',str(id(error)))
+            self.assertFalse(self.service.state(tid)['request']['retry_unsent'])
+            self.service.inspect(tid)
+            with self.assertRaises(ValueError):self.service.retry_unsent(tid,str(id(error)))
+            tid=self.service.fork(tid)['id']
+        self.assertEqual(self.posts(),0)
+
+    def test_unsent_proof_invalidated_by_receipt_or_changed_snapshot(self):
+        provider=self.company();tid=self.service.start(assistant_id='company:fixture:1')['id']
+        with patch.object(provider.profiles,'respond',side_effect=AssistantFailure('LOCAL_SETUP','preflight',sent=False)):
+            with self.assertRaises(AssistantFailure):self.service.send(tid,'合成草稿','unsent')
+        with patch.object(provider.profiles,'can_retry_unsent',return_value=False):
+            with self.assertRaises(ValueError):self.service.retry_unsent(tid,'unsent')
+        with self.service.store.connect() as db:db.execute("UPDATE requests SET history='[]'")
+        with self.assertRaisesRegex(ValueError,'內容已改變'):self.service.retry_unsent(tid,'unsent')
+        self.assertEqual(self.posts(),0)
 
     def test_second_turn_failure_reopens_recovers_only_reads_then_third_turn(self):
         for stage in ('poll','read_text'):

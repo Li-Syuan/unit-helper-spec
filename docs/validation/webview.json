@@ -1,6 +1,4 @@
 {
-  "version": "0.19.0",
-  "scope": "real_webview2_synthetic",
   "status": "passed",
   "checks": [
     "bridge_ready",
@@ -17,44 +15,22 @@
     "attention_running_success_failure_distinct_in_both_themes",
     "notification_unread_is_informational_explicit_view_only_and_state_retained",
     "untrusted_navigation_blocked",
+    "proven_unsent_retry_same_request_preserves_history",
     "company_sdk_mock_multiturn_main_ui_badge_small_controls",
     "briefing_dom_preview_trial_review_schedule_pause_mock",
     "cleanup_cancel_confirm_no_dispatch_preserves_schedule_query_entry",
     "company_setup_and_metadata_probe_no_model_dispatch",
-    "search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search"
+    "search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search",
+    "chat_search_separate_opt_in_and_single_mock_tool_roundtrip",
+    "credential_revision_fork_explicit_destination_and_preserved_draft_zero_dispatch"
   ],
-  "focused": {
-    "status": "passed",
-    "checks": [
-      "search_clears_hidden_selection_in_both_managers",
-      "per_assistant_trial_only_prepares_correct_target_and_draft"
-    ]
-  },
   "viewport": {
     "width": 942,
     "height": 603,
     "devicePixelRatio": 1.6500000953674316
   },
+  "version": "0.20.0",
+  "data": "synthetic_only",
   "company_real": "not_tested",
-  "human_usability": "not_tested",
-  "ime": "not_tested",
-  "author_ui": {
-    "status": "passed",
-    "scope": "synthetic_webview_about",
-    "checks": [
-      "three_author_fields_safe_text",
-      "small_viewport_dark_light",
-      "zero_dispatch"
-    ]
-  },
-  "author_popover": {
-    "status": "passed",
-    "scope": "synthetic_author_popover",
-    "checks": [
-      "small_dark_light_popover_inside_viewport",
-      "theme_keeps_open_card_and_draft",
-      "close_restores_focus",
-      "zero_dispatch"
-    ]
-  }
+  "manual_usability": "not_tested"
 }
