@@ -1,3 +1,5 @@
+[**公司 Code ZIP 首次安裝：直接複製給 Copilot**](COPILOT-START-HERE.md)
+
 ## GitHub Code ZIP 離線入口（2026-10-01）
 
 公司允許 GitHub Code → Download ZIP 時，下載目前 main 並解壓**整個資料夾**到新位置；不需要 Release。根目錄 `install-offline.bat` 會驗證並共用 lab 的 48 個 wheels、加入 `offline-app/packages` 的 21 個，依 App 自己的 69 套件 lock 安裝；不使用 lab lock。不連網補件、不覆蓋既有 `.venv`，既有 wheelhouse 若失效仍停止。最短步驟及前置條件見 [Code ZIP 說明](offline-app/README.md)。
