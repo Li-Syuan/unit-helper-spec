@@ -19,6 +19,7 @@ start-demo-login.bat
 - `experiments/langgraph-lab/packages` 既有 52 個：正式 App 共用其中 48 個；其餘 4 個僅供 lab（langchain、langchain-openai、regex、tiktoken），不裝入 App。
 - `offline-app/packages` 只新增正式 App 缺少的 21 個（3,101,202 bytes），含 pywebview、pythonnet、keyring 等。
 - `bundle-manifest.json` 指定 69 個來源、版本及 SHA256。所有 wheels 的 tags 相容 Windows CPython 3.10.4 x64；仍以目標平台及完整 App `requirements.lock` 為準。
+- 安裝診斷預設使用暫存資料目錄，避免讀取或修改既有使用者的公司 profiles／金鑰；明確指定 `--data-dir` 時才診斷該目錄。這只驗證軟體就緒，不代表公司設定通過。
 - installer 暫存組合 69 個 wheels，核對原正式包雜湊、lock 指紋及套件身份後，使用 pip `--no-index --no-deps`；安裝後核對 freeze 與 pip check，暫存 wheels 隨即移除。
 - 若已有 root wheelhouse，仍驗證它，**不因 lock／雜湊錯誤改用其他來源**；缺檔、LFS 指標、不安全路徑或完整性錯誤均停止，不連網。既有 `.venv` 亦拒絕覆蓋。
 - 原正式包的 license/notices 保留於 [THIRD-PARTY-NOTICES](../docs/THIRD-PARTY-NOTICES.md) 與 `docs/licenses`（包含 wheel 本身缺少的 upstream license）；此次沿用已核對的原二進位，不另造依賴版本。

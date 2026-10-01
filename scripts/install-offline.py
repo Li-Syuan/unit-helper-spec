@@ -7,6 +7,8 @@ import re
 import struct
 import subprocess
 import sys
+import tempfile
+from contextlib import nullcontext
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -82,8 +84,11 @@ def main(argv=None):
     args = parser.parse_args(argv)
     report = {}
     try:
-        with installation_bundle(ROOT, args.offline_bundle) as verified_source:
-            install(ROOT, verified_source, args.environment, args.data_dir, progress=report)
+        # An install checks software readiness, not the user's saved company profiles.
+        data_context = (nullcontext(args.data_dir) if args.data_dir is not None
+                        else tempfile.TemporaryDirectory(prefix='qa-install-check-'))
+        with data_context as diagnostic_data, installation_bundle(ROOT, args.offline_bundle) as verified_source:
+            install(ROOT, verified_source, args.environment, diagnostic_data, progress=report)
     except (InstallError, BundleError) as error:
         report['code'] = str(error)
     except (OSError, ValueError):

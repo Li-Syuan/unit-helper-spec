@@ -240,6 +240,23 @@ class OfflineInstallerTests(unittest.TestCase):
                 installer.install(self.root,self.folder,'.venv-new')
             self.assertFalse((self.root/'.venv-new').exists());run.assert_not_called()
 
+    def test_main_diagnostics_are_isolated_and_explicit_data_is_preserved(self):
+        from contextlib import redirect_stdout
+        import io
+        seen=[]
+        def fake_install(project, source, environment, data_dir, progress):
+            data=Path(data_dir);self.assertTrue(data.is_dir())
+            seen.append(data)
+            progress.update(status='passed',company_real='not_tested')
+        explicit=self.root/'explicit-data';explicit.mkdir()
+        marker=explicit/'keep.txt';marker.write_text('keep')
+        with patch.object(installer,'ROOT',self.root),patch.object(installer,'install',side_effect=fake_install),redirect_stdout(io.StringIO()):
+            self.assertEqual(installer.main(['--offline-bundle',str(self.folder)]),0)
+            self.assertFalse(seen[-1].exists())
+            self.assertEqual(installer.main(['--offline-bundle',str(self.folder),'--data-dir',str(explicit)]),0)
+            self.assertEqual(seen[-1],explicit)
+            self.assertEqual(marker.read_text(),'keep')
+
     def test_install_is_offline_only_failures_stop_and_lock_is_required(self):
         from contextlib import redirect_stdout
         import io
