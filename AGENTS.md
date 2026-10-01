@@ -1,3 +1,7 @@
+# 2026-10-01 Code ZIP 離線來源（使用者明確授權）
+
+公司可取 Code Download ZIP、不能取 Release。允許正式App缺少的21個wheels進Git的offline-app/packages；48個相同wheels重用experiments/langgraph-lab/packages，來源與SHA256由offline-app/bundle-manifest.json固定。禁止LFS指標、連外補件、覆寫既有環境或對損壞wheelhouse回退；69套件lock不變。此明確授權優先於下方「正式wheels不進Git」舊規則。舊Release、AD與其他功能不更動。
+
 # 0.20.0 官方契約修正（優先於下方舊版限制）
 
 依 [Assistant API](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2719802/Assistant+API) 的 Threads/Messages/Runs/pluginapi 契約整合，不能照抄 verify=False、短 timeout、第一則訊息或每次刪 thread。普通聊天只有保存的 chat_search_enabled=true 與核准 policy 同時成立，Profiles 才由 trusted operation=ordinary_chat 派發工具；task_draft、planner、analysis/review/compose 保持停用。既有日報與已驗收 rag 規則不變；舊 policy 不自動放寬，修改憑證／連線撤銷核准與能力。

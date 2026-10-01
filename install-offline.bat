@@ -10,7 +10,8 @@ exit /b %QA_INSTALL_RESULT%
 :usage
 echo Usage: install-offline.bat "C:\approved\Python3104\python.exe"
 echo Run from CMD with the approved Python 3.10.4 x64 executable path.
-echo Extract the COMPLETE official offline ZIP first. Clone alone has no wheels.
+echo Extract the COMPLETE current Code ZIP or official offline ZIP first.
+echo Code ZIP reuses tracked lab wheels plus the verified App additions.
 echo No PowerShell policy change is required. Existing .venv is not overwritten.
 pause
 exit /b 2

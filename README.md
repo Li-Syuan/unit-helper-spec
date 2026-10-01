@@ -36,9 +36,9 @@
 
 新增登入頁（AD 函數待提供）；右上角「作者」可展開姓名／工號／電話小卡。畫面預覽與接線方式見[登入工作單](COMPANY-HANDOFF.md#ad-登入與作者資訊)，不啟用 AD 時保留既有本機入口。公開版本只含空白作者範例。
 
-完整離線包放在 [GitHub Releases](https://github.com/Li-Syuan/unit-helper-spec/releases)，包含正式 69 個鎖定 wheels。請先閱讀候選版已知限制，再依下方步驟安裝；單純 clone 不會取得正式 wheelhouse。
+目前 GitHub **Code → Download ZIP** 也含完整 App 所需的 69 個鎖定 wheels：共用 lab 既有 48 個，只新增缺少的 21 個。不是 Git LFS 指標，也不需要 Release 下載。解壓整個資料夾後直接使用 `install-offline.bat`，詳見 [Code ZIP 離線安裝](offline-app/README.md)。既有 [Release 離線包](https://github.com/Li-Syuan/unit-helper-spec/releases) 保持不變。
 
-**組織索引缺少鎖定版本、或 PowerShell 腳本被限制時：**透過核准管道取得完整正式離線 ZIP，解壓到新資料夾，保留組織原專案與 `.venv`。Clone 本身不包含正式 wheels。關閉舊 App，再於新資料夾的 CMD 執行（換成核准的 Python 路徑）：
+**組織索引缺少鎖定版本、或 PowerShell 腳本被限制時：**透過核准管道取得目前 main 的 Code ZIP 或完整正式離線 ZIP，解壓到新資料夾，保留組織原專案與 `.venv`。目前 clone 亦含所需 wheels；不要使用早於本次 Code ZIP 支援的 checkout。關閉舊 App，再於新資料夾的 CMD 執行（換成核准的 Python 路徑）：
 
 ```bat
 install-offline.bat "C:\approved\Python3104\python.exe"

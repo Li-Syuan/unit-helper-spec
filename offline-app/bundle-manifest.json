@@ -1,0 +1,427 @@
+{
+  "schema_version": 1,
+  "bundle": {
+    "schema_version": 1,
+    "target": "cp310-win_amd64",
+    "python": "3.10.4",
+    "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b",
+    "files": {
+      "aiosqlite-0.22.1-py3-none-any.whl": {
+        "sha256": "21c002eb13823fad740196c5a2e9d8e62f6243bd9e7e4a1f87fb5e44ecb4fceb",
+        "package": "aiosqlite",
+        "version": "0.22.1"
+      },
+      "annotated_types-0.8.0-py3-none-any.whl": {
+        "sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0",
+        "package": "annotated-types",
+        "version": "0.8.0"
+      },
+      "anyio-4.15.1-py3-none-any.whl": {
+        "sha256": "6152fdbbf9a77fdec97731721bebf7c4c44f7c29b424b0065826173efc7ed101",
+        "package": "anyio",
+        "version": "4.15.1"
+      },
+      "backports.tarfile-1.2.0-py3-none-any.whl": {
+        "sha256": "77e284d754527b01fb1e6fa8a1afe577858ebe4e9dad8919e34c862cb399bc34",
+        "package": "backports-tarfile",
+        "version": "1.2.0"
+      },
+      "bleach-6.4.0-py3-none-any.whl": {
+        "sha256": "4b6b6a54fff2e69a3dde9d21cc6301220bee3c3cb792187d11403fd795031081",
+        "package": "bleach",
+        "version": "6.4.0"
+      },
+      "bottle-0.13.4-py2.py3-none-any.whl": {
+        "sha256": "045684fbd2764eac9cdeb824861d1551d113e8b683d8d26e296898d3dd99a12e",
+        "package": "bottle",
+        "version": "0.13.4"
+      },
+      "certifi-2026.7.22-py3-none-any.whl": {
+        "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+        "package": "certifi",
+        "version": "2026.7.22"
+      },
+      "cffi-2.1.1-cp310-cp310-win_amd64.whl": {
+        "sha256": "a48d62ab9d6f4f98c983223a547af44be6ca3691074c31cecced6facd3ba2dc1",
+        "package": "cffi",
+        "version": "2.1.1"
+      },
+      "charset_normalizer-3.5.1-cp310-cp310-win_amd64.whl": {
+        "sha256": "be47f99644b208bff7766314013f9acf57b056b04191d570d68ad14022cf5b1d",
+        "package": "charset-normalizer",
+        "version": "3.5.1"
+      },
+      "clr_loader-0.3.1-py3-none-any.whl": {
+        "sha256": "cbad189de20d202a7d621956b0fc38049e13c9bf7ca2923441eff725cd121aa1",
+        "package": "clr-loader",
+        "version": "0.3.1"
+      },
+      "colorama-0.4.6-py2.py3-none-any.whl": {
+        "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+        "package": "colorama",
+        "version": "0.4.6"
+      },
+      "distro-1.9.0-py3-none-any.whl": {
+        "sha256": "7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2",
+        "package": "distro",
+        "version": "1.9.0"
+      },
+      "exceptiongroup-1.3.1-py3-none-any.whl": {
+        "sha256": "a7a39a3bd276781e98394987d3a5701d0c4edffb633bb7a5144577f82c773598",
+        "package": "exceptiongroup",
+        "version": "1.3.1"
+      },
+      "h11-0.16.0-py3-none-any.whl": {
+        "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+        "package": "h11",
+        "version": "0.16.0"
+      },
+      "httpcore-1.0.9-py3-none-any.whl": {
+        "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+        "package": "httpcore",
+        "version": "1.0.9"
+      },
+      "httpcore2-2.13.1-py3-none-any.whl": {
+        "sha256": "e1e05d4f25f7d7d496bfb96748f6f4b67657b03da069b3a68c36069f3db73d0a",
+        "package": "httpcore2",
+        "version": "2.13.1"
+      },
+      "httpx-0.28.1-py3-none-any.whl": {
+        "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+        "package": "httpx",
+        "version": "0.28.1"
+      },
+      "httpx2-2.13.1-py3-none-any.whl": {
+        "sha256": "6dff50fabc270ee5fd25d845d0b078ed20564579744d6d962850975996d2f9a4",
+        "package": "httpx2",
+        "version": "2.13.1"
+      },
+      "idna-3.20-py3-none-any.whl": {
+        "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c",
+        "package": "idna",
+        "version": "3.20"
+      },
+      "importlib_metadata-9.0.1-py3-none-any.whl": {
+        "sha256": "bba5600596a7e21f3eef53281cf28d6a5195634d2f2b78ff9501a3272c6eaab0",
+        "package": "importlib-metadata",
+        "version": "9.0.1"
+      },
+      "jaraco.classes-3.4.0-py3-none-any.whl": {
+        "sha256": "f662826b6bed8cace05e7ff873ce0f9283b5c924470fe664fff1c2f00f581790",
+        "package": "jaraco-classes",
+        "version": "3.4.0"
+      },
+      "jaraco_context-6.1.2-py3-none-any.whl": {
+        "sha256": "bf8150b79a2d5d91ae48629d8b427a8f7ba0e1097dd6202a9059f29a36379535",
+        "package": "jaraco-context",
+        "version": "6.1.2"
+      },
+      "jaraco_functools-4.6.0-py3-none-any.whl": {
+        "sha256": "99e3dc0060c5cbe8fcd1cdb36258e2a65ca40f1566b2033b12abb1bb44dd3c30",
+        "package": "jaraco-functools",
+        "version": "4.6.0"
+      },
+      "jiter-0.17.0-cp310-cp310-win_amd64.whl": {
+        "sha256": "37150a9e02e869475854fa20b7d0d5e26d18d0f8bc17293999973ff27e99ae7a",
+        "package": "jiter",
+        "version": "0.17.0"
+      },
+      "jsonpatch-1.33-py2.py3-none-any.whl": {
+        "sha256": "0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade",
+        "package": "jsonpatch",
+        "version": "1.33"
+      },
+      "jsonpointer-3.1.1-py3-none-any.whl": {
+        "sha256": "8ff8b95779d071ba472cf5bc913028df06031797532f08a7d5b602d8b2a488ca",
+        "package": "jsonpointer",
+        "version": "3.1.1"
+      },
+      "keyring-25.7.0-py3-none-any.whl": {
+        "sha256": "be4a0b195f149690c166e850609a477c532ddbfbaed96a404d4e43f8d5e2689f",
+        "package": "keyring",
+        "version": "25.7.0"
+      },
+      "langchain_core-1.6.5-py3-none-any.whl": {
+        "sha256": "54c7b0e9314b9084fb04405bb33dc5d32986d512d92b7b8863899cd5f6267556",
+        "package": "langchain-core",
+        "version": "1.6.5"
+      },
+      "langchain_protocol-0.0.19-py3-none-any.whl": {
+        "sha256": "4cdf879a492a35980fd859ae792d3c65458ccaae504e183c9a10d7eac1f0720f",
+        "package": "langchain-protocol",
+        "version": "0.0.19"
+      },
+      "langgraph-1.2.12-py3-none-any.whl": {
+        "sha256": "95403af7b510de8d79164742f71daaf866c69ca804a8cb72bef2cc1fa1ab9813",
+        "package": "langgraph",
+        "version": "1.2.12"
+      },
+      "langgraph_checkpoint-4.2.0-py3-none-any.whl": {
+        "sha256": "0547fd228935a0b758865de3a3d6d7a2537c308895d0f9ab092ce9151b5da942",
+        "package": "langgraph-checkpoint",
+        "version": "4.2.0"
+      },
+      "langgraph_checkpoint_sqlite-3.1.1-py3-none-any.whl": {
+        "sha256": "8505c54c94a658080525d7e6780fdd4e0c078ff2566b30d399c02cc9f9af1c63",
+        "package": "langgraph-checkpoint-sqlite",
+        "version": "3.1.1"
+      },
+      "langgraph_prebuilt-1.1.0-py3-none-any.whl": {
+        "sha256": "51e311747d755b751d5c6b39b0c1446124d3a7643d2515017e6714b323508fc9",
+        "package": "langgraph-prebuilt",
+        "version": "1.1.0"
+      },
+      "langgraph_sdk-0.4.5-py3-none-any.whl": {
+        "sha256": "e03ef033a20d21288af496e9b6c08ae3afcc1b58dc5abcd37575bfd1a93045de",
+        "package": "langgraph-sdk",
+        "version": "0.4.5"
+      },
+      "langsmith-0.14.1-py3-none-any.whl": {
+        "sha256": "dcfd8a25ba72d8663024bd87df02e372e470f43e18f4a726f37fbacc772c0193",
+        "package": "langsmith",
+        "version": "0.14.1"
+      },
+      "markdown_it_py-4.2.0-py3-none-any.whl": {
+        "sha256": "9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a",
+        "package": "markdown-it-py",
+        "version": "4.2.0"
+      },
+      "mdurl-0.1.2-py3-none-any.whl": {
+        "sha256": "84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8",
+        "package": "mdurl",
+        "version": "0.1.2"
+      },
+      "more_itertools-11.1.0-py3-none-any.whl": {
+        "sha256": "4b65538ae22f6fed0ce4874efd317463a7489796a0939fa66824dd542125a192",
+        "package": "more-itertools",
+        "version": "11.1.0"
+      },
+      "openai-2.54.0-py3-none-any.whl": {
+        "sha256": "89089789197ccdb87f173a03145ed1598d00795220c93e96cf712b1cbf5e5f2b",
+        "package": "openai",
+        "version": "2.54.0"
+      },
+      "orjson-3.12.0-cp310-cp310-win_amd64.whl": {
+        "sha256": "3bb17a06f9bd15237b3216c044209fe92597379124018cfc196fbb846cde64df",
+        "package": "orjson",
+        "version": "3.12.0"
+      },
+      "ormsgpack-1.12.2-cp310-cp310-win_amd64.whl": {
+        "sha256": "dc7a33be14c347893edbb1ceda89afbf14c467d593a5ee92c11de4f1666b4d4f",
+        "package": "ormsgpack",
+        "version": "1.12.2"
+      },
+      "packaging-26.3-py3-none-any.whl": {
+        "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+        "package": "packaging",
+        "version": "26.3"
+      },
+      "pip-24.3.1-py3-none-any.whl": {
+        "sha256": "3790624780082365f47549d032f3770eeb2b1e8bd1f7b2e02dace1afa361b4ed",
+        "package": "pip",
+        "version": "24.3.1"
+      },
+      "proxy_tools-0.1.0-py3-none-any.whl": {
+        "sha256": "eeba7ac996dce16ca1d161fa1e12179570d0758ebbdadbd72526ec84ae8fd7b2",
+        "package": "proxy-tools",
+        "version": "0.1.0"
+      },
+      "pycparser-3.0-py3-none-any.whl": {
+        "sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992",
+        "package": "pycparser",
+        "version": "3.0"
+      },
+      "pydantic-2.13.5-py3-none-any.whl": {
+        "sha256": "346a034f080da3755d8e9cb5e00e8b07de1d39e4f6e2c87d8ab7cafa0b269a73",
+        "package": "pydantic",
+        "version": "2.13.5"
+      },
+      "pydantic_core-2.46.5-cp310-cp310-win_amd64.whl": {
+        "sha256": "1e5aad1220a1192c42341c8fd4a8686657e73ab2a920c970bdc4de334fe3193d",
+        "package": "pydantic-core",
+        "version": "2.46.5"
+      },
+      "python_dotenv-1.2.3-py3-none-any.whl": {
+        "sha256": "904552145e8bfed22162c09dab1c2b9b54fefa7b23ba780f4f26ca0316b0f0d9",
+        "package": "python-dotenv",
+        "version": "1.2.3"
+      },
+      "pythonnet-3.1.0-cp310.cp311.cp312.cp313.cp314-none-win32.win_amd64.whl": {
+        "sha256": "7bdd4de03df3547a48122a3989265c8b31d5be0d19dadffa009eec7df8085e0b",
+        "package": "pythonnet",
+        "version": "3.1.0"
+      },
+      "pywebview-6.2.1-py3-none-any.whl": {
+        "sha256": "9d07275f53894ab4d5e2e0e996227193e7187dec276d9b624dccbce029216b46",
+        "package": "pywebview",
+        "version": "6.2.1"
+      },
+      "pywin32_ctypes-0.2.3-py3-none-any.whl": {
+        "sha256": "8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8",
+        "package": "pywin32-ctypes",
+        "version": "0.2.3"
+      },
+      "pyyaml-6.0.3-cp310-cp310-win_amd64.whl": {
+        "sha256": "bdb2c67c6c1390b63c6ff89f210c8fd09d9a1217a465701eac7316313c915e4c",
+        "package": "pyyaml",
+        "version": "6.0.3"
+      },
+      "requests-2.34.2-py3-none-any.whl": {
+        "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0",
+        "package": "requests",
+        "version": "2.34.2"
+      },
+      "requests_toolbelt-1.0.0-py2.py3-none-any.whl": {
+        "sha256": "cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06",
+        "package": "requests-toolbelt",
+        "version": "1.0.0"
+      },
+      "setuptools-58.1.0-py3-none-any.whl": {
+        "sha256": "7324fd4b66efa05cdfc9c89174573a4410acc7848f318cc0565c7fb659dfdc81",
+        "package": "setuptools",
+        "version": "58.1.0"
+      },
+      "sniffio-1.3.1-py3-none-any.whl": {
+        "sha256": "2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2",
+        "package": "sniffio",
+        "version": "1.3.1"
+      },
+      "sqlite_vec-0.1.9-py3-none-win_amd64.whl": {
+        "sha256": "4a28dc12fa4b53d7b1dced22da2488fade444e96b5d16fd2d698cd670675cf32",
+        "package": "sqlite-vec",
+        "version": "0.1.9"
+      },
+      "tenacity-9.1.4-py3-none-any.whl": {
+        "sha256": "6095a360c919085f28c6527de529e76a06ad89b23659fa881ae0649b867a9d55",
+        "package": "tenacity",
+        "version": "9.1.4"
+      },
+      "tqdm-4.70.1-py3-none-any.whl": {
+        "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73",
+        "package": "tqdm",
+        "version": "4.70.1"
+      },
+      "truststore-0.10.4-py3-none-any.whl": {
+        "sha256": "adaeaecf1cbb5f4de3b1959b42d41f6fab57b2b1666adb59e89cb0b53361d981",
+        "package": "truststore",
+        "version": "0.10.4"
+      },
+      "typing_extensions-4.16.0-py3-none-any.whl": {
+        "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+        "package": "typing-extensions",
+        "version": "4.16.0"
+      },
+      "typing_inspection-0.4.4-py3-none-any.whl": {
+        "sha256": "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147",
+        "package": "typing-inspection",
+        "version": "0.4.4"
+      },
+      "urllib3-2.8.0-py3-none-any.whl": {
+        "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3",
+        "package": "urllib3",
+        "version": "2.8.0"
+      },
+      "uuid_utils-0.17.1-cp310-cp310-win_amd64.whl": {
+        "sha256": "f2e91fef913d654f643ba7e4f92347002aff0debeb84cccaf474912756b43a9c",
+        "package": "uuid-utils",
+        "version": "0.17.1"
+      },
+      "webencodings-0.6.1-py3-none-any.whl": {
+        "sha256": "7fab6269c8bf237c657876b52058ccb182e861518d1c695c1a9aaa8c1c105d5b",
+        "package": "webencodings",
+        "version": "0.6.1"
+      },
+      "websockets-16.1.1-cp310-cp310-win_amd64.whl": {
+        "sha256": "d57685547e0060cc6fd90ee6a28405d6bd395e525545f13c8d7cd99c78afd79f",
+        "package": "websockets",
+        "version": "16.1.1"
+      },
+      "xxhash-4.0.1-cp310-cp310-win_amd64.whl": {
+        "sha256": "8ec4777d92fd61a5c8fdeddab894fd65bea301a8092fb5419ec6472aa4d458d7",
+        "package": "xxhash",
+        "version": "4.0.1"
+      },
+      "zipp-4.1.0-py3-none-any.whl": {
+        "sha256": "25ad4e16390cd314347dd8f1de67a2ac538ae658ed4ab9db16029c07c188e97f",
+        "package": "zipp",
+        "version": "4.1.0"
+      },
+      "zstandard-0.25.0-cp310-cp310-win_amd64.whl": {
+        "sha256": "ea9d54cc3d8064260114a0bbf3479fc4a98b21dffc89b3459edd506b69262f6e",
+        "package": "zstandard",
+        "version": "0.25.0"
+      }
+    }
+  },
+  "sources": {
+    "aiosqlite-0.22.1-py3-none-any.whl": "experiments/langgraph-lab/packages/aiosqlite-0.22.1-py3-none-any.whl",
+    "annotated_types-0.8.0-py3-none-any.whl": "experiments/langgraph-lab/packages/annotated_types-0.8.0-py3-none-any.whl",
+    "anyio-4.15.1-py3-none-any.whl": "experiments/langgraph-lab/packages/anyio-4.15.1-py3-none-any.whl",
+    "backports.tarfile-1.2.0-py3-none-any.whl": "offline-app/packages/backports.tarfile-1.2.0-py3-none-any.whl",
+    "bleach-6.4.0-py3-none-any.whl": "offline-app/packages/bleach-6.4.0-py3-none-any.whl",
+    "bottle-0.13.4-py2.py3-none-any.whl": "offline-app/packages/bottle-0.13.4-py2.py3-none-any.whl",
+    "certifi-2026.7.22-py3-none-any.whl": "experiments/langgraph-lab/packages/certifi-2026.7.22-py3-none-any.whl",
+    "cffi-2.1.1-cp310-cp310-win_amd64.whl": "offline-app/packages/cffi-2.1.1-cp310-cp310-win_amd64.whl",
+    "charset_normalizer-3.5.1-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/charset_normalizer-3.5.1-cp310-cp310-win_amd64.whl",
+    "clr_loader-0.3.1-py3-none-any.whl": "offline-app/packages/clr_loader-0.3.1-py3-none-any.whl",
+    "colorama-0.4.6-py2.py3-none-any.whl": "experiments/langgraph-lab/packages/colorama-0.4.6-py2.py3-none-any.whl",
+    "distro-1.9.0-py3-none-any.whl": "experiments/langgraph-lab/packages/distro-1.9.0-py3-none-any.whl",
+    "exceptiongroup-1.3.1-py3-none-any.whl": "experiments/langgraph-lab/packages/exceptiongroup-1.3.1-py3-none-any.whl",
+    "h11-0.16.0-py3-none-any.whl": "experiments/langgraph-lab/packages/h11-0.16.0-py3-none-any.whl",
+    "httpcore-1.0.9-py3-none-any.whl": "experiments/langgraph-lab/packages/httpcore-1.0.9-py3-none-any.whl",
+    "httpcore2-2.13.1-py3-none-any.whl": "experiments/langgraph-lab/packages/httpcore2-2.13.1-py3-none-any.whl",
+    "httpx-0.28.1-py3-none-any.whl": "experiments/langgraph-lab/packages/httpx-0.28.1-py3-none-any.whl",
+    "httpx2-2.13.1-py3-none-any.whl": "experiments/langgraph-lab/packages/httpx2-2.13.1-py3-none-any.whl",
+    "idna-3.20-py3-none-any.whl": "experiments/langgraph-lab/packages/idna-3.20-py3-none-any.whl",
+    "importlib_metadata-9.0.1-py3-none-any.whl": "offline-app/packages/importlib_metadata-9.0.1-py3-none-any.whl",
+    "jaraco.classes-3.4.0-py3-none-any.whl": "offline-app/packages/jaraco.classes-3.4.0-py3-none-any.whl",
+    "jaraco_context-6.1.2-py3-none-any.whl": "offline-app/packages/jaraco_context-6.1.2-py3-none-any.whl",
+    "jaraco_functools-4.6.0-py3-none-any.whl": "offline-app/packages/jaraco_functools-4.6.0-py3-none-any.whl",
+    "jiter-0.17.0-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/jiter-0.17.0-cp310-cp310-win_amd64.whl",
+    "jsonpatch-1.33-py2.py3-none-any.whl": "experiments/langgraph-lab/packages/jsonpatch-1.33-py2.py3-none-any.whl",
+    "jsonpointer-3.1.1-py3-none-any.whl": "experiments/langgraph-lab/packages/jsonpointer-3.1.1-py3-none-any.whl",
+    "keyring-25.7.0-py3-none-any.whl": "offline-app/packages/keyring-25.7.0-py3-none-any.whl",
+    "langchain_core-1.6.5-py3-none-any.whl": "experiments/langgraph-lab/packages/langchain_core-1.6.5-py3-none-any.whl",
+    "langchain_protocol-0.0.19-py3-none-any.whl": "experiments/langgraph-lab/packages/langchain_protocol-0.0.19-py3-none-any.whl",
+    "langgraph-1.2.12-py3-none-any.whl": "experiments/langgraph-lab/packages/langgraph-1.2.12-py3-none-any.whl",
+    "langgraph_checkpoint-4.2.0-py3-none-any.whl": "experiments/langgraph-lab/packages/langgraph_checkpoint-4.2.0-py3-none-any.whl",
+    "langgraph_checkpoint_sqlite-3.1.1-py3-none-any.whl": "experiments/langgraph-lab/packages/langgraph_checkpoint_sqlite-3.1.1-py3-none-any.whl",
+    "langgraph_prebuilt-1.1.0-py3-none-any.whl": "experiments/langgraph-lab/packages/langgraph_prebuilt-1.1.0-py3-none-any.whl",
+    "langgraph_sdk-0.4.5-py3-none-any.whl": "experiments/langgraph-lab/packages/langgraph_sdk-0.4.5-py3-none-any.whl",
+    "langsmith-0.14.1-py3-none-any.whl": "experiments/langgraph-lab/packages/langsmith-0.14.1-py3-none-any.whl",
+    "markdown_it_py-4.2.0-py3-none-any.whl": "offline-app/packages/markdown_it_py-4.2.0-py3-none-any.whl",
+    "mdurl-0.1.2-py3-none-any.whl": "offline-app/packages/mdurl-0.1.2-py3-none-any.whl",
+    "more_itertools-11.1.0-py3-none-any.whl": "offline-app/packages/more_itertools-11.1.0-py3-none-any.whl",
+    "openai-2.54.0-py3-none-any.whl": "experiments/langgraph-lab/packages/openai-2.54.0-py3-none-any.whl",
+    "orjson-3.12.0-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/orjson-3.12.0-cp310-cp310-win_amd64.whl",
+    "ormsgpack-1.12.2-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/ormsgpack-1.12.2-cp310-cp310-win_amd64.whl",
+    "packaging-26.3-py3-none-any.whl": "experiments/langgraph-lab/packages/packaging-26.3-py3-none-any.whl",
+    "pip-24.3.1-py3-none-any.whl": "experiments/langgraph-lab/packages/pip-24.3.1-py3-none-any.whl",
+    "proxy_tools-0.1.0-py3-none-any.whl": "offline-app/packages/proxy_tools-0.1.0-py3-none-any.whl",
+    "pycparser-3.0-py3-none-any.whl": "offline-app/packages/pycparser-3.0-py3-none-any.whl",
+    "pydantic-2.13.5-py3-none-any.whl": "experiments/langgraph-lab/packages/pydantic-2.13.5-py3-none-any.whl",
+    "pydantic_core-2.46.5-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/pydantic_core-2.46.5-cp310-cp310-win_amd64.whl",
+    "python_dotenv-1.2.3-py3-none-any.whl": "offline-app/packages/python_dotenv-1.2.3-py3-none-any.whl",
+    "pythonnet-3.1.0-cp310.cp311.cp312.cp313.cp314-none-win32.win_amd64.whl": "offline-app/packages/pythonnet-3.1.0-cp310.cp311.cp312.cp313.cp314-none-win32.win_amd64.whl",
+    "pywebview-6.2.1-py3-none-any.whl": "offline-app/packages/pywebview-6.2.1-py3-none-any.whl",
+    "pywin32_ctypes-0.2.3-py3-none-any.whl": "offline-app/packages/pywin32_ctypes-0.2.3-py3-none-any.whl",
+    "pyyaml-6.0.3-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/pyyaml-6.0.3-cp310-cp310-win_amd64.whl",
+    "requests-2.34.2-py3-none-any.whl": "experiments/langgraph-lab/packages/requests-2.34.2-py3-none-any.whl",
+    "requests_toolbelt-1.0.0-py2.py3-none-any.whl": "experiments/langgraph-lab/packages/requests_toolbelt-1.0.0-py2.py3-none-any.whl",
+    "setuptools-58.1.0-py3-none-any.whl": "experiments/langgraph-lab/packages/setuptools-58.1.0-py3-none-any.whl",
+    "sniffio-1.3.1-py3-none-any.whl": "experiments/langgraph-lab/packages/sniffio-1.3.1-py3-none-any.whl",
+    "sqlite_vec-0.1.9-py3-none-win_amd64.whl": "experiments/langgraph-lab/packages/sqlite_vec-0.1.9-py3-none-win_amd64.whl",
+    "tenacity-9.1.4-py3-none-any.whl": "experiments/langgraph-lab/packages/tenacity-9.1.4-py3-none-any.whl",
+    "tqdm-4.70.1-py3-none-any.whl": "experiments/langgraph-lab/packages/tqdm-4.70.1-py3-none-any.whl",
+    "truststore-0.10.4-py3-none-any.whl": "experiments/langgraph-lab/packages/truststore-0.10.4-py3-none-any.whl",
+    "typing_extensions-4.16.0-py3-none-any.whl": "experiments/langgraph-lab/packages/typing_extensions-4.16.0-py3-none-any.whl",
+    "typing_inspection-0.4.4-py3-none-any.whl": "experiments/langgraph-lab/packages/typing_inspection-0.4.4-py3-none-any.whl",
+    "urllib3-2.8.0-py3-none-any.whl": "experiments/langgraph-lab/packages/urllib3-2.8.0-py3-none-any.whl",
+    "uuid_utils-0.17.1-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/uuid_utils-0.17.1-cp310-cp310-win_amd64.whl",
+    "webencodings-0.6.1-py3-none-any.whl": "offline-app/packages/webencodings-0.6.1-py3-none-any.whl",
+    "websockets-16.1.1-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/websockets-16.1.1-cp310-cp310-win_amd64.whl",
+    "xxhash-4.0.1-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/xxhash-4.0.1-cp310-cp310-win_amd64.whl",
+    "zipp-4.1.0-py3-none-any.whl": "offline-app/packages/zipp-4.1.0-py3-none-any.whl",
+    "zstandard-0.25.0-cp310-cp310-win_amd64.whl": "experiments/langgraph-lab/packages/zstandard-0.25.0-cp310-cp310-win_amd64.whl"
+  }
+}

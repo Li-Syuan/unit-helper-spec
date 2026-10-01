@@ -18,6 +18,7 @@ def module(name, filename):
 doctor = module('environment_doctor', 'doctor.py')
 bundle = module('environment_bundle', 'offline_bundle.py')
 installer = module('environment_installer', 'install-offline.py')
+code_zip = module('environment_code_zip', 'code_zip_bundle.py')
 
 
 class DiagnosticTests(unittest.TestCase):
@@ -133,6 +134,56 @@ class OfflineBundleTests(unittest.TestCase):
 
     def save_manifest(self):
         (self.folder / 'manifest.json').write_text(json.dumps(self.manifest), encoding='utf-8')
+
+    def code_zip_fixture(self):
+        import shutil
+        source=self.root/'experiments/langgraph-lab/packages'/self.wheel.name
+        source.parent.mkdir(parents=True);shutil.copyfile(self.wheel,source)
+        manifest=self.root/'offline-app/bundle-manifest.json';manifest.parent.mkdir()
+        item={'schema_version':1,'bundle':self.manifest,'sources':{self.wheel.name:source.relative_to(self.root).as_posix()}}
+        manifest.write_text(json.dumps(item),encoding='utf-8')
+        return source,manifest,item
+
+    def test_code_zip_reuses_verified_source_and_removes_temporary_bundle(self):
+        import shutil
+        self.code_zip_fixture();shutil.rmtree(self.folder)
+        with code_zip.installation_bundle(self.root,self.folder) as target:
+            self.assertNotEqual(target,self.folder)
+            self.assertEqual(code_zip.verify_bundle(target,self.lock),self.manifest)
+            self.assertTrue((target/self.wheel.name).is_file())
+        self.assertFalse(target.exists());self.assertFalse(self.folder.exists())
+        self.assertFalse((self.root/'.venv').exists())
+
+    def test_code_zip_corrupt_missing_and_lfs_source_rejected(self):
+        source,manifest,item=self.code_zip_fixture();original=source.read_bytes()
+        for case in ('tampered','missing','lfs'):
+            with self.subTest(case=case),tempfile.TemporaryDirectory() as target:
+                source.write_bytes(original)
+                if case=='tampered':source.write_bytes(original+b'tampered')
+                elif case=='missing':source.unlink()
+                else:source.write_bytes(b'version https://git-lfs.github.com/spec/v1\n')
+                with self.assertRaises(code_zip.BundleError):code_zip.materialize(self.root,target)
+                self.assertFalse((self.root/'.venv').exists())
+
+    def test_code_zip_unsafe_source_or_changed_lock_rejected(self):
+        source,manifest,item=self.code_zip_fixture()
+        for location in ('../'+self.wheel.name,'/outside/'+self.wheel.name,'offline-app/packages/../../'+self.wheel.name):
+            with self.subTest(location=location),tempfile.TemporaryDirectory() as target:
+                item['sources'][self.wheel.name]=location;manifest.write_text(json.dumps(item))
+                with self.assertRaisesRegex(code_zip.BundleError,'source_invalid'):code_zip.materialize(self.root,target)
+        item['sources'][self.wheel.name]=source.relative_to(self.root).as_posix();manifest.write_text(json.dumps(item))
+        self.lock.write_text('sample==2.0\n')
+        with tempfile.TemporaryDirectory() as target,self.assertRaisesRegex(code_zip.BundleError,'fingerprint'):
+            code_zip.materialize(self.root,target)
+
+    def test_code_zip_never_falls_back_from_existing_invalid_wheelhouse(self):
+        self.code_zip_fixture();self.wheel.write_bytes(b'tampered')
+        with code_zip.installation_bundle(self.root,self.folder) as selected:
+            self.assertEqual(selected,self.folder)
+            with patch.object(installer.subprocess,'run') as run,self.assertRaises(installer.BundleError):
+                installer.install(self.root,selected)
+            run.assert_not_called()
+        self.assertFalse((self.root/'.venv').exists())
 
     def test_complete_bundle_verifies(self):
         self.assertEqual(bundle.verify_bundle(self.folder, self.lock), self.manifest)
