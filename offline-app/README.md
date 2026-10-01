@@ -25,3 +25,5 @@ start-demo-login.bat
 - 原正式包的 license/notices 保留於 [THIRD-PARTY-NOTICES](../docs/THIRD-PARTY-NOTICES.md) 與 `docs/licenses`（包含 wheel 本身缺少的 upstream license）；此次沿用已核對的原二進位，不另造依賴版本。
 
 錯誤時保留終端錯誤與 `artifacts/company-test/latest.json`；分享前遮密及去識別。公司 API、AD、人事資料與 Oracle 真實驗證仍未執行。VS Code Copilot 接手先開啟整個解壓資料夾，讀 AGENTS、README、ONE-CLICK-TEST、COMPANY-IMPLEMENTATION、DVC-REVIEW、VALIDATION；使用公司核准模型及權限，不宣稱 Copilot 可離線使用。
+
+本次遠端ZIP實測：安裝通過、定向19/19、WebView25/25、原生登入3/3；完整回歸570通過及1項Windows剪貼簿error5，一鍵full會正確停止。未解決或跳過該錯誤，詳見 [驗證結果](../docs/VALIDATION.md)。

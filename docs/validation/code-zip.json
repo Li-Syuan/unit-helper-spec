@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "tested_commit": "54767c7a58be4b30870eee04a4352899f2f992d6",
+  "archive_url": "https://github.com/Li-Syuan/unit-helper-spec/archive/54767c7a58be4b30870eee04a4352899f2f992d6.zip",
+  "archive_bytes": 20062294,
+  "archive_sha256": "71b4b2fadb7fd84ffa31f6e771acb1f09bd42a00011a928c02cb848cf8f17513",
+  "source_manifest": "passed",
+  "wheel_files": "real_binary_not_lfs",
+  "app_wheels": 69,
+  "lab_shared": 48,
+  "app_added": 21,
+  "added_bytes": 3101202,
+  "python": "3.10.4",
+  "platform": "Windows x64",
+  "installation": {
+    "status": "passed",
+    "environment_created": true,
+    "checks": [
+      {
+        "name": "bundle_integrity",
+        "status": "passed"
+      },
+      {
+        "name": "base_python",
+        "exit_code": 0,
+        "status": "passed"
+      },
+      {
+        "name": "create_environment",
+        "exit_code": 0,
+        "status": "passed"
+      },
+      {
+        "name": "offline_install",
+        "exit_code": 0,
+        "status": "passed"
+      },
+      {
+        "name": "pip_check",
+        "exit_code": 0,
+        "status": "passed"
+      },
+      {
+        "name": "environment_diagnostic",
+        "exit_code": 0,
+        "status": "passed"
+      },
+      {
+        "name": "lock_match",
+        "status": "passed"
+      }
+    ],
+    "full_regression": "not_tested",
+    "company_real": "not_tested",
+    "wheels": 69,
+    "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b"
+  },
+  "regression": {
+    "count": 571,
+    "passed": false,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 1,
+    "expected_failures": 0,
+    "unexpected_successes": 0,
+    "seconds": 155.1194
+  },
+  "regression_error": {
+    "test": "tests.test_dialogs.DialogTests.test_long_message_theme_copy_and_close_without_mutation",
+    "api": "OpenClipboard",
+    "windows_error": 5,
+    "targeted_retest": "same_error",
+    "read_only_probe": "clipboard_denied_even_without_Tk; input_desktop_readable; no_busy_window",
+    "resolution": "not_resolved; no_permission_changes_or_test_skips"
+  },
+  "webview": {
+    "status": "passed",
+    "passed_checks": 25,
+    "checks": [
+      "bridge_ready",
+      "author_popover_readonly_escape_outside_and_late_reply_fence",
+      "six_style_modes_preserve_form_semantic_colors_save_retry_reset_zero_dispatch",
+      "semantic_theme_keeps_draft_selection_and_zero_dispatch",
+      "failed_request_fenced_inspect_fork_and_explicit_delete",
+      "provider_failure_preserves_input_and_messages_no_fallback",
+      "offline_multiturn_mode_reset_questions_preview_cancel_and_disabled_save",
+      "assistant_switch_starts_empty_view",
+      "chat_sent_from_dom",
+      "three_click_query_zero_dispatch_before_confirm",
+      "workflow_explicit_approval_and_outcome_feedback_mock",
+      "attention_running_success_failure_distinct_in_both_themes",
+      "notification_unread_is_informational_explicit_view_only_and_state_retained",
+      "untrusted_navigation_blocked",
+      "proven_unsent_retry_same_request_preserves_history",
+      "company_sdk_mock_multiturn_main_ui_badge_small_controls",
+      "briefing_dom_preview_trial_review_schedule_pause_mock",
+      "cleanup_cancel_confirm_no_dispatch_preserves_schedule_query_entry",
+      "company_setup_and_metadata_probe_no_model_dispatch",
+      "search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search",
+      "chat_search_separate_opt_in_and_single_mock_tool_roundtrip",
+      "credential_revision_fork_explicit_destination_and_preserved_draft_zero_dispatch",
+      "todo_real_inbox_source_zero_dispatch_description_search_due_filters_transitions_duplicate_save_empty_cancel_small_light_maximized",
+      "todo_main_source_navigation_preserves_unsent_draft_and_deleted_source_keeps_copy_zero_dispatch",
+      "offline_demo_login_workspace_network_settings_denied_logout_veil_and_bridge_navigation_bypass_rejected"
+    ],
+    "providers": "synthetic",
+    "runtime": "real_MSI_WebView2"
+  },
+  "native_login": {
+    "status": "passed",
+    "company_real": "not_tested",
+    "checks": [
+      "actual_native_demo_login_before_workspace",
+      "actual_logout_with_unsent_draft_requested",
+      "native_webview_closed_and_temporary_workspace_removed"
+    ]
+  },
+  "company_real": "not_tested",
+  "full_one_click": "failed_at_regression; UI_mode_passed_separately",
+  "earlier_installation": "3eab8c7 failed diagnostic on existing saved profile; fixed by isolated install diagnostics in 54767c7; original reports retained locally"
+}

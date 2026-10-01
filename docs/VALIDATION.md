@@ -1,3 +1,21 @@
+# Code ZIP 離線交付驗證（2026-10-01）
+
+本次改動只補齊 GitHub Code ZIP 的 App 離線來源及安裝診斷隔離；lock、AD、App 功能與舊 Release 不變。實際下載公開遠端 `54767c7a58be4b30870eee04a4352899f2f992d6` archive（20,062,294 bytes），驗來源 MANIFEST、69 個 wheel 二進位及雜湊後，在 MSI 的新目錄執行真正 `install-offline.bat`，不連網補件。原環境未覆蓋。
+
+| 範圍 | 本次結果 |
+|---|---|
+| 安裝 | **通過**：69 wheels、Python3.10.4 x64／Tk、pip check、doctor、freeze精確符合原lock |
+| 完整回歸 | **570通過／571執行，0failure、1error、0skip**；唯一錯誤是長訊息剪貼簿讀回 `OpenClipboard` 被Windows拒絕（error5），單獨重測仍失敗 |
+| Code ZIP／installer 定向測試 | **19/19通過**，含損壞、缺檔、LFS指標、不安全路徑、lock不符拒絕，以及暫存診斷／既有資料保留 |
+| WebView合成UI | **25/25通過**；MSI真實WebView2，provider與公司SDK為合成 |
+| 原生展示登入生命週期 | **3/3通過**，先登入、帶未送出草稿登出、WebView關閉及暫存清除 |
+| 一鍵入口 | full模式因回歸錯誤正確停止；另跑`test-company.bat ui`通過，不將它宣稱成full通過 |
+| 真實公司DVC／AD／人事使用資格／Oracle | **未執行** |
+
+[去識別證據](validation/code-zip.json)。剪貼簿拒絕尚未解決；唯讀探測在Tk外也出現error5，而input desktop可讀、未見busy window，無法據此判定具體權限／桌面政策原因。未放寬Windows權限、跳過測試或修改公司政策；公司端若同樣失敗，需由核准的互動桌面確認剪貼簿可用性後重跑，不能當公司服務通過。最初安裝因診斷誤讀MSI既有助理設定而停止，已以隔離診斷修正並從另一個遠端ZIP新資料夾安裝通過。最後證據提交只改文件及清單，runtime／wheels與上述已測commit相同，另核對最終遠端ZIP。
+
+以下為先前 Release 登入與待辦版歷史驗證，不能代替本次 Code ZIP 的結果。
+
 # 本次待辦與一鍵交付驗證
 
 2026-09-30，0.21.0登入與待辦版，基於0.20.0/e189eda工作樹；發布依使用者後續明確授權另行執行。主schema6、dialogue schema2、69套件lock未變。
