@@ -154,6 +154,6 @@ class WorkOrderTests(unittest.TestCase):
             self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='work_orders'").fetchone())
         migrated=Store(path)
         self.assertEqual(migrated.conversation(cid)['title'],'preserved')
-        with migrated.connection() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],7)
-        for backup in path.parent.glob('migration.sqlite3.pre-v7-*.bak'):
+        with migrated.connection() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],8)
+        for backup in path.parent.glob('migration.sqlite3.pre-v8-*.bak'):
             with sqlite3.connect(backup) as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],6)

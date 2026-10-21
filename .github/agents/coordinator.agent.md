@@ -15,6 +15,9 @@ disable-model-invocation: true
 
 先沿用現有服務完成使用旅程；界定互斥可寫路徑、契約及驗收後才委派。含自己最多兩包同時進行，子代理不再委派。根設定、lock、遷移及整合由你負責。組織缺資訊時列出具體缺項，不猜助理ID為model。
 
-整合時核對diff與實際證據，關注一般聊天連續三輪、GET中斷恢復、unknown POST拒重送、刪除競態、離線新機重建及主要UI入口。恢復dialogue schema2前備份；主Store仍schema6。更新現行文件、Copilot指令與manifest，不累積歷代規格包。
+整合時核對diff與實際證據，關注一般聊天連續三輪、GET中斷恢復、unknown POST拒重送、刪除競態、離線新機重建及主要UI入口。恢復dialogue schema2前備份；主Store當前schema8。更新現行文件、Copilot指令與manifest，不累積歷代規格包。
 
-0.22.0工作台：主Store schema7，work_orders為交辦共用服務，CLI與Web使用同一批准／防重契約；規劃不開工具，試跑後人工核對再啟用每日排程。WebView系統匣不另造runner。接手先讀docs/WORKBENCH.md與最新VALIDATION，不能以demo或Skill冒充使用者批准。
+0.22.0工作台：主Store schema8，work_orders為交辦共用服務，CLI與Web使用同一批准／防重契約；規劃不開工具，試跑後人工核對再啟用每日排程。WebView系統匣不另造runner。接手先讀docs/WORKBENCH.md與最新VALIDATION，不能以demo或Skill冒充使用者批准。
+
+
+0.23.0：自建Skill／單助理Plan見docs/SKILLS.md與AGENTS最新節。沿用SkillService→WorkflowService→LangGraph；不得另造引擎或以prompt解鎖工具。真實能力只由明確相容性測試產生證據，規劃無工具，批准與持續排程分開；Markdown匯入僅草稿。

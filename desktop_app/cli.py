@@ -13,6 +13,19 @@ from pathlib import Path
 HELP = """QA agent 工作台
 直接輸入文字：送給目前助理（預設本機示範）
 /assistants                   列出聊天助理及已驗證規劃角色
+/skills                       列出我的 Skills
+/skill <ID> [profileID]        選取 Skill，建立零派發規劃；預設使用其本機助理
+/skill-values <JSON>           填入必要條件，呼叫規劃前仍須 /reply
+/skill-save <JSON>             新建或修改：{data:定義,id?:ID,revision?:修訂}；預覽確認後保存
+/skill-draft <profileID> <需求> 請指定助理起草方法（一次請求，不保存或執行）
+/skill-import <Markdown路徑>   匯入為新草稿，預覽確認保存（缺欄位改用 /skill-save）
+/skill-export <ID> <路徑>      分享單一 Markdown，不含助理綁定
+/skill-copy <ID>               取得可修改新草稿，不保存
+/skill-manage <ID> <disable|enable|delete> 預覽關聯排程後確認
+/skill-probe <profileID> [search] 明確確認後相容性測試，最多三次請求
+/skill-edit <JSON步驟陣列>     修改目前計畫；舊預覽失效
+/skill-inspect 或 /skill-recover 檢查／取回原規劃，不重送未知請求
+/skill-schedule <HH:MM>        成果核對與持續授權後每日排程
 /order <profile ID> <需求>     建立交辦並請助理補條件（示範ID為demo）
 /orders 或 /order-open <ID>    列出／選取既有交辦
 /order-reply <補充>            補充交辦；不會搜尋
@@ -58,6 +71,9 @@ class Workbench:
         self.thread = None
         self.workflow = None
         self.order = None
+        self.skill_values = None
+
+    def skills(self):return self.call('skill_list')
 
     def orders(self):
         return self.call('order_list')
@@ -151,6 +167,56 @@ def execute_line(w, line, input_stream, output):
     argument=argument.strip()
     if command=='/quit':return False
     if command=='/help':emit(HELP,output)
+    elif command=='/skills':emit(w.skills(),output)
+    elif command=='/skill':
+        sid,_,pid=argument.partition(' ');s=w.call('skill_get',id=sid)
+        pid=pid.strip() or s.get('default_profile_id')
+        if not pid:raise ValueError('請指定本機 profile ID：/skill SkillID profileID')
+        r=w.call('skill_start',id=sid,revision=s['revision'],profile_id=pid,values={},goal=s['purpose'])
+        w.workflow=r['id'];w.skill_values={};emit(r,output)
+    elif command=='/skill-values':
+        from .skills import answers
+        r=w.call('skill_state',wid=w.workflow);v,missing=answers(r['skill']['fields'],json.loads(argument))
+        w.skill_values=v;emit({'values':v,'missing':missing,'notice':'尚未傳送；使用 /reply 討論。'},output)
+    elif command=='/skill-copy':emit(w.call('skill_copy',id=argument),output)
+    elif command=='/skill-draft':
+        pid,_,request=argument.partition(' ')
+        if not request:raise ValueError('用法：/skill-draft profileID 工作方法需求')
+        emit(w.call('skill_generate',profile_id=pid,request=request),output)
+    elif command in ('/skill-save','/skill-import'):
+        if command=='/skill-import':
+            from .skills import import_markdown
+            path=Path(argument.strip('"'))
+            if path.suffix.lower()!='.md' or path.stat().st_size>65536:raise ValueError('只接受64KiB內單一Markdown。')
+            data=import_markdown(path.read_text(encoding='utf-8-sig'));emit({'draft':data},output);p={'data':data}
+        else:p=json.loads(argument)
+        preview=w.call('skill_save_preview',**p)
+        if confirm(preview,'保存工作方法（不執行）？',input_stream,output):emit(w.call('skill_save_confirm',token=preview['token']),output)
+        else:emit('未保存。',output)
+    elif command=='/skill-export':
+        from .skills import export_markdown
+        sid,_,name=argument.partition(' ');path=Path(name.strip('"'))
+        if not name or path.suffix.lower()!='.md':raise ValueError('請指定單一 .md 路徑。')
+        text=export_markdown(w.call('skill_get',id=sid))
+        if confirm({'file':str(path),'notice':'指示正文可能包含你自行寫入的私密資料，請先檢查。'},'匯出以上 Markdown？',input_stream,output):
+            # CLI never silently overwrites a pre-existing user file.
+            with path.open('x',encoding='utf-8') as f:f.write(text)
+            emit('已匯出。',output)
+    elif command=='/skill-manage':
+        sid,_,action=argument.partition(' ');r=w.call('skill_get',id=sid)
+        p=w.call('skill_manage_preview',id=sid,revision=r['revision'],action=action)
+        if confirm(p,'套用以上 Skill 管理操作？',input_stream,output):emit(w.call('skill_manage_confirm',token=p['token']),output)
+    elif command=='/skill-probe':
+        pid,_,search=argument.partition(' ')
+        if search not in ('','search'):raise ValueError('選項僅支援 search。')
+        if confirm({'profile_id':pid,'search':bool(search),'requests':3 if search else 2},'傳送合成相容性測試？',input_stream,output):emit(w.call('skill_probe',profile_id=pid,search=bool(search),consent=True),output)
+    elif command=='/skill-edit':
+        r=w.current_workflow();emit(w.call('skill_update',wid=r['id'],revision=r['revision'],steps=json.loads(argument)),output)
+    elif command in ('/skill-inspect','/skill-recover'):
+        r=w.current_workflow();emit(w.call(command[1:].replace('-','_'),wid=r['id']),output)
+    elif command=='/skill-schedule':
+        r=w.call('skill_state',wid=w.workflow)
+        if confirm({'workflow':r,'time_taipei':argument},'已核對成果與來源，且同意每日持續傳送？',input_stream,output):emit(w.call('skill_schedule',wid=r['id'],revision=r['revision'],time_hhmm=argument,reviewed=True,consent=True),output)
     elif command=='/assistants':emit(w.assistants(),output)
     elif command=='/orders':emit(w.orders(),output)
     elif command=='/order':
@@ -190,17 +256,21 @@ def execute_line(w, line, input_stream, output):
         emit(w.plan(pid,text),output)
     elif command=='/reply':
         r=w.current_workflow()
-        emit(w.call('workflow_discuss',cid=r['conversation_id'],wid=r['id'],revision=r['revision'],text=argument),output)
+        if w.session.skills.link(r['id']):
+            emit(w.call('skill_discuss',wid=r['id'],revision=r['revision'],text=argument,values=w.skill_values if w.skill_values is not None else w.session.skills.link(r['id'])['inputs']),output)
+        else:emit(w.call('workflow_discuss',cid=r['conversation_id'],wid=r['id'],revision=r['revision'],text=argument),output)
     elif command=='/workflow':
         w.session.assert_identity()
-        r=w.session.workflows.snapshot(argument);w.workflow=r['id'];emit(r,output)
+        r=w.session.workflows.snapshot(argument);w.workflow=r['id'];w.skill_values=None;emit(r,output)
     elif command=='/preview':emit(w.preview(),output)
     elif command=='/approve':
         r=w.preview()
         if not r['ready']:raise ValueError(r['error'] or '計畫尚未就緒。')
         if confirm(r,'同意以上修訂的分工與指定資料傳送？',input_stream,output):
             emit(w.call('workflow_confirm',wid=r['id'],revision=r['revision']),output)
-        else:emit('已取消確認；尚未執行。',output)
+        else:
+            w.session.workflows.previews.pop(r['id'],None)
+            emit('已取消確認；尚未執行。',output)
     elif command=='/status':emit(w.status(),output)
     elif command=='/result':emit(w.result(argument),output)
     elif command=='/briefing':
@@ -274,7 +344,7 @@ def main(argv=None):
     source=parser.add_mutually_exclusive_group()
     source.add_argument('--demo',action='store_true',help='暫存離線示範，不讀取正式設定')
     source.add_argument('--config',help='既有本機設定檔；金鑰仍由原keyring機制取得')
-    parser.add_argument('command',nargs='?',choices=['shell','assistants','orders','status','result','desktop'],default='shell')
+    parser.add_argument('command',nargs='?',choices=['shell','assistants','skills','orders','status','result','desktop'],default='shell')
     parser.add_argument('task_id',nargs='?')
     args=parser.parse_args(argv)
     if sys.version_info[:3]!=(3,10,4):parser.error('請使用專案 Python 3.10.4。')

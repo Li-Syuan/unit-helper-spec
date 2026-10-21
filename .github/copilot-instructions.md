@@ -15,3 +15,6 @@
 開發分工按AGENTS，含Coordinator最多兩包同時進行，子代理不另委派。不要擴張中央平台、更新器或任意命令工具。使用者的目標是填參數後操作既有功能，先修可重現的失敗與入口，避免重寫畫面或整套服務。
 
 登入只接 company_auth.py 的可信 AD／名單函數；identity_mode=company 必須先驗證才建工作區，不能以返回 True 代替完整身分契約。每 subject 獨立資料夾，舊資料不自動搬移；密碼不保存、未知認證例外不顯示。publisher.json 是私人作者設定，不進 Git；範例只留空欄位。
+
+
+0.23.0：自建Skill／單助理Plan見docs/SKILLS.md與AGENTS最新節。沿用SkillService→WorkflowService→LangGraph；不得另造引擎或以prompt解鎖工具。真實能力只由明確相容性測試產生證據，規劃無工具，批准與持續排程分開；Markdown匯入僅草稿。

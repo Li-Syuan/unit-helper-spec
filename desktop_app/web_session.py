@@ -63,6 +63,8 @@ class WebSession:
                 query_catalog=self.queries.catalog,assistant_router=self.profiles.respond,binding_validator=self.profiles.validate)
             self.engine.authorization=self.assert_identity
             self.actions=ActionService(self.engine);self.workflows=WorkflowService(self.engine,self.profiles)
+            from .skills import SkillService
+            self.skills=SkillService(self.engine,self.profiles,self.workflows)
             from .assistant_briefings import AssistantBriefings
             self.briefings=AssistantBriefings(self.engine,self.profiles)
             from .work_orders import WorkOrders
@@ -102,7 +104,9 @@ class WebSession:
         if self.scheduler is not None:self.scheduler.join()
         self.dialogue.close(wait=False)
         self.company_probe.close(wait=False)
-        try:self.engine.close(wait=True)
+        try:
+            self.engine.close(wait=True)
+            self.engine.wait_closed()
         finally:
             try:self.dialogue.close(wait=True)
             finally:

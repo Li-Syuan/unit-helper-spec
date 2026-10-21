@@ -97,6 +97,7 @@ class WorkflowService:
         with self.engine._lock:
             self.engine._ensure_open();r=self.get(wid);self._editable(r,revision)
             self.profiles.validate_workflow(r['planner'],'planner')
+            if getattr(self,'skills',None):self.skills.guard_discuss(wid)
             history=r['discussion']+[{'role':'user','content':text}]
             if sum(len(m['content']) for m in history)>12000: raise ValueError('需求討論過長，請另開流程整理需求。')
             with self.store.connection() as db:
@@ -113,12 +114,20 @@ class WorkflowService:
             if self.planning.get(wid) is future:self.planning.pop(wid,None)
             self.engine._futures.discard(future)
 
-    def _plan(self,wid,revision):
+    def _plan(self,wid,revision,resume=False):
         try:
             with self.engine._lock:
                 r=self.get(wid)
                 if self.engine._closed or r['state']!='planning' or r['revision']!=revision:return
                 self.profiles.validate_workflow(r['planner'],'planner')
+            if getattr(self,'skills',None) and self.skills.link(wid):
+                obj=self.skills.planning(r,resume=resume)
+                history=r['discussion']+[{'role':'assistant','content':obj['message']}]
+                with self.engine._lock,self.store.connection() as db:
+                    if self.engine._closed:return
+                    db.execute("UPDATE workflows SET discussion=?,questions=?,steps=?,state=?,updated_at=? WHERE id=? AND revision=? AND state='planning'",
+                        (dumps(history),dumps(obj['questions']),dumps(obj['steps']),'draft' if obj['questions'] else 'ready',stamp(),wid,revision))
+                return
             catalog=[{'id':p['id'],'name':p['name'],'description':p['notes'],'roles':p['workflow']['roles']}
                      for p in self.profiles.workflow_catalog()]
             queries=[{k:t[k] for k in ('id','name','parameters','date_range') if k in t} for t in self.engine.query_catalog()]
@@ -210,6 +219,7 @@ class WorkflowService:
         with self.engine._lock:
             self.engine._ensure_open();r=self.get(wid);self._editable(r,revision)
             clean=self.validate_steps(steps)
+            if getattr(self,'skills',None):self.skills.validate_plan(wid,clean)
             with self.store.connection() as db:
                 db.execute("UPDATE workflows SET steps=?,questions='[]',state='ready',revision=revision+1,error='',updated_at=? WHERE id=?",(dumps(clean),stamp(),wid))
             self.previews.pop(wid,None);return self.get(wid)
@@ -222,6 +232,7 @@ class WorkflowService:
                 if r['state']!='ready':raise ValueError('請先完成需求討論，取得或保存完整計畫。')
                 if r['questions']:raise ValueError('請先回答主代理的問題。')
                 self.validate_steps(r['steps'])
+                if getattr(self,'skills',None):self.skills.validate_plan(wid,r['steps'])
                 self.previews[wid]=(revision,time.monotonic()+600)
                 searches=[]
                 for step in r['steps']:
@@ -255,7 +266,9 @@ class WorkflowService:
             if not p or p[0]!=revision or p[1]<=time.monotonic():raise ValueError('預覽已過期，請重新核對。')
             if consent is not True:raise ValueError('請確認計畫中的跨助理資料傳送範圍。')
             self.profiles.validate_workflow(r['planner'],'planner');self.validate_steps(r['steps'])
+            if getattr(self,'skills',None):self.skills.validate_plan(wid,r['steps'])
             spec={'id':wid,'revision':revision,'goal':r['goal'],'planner':r['planner'],'steps':r['steps']}
+            if getattr(self,'skills',None):spec.update(self.skills.approved_spec(wid))
             with self.store.connection() as db:
                 db.execute('BEGIN IMMEDIATE')
                 db.execute('INSERT INTO workflow_versions VALUES(?,?,?)',(wid,revision,dumps(spec)))
@@ -308,6 +321,11 @@ class WorkflowService:
                 with self.engine._lock:
                     if not self._active(tid):raise ValueError('工作已取消或停止。')
                     inputs={'goal':spec['goal'],'instruction':s.get('instruction',''),'sources':{ref:outputs[ref]['transfer'] for ref in s['inputs']}}
+                    if 'skill' in spec:
+                        inputs['skill']={k:spec['skill'][k] for k in ('name','purpose','instructions','output_format')}
+                        inputs['conditions']=spec['skill_values']
+                        inputs['execution_date_taipei']=datetime.fromisoformat(spec.get('occurrence',task['created_at'])).astimezone(TAIPEI).date().isoformat()
+                        inputs['date_rule']='相對日期（今天／昨天）依本次 execution_date_taipei 解讀；固定日期不改寫。'
                     if len(dumps(inputs))>20000:raise ValueError('步驟輸入超過上限，請縮小資料範圍；沒有截斷送出。')
                     with self.store.connection() as db:
                         db.execute("UPDATE workflow_steps SET state='running',input=? WHERE task_id=? AND step_id=?",(dumps(inputs),tid,current))
@@ -475,13 +493,16 @@ class WorkflowService:
             if created:self.engine._submit(new)
             return new
 
-    def schedule(self,wid,revision,name,frequency,time_hhmm,weekday=0,consent=False):
+    def schedule(self,wid,revision,name,frequency,time_hhmm,weekday=0,consent=False,skill_reviewed=False):
         name=bounded_text(name,'自動工作名稱',120)
         if frequency not in {'daily','weekly'} or type(weekday) is not int or weekday not in range(7) or not isinstance(time_hhmm,str) or not re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d',time_hhmm):
             raise ValueError('請選擇有效頻率與台北時間 HH:MM。')
         if consent is not True:raise ValueError('請確認每次流程的持續資料傳送授權。')
         with self.engine._lock:
             self.engine._ensure_open();r=self.get(wid)
+            if getattr(self,'skills',None) and self.skills.link(wid):
+                self.skills.active(self.skills.link(wid))
+                if skill_reviewed is not True:raise ValueError('Skill 排程需另行核對成果與來源。')
             if r['revision']!=revision or r['state']!='approved' or not r['task_id'] or self.store.task(r['task_id'])['state']!='succeeded':
                 raise ValueError('需相同流程版本試跑成功後才能設定排程。')
             spec=self._spec(wid,revision);self.validate_steps(spec['steps']);self.profiles.validate_workflow(spec['planner'],'planner')
@@ -496,6 +517,9 @@ class WorkflowService:
 
     def schedule_spec(self,s,when):
         meta=s['parameters']['_workflow'];spec=self._spec(meta['id'],meta['revision'])
+        if 'skill' in spec:
+            if not getattr(self,'skills',None):raise ValueError('此入口未支援 Skill 排程，請開啟主要工作區。')
+            self.skills.active({'skill_id':spec['skill']['id']})
         self.profiles.validate_workflow(spec['planner'],'planner')
         spec['steps']=self.validate_steps(spec['steps'],occurrence=when)
         spec['occurrence']=stamp(when)

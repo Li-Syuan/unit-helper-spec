@@ -1,3 +1,12 @@
+## 0.23.0 最短接手路徑
+
+1. 用既有69wheels離線安裝，勿重裝已符合lock的環境。主Store升schema8前自動備份；保留原資料一致備份。
+2. 設定endpoint、keyring金鑰及一位Assistant ID，核對Assistants契約。先一般聊天，再核准實際唯讀搜尋工具。
+3. 「我的 Skills」選助理，明確按相容性測試。先規劃／整理兩請求，搜尋另加一請求；來源品質仍人工核對。成功不是任意工具授權，不直接改verified旗標。
+4. 依 [Skills試用旅程](docs/SKILLS.md) 做市場情報、純文字報告、Markdown分享。先試跑、人工核對、再授權每日08:00；記錄來源日期／工具收據與中斷恢復。
+
+修改入口：desktop_app/skills.py（方法／輸入／能力）、workflows.py（共用批准與執行）、profiles.py與assistants_gateway.py（真實連線）、web_assets/skills.js（介面）、cli.py（CLI）。本機測試：`.venv\Scripts\python.exe scripts\test_runner.py --suite targeted --tests tests.test_skills`；重大整合只跑一次verify full，不重複堆測試。不得用同一助理的兩階段宣稱獨立覆核；真正達哥格式、搜尋品質、AD仍需部署端驗收。
+
 ## 0.22.0 交辦工作接手
 
 先讀[工作台操作](docs/WORKBENCH.md)及[驗證紀錄](docs/VALIDATION.md)。無新套件，沿用69wheels；主DB升schema7先backup，勿用舊版直接開新庫。第一件驗收只用一位已核准搜尋助理：每日台股／美股／總經需求 → 工具停用的結構化補問 → 本機預覽 → 試跑 → 人工核對日期來源 → 每日持續同意。未核准工具、缺欄位、格式錯誤、變更連線與失敗不可默默啟用。

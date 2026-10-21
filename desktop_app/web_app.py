@@ -13,7 +13,7 @@ def application_html():
     nonce=secrets.token_urlsafe(24)
     html=(folder/'index.html').read_text('utf-8')
     css=(folder/'app.css').read_text('utf-8')
-    script='\n'.join((folder/name).read_text('utf-8') for name in ('app.js','dialogue.js','author.js','orders.js'))
+    script='\n'.join((folder/name).read_text('utf-8') for name in ('app.js','dialogue.js','author.js','orders.js','skills.js'))
     policy=("default-src 'none'; img-src data:; style-src 'nonce-"+nonce+"'; script-src 'nonce-"+nonce+"' 'unsafe-eval'; "
             "connect-src 'none'; font-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'")
     html=html.replace('<!--APP_STYLE-->',f'<meta http-equiv="Content-Security-Policy" content="{policy}"><style nonce="{nonce}">{css}</style>')

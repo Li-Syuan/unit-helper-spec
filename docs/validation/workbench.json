@@ -1,19 +1,96 @@
 {
-  "version": "0.22.0",
+  "version": "0.23.0",
+  "schema": 8,
   "python": "3.10.4",
-  "schema": 7,
   "full": {
-    "passed": true,
-    "seconds": 170.1365,
-    "selected": 590
+    "passed": false,
+    "seconds": 170.588,
+    "selected": 603
   },
   "full_result": {
-    "count": 590,
-    "seconds": 167.9101,
+    "count": 603,
+    "seconds": 168.4903,
     "failures": 0,
-    "errors": 0,
+    "errors": 1,
     "skipped": 0
   },
+  "final_targeted": {
+    "suite": "targeted",
+    "passed": false,
+    "seconds": 3.2635,
+    "selected": 14,
+    "result": {
+      "passed": false,
+      "count": 14,
+      "seconds": 2.1236,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 1,
+      "expected_failures": 0,
+      "unexpected_successes": 0,
+      "tests": [
+        {
+          "id": "tests.test_dialogs.DialogTests.test_long_message_theme_copy_and_close_without_mutation",
+          "seconds": 0.4388
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_cancel_late_planner_and_profile_mutation_guard",
+          "seconds": 0.2987
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_cli_skill_selection_requires_interactive_save_and_no_scheduler",
+          "seconds": 0.0512
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_company_single_id_plan_and_stages_isolated_and_bad_search_stops",
+          "seconds": 0.1675
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_definitions_options_import_and_export_remove_local_binding",
+          "seconds": 0.0224
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_edit_dismiss_and_binding_changes_invalidate_approval",
+          "seconds": 0.1157
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_immutable_snapshot_schedule_dates_disable_and_delete_history",
+          "seconds": 0.1918
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_missing_fields_zero_dispatch_then_demo_plan_and_idempotent_execution",
+          "seconds": 0.1536
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_probe_asserts_formats_no_legacy_unlock_and_revision_isolation",
+          "seconds": 0.0338
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_save_preview_atomic_revision_and_one_shot",
+          "seconds": 0.0472
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_schema_1_through_7_backup_and_transaction_failure",
+          "seconds": 0.2323
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_search_probe_requires_actual_receipt_and_profile_revision_revokes",
+          "seconds": 0.0608
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_source_deletion_keeps_approved_skill_work",
+          "seconds": 0.1635
+        },
+        {
+          "id": "tests.test_skills.SkillTests.test_unknown_planning_post_requires_same_receipt_recovery",
+          "seconds": 0.1461
+        }
+      ],
+      "status": "completed"
+    }
+  },
+  "release_status": "implementation_candidate; full regression not passed",
+  "known_failure": "Tk clipboard readback: OpenClipboard Windows error 5 in full and targeted runs; no skip or permission workaround applied.",
   "webview": {
     "status": "passed",
     "checks": [
@@ -43,11 +120,22 @@
       "work_order_demo_discussion_questions_preview_cancel_trial_readonly_and_chat_draft_preserved",
       "real_winforms_tray_register_hide_restore_dispose_local_only",
       "close_choice_explicit_remember_unsaved_cancel_and_preference_roundtrip",
+      "skills_definition_draft_preservation_typed_questions_plan_edit_cancel_and_single_confirmation_zero_external_dispatch",
+      "skills_explicit_daily_consent_pause_markdown_roundtrip_and_disable_preserves_history",
       "todo_real_inbox_source_zero_dispatch_description_search_due_filters_transitions_duplicate_save_empty_cancel_small_light_maximized",
       "todo_main_source_navigation_preserves_unsent_draft_and_deleted_source_keeps_copy_zero_dispatch",
       "offline_demo_login_workspace_network_settings_denied_logout_veil_and_bridge_navigation_bypass_rejected"
     ],
-    "scope": "real WebView2; synthetic provider and data"
+    "scope": "real WebView2, synthetic provider/data"
+  },
+  "final_ui_targeted": {
+    "status": "passed",
+    "scope": "skills",
+    "checks": [
+      "bridge_ready",
+      "skills_definition_draft_preservation_typed_questions_plan_edit_cancel_and_single_confirmation_zero_external_dispatch",
+      "skills_explicit_daily_consent_pause_markdown_roundtrip_and_disable_preserves_history"
+    ]
   },
   "delivery": {
     "python": "3.10.4",
@@ -62,20 +150,19 @@
     "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b",
     "passed": true
   },
+  "review_fix": "Expired-login Skill cancellation now returns only a minimal receipt, without requesting protected workflow data.",
   "prior_attempts": [
-    "Original user profile preflight failed: credential_store_unavailable_or_empty; tests not_run.",
-    "Sandbox atomic replace denied; actual normal-Windows run succeeded without relaxing checks.",
-    "Demo Chinese-adjacent HH:MM parsing failed, fixed and covered by existing regression case.",
-    "Expired-receipt smoke initially waited on an absent DOM node; fixture wait corrected, failure retained.",
-    "Expiry review found exit/cancel blocked; fixed and covered without allowing dispatch."
+    "Sandbox atomic replace denied; normal Windows offline tests passed without weakening storage.",
+    "First Skills navigation did not load while its button was busy; fixed.",
+    "Smoke matched a closed modal confirmation; wait condition fixed; original failures retained locally."
   ],
   "not_tested": [
-    "company DVC planning/search/source quality",
-    "real AD",
-    "human X/tray menu usage",
-    "sleep/shutdown",
+    "real DVC Skill format/search compatibility",
+    "search source quality",
+    "AD",
+    "human usability",
     "IME",
-    "human usability"
+    "physical native file picker"
   ],
   "no_new_dependencies": true,
   "no_new_environment": true

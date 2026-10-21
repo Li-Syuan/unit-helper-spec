@@ -1,3 +1,13 @@
+# 0.23.0 自建 Skill（優先於下方歷史 schema）
+
+主Store schema8，schema1～7先backup再交易；skills.py保存定義、不可變版本、流程來源、實測能力及原規劃請求。Skill僅資料；無shell／檔案工具／任意bridge。Markdown匯入為新草稿、預覽確認保存，不含本機綁定或授權；正文仍可能由使用者自行寫入私密資料，勿宣稱自動去識別。
+
+WebView／CLI共用SkillService及既有WorkflowService／LangGraph／scheduler；單一assistant分階段隔離，不能稱獨立多代理覆核。規劃停工具；執行僅核准搜尋與文字整理，最後compose，1～6步。方法／輸入／綁定固定於批准快照，修改預覽失效；日期依每次occurrence注入。成功試跑後仍需人工核對與獨立持續傳送同意。停用／刪除暫停關聯排程，保留批准工作及成果。
+
+Skill能力測試明確同意、最多3次合成模型請求；僅實際斷言通過寫對應助理修訂證據，不改舊workflow verified。搜尋另核對工具收據，品質仍not_tested。生成／測試／檢查納入真實future，UI鎖外I/O，關閉drain。原Skill規劃先存固定訊息／ID，unknown POST禁止再派，known run/cache才沿原ID恢復。公司真實服務未測不可用示範通過代替。
+
+本版無依賴變更、69wheels不變；Tk備用不新增Skills頁。UI以web_assets/skills.js為主，操作與格式見docs/SKILLS.md。新測試class分類，保留快／完整驗證分流，不以數量為指標。
+
 # 0.22.0 交辦與CLI（優先於下方schema6限制）
 
 使用者已批准單助理每日搜尋交辦、CLI共用服務及WebView系統匣。主Store升schema7，舊1～6先backup再交易新增work_orders；dialogue task_drafts CHECK=0不變。work_orders.py保存獨立需求、修訂、綁定及工作／排程連結；真實狀態仍讀既有task/schedule，不另造runner。規劃purpose=workflow_plan/operation=task_draft強制零工具，只接受scope/sources/time_hhmm建議；預覽純本機、十分鐘token，確認試跑與人工核對後每日持續同意分開。demo只能合成試跑，不能啟用真排程。試跑及連結、排程及連結各自同交易，取消晚到不復活，未知POST不重送。可檢查遠端收據，僅已知規劃回覆可沿原ID恢復。

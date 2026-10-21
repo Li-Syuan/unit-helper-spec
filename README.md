@@ -1,6 +1,10 @@
 # QA agent
 
-**0.22.0 本機候選版 · Windows x64 · Python 3.10.4 · WebView2 主介面／Tkinter 備用**
+**0.23.0 本機候選版 · Windows x64 · Python 3.10.4 · WebView2 主介面／Tkinter 備用**
+
+## 自建 Skill＋單助理 Plan mode
+
+在「我的 Skills」自行定義方法 → 選助理與條件 → 討論／修改計畫 → 一次確認執行 → 核對成果後另行授權每日排程。可用對話起草或空白表單，支援 Markdown 分享。一位助理即可；真實連線先明確啟動相容性測試，離線示範不需金鑰。詳見 [Skill 操作與格式](docs/SKILLS.md)。
 
 ## 交辦工作與 CLI
 

@@ -58,7 +58,8 @@
     "tests.test_web.WebTests",
     "tests.test_web_palette.WebPaletteTests",
     "tests.test_workflow_profiles.WorkflowProfilesTests",
-    "tests.test_workflows.WorkflowTests"
+    "tests.test_workflows.WorkflowTests",
+    "tests.test_skills.SkillTests"
   ],
   "integration": [
     "tests.test_about.PublisherTkTests",

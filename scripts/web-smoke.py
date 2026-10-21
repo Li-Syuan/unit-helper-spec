@@ -13,10 +13,154 @@ from desktop_app.web_session import WebSession
 from desktop_app.web_bridge import WebBridge
 
 
+def skills_journey(session, api, window, capture, wait_script, report, tmp, company_mock):
+    expected_chat_draft=window.evaluate_js("document.getElementById('dialogue-input').value")
+    # Skills use one assistant, explicit local saves and a separate execution gate.
+    skill_tasks_before={t['id'] for t in session.store.tasks()}
+    skill_company_before=len(company_mock.runs)
+    window.evaluate_js("document.getElementById('dialogue-skill').click()")
+    wait_script("!!document.getElementById('skill-new')")
+    window.evaluate_js("document.getElementById('skill-example').click()")
+    wait_script("!!document.getElementById('skill-name')")
+    window.evaluate_js("document.getElementById('skill-name').value='合成 Skill 驗證';document.getElementById('skill-name').dispatchEvent(new Event('input'));document.getElementById('skill-generator-profile').value='demo';document.getElementById('skill-generate-request').value='整理合成工作內容，不要編造資料';document.getElementById('skill-generate').click()")
+    wait_script("!!document.getElementById('skill-accept-generated')")
+    window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='保留原草稿').click()")
+    assert window.evaluate_js("document.getElementById('skill-name').value")=='合成 Skill 驗證','skill_generate_overwrote_draft'
+    window.evaluate_js("document.getElementById('skill-save-preview').click()")
+    wait_script("!!document.getElementById('skill-save-confirm')")
+    assert not session.skills.list(),'skill_preview_saved'
+    window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='返回修改').click()")
+    assert not session.skills.list(),'skill_cancel_saved'
+    window.evaluate_js("document.getElementById('skill-save-preview').click()")
+    wait_script("!!document.getElementById('skill-save-confirm')")
+    window.evaluate_js("document.getElementById('skill-save-confirm').click();document.getElementById('skill-save-confirm')?.click()")
+    wait_script("!!document.querySelector('.skill-card')")
+    assert len(session.skills.list())==1,'skill_save_duplicate'
+    assert {t['id'] for t in session.store.tasks()}==skill_tasks_before,'skill_definition_dispatched'
+    record=session.skills.list()[0]
+    # Additional typed fields are synthetic fixture data, consumed by real controls.
+    from desktop_app.skills import FIELDS as SKILL_FIELDS
+    definition={k:record[k] for k in SKILL_FIELDS}
+    definition['fields'] += [{'id':'confirmed','text':'已確認測試資料','type':'boolean','options':[]},{'id':'length','text':'成果長度','type':'single','options':['精簡','完整']}]
+    p=session.skills.save_preview(definition,record['id'],record['revision']);record=session.skills.save_confirm(p['token'])
+    window.evaluate_js("document.getElementById('skill-new').click()")
+    wait_script("!!document.getElementById('skill-name')")
+    assert window.evaluate_js("document.getElementById('skill-name').value===''&&document.getElementById('skill-instructions').value===''&&document.querySelectorAll('.skill-field-card').length===0"),'skill_new_not_blank'
+    window.evaluate_js("Array.from(document.querySelectorAll('#skill-actions button')).find(b=>b.textContent==='返回我的 Skills').click()")
+    wait_script("document.getElementById('modal').open")
+    window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='放棄未保存編輯並繼續').click()")
+    wait_script("!!document.querySelector('.skill-card')")
+    window.evaluate_js("Array.from(document.querySelectorAll('.skill-card button')).find(b=>b.textContent==='使用 Skill').click()")
+    wait_script("!!document.getElementById('skill-start')")
+    window.evaluate_js("document.getElementById('skill-profile').value='demo';document.getElementById('skill-probe').click()")
+    wait_script("document.getElementById('modal').open&&!!document.getElementById('skill-probe-confirm')")
+    window.evaluate_js("document.getElementById('skill-probe-confirm').click()")
+    wait_script("document.getElementById('modal-title').textContent==='能力驗證結果'")
+    assert window.evaluate_js("document.getElementById('modal-body').textContent.includes('未驗證真實助理')"),'skill_demo_probe_mislabeled'
+    window.evaluate_js("document.getElementById('modal-close').click()")
+    window.evaluate_js("document.getElementById('skill-profile').value='demo';document.getElementById('skill-start').click()")
+    wait_script("!!document.getElementById('skill-discuss')")
+    assert {t['id'] for t in session.store.tasks()}==skill_tasks_before,'skill_start_dispatched'
+    window.evaluate_js("document.getElementById('skill-discuss').click()")
+    wait_script("!!document.getElementById('skill-discuss')&&!document.getElementById('skill-discuss').disabled")
+    assert not session.skills.runs()[0]['steps'],'skill_missing_fields_planned'
+    window.evaluate_js("document.getElementById('skill-value-markets-0').checked=true;document.getElementById('skill-value-markets-2').checked=true;document.getElementById('skill-value-sources').value='只用合成資料，未連即時來源';document.getElementById('skill-value-confirmed').value='false';document.getElementById('skill-value-length').value='精簡';document.getElementById('skill-value-sources').dispatchEvent(new Event('input'))")
+    for theme in ('dark','light'):
+        api.call('appearance',{'theme':theme});time.sleep(1.7)
+        assert window.evaluate_js("document.getElementById('skill-value-confirmed').value==='false'&&document.getElementById('skill-value-sources').value==='只用合成資料，未連即時來源'"),'skill_theme_lost_fields'
+        capture('skills-input-'+theme+'.png')
+    window.evaluate_js("document.getElementById('skill-discuss').click()")
+    wait_script("!!document.getElementById('skill-run-preview')&&!document.getElementById('skill-run-preview').disabled")
+    assert {t['id'] for t in session.store.tasks()}==skill_tasks_before,'skill_planning_dispatched'
+    assert session.skills.runs()[0]['values']['confirmed'] is False,'skill_false_answer_lost'
+    window.evaluate_js("document.getElementById('skill-edit-steps').click()")
+    wait_script("!!document.getElementById('skill-steps-save')")
+    window.evaluate_js("document.querySelector('.skill-step-editor input').value='核對合成來源';document.querySelector('.skill-step-editor input').dispatchEvent(new Event('input'));document.getElementById('skill-steps-save').click()")
+    wait_script("!!document.getElementById('skill-run-preview')&&!document.getElementById('skill-run-preview').disabled")
+    window.resize(1050,700);time.sleep(.2)
+    window.evaluate_js("document.getElementById('skill-run-preview').scrollIntoView({block:'center'})")
+    capture('skills-plan-small.png')
+    window.evaluate_js("document.getElementById('skill-run-preview').click()")
+    wait_script("document.getElementById('modal').open&&!!document.getElementById('skill-confirm')")
+    assert window.evaluate_js("document.getElementById('modal-body').textContent.includes('目的助理')&&document.getElementById('modal-body').textContent.includes('只用合成資料，未連即時來源')&&document.getElementById('modal-body').textContent.includes('輸入來源')"),'skill_preview_missing_transfer_scope'
+    window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='取消這次預覽').click()")
+    wait_script("!document.getElementById('modal').open")
+    assert {t['id'] for t in session.store.tasks()}==skill_tasks_before,'skill_cancel_plan_dispatched'
+    window.evaluate_js("document.getElementById('skill-run-preview').click()")
+    wait_script("document.getElementById('modal').open&&!!document.getElementById('skill-confirm')")
+    window.evaluate_js("document.getElementById('skill-confirm').click();document.getElementById('skill-confirm')?.click()")
+    wait_script("!!document.getElementById('skill-schedule-preview')")
+    assert len({t['id'] for t in session.store.tasks()}-skill_tasks_before)==1,'skill_confirm_duplicate'
+    assert len(company_mock.runs)==skill_company_before,'demo_skill_called_company'
+    assert window.evaluate_js("document.getElementById('dialogue-input').value")==expected_chat_draft,'skill_lost_chat_draft'
+    window.evaluate_js("document.getElementById('skill-schedule-preview').scrollIntoView({block:'center'})")
+    assert window.evaluate_js("(()=>{const r=document.getElementById('skill-schedule-preview').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()"),'skill_result_action_unreachable'
+    capture('skills-result-small.png');window.resize(1280,860)
+    report['checks'].append('skills_definition_draft_preservation_typed_questions_plan_edit_cancel_and_single_confirmation_zero_external_dispatch')
+    schedule_before={s['id'] for s in session.store.schedules()}
+    window.evaluate_js("document.getElementById('skill-schedule-preview').click()")
+    wait_script("!!document.getElementById('skill-schedule-confirm')")
+    window.evaluate_js("document.getElementById('skill-schedule-confirm').click()")
+    wait_script("!!document.querySelector('.skill-modal-error')")
+    assert {s['id'] for s in session.store.schedules()}==schedule_before,'skill_schedule_without_consent'
+    window.evaluate_js("document.getElementById('skill-schedule-reviewed').checked=true;document.getElementById('skill-schedule-consent').checked=true;document.getElementById('skill-schedule-confirm').click()")
+    wait_script("!document.getElementById('modal').open&&document.getElementById('skill-result').textContent.includes('每日工作已啟用')")
+    window.evaluate_js("Array.from(document.querySelectorAll('#skill-result button')).find(b=>b.textContent==='暫停每日工作').click()")
+    wait_script("document.getElementById('skill-result').textContent.includes('每日工作已暫停')")
+    window.evaluate_js("Array.from(document.querySelectorAll('#skill-actions button')).find(b=>b.textContent==='返回我的 Skills').click()")
+    wait_script("!!document.querySelector('.skill-card')")
+    # Exercise the actual bridge file format with a synthetic native-dialog selection.
+    from types import SimpleNamespace
+    export_path=Path(tmp)/'synthetic-skill.md'
+    api._window=SimpleNamespace(create_file_dialog=lambda *a,**k:[str(export_path)])
+    try:
+        window.evaluate_js("Array.from(document.querySelectorAll('.skill-card button')).find(b=>b.textContent==='匯出 Markdown').click()")
+        wait_script("document.getElementById('skill-notice').textContent.includes('已匯出')")
+        assert export_path.exists() and 'default_profile_id' not in export_path.read_text('utf-8'),'skill_export_binding_leak'
+        window.evaluate_js("Array.from(document.querySelectorAll('#skill-actions button')).find(b=>b.textContent==='匯入 Markdown').click()")
+        wait_script("!!document.getElementById('skill-name')")
+        assert window.evaluate_js("document.getElementById('skill-default-profile').value")== '','skill_import_bound_assistant'
+        assert len(session.skills.list())==1,'skill_import_saved_automatically'
+        window.evaluate_js("Array.from(document.querySelectorAll('#skill-actions button')).find(b=>b.textContent==='返回我的 Skills').click()")
+        wait_script("document.getElementById('modal').open")
+        window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='放棄未保存編輯並繼續').click()")
+        wait_script("!!document.querySelector('.skill-card')")
+    finally:api._window=window
+    window.evaluate_js("Array.from(document.querySelectorAll('.skill-card button')).find(b=>b.textContent==='複製').click()")
+    wait_script("!!document.getElementById('skill-name')")
+    assert len(session.skills.list())==1,'skill_copy_saved_automatically'
+    window.evaluate_js("document.getElementById('skill-name').value='合成 Skill 副本';document.getElementById('skill-name').dispatchEvent(new Event('input'));document.getElementById('skill-save-preview').click()")
+    wait_script("document.getElementById('modal').open&&!!document.getElementById('skill-save-confirm')")
+    window.evaluate_js("document.getElementById('skill-save-confirm').click()")
+    wait_script("document.querySelectorAll('.skill-card').length===2")
+    window.evaluate_js("window.skillCopyCard=Array.from(document.querySelectorAll('.skill-card')).find(c=>c.querySelector('h3').textContent==='合成 Skill 副本');skillCopyCard.querySelector('details').open=true;Array.from(skillCopyCard.querySelectorAll('button')).find(b=>b.textContent==='刪除 Skill').click()")
+    wait_script("document.getElementById('modal').open&&document.getElementById('modal-title').textContent==='刪除 Skill'")
+    window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='取消').click()")
+    assert len(session.skills.list())==2,'skill_delete_cancel_removed'
+    window.evaluate_js("Array.from(skillCopyCard.querySelectorAll('button')).find(b=>b.textContent==='刪除 Skill').click()")
+    wait_script("document.getElementById('modal').open")
+    window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='確認刪除').click()")
+    wait_script("document.querySelectorAll('.skill-card').length===1")
+    window.evaluate_js("document.querySelector('.skill-card details').open=true;Array.from(document.querySelectorAll('.skill-card button')).find(b=>b.textContent==='停用').click()")
+    wait_script("document.getElementById('modal-title').textContent==='變更 Skill 狀態'")
+    window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='確認停用').click()")
+    wait_script("!!document.querySelector('.skill-card')&&document.querySelector('.skill-card').textContent.includes('已停用')")
+    assert not session.skills.list()[0]['enabled'],'skill_disable_not_saved'
+    assert not session.skills.runs()[0]['schedule']['enabled'],'skill_disable_schedule_active'
+    window.evaluate_js("document.querySelector('[data-page=help]').click()")
+    wait_script("Array.from(document.querySelectorAll('#page-content .card')).some(c=>c.textContent.includes('Skills 使用說明'))")
+    window.evaluate_js("Array.from(document.querySelectorAll('#page-content .card')).find(c=>c.textContent.includes('Skills 使用說明')).querySelector('button').click()")
+    wait_script("document.getElementById('modal').open&&document.getElementById('modal-title').textContent==='Skills 使用說明'")
+    assert window.evaluate_js("document.getElementById('modal-body').textContent.includes('Skill')&&document.getElementById('modal-body').textContent.length>300"),'skill_offline_manual_empty'
+    window.evaluate_js("document.getElementById('modal-close').click()")
+    report['checks'].append('skills_explicit_daily_consent_pause_markdown_roundtrip_and_disable_preserves_history')
+
+
 def main():
     destination=Path(__file__).resolve().parents[1]/'artifacts'/'web-smoke'
     destination.mkdir(parents=True,exist_ok=True)
-    report={'status':'failed','checks':[]}
+    skills_only='--skills-only' in sys.argv
+    report={'status':'failed','scope':'skills' if skills_only else 'full','checks':[]}
     with tempfile.TemporaryDirectory() as tmp:
         from desktop_app import about
         publisher_root=about.ROOT;about.ROOT=Path(tmp)
@@ -46,6 +190,17 @@ def main():
                         window.native.Invoke(Action(start))
                         if not pending[0].Wait(10000):raise AssertionError('capture_timeout')
                     finally:stream.Dispose()
+                if skills_only:
+                    def wait_skills(script):
+                        for _ in range(100):
+                            if window.evaluate_js(script):return
+                            time.sleep(.1)
+                        raise AssertionError('skills_wait_timeout')
+                    from types import SimpleNamespace
+                    window.evaluate_js("document.getElementById('dialogue-input').value='合成未送出草稿'")
+                    skills_journey(session,api,window,capture,wait_skills,report,tmp,SimpleNamespace(runs=[]))
+                    report['status']='passed'
+                    return
                 time.sleep(.4);capture('dark.png')
                 window.evaluate_js("document.getElementById('author-toggle').click()")
                 for _ in range(80):
@@ -65,7 +220,7 @@ def main():
                 # Work palette is local navigation, not an execution/approval surface.
                 window.evaluate_js("document.getElementById('dialogue-input').value='保留主對話草稿';document.getElementById('dialogue-input').focus();document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}))")
                 assert window.evaluate_js("document.getElementById('modal').open&&document.activeElement.id==='work-entry-search'"),'work_entry_shortcut_focus'
-                assert window.evaluate_js("document.querySelectorAll('[data-work-entry]').length")==10,'work_entry_missing_destinations'
+                assert window.evaluate_js("document.querySelectorAll('[data-work-entry]').length")==11,'work_entry_missing_destinations'
                 window.evaluate_js("document.getElementById('work-entry-search').value='不存在的入口';document.getElementById('work-entry-search').dispatchEvent(new Event('input'))")
                 assert window.evaluate_js("document.querySelectorAll('[data-work-entry]').length")==0,'work_entry_filter'
                 window.evaluate_js("document.getElementById('work-entry-search').value='成果';document.getElementById('work-entry-search').dispatchEvent(new Event('input'));document.getElementById('work-entry-search').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))")
@@ -571,6 +726,7 @@ def main():
                 assert api.call('close_behavior',{})['data']['value']=='background','close_preference_not_restored'
                 api.call('close_behavior',{'value':'ask'})
                 report['checks'].append('close_choice_explicit_remember_unsaved_cancel_and_preference_roundtrip')
+                skills_journey(session,api,window,capture,wait_script,report,tmp,company_mock)
                 # Real desktop WebView2, synthetic personal work only; never user data.
                 inbox_baseline={t['id'] for t in session.store.tasks()}
                 from datetime import datetime, timezone, timedelta
@@ -703,7 +859,7 @@ def main():
                 try:capture('failure.png')
                 except Exception:pass
             finally:
-                (destination/'result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+                (destination/('result-skills.json' if skills_only else 'result.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
                 window.destroy()
         try:webview.start(inspect,gui='edgechromium',debug=False,private_mode=True)
         finally:

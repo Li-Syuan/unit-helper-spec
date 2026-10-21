@@ -31,12 +31,12 @@ class WebBridge:
                 if self._s.demo_session and (name.startswith('profile_') or name.startswith('search_policy_')
                         or name in {'connection_save','key_remove','company_probe'}):
                     raise ValueError('離線登入展示禁止公司連線、金鑰與工具設定；請關閉並改用公司登入。')
-                if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel','order_cancel','host_close'}:
+                if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel','order_cancel','skill_cancel','host_close'}:
                     self._s.assert_identity()
                 if self._closing and name not in {'state','save_draft'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','host_close'}:
+                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','skill_generate','skill_probe','skill_discuss','skill_inspect','skill_recover','host_close'}:
                     return {'ok':True,'data':handler(payload or {})}
             # Provider I/O must not block theme/state/cancellation/close commands.
             return {'ok':True,'data':handler(payload or {})}
@@ -52,6 +52,28 @@ class WebBridge:
     def _handlers(self):
         s=self._s
         return {
+            'skill_list':lambda p:s.skills.list(),'skill_catalog':lambda p:s.skills.catalog(),
+            'skill_runs':lambda p:s.skills.runs(),'skill_get':lambda p:s.skills.get(p['id']),
+            'skill_template':self._skill_template,
+            'skill_generate':lambda p:s.skills.generate(p['profile_id'],p['request']),
+            'skill_save_preview':lambda p:s.skills.save_preview(p['data'],p.get('id'),p.get('revision')),
+            'skill_save_confirm':lambda p:s.skills.save_confirm(p['token']),
+            'skill_copy':lambda p:s.skills.copy(p['id']),
+            'skill_manage_preview':lambda p:s.skills.manage_preview(p['id'],p['revision'],p['action']),
+            'skill_manage_confirm':lambda p:s.skills.manage_confirm(p['token']),
+            'skill_import':self._skill_import,'skill_export':self._skill_export,
+            'skill_probe':lambda p:s.skills.probe(p['profile_id'],p.get('search',False),p.get('consent',False)),
+            'skill_start':lambda p:s.skills.start(p['id'],p['revision'],p['profile_id'],p.get('values',{}),p.get('goal','')),
+            'skill_discuss':lambda p:s.skills.discuss(p['wid'],p['revision'],p.get('text',''),p.get('values',{})),
+            'skill_state':lambda p:s.skills.state(p['wid']),
+            'skill_inspect':lambda p:s.skills.inspect(p['wid']),
+            'skill_recover':lambda p:s.skills.recover(p['wid']),
+            'skill_update':self._skill_update,
+            'skill_preview':self._skill_preview,
+            'skill_dismiss':lambda p:s.skills.dismiss(p['wid']),
+            'skill_confirm':lambda p:s.workflows.confirm(p['wid'],p['revision'],True),
+            'skill_cancel':self._skill_cancel,
+            'skill_schedule':lambda p:s.skills.schedule(p['wid'],p['revision'],p['time_hhmm'],p.get('reviewed',False),p.get('consent',False)),
             'close_behavior':self._close_behavior,'host_close':self._host_close_request,
             'order_catalog':lambda p:s.orders.catalog(),
             'order_list':lambda p:s.orders.list(),
@@ -142,6 +164,50 @@ class WebBridge:
             'dialogue_delete_preview':lambda p:s.dialogue.preview_delete(p['kind'],p['ids']),
             'dialogue_delete_confirm':lambda p:s.dialogue.confirm_delete(p['token']),
         }
+
+    def _skill_template(self,p):
+        from .skills import TEMPLATE
+        return copy.deepcopy(TEMPLATE)
+
+    def _skill_cancel(self,p):
+        self._s.workflows.cancel(p['wid'])
+        try:self._s.assert_identity()
+        except ValueError:return {'id':p['wid'],'cancelled':True,'identity_expired':True}
+        return self._s.skills.state(p['wid'])
+
+    def _skill_update(self,p):
+        self._s.skills.state(p['wid'])
+        self._s.workflows.update(p['wid'],p['revision'],p['steps'])
+        return self._s.skills.state(p['wid'])
+
+    def _skill_preview(self,p):
+        r=self._s.skills.state(p['wid'])
+        return dict(r,**self._s.workflows.preview(p['wid'],p['revision']))
+
+    def _skill_import(self,p):
+        import webview
+        from .skills import import_markdown
+        if not self._window:raise ValueError('請在桌面選擇單一 Markdown；CLI 使用明確匯入指令。')
+        paths=self._window.create_file_dialog(webview.FileDialog.OPEN,allow_multiple=False,file_types=('Markdown (*.md)',))
+        if not paths:return {'cancelled':True}
+        path=Path(paths if isinstance(paths,str) else paths[0])
+        if path.suffix.lower()!='.md' or path.stat().st_size>65536:raise ValueError('只接受64KiB內的單一 Markdown。')
+        try:text=path.read_text(encoding='utf-8-sig')
+        except (OSError,UnicodeError):raise ValueError('無法讀取UTF-8 Markdown。') from None
+        return {'draft':import_markdown(text),'notice':'已匯入為新草稿；請選助理、補齊欄位並預覽保存。尚未執行。'}
+
+    def _skill_export(self,p):
+        import webview
+        from .skills import export_markdown
+        text=export_markdown(self._s.skills.get(p['id']))
+        if not self._window:raise ValueError('請在桌面選擇儲存位置；CLI 使用明確匯出指令。')
+        paths=self._window.create_file_dialog(webview.FileDialog.SAVE,save_filename='qa-skill.md',file_types=('Markdown (*.md)',))
+        if not paths:return {'saved':False}
+        path=Path(paths if isinstance(paths,str) else paths[0])
+        if path.suffix.lower()!='.md':raise ValueError('請使用 .md 副檔名。')
+        try:path.write_text(text,encoding='utf-8')
+        except OSError:raise ValueError('Markdown 保存失敗；原 Skill 未變更。') from None
+        return {'saved':True}
 
     def _logout(self,p):
         if not (self._s.demo_session or self._s.login_session):
@@ -356,7 +422,7 @@ class WebBridge:
         update_preferences(self._s.preferences_path,{'sidebar_collapsed':p['collapsed']})
 
     def _help(self,p):
-        if p['name'] not in {'USER-GUIDE','DATA-USAGE','THIRD-PARTY-LICENSES'}:raise ValueError('說明不存在。')
+        if p['name'] not in {'USER-GUIDE','DATA-USAGE','THIRD-PARTY-LICENSES','SKILLS'}:raise ValueError('說明不存在。')
         name='THIRD-PARTY-NOTICES' if p['name']=='THIRD-PARTY-LICENSES' else p['name']
         text=(Path(__file__).resolve().parents[1]/'docs'/(name+'.md')).read_text('utf-8')
         return {'html':render_markdown(text)}

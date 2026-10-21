@@ -1,3 +1,9 @@
+# 0.23.0 自建 Skill 與單助理規劃
+
+主 Store 當前 schema **8**；下方舊版 schema 敘述為歷史。skills.py 管定義、不可變修訂、分享、相容性證據與 Skill 流程來源，WorkflowService／LangGraph仍是唯一執行管線。規劃與執行只提供所選單一助理、rag與compose；不套四角色提示。能力證據獨立於舊 workflow verified，必須經明確合成實測；修改連線或重新測試使舊證據失效。批准快照固定方法、條件、助理版本，每次排程注入當次台北日期。
+
+Skill Plan請求先保存原訊息與識別；未知POST阻止再次討論，檢查／取回沿原收據，取消後不復活。生成草稿與相容性同步I/O也登記真實future，關閉與改憑證等待實際收尾。WebView skills.js與CLI共用服務，無新增依賴、任意shell、背景選Skill或第二排程器。停用／刪除先列出關聯排程並暫停，保留成果；MD僅是資料。操作／格式見 [SKILLS](SKILLS.md)。
+
 ## 0.22.0 共用工作台
 
 work_orders.py 為每日搜尋交辦服務；WebBridge與CLI共用。規劃只提scope/sources/time_hhmm、不開工具，確認試跑才交既有AssistantBriefings／Engine，人工核對與持續授權後才排程。主Store升schema7保存獨立交辦，既有schema1～6一致備份後交易遷移；其餘資料庫版本不變。work_orders的state只是需求整理狀態，執行與排程狀態從既有資料讀取。
