@@ -193,8 +193,8 @@ class WorkflowTests(unittest.TestCase):
             with self.assertRaises(ValueError):Store(self.path)
         with self.store.connection() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],4)
         migrated=Store(self.path)
-        with migrated.connection() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],6)
-        self.assertTrue(list(self.path.parent.glob('*.pre-v6-*.bak')))
+        with migrated.connection() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],7)
+        self.assertTrue(list(self.path.parent.glob('*.pre-v7-*.bak')))
         self.assertEqual(migrated.conversation(self.cid)['title'],'合成測試')
 
     def test_invalid_plan_clears_old_ready_steps_and_duplicate_json_rejected(self):

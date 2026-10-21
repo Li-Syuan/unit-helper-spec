@@ -13,7 +13,7 @@ def application_html():
     nonce=secrets.token_urlsafe(24)
     html=(folder/'index.html').read_text('utf-8')
     css=(folder/'app.css').read_text('utf-8')
-    script='\n'.join((folder/name).read_text('utf-8') for name in ('app.js','dialogue.js','author.js'))
+    script='\n'.join((folder/name).read_text('utf-8') for name in ('app.js','dialogue.js','author.js','orders.js'))
     policy=("default-src 'none'; img-src data:; style-src 'nonce-"+nonce+"'; script-src 'nonce-"+nonce+"' 'unsafe-eval'; "
             "connect-src 'none'; font-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'")
     html=html.replace('<!--APP_STYLE-->',f'<meta http-equiv="Content-Security-Policy" content="{policy}"><style nonce="{nonce}">{css}</style>')
@@ -66,34 +66,89 @@ def launch(config_path=None, groq_trial=False, *, demo_login=False):
             seal_navigation(window)
             apply_chrome(window,load_theme(session.preferences_path))
         window.events.loaded+=loaded
-        closing=[False];finished=[False]
+        closing=[False];finished=[False];asking=[False]
+        from .tray import TrayController,WinFormsTray
+        from .preferences import load_preferences,update_preferences
+        def tray_status():
+            try:session.assert_identity()
+            except Exception:return '登入已失效 · 請重新開啟並登入'
+            count=sum(bool(row.get('enabled')) for row in session.store.schedules())
+            return ('排程需檢查 · ' if session.scheduler_error else '')+f'{count} 個已啟用自動工作 · 電腦須保持運作'
+        def request_exit():
+            threading.Thread(target=lambda:host_close('exit',False),daemon=True).start()
+        tray=TrayController(WinFormsTray(window,tray_status,request_exit))
+        def host_close(value,remember=False):
+            if value not in ('background','exit') or type(remember) is not bool:
+                raise ValueError('關閉方式無效。')
+            asking[0]=False
+            if session.demo_session or api._closing:value='exit'
+            if closing[0]:return {'value':'exit','saved':False}
+            if value=='exit' and not api._closing and not session.demo_session:
+                needs_confirmation=window.evaluate_js('!!(window.qaOrderHasUnsaved && window.qaOrderHasUnsaved() && !window.qaOrderExitConfirmed)')
+                if needs_confirmation:
+                    tray.show()
+                    window.evaluate_js('window.qaRequestClose && window.qaRequestClose(true,'+('true' if remember else 'false')+')')
+                    return {'value':'exit','saved':False,'pending':True}
+            # Register first; on failure we leave the window reachable.
+            if value=='background' and not tray.background():
+                raise ValueError('系統匣無法啟用，視窗保持開啟。請重試或選擇退出。')
+            saved=not remember
+            if remember:
+                try:update_preferences(session.preferences_path,{'close_behavior':value});saved=True
+                except (OSError,ValueError):
+                    saved=False
+                    if value=='background':tray.show()
+            if value=='exit':begin_exit()
+            return {'value':value,'saved':saved}
+        api._host_close=host_close
+        def begin_exit():
+            if closing[0]:return
+            closing[0]=True;api._closing=True
+            # Reachable even when initiated from the tray; save/drain errors stay visible.
+            try:tray.show()
+            except Exception:pass
+            def drain():
+                try:
+                    draft=window.evaluate_js('window.qaSetClosing && window.qaSetClosing(true); window.qaDraftSnapshot ? window.qaDraftSnapshot() : null')
+                    if draft:
+                        result=api.call('save_draft',draft)
+                        if not result['ok']:raise ValueError('draft_save_failed')
+                    # No bridge lock across pending remote I/O or scheduler shutdown.
+                    session.close()
+                except Exception:
+                    closing[0]=False;api._closing=False
+                    try:window.evaluate_js("window.qaSetClosing && window.qaSetClosing(false);document.getElementById('status-text').textContent='關閉未完成，視窗保持開啟。請確認草稿或稍後重試。'")
+                    except Exception:pass
+                    return
+                try:tray.close()
+                finally:
+                    finished[0]=True;window.destroy()
+            threading.Thread(target=drain,daemon=False).start()
         def on_closing():
             if finished[0]:return True
-            if not closing[0]:
-                closing[0]=True
-                api._closing=True
-                def drain():
-                    try:
-                        draft=window.evaluate_js('window.qaSetClosing && window.qaSetClosing(true); window.qaDraftSnapshot ? window.qaDraftSnapshot() : null')
-                        if draft:
-                            result=api.call('save_draft',draft)
-                            if not result['ok']:
-                                closing[0]=False
-                                api._closing=False
-                                window.evaluate_js("window.qaSetClosing && window.qaSetClosing(false);document.getElementById('draft-status').textContent='保存失敗，請重試；視窗尚未關閉。'")
-                                return
+            if closing[0]:return False
+            if api._closing or session.demo_session:
+                begin_exit();return False
+            choice=load_preferences(session.preferences_path).get('close_behavior','ask')
+            if choice in ('background','exit'):
+                def apply_choice():
+                    try:host_close(choice)
                     except Exception:
-                        closing[0]=False
-                        api._closing=False
-                        try:window.evaluate_js('window.qaSetClosing && window.qaSetClosing(false)')
+                        try:window.evaluate_js("document.getElementById('status-text').textContent='系統匣無法啟用，視窗保持開啟；可在設定改為退出。'")
                         except Exception:pass
-                        return
-                    with api._lock:session.close()
-                    finished[0]=True;window.destroy()
-                threading.Thread(target=drain,daemon=False).start()
+                threading.Thread(target=apply_choice,daemon=True).start()
+            elif not asking[0]:
+                asking[0]=True
+                def ask():
+                    try:window.evaluate_js('window.qaRequestClose && window.qaRequestClose()')
+                    finally:asking[0]=False
+                threading.Thread(target=ask,daemon=True).start()
             return False
         window.events.closing+=on_closing
-        webview.start(gui='edgechromium',debug=False,private_mode=True)
+        try:webview.start(gui='edgechromium',debug=False,private_mode=True)
+        finally:
+            try:tray.close()
+            except Exception:pass
         return True
     except Exception as exc:
         from .support import record

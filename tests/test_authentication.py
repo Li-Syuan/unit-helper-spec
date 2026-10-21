@@ -103,6 +103,9 @@ class AuthenticationTests(unittest.TestCase):
             session=WebSession(directory=folder,config=config,login_session=identity)
             try:
                 binding=session.profiles.default_binding()
+                order=session.orders.create('demo','合成取消需求')
+                with session.store.connection() as db:
+                    db.execute("UPDATE work_orders SET state='planning' WHERE id=?",(order['id'],))
                 clock[0]=40000
                 api=WebBridge(session)
                 self.assertFalse(api.call('new_chat')['ok'])
@@ -110,6 +113,21 @@ class AuthenticationTests(unittest.TestCase):
                 with self.assertRaises(AuthenticationError):session.queries.run('DEMO01',{})
                 with self.assertRaises(AuthenticationError):session.profiles.respond([{'role':'user','content':'不派發'}],'chat',binding)
                 self.assertEqual(session.store.tasks(),[])
+                cancelled=api.call('order_cancel',{'id':order['id']})
+                self.assertEqual(cancelled['data'],{'id':order['id'],'cancelled':True,'identity_expired':True})
+                with session.store.connection() as db:
+                    self.assertEqual(db.execute('SELECT state FROM work_orders WHERE id=?',(order['id'],)).fetchone()[0],'draft')
+                with patch.object(api,'_host_close',create=True,return_value={'value':'exit','saved':False}) as close:
+                    self.assertTrue(api.call('host_close',{'value':'exit'})['ok'])
+                    close.assert_called_once_with('exit',False)
+                    self.assertFalse(api.call('host_close',{'value':'execute'})['ok'])
+                self.assertFalse(api.call('order_create',{'profile_id':'demo','goal':'不可派發'})['ok'])
+                self.assertFalse(api.call('order_state',{'id':order['id']})['ok'])
+                from desktop_app.cli import Workbench,execute_line
+                from io import StringIO
+                workbench=Workbench(session);workbench.order=order['id'];output=StringIO()
+                self.assertTrue(execute_line(workbench,'/order-cancel',StringIO(),output))
+                self.assertIn('"identity_expired": true',output.getvalue())
             finally:session.close()
 
 

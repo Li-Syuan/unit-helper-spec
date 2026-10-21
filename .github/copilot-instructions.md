@@ -1,5 +1,7 @@
 # Copilot 接手入口
 
+0.22.0先讀[工作台](../docs/WORKBENCH.md)：單助理交辦由work_orders共用服務處理，主Store為schema7（先backup），CLI不啟動排程器。規劃零工具、試跑與每日持續授權分開；不要讓模型或Skill代填確認。WebView系統匣只是同一程序背景運作，不是Windows服務。依賴69wheels不變，來源與公司API效果仍須現場驗收。
+
 版本與實測結果以 [README](../README.md)、[驗證紀錄](../docs/VALIDATION.md) 為準。先讀 [AGENTS](../AGENTS.md) 與 [組織工作單](../COMPANY-HANDOFF.md)，保留組織成功程式及設定後再比對合併。
 
 正式架構為 Windows x64、Python 恰好 3.10.4、WebView2 主介面、Tkinter 備用、SQLite 與 OpenAI SDK；LangGraph 已接管批准後的多助理依序流程，不另建一套引擎。主畫面任務草稿維持未啟用，普通聊天需另行勾選才使用核准搜尋；規劃及任務草稿不開工具。只有明確核准搜尋可進 pluginapi。TLS、未知寫入不重送、取消防晚到回覆及助理版本綁定不可放寬。

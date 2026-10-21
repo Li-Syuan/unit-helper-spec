@@ -9,7 +9,7 @@ function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className
 function button(text,fn,cls='button'){const b=el('button',cls,text);b.type='button';b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;try{await fn();}catch(e){notify(e.message,true);}finally{b.disabled=S.closing;}});return b;}
 const S={ready:false,state:null,cid:null,page:'dialogue',mode:'chat',purpose:'chat',planned:false,seq:0,sending:false,composing:false,dirty:false,polling:false,closing:false,viewGeneration:0,editVersion:0,saveTimer:null,modalVersion:0,signatures:{}};
 function sampleQuery(){const now=Date.now()+8*3600000,yesterday=new Date(now-86400000).toISOString().slice(0,10),today=new Date(now).toISOString().slice(0,10);return {text:'查昨天 A 類數量合計',query_id:'DEMO03',parameters:{from_date:yesterday,to_date:today,category:'A'}};}
-const labels={dialogue:'對話',chat:'規劃與分工',team:'助理團隊',todo:'我的待辦',schedule:'自動工作',activity:'活動紀錄',notice:'通知',query:'查資料',settings:'設定',help:'說明與關於',issue:'問題回報'};
+const labels={dialogue:'對話',orders:'交辦工作',chat:'規劃與分工',team:'助理團隊',todo:'我的待辦',schedule:'自動工作',activity:'活動紀錄',notice:'通知',query:'查資料',settings:'設定',help:'說明與關於',issue:'問題回報'};
 const descriptions={team:'每位助理各有所長。先確認能力，再一起完成工作。',todo:'留下下一步，讓事情持續前進。',schedule:'核准一次，依固定流程執行。應用程式需要保持開啟。',activity:'查看真實的執行進度與成果。',notice:'工作有了新結果，從這裡繼續。',query:'1 選資料來源 → 2 填條件並確認 → 3 查看表格或交給助理。',settings:'設定你的助理連線與工作區外觀。',help:'離線手冊、資料說明與第三方授權。',issue:'問題與需求先保存本機，尚未送至管理平台。'};
 const states={deleted:'成果已刪除',queued:'排隊中',running:'執行中',succeeded:'已完成',failed:'未完成',cancelled:'已取消',draft:'草稿',ready:'待確認',approved:'已批准',planning:'規劃中',executing:'執行中',todo:'待處理',ongoing:'進行中',done:'已完成',pass:'流程覆核通過',needs_attention:'需要處理'};
 function rid(){return globalThis.crypto?.randomUUID?.()||'web-'+Date.now()+'-'+Math.random().toString(36).slice(2);}
@@ -38,8 +38,67 @@ function trustedMarkdown(node,html,fallback){if(typeof html==='string'){node.inn
 document.addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();notify('連結不會在工作區內開啟，請依組織流程查閱來源。');}});
 function field(parent,label,value='',type='text',options=null){const wrap=el('div','field');const lab=el('label','',label);const input=el(options?'select':type==='textarea'?'textarea':'input');input.id=rid();lab.htmlFor=input.id;if(options){options.forEach(o=>{const option=el('option','',typeof o==='object'?o.label:o);option.value=typeof o==='object'?o.value:o;input.append(option);});}else if(type!=='textarea')input.type=type;input.value=value??'';wrap.append(lab,input);parent.append(wrap);return input;}
 function modal(title){S.modalVersion++;$('modal-title').textContent=title;$('modal-body').replaceChildren();$('modal-actions').replaceChildren();if(!$('modal').open)$('modal').showModal();return $('modal-body');}
-function closeModal(){$('modal').close();S.modalVersion++;}
+let workEntryDismiss=null;
+function closeModal(){$('modal').close();S.modalVersion++;if(workEntryDismiss){const finish=workEntryDismiss;workEntryDismiss=null;finish();}}
 function modalButtons(...items){$('modal-actions').replaceChildren(...items);}
+// This palette only locates existing screens. It never dispatches or approves work.
+const workEntries=[
+ {id:'orders',icon:'clock',title:'交辦工作',description:'把需求聊清楚，先試跑日報再啟用每天執行',keywords:'日報 交辦 主代理 agent'},
+ {id:'dialogue',icon:'chat',title:'繼續對話',description:'回到目前對話，保留尚未送出的內容',keywords:'聊天 chat assistant'},
+ {id:'chat',icon:'workflow',title:'規劃與分工',description:'先討論需求與步驟，確認後才交給助理執行',keywords:'plan 多代理 multi agents 團隊'},
+ {id:'team',icon:'team',title:'助理團隊',description:'管理 Assistant ID、角色與能力驗證',keywords:'assistant 設定 主代理 子代理'},
+ {id:'briefing',icon:'document',title:'財經日報',description:'開啟日報設定與預覽；不會立即搜尋或啟用',keywords:'台股 美股 總經 每日 搜尋 search'},
+ {id:'schedule',icon:'clock',title:'自動工作',description:'查看已設定的時間、最近結果與啟停狀態',keywords:'schedule 排程 每天'},
+ {id:'activity',icon:'activity',title:'成果與活動',description:'查看實際進度、成果與失敗原因',keywords:'task result status 工作 紀錄'},
+ {id:'todo',icon:'todo',title:'我的待辦',description:'記下下一步，手動更新完成狀態',keywords:'todo done ongoing'},
+ {id:'query',icon:'database',title:'查資料',description:'選擇核准來源、填條件，再預覽確認',keywords:'database oracle 數據 查詢'},
+ {id:'settings',icon:'settings',title:'設定連線與外觀',description:'設定 Endpoint、金鑰及工作區配色',keywords:'api key endpoint theme'},
+];
+function openWorkEntry(){
+ if(S.closing)return;
+ if($('modal').open){notify('請先完成或關閉目前視窗，再開啟工作入口。');return;}
+ const previous=document.activeElement,body=modal('你想從哪件事開始？'),dialog=$('modal');
+ dialog.classList.add('work-palette');dialog.setAttribute('aria-labelledby','modal-title');
+ const search=field(body,'搜尋工作入口','','search');search.id='work-entry-search';search.previousElementSibling.htmlFor=search.id;search.placeholder='例如：規劃、日報、成果…';search.autocomplete='off';
+ const hint=el('p','work-entry-hint','只開啟入口，不會自動送出、批准或啟用工作。'),list=el('div','work-entry-list'),status=el('p','muted');list.id='work-entry-list';status.setAttribute('role','status');body.append(hint,list,status);
+ const dismiss=()=>{dialog.classList.remove('work-palette');if(previous?.isConnected&&!previous.closest('[hidden]'))previous.focus();};
+ workEntryDismiss=dismiss;
+ function draw(){
+  list.replaceChildren();const term=search.value.trim().toLocaleLowerCase();
+  const matches=workEntries.filter(item=>[item.title,item.description,item.keywords].join(' ').toLocaleLowerCase().includes(term));
+  status.textContent=matches.length?matches.length+' 個入口 · ↑↓ 選擇，Enter 開啟，Esc 關閉':'沒有符合的入口，請換個關鍵字。';
+  for(const item of matches){
+   const row=button('',async()=>{
+    // Existing input elements are retained; never fill or clear a draft here.
+    workEntryDismiss=null;dialog.classList.remove('work-palette');closeModal();
+    if(item.id==='briefing'){await showBriefing();return;}
+    if(S.page!==item.id)navigate(item.id);
+    if(item.id==='chat'){
+     if(!$('message-input').value.trim()&&!S.sending)mode('workflow');
+     else notify('已保留目前草稿與模式；準備好後可選「規劃工作」。');
+     $('message-input').focus();
+    }else if(item.id==='dialogue')$('dialogue-input').focus();
+   },'work-entry-item');row.dataset.workEntry=item.id;
+   const text=el('span','work-entry-copy');text.append(el('strong','',item.title),el('small','',item.description));row.append(icon(item.icon),text,el('span','work-entry-arrow','↗'));list.append(row);
+  }
+ }
+ search.addEventListener('input',draw);
+ body.addEventListener('keydown',event=>{
+  if(event.isComposing||event.keyCode===229||event.repeat)return;
+  const buttons=[...list.querySelectorAll('button')],index=buttons.indexOf(document.activeElement);
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+   event.preventDefault();if(!buttons.length)return;
+   const next=event.key==='ArrowDown'?(index+1)%buttons.length:(index<0?buttons.length-1:(index-1+buttons.length)%buttons.length);buttons[next].focus();
+  }else if(event.key==='Enter'&&event.target===search){event.preventDefault();buttons[0]?.click();}
+ });
+ draw();search.focus();
+}
+$('work-entry').addEventListener('click',openWorkEntry);
+document.addEventListener('keydown',event=>{
+ if(event.isComposing||event.keyCode===229)return;
+ if(event.key==='Escape'&&$('modal').open&&$('modal').classList.contains('work-palette')){event.preventDefault();closeModal();return;}
+ if(event.ctrlKey&&!event.altKey&&!event.shiftKey&&event.key.toLowerCase()==='k'){event.preventDefault();if(!event.repeat)openWorkEntry();}
+});
 function confirm(title,text,label,fn){const body=modal(title);body.append(el('p','plain-text',text));const cancel=button('取消',closeModal);modalButtons(cancel,button(label,async()=>{await fn();closeModal();},'button primary'));cancel.focus();}
 function companyReadinessEntry(root){
  const card=el('section','card');card.style.marginTop='18px';
@@ -252,7 +311,7 @@ async function showCompanyReadiness(profileId=null){
  }
 }
 function renderNav(){const nav=$('navigation');[['dialogue','chat'],['chat','workflow'],['team','team'],['todo','todo'],['schedule','clock'],['activity','activity'],['notice','bell'],['query','database'],['issue','issue']].forEach(([page,i])=>{const b=button('',()=>navigate(page),'nav-item');b.dataset.page=page;b.title=labels[page];b.append(icon(i),el('span','nav-label',labels[page]));if(page==='notice'){const count=el('span','badge');count.hidden=true;b.append(count);}nav.append(b);});document.querySelectorAll('.sidebar-bottom [data-page]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));}
-function navigate(page){S.page=page;document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('page-title').textContent=labels[page];$('chat-page').hidden=page!=='chat';$('dialogue-page').hidden=page!=='dialogue';$('content-page').hidden=page==='chat'||page==='dialogue';if(page==='dialogue'){document.dispatchEvent(new Event('qa-dialogue-enter'));$('connection').replaceChildren(el('span','status-dot'),document.createTextNode(document.body.dataset.dialogueMode||'示範模式 · 離線'));}else if(page!=='chat')renderPage(true);}
+function navigate(page){S.page=page;document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('page-title').textContent=labels[page];$('chat-page').hidden=page!=='chat';$('dialogue-page').hidden=page!=='dialogue';$('orders-page').hidden=page!=='orders';$('content-page').hidden=['chat','dialogue','orders'].includes(page);if(page==='orders')document.dispatchEvent(new Event('qa-orders-enter'));else if(page==='dialogue'){document.dispatchEvent(new Event('qa-dialogue-enter'));$('connection').replaceChildren(el('span','status-dot'),document.createTextNode(document.body.dataset.dialogueMode||'示範模式 · 離線'));}else if(page!=='chat')renderPage(true);}
 function applyPreferences(data){document.body.dataset.theme=data.theme||'dark';document.body.dataset.colorStyle=data.color_style||'ocean';syncAppearanceControls(data);const brand=document.querySelector('.brand img');brand.src=data.theme==='light'?brand.dataset.light:brand.dataset.dark;document.querySelector('.sidebar').classList.toggle('collapsed',!!data.sidebar_collapsed);$('collapse').title=data.sidebar_collapsed?'展開側欄':'收合側欄';$('collapse').setAttribute('aria-label',$('collapse').title);}
 function paintState(data){S.state=data;applyPreferences(data);$('identity').textContent=data.identity?.mode==='company'?'已登入 · '+data.identity.name:data.identity?.mode==='demo_login'?'離線展示已登入 · 非 AD':'本機身分 · 未驗證 AD';$('logout').hidden=!['company','demo_login'].includes(data.identity?.mode);$('app-version').textContent='QA agent · '+(data.version||'');$('connection').classList.add('connected');$('connection').replaceChildren(el('span','status-dot'),document.createTextNode(S.page==='dialogue'?(document.body.dataset.dialogueMode||'示範模式 · 離線'):data.mode||'已連接桌面服務'));$('connection-error').hidden=true;renderUnread(data);renderRecent(data);renderProfiles(data);renderChat(data);if(S.page!=='chat')renderPage();}
 async function refresh(){if(!S.ready||S.polling||S.closing)return;const requestedCid=S.cid,generation=S.viewGeneration;S.polling=true;try{const data=await call('state',{cid:requestedCid});if(S.closing||generation!==S.viewGeneration||requestedCid!==S.cid)return;const cid=typeof data.conversation==='string'?data.conversation:data.conversation?.id;if(requestedCid&&cid!==requestedCid)return;if(cid&&cid!==S.cid){S.cid=cid;restoreDraft(data.draft);S.signatures={};}paintState(data);}catch(e){if(generation===S.viewGeneration&&!S.closing){$('connection-error').hidden=false;$('connection-error').textContent=e.message;}}finally{S.polling=false;}}
@@ -442,7 +501,7 @@ function renderAppearance(root,data){
  const legend=el('div','appearance-legend');legend.append(el('p','muted','狀態色固定，換風格也不會改變意思。'));statusLegend(legend);card.append(legend);
  syncAppearanceControls(data);
 }
-function renderSettings(root,data){const conn=el('div','card');conn.style.marginTop='18px';root.append(conn);conn.append(el('h3','','AI 助理連線'));const protocol=el('details');protocol.append(el('summary','','進階：連線協定'));conn.append(el('p','muted','先保存共用 Endpoint，再新增 Assistant ID；可使用共用金鑰，或在助理編輯中設定個別金鑰。組織範例預設使用 Assistants 協定。'));const wire=field(protocol,'連線協定',(!data.settings?.wire_mode||data.settings.wire_mode==='unconfigured')?'assistants':data.settings.wire_mode,'text',['unconfigured','assistants','model','body_field']);protocol.append(el('p','muted','組織範例請選 assistants；切換協定會使舊助理版本及能力驗證失效。'));const endpoint=field(conn,'Endpoint',data.settings?.endpoint||''),key=field(conn,'共用 API key','','password');key.autocomplete='new-password';conn.append(el('p','muted','金鑰狀態：'+(data.settings?.key_status||'尚未設定')));const actions=el('div','card-actions');actions.append(button('保存連線',async()=>{const saved=await action('connection_save',{endpoint:endpoint.value,wire_mode:wire.value,...(key.value?{key:key.value}:{})});key.value='';notify(saved?.cleanup_pending?'新連線已生效；舊認證項目清理失敗，請聯絡維護者。':'連線設定已保存；尚未完成實測，可試用一般聊天。',!!saved?.cleanup_pending);},'button primary'),button('移除共用金鑰',()=>confirm('移除共用金鑰','使用共用金鑰的助理將無法呼叫；個別金鑰保留。','確認移除',async()=>{const saved=await action('key_remove');if(saved?.cleanup_pending)notify('共用金鑰已停用；認證管理員殘留項目清理失敗，請聯絡維護者。',true);}),'button danger'));conn.append(actions,protocol);const ids=el('section','card');ids.style.marginTop='18px';ids.append(el('h3','','Assistant ID'),el('p','muted','已設定 '+(data.profiles||[]).filter(p=>p.id!=='demo').length+' 位AI 助理。先測通一位的連續對話，再設定團隊角色。'),button('新增助理 ID',()=>editProfile()),button('管理及檢查每位助理',()=>navigate('team')));root.append(ids);companyReadinessEntry(root);renderAppearance(root,data);if(String(data.mode).toLowerCase().includes('groq')||data.settings?.editable===false){wire.disabled=true;endpoint.disabled=true;key.disabled=true;actions.querySelectorAll('button').forEach(b=>b.disabled=true);conn.append(el('p','notice','外部試用工作區不能修改組織連線。'));}}
+function renderSettings(root,data){const conn=el('div','card');conn.style.marginTop='18px';root.append(conn);conn.append(el('h3','','AI 助理連線'));const protocol=el('details');protocol.append(el('summary','','進階：連線協定'));conn.append(el('p','muted','先保存共用 Endpoint，再新增 Assistant ID；可使用共用金鑰，或在助理編輯中設定個別金鑰。組織範例預設使用 Assistants 協定。'));const wire=field(protocol,'連線協定',(!data.settings?.wire_mode||data.settings.wire_mode==='unconfigured')?'assistants':data.settings.wire_mode,'text',['unconfigured','assistants','model','body_field']);protocol.append(el('p','muted','組織範例請選 assistants；切換協定會使舊助理版本及能力驗證失效。'));const endpoint=field(conn,'Endpoint',data.settings?.endpoint||''),key=field(conn,'共用 API key','','password');key.autocomplete='new-password';conn.append(el('p','muted','金鑰狀態：'+(data.settings?.key_status||'尚未設定')));const actions=el('div','card-actions');actions.append(button('保存連線',async()=>{const saved=await action('connection_save',{endpoint:endpoint.value,wire_mode:wire.value,...(key.value?{key:key.value}:{})});key.value='';notify(saved?.cleanup_pending?'新連線已生效；舊認證項目清理失敗，請聯絡維護者。':'連線設定已保存；尚未完成實測，可試用一般聊天。',!!saved?.cleanup_pending);},'button primary'),button('移除共用金鑰',()=>confirm('移除共用金鑰','使用共用金鑰的助理將無法呼叫；個別金鑰保留。','確認移除',async()=>{const saved=await action('key_remove');if(saved?.cleanup_pending)notify('共用金鑰已停用；認證管理員殘留項目清理失敗，請聯絡維護者。',true);}),'button danger'));conn.append(actions,protocol);const ids=el('section','card');ids.style.marginTop='18px';ids.append(el('h3','','Assistant ID'),el('p','muted','已設定 '+(data.profiles||[]).filter(p=>p.id!=='demo').length+' 位AI 助理。先測通一位的連續對話，再設定團隊角色。'),button('新增助理 ID',()=>editProfile()),button('管理及檢查每位助理',()=>navigate('team')));root.append(ids);companyReadinessEntry(root);renderAppearance(root,data);renderCloseBehavior(root,data);if(String(data.mode).toLowerCase().includes('groq')||data.settings?.editable===false){wire.disabled=true;endpoint.disabled=true;key.disabled=true;actions.querySelectorAll('button').forEach(b=>b.disabled=true);conn.append(el('p','notice','外部試用工作區不能修改組織連線。'));}}
 function renderHelp(root){const about=el('section','card');about.append(el('h3','','關於 QA agent'),el('p','muted','作者資訊與版本'));root.append(about);call('about').then(info=>{if(about.isConnected)about.append(el('div','plain-text',info.text));}).catch(error=>{if(about.isConnected)about.append(el('p','error',error.message));});root.append(button('管理本機資料',manageRecords),button('匯出除錯包',()=>confirm('匯出除錯包','僅包含版本、錯誤代碼與程式位置，不包含對話、設定、金鑰或資料庫。存成 ZIP 後請依組織規定分享。','選擇儲存位置',async()=>{const r=await call('support_export');if(r.saved)notify('已匯出：'+r.path);closeModal();})));const grid=el('div','card-grid');root.append(grid);[['USER-GUIDE','使用手冊','依工作查找操作步驟與常見問題'],['DATA-USAGE','資料使用說明','了解本機保存、傳送與功能限制'],['THIRD-PARTY-LICENSES','第三方授權','使用的開源元件與授權資訊']].forEach(([name,title,desc])=>{const c=el('div','card');c.append(el('h3','',title),el('p','',desc),button('閱讀',async()=>{const r=await call('help',{name});const body=modal(title);trustedMarkdown(body,r.html,'手冊未提供');}));grid.append(c);});}
 function renderIssues(root,data){$('page-actions').append(button('回報問題',()=>{const body=modal('問題與需求回報');const type=field(body,'類型','操作故障','text',['操作故障','回答不符','新需求']),title=field(body,'標題'),desc=field(body,'問題描述','','textarea'),expected=field(body,'預期結果','','textarea');body.append(el('p','notice','目前只保存在本機，不自動附加對話、資料或附件。'));modalButtons(button('取消',closeModal),button('保存回報',async()=>{await action('issue_save',{type:({'操作故障':'app','回答不符':'answer','新需求':'feature'})[type.value],title:title.value,description:desc.value,expected:expected.value});closeModal();},'button primary'));},'button primary'));(data.issues||[]).forEach(i=>{const row=el('div','list-row');row.append(el('strong','grow',i.title||i.description),badge(i.state||'本機草稿'),button('刪除',()=>deleteRecords('issues',[i.id]),'button danger'));root.append(row);});if(!data.issues?.length)empty(root,'讓工作區逐漸更好','記下問題或需求，交給組織維護者後續處理。');}
 async function manageChats(){const body=modal('管理對話');const search=field(body,'搜尋標題');const list=el('div');body.append(list);const chosen=new Set();function draw(){list.replaceChildren();(S.state.conversations||[]).filter(c=>(c.title||'').includes(search.value)).forEach(c=>{const label=el('label','check-field'),check=el('input');check.type='checkbox';check.checked=chosen.has(c.id);check.addEventListener('change',()=>check.checked?chosen.add(c.id):chosen.delete(c.id));label.append(check,document.createTextNode(c.title||'新對話'));list.append(label);});}search.addEventListener('input',()=>{chosen.clear();draw();});draw();modalButtons(button('取消',closeModal),button('刪除選取對話',async()=>{if(!chosen.size)throw Error('請先選擇對話。');const preview=await call('delete_preview',{ids:[...chosen]});confirm('永久刪除對話','不能由應用復原。另存待辦、獨立查詢與排程保留。\n'+plain(preview.counts),'確認永久刪除',async()=>{const r=await call('delete_confirm',{token:preview.token});S.cid=r?.new_cid||null;S.signatures={};S.dirty=false;await refresh();});},'button danger'));}
@@ -473,6 +532,23 @@ const closingControls=new Map();let previousInert=false;
 window.qaSetClosing=value=>{if(value===true){if(S.closing)return;S.closing=true;clearTimeout(S.saveTimer);previousInert=document.body.inert;document.body.inert=true;document.querySelectorAll('button,input,textarea,select').forEach(control=>{closingControls.set(control,{disabled:control.disabled,readOnly:control.readOnly});control.disabled=true;if('readOnly'in control)control.readOnly=true;});$('status-text').textContent='正在保存並等待背景工作結束…';}else{S.closing=false;document.body.inert=previousInert;for(const[control,prior]of closingControls){if(control.isConnected){control.disabled=prior.disabled;if('readOnly'in control)control.readOnly=prior.readOnly;}}closingControls.clear();$('send').disabled=S.sending;$('status-text').textContent='關閉未完成，請檢查草稿保存狀態。';}};
 window.qaDraftSnapshot=()=>{clearTimeout(S.saveTimer);window.qaSetClosing(true);if(!S.dirty||!S.cid)return null;return {cid:S.cid,text:$('message-input').value,purpose:S.purpose,planned:S.planned,seq:++S.seq};};
 window.addEventListener('pywebviewready',()=>{S.ready=true;refresh();setInterval(refresh,1500);});
-document.addEventListener('qa-navigate',e=>{if(['settings','team','chat'].includes(e.detail))navigate(e.detail);});
+document.addEventListener('qa-navigate',e=>{if(['settings','team','chat','orders','dialogue'].includes(e.detail))navigate(e.detail);});
+
+window.qaRequestClose=(unsavedExit=false,rememberExit=false)=>{
+ if(S.closing)return;
+ if($('modal').open&&!unsavedExit){notify('請先完成或關閉目前視窗，再選擇關閉方式。');return;}
+ if(unsavedExit){const body=modal('交辦內容尚未保存');body.append(el('p','notice','尚未提交的需求、補充文字或條件修改將在退出時遺失。已保存的討論、成果與排程保留。可取消並返回保存，或明確放棄這些編輯。'));const cancel=button('返回保存',()=>{closeModal();navigate('orders');});modalButtons(cancel,button('放棄未保存編輯並退出',async()=>{window.qaOrderExitConfirmed=true;const result=await call('host_close',{value:'exit',remember:rememberExit});if(!result.pending)closeModal();},'button danger'));cancel.focus();return;}
+ const body=modal('關閉視窗後，要繼續自動工作嗎？');
+ body.append(el('p','notice','留在系統匣會保持此程式及已啟用的本機排程運作。電腦關機、休眠或登出後不能執行。退出會停止本機自動工作。'));
+ const row=el('label','check-field'),remember=el('input');remember.type='checkbox';row.append(remember,document.createTextNode('記住這次選擇（可在設定變更）'));body.append(row);
+ const choose=async value=>{const result=await call('host_close',{value,remember:remember.checked});if(result.pending)return;closeModal();if(!result.saved)notify('本次選擇已處理，但偏好未保存；下次仍會詢問。',true);};
+ const cancel=button('取消',closeModal);modalButtons(cancel,button('退出程式',()=>choose('exit')),button('留在系統匣',()=>choose('background'),'button primary'));cancel.focus();
+};
+
+function renderCloseBehavior(root,data){
+ const card=el('section','card');card.style.marginTop='18px';card.append(el('h3','','關閉視窗與自動工作'),el('p','muted','留在系統匣時排程繼續；電腦必須保持運作。登入失效時須重新登入。'));
+ const value=field(card,'按右上角關閉時',data.close_behavior||'ask','text',[{value:'ask',label:'每次詢問'},{value:'background',label:'留在系統匣'},{value:'exit',label:'退出程式'}]);value.id='close-behavior';value.previousElementSibling.htmlFor=value.id;
+ const info=el('p','muted');card.append(button('保存關閉方式',async()=>{const result=await call('close_behavior',{value:value.value});info.textContent=result.saved?'關閉方式已保存。':'保存失敗，請重試。';info.className=result.saved?'muted':'error';}),info);root.append(card);
+}
 document.addEventListener('qa-plan-entry',()=>{navigate('chat');$('plan-mode').click();});
 })();

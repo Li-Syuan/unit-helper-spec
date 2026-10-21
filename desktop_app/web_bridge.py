@@ -31,12 +31,12 @@ class WebBridge:
                 if self._s.demo_session and (name.startswith('profile_') or name.startswith('search_policy_')
                         or name in {'connection_save','key_remove','company_probe'}):
                     raise ValueError('離線登入展示禁止公司連線、金鑰與工具設定；請關閉並改用公司登入。')
-                if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel'}:
+                if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel','order_cancel','host_close'}:
                     self._s.assert_identity()
                 if self._closing and name not in {'state','save_draft'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe'}:
+                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','host_close'}:
                     return {'ok':True,'data':handler(payload or {})}
             # Provider I/O must not block theme/state/cancellation/close commands.
             return {'ok':True,'data':handler(payload or {})}
@@ -52,6 +52,21 @@ class WebBridge:
     def _handlers(self):
         s=self._s
         return {
+            'close_behavior':self._close_behavior,'host_close':self._host_close_request,
+            'order_catalog':lambda p:s.orders.catalog(),
+            'order_list':lambda p:s.orders.list(),
+            'order_create':lambda p:s.orders.create(p['profile_id'],p['goal'],p.get('source_thread')),
+            'order_state':lambda p:s.orders.state(p['id']),
+            'order_discuss':lambda p:s.orders.discuss(p['id'],p['revision'],p['text']),
+            'order_edit':lambda p:s.orders.edit(p['id'],p['revision'],p['answers']),
+            'order_preview':lambda p:s.orders.preview(p['id'],p['revision']),
+            'order_trial':lambda p:s.orders.trial(p['id'],p['token']),
+            'order_schedule_preview':lambda p:s.orders.schedule_preview(p['id'],p['revision']),
+            'order_enable':lambda p:s.orders.enable(p['id'],p['token'],p.get('reviewed',False),p.get('consent',False)),
+            'order_pause':lambda p:s.orders.pause(p['id']),
+            'order_cancel':lambda p:s.orders.cancel(p['id']),
+            'order_inspect':lambda p:s.orders.inspect(p['id']),
+            'order_recover':lambda p:s.orders.recover(p['id']),
             'about':self._about,'logout':self._logout,
             'state':self._state,'new_chat':self._new_chat,'save_draft':self._draft,'send':self._send,
             'cleanup_preview':lambda p:s.cleanup.preview(p['kind'],p['ids']),
@@ -137,6 +152,22 @@ class WebBridge:
         if self._window:threading.Timer(.2,self._window.destroy).start()
         return {'logged_out':True}
 
+    def _close_behavior(self,p):
+        value=p.get('value')
+        if value is not None:
+            if value not in ('ask','background','exit'):raise ValueError('關閉行為無效。')
+            try:update_preferences(self._s.preferences_path,{'close_behavior':value})
+            except OSError:return {'value':value,'saved':False}
+        value=load_preferences(self._s.preferences_path).get('close_behavior','ask')
+        return {'value':value if value in ('ask','background','exit') else 'ask','saved':True}
+
+    def _host_close_request(self,p):
+        if p.get('value') not in ('background','exit') or type(p.get('remember',False)) is not bool:
+            raise ValueError('關閉選項無效。')
+        handler=getattr(self,'_host_close',None)
+        if not handler:raise ValueError('此入口沒有桌面視窗。')
+        return handler(p['value'],p.get('remember',False))
+
     def _about(self,p):
         from .about import publisher_info, about_text
         return dict(author=publisher_info(),text=about_text(),version=__version__)
@@ -184,7 +215,7 @@ class WebBridge:
             actions=[dict(s.actions.snapshot(a['id']),parse_note=self._parse_notes.get(a['id'],'')) for a in s.actions.list(cid)],catalog=s.queries.catalog(),
             work_inbox=work_inbox(s),todos=s.store.todos(),schedules=s.store.schedules(),notifications=s.store.notifications(),issues=s.store.issues(),
             draft=s.store.draft(cid),attachment=self._attachment_info(cid),busy=s.engine.has_inflight(),
-            scheduler_error=s.scheduler_error,settings={'endpoint':s.profiles.data.get('endpoint','') if not s.trial else '',
+            scheduler_error=s.scheduler_error,close_behavior=self._close_behavior({})['value'],settings={'endpoint':s.profiles.data.get('endpoint','') if not s.trial else '',
                 'wire_mode':s.profiles.data.get('wire_mode','unconfigured'),
                 'key_status':s.profiles.key_status() if not s.trial else '由隔離試用 .env 提供','trial':s.trial})
 

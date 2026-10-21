@@ -17,3 +17,5 @@ disable-model-invocation: false
 對話schema2保存原request ID／狀態與失敗輸入；inspect只讀，recover僅已知run或cache，不能retry未知POST。刪除在鎖及交易內核對快照、inflight及附加帳本；工作保留最少防重識別，不讓舊確認復活。support.py記白名單錯誤事件，不記原始例外或HTTP body。
 
 AD接每次派發／排程授權及owner隔離；Oracle只核准模板／bind／有限結果／精確數字，未接組織時不以示範冒充。真角色能力、session隔離與工具只依實測啟用，不手改verified解鎖。
+
+0.22.0工作台：主Store schema7，work_orders為交辦共用服務，CLI與Web使用同一批准／防重契約；規劃不開工具，試跑後人工核對再啟用每日排程。WebView系統匣不另造runner。接手先讀docs/WORKBENCH.md與最新VALIDATION，不能以demo或Skill冒充使用者批准。

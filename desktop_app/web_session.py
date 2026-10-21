@@ -16,7 +16,7 @@ from .outcomes import OutcomeService
 
 
 class WebSession:
-    def __init__(self, directory=None, config=None, config_path=None, groq_trial=False, login_session=None, demo_session=None):
+    def __init__(self, directory=None, config=None, config_path=None, groq_trial=False, login_session=None, demo_session=None, *, start_scheduler=True):
         if groq_trial and (config is not None or config_path is not None):
             raise ValueError('試用不能載入連線設定。')
         if demo_session is not None and (config_path is not None or config is None
@@ -65,6 +65,8 @@ class WebSession:
             self.actions=ActionService(self.engine);self.workflows=WorkflowService(self.engine,self.profiles)
             from .assistant_briefings import AssistantBriefings
             self.briefings=AssistantBriefings(self.engine,self.profiles)
+            from .work_orders import WorkOrders
+            self.orders=WorkOrders(self.engine,self.profiles,self.briefings)
             self.outcomes=OutcomeService(self.workflows);self.forms=ChoiceForms(self.store.path)
             from .data_cleanup import DataCleanup
             self.cleanup=DataCleanup(self.engine)
@@ -76,7 +78,9 @@ class WebSession:
             from .company_readiness import CompanyProbe
             self.company_probe=CompanyProbe(self.profiles)
             self.scheduler_error=False
-            self.scheduler=threading.Thread(target=self._tick,daemon=True);self.scheduler.start()
+            self.scheduler=None
+            if start_scheduler:
+                self.scheduler=threading.Thread(target=self._tick,daemon=True);self.scheduler.start()
         except BaseException:
             if self.engine:self.engine.close(wait=True)
             self.lock.close();raise
@@ -94,7 +98,8 @@ class WebSession:
 
     def close(self):
         if self.closed:return
-        self.closed=True;self.stop.set();self.scheduler.join()
+        self.closed=True;self.stop.set()
+        if self.scheduler is not None:self.scheduler.join()
         self.dialogue.close(wait=False)
         self.company_probe.close(wait=False)
         try:self.engine.close(wait=True)

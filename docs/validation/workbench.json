@@ -1,0 +1,82 @@
+{
+  "version": "0.22.0",
+  "python": "3.10.4",
+  "schema": 7,
+  "full": {
+    "passed": true,
+    "seconds": 170.1365,
+    "selected": 590
+  },
+  "full_result": {
+    "count": 590,
+    "seconds": 167.9101,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "webview": {
+    "status": "passed",
+    "checks": [
+      "bridge_ready",
+      "author_popover_readonly_escape_outside_and_late_reply_fence",
+      "work_entry_keyboard_search_draft_preservation_preview_only_small_window",
+      "six_style_modes_preserve_form_semantic_colors_save_retry_reset_zero_dispatch",
+      "semantic_theme_keeps_draft_selection_and_zero_dispatch",
+      "failed_request_fenced_inspect_fork_and_explicit_delete",
+      "provider_failure_preserves_input_and_messages_no_fallback",
+      "offline_multiturn_mode_reset_questions_preview_cancel_and_disabled_save",
+      "assistant_switch_starts_empty_view",
+      "chat_sent_from_dom",
+      "three_click_query_zero_dispatch_before_confirm",
+      "workflow_explicit_approval_and_outcome_feedback_mock",
+      "attention_running_success_failure_distinct_in_both_themes",
+      "notification_unread_is_informational_explicit_view_only_and_state_retained",
+      "untrusted_navigation_blocked",
+      "proven_unsent_retry_same_request_preserves_history",
+      "company_sdk_mock_multiturn_main_ui_badge_small_controls",
+      "briefing_dom_preview_trial_review_schedule_pause_mock",
+      "cleanup_cancel_confirm_no_dispatch_preserves_schedule_query_entry",
+      "company_setup_and_metadata_probe_no_model_dispatch",
+      "search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search",
+      "chat_search_separate_opt_in_and_single_mock_tool_roundtrip",
+      "credential_revision_fork_explicit_destination_and_preserved_draft_zero_dispatch",
+      "work_order_demo_discussion_questions_preview_cancel_trial_readonly_and_chat_draft_preserved",
+      "real_winforms_tray_register_hide_restore_dispose_local_only",
+      "close_choice_explicit_remember_unsaved_cancel_and_preference_roundtrip",
+      "todo_real_inbox_source_zero_dispatch_description_search_due_filters_transitions_duplicate_save_empty_cancel_small_light_maximized",
+      "todo_main_source_navigation_preserves_unsent_draft_and_deleted_source_keeps_copy_zero_dispatch",
+      "offline_demo_login_workspace_network_settings_denied_logout_veil_and_bridge_navigation_bypass_rejected"
+    ],
+    "scope": "real WebView2; synthetic provider and data"
+  },
+  "delivery": {
+    "python": "3.10.4",
+    "company_real": "not_tested",
+    "checks": [
+      "bat_foreign_cwd_utf8_demo_catalog",
+      "cli_piped_prepare_preview_no_approval",
+      "cli_error_exit_code_and_json",
+      "all_code_zip_wheels_hash_lock_identity"
+    ],
+    "wheel_count": 69,
+    "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b",
+    "passed": true
+  },
+  "prior_attempts": [
+    "Original user profile preflight failed: credential_store_unavailable_or_empty; tests not_run.",
+    "Sandbox atomic replace denied; actual normal-Windows run succeeded without relaxing checks.",
+    "Demo Chinese-adjacent HH:MM parsing failed, fixed and covered by existing regression case.",
+    "Expired-receipt smoke initially waited on an absent DOM node; fixture wait corrected, failure retained.",
+    "Expiry review found exit/cancel blocked; fixed and covered without allowing dispatch."
+  ],
+  "not_tested": [
+    "company DVC planning/search/source quality",
+    "real AD",
+    "human X/tray menu usage",
+    "sleep/shutdown",
+    "IME",
+    "human usability"
+  ],
+  "no_new_dependencies": true,
+  "no_new_environment": true
+}

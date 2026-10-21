@@ -112,12 +112,20 @@ class AssistantBriefings:
                 raise ValueError('請先完成一次試跑並核對結果。')
             spec=task['payload']['spec'];self.validate(spec)
             if task['schedule_id']:return self._scheduled(task['schedule_id'])
-            sid=uid();now=utcnow();params={'_assistant_briefing':copy.deepcopy(spec),'trial_task':tid}
             with self.store.connection() as db:
                 db.execute('BEGIN IMMEDIATE')
-                db.execute("INSERT INTO schedules(id,name,query_id,parameters,frequency,time_hhmm,weekday,notify_rule,enabled,next_fire,created_at) VALUES(?,'財經日報','ASSISTANT_BRIEFING',?,'daily',?,0,'assistant_briefing',1,?,?)",
-                    (sid,dumps(params),spec['time_hhmm'],stamp(self.engine._next_fire({'frequency':'daily','time_hhmm':spec['time_hhmm']},now)),stamp(now)))
+                sid=self.schedule_tx(db,task)
             return self._scheduled(sid)
+
+    def schedule_tx(self,db,task):
+        """Caller holds engine lock, has confirmed consent, and owns transaction."""
+        spec=task['payload']['spec'];self.validate(spec)
+        old=db.execute("SELECT id FROM schedules WHERE query_id='ASSISTANT_BRIEFING' AND json_extract(parameters,'$.trial_task')=?",(task['id'],)).fetchone()
+        if old:return old['id']
+        sid=uid();now=utcnow();params={'_assistant_briefing':copy.deepcopy(spec),'trial_task':task['id']}
+        db.execute("INSERT INTO schedules(id,name,query_id,parameters,frequency,time_hhmm,weekday,notify_rule,enabled,next_fire,created_at) VALUES(?,'財經日報','ASSISTANT_BRIEFING',?,'daily',?,0,'assistant_briefing',1,?,?)",
+            (sid,dumps(params),spec['time_hhmm'],stamp(self.engine._next_fire({'frequency':'daily','time_hhmm':spec['time_hhmm']},now)),stamp(now)))
+        return sid
 
     def _scheduled(self,sid):
         s=self.store.schedule(sid)

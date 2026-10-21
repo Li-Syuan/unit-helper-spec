@@ -17,3 +17,5 @@ disable-model-invocation: false
 失敗原處呈現原因與問題編號，保留已完成訊息及草稿；檢查與取回原請求分開，另開對話的歷史轉交要預覽確認。刪除取消預設焦點，busy不得批次刪除。主題／資料刷新保留選取、草稿與閱讀位置。組織連線入口以Endpoint、API key與Assistant ID為主；角色與工具驗收不偽裝完成。
 
 檢查深淺、1050×700及正常／最大化按鈕可達，保留原圖示／DPI／IME防護；人工IME與可用性需另外實測。
+
+0.22.0工作台：主Store schema7，work_orders為交辦共用服務，CLI與Web使用同一批准／防重契約；規劃不開工具，試跑後人工核對再啟用每日排程。WebView系統匣不另造runner。接手先讀docs/WORKBENCH.md與最新VALIDATION，不能以demo或Skill冒充使用者批准。

@@ -89,7 +89,7 @@ class OutcomeTests(unittest.TestCase):
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],5)
             self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='failed_marker'").fetchone())
         Store(self.path)
-        backups=list(self.path.parent.glob('*.pre-v6-*.bak'));self.assertTrue(backups)
+        backups=list(self.path.parent.glob('*.pre-v7-*.bak'));self.assertTrue(backups)
         with sqlite3.connect(backups[0]) as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],5)
 
     def test_failed_save_keeps_previous_feedback(self):

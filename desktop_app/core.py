@@ -55,10 +55,10 @@ class Store(LocalWorkStore):
         self._draft_revisions = {}
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version > 6:
+            if version > 7:
                 raise ValueError("資料庫版本較新，請使用相容的應用程式。")
-            if version in (1, 2, 3, 4, 5):
-                backup=self.path.with_name(self.path.name+'.pre-v6-'+uid()+'.bak')
+            if version in (1, 2, 3, 4, 5, 6):
+                backup=self.path.with_name(self.path.name+'.pre-v7-'+uid()+'.bak')
                 with sqlite3.connect(str(backup)) as target: db.backup(target)
             db.executescript("""
                 PRAGMA journal_mode=WAL;
@@ -106,7 +106,9 @@ class Store(LocalWorkStore):
             initialize_workflow_schema(db)
             from .outcomes import initialize_outcome_schema
             initialize_outcome_schema(db)
-            db.execute("PRAGMA user_version=6")
+            from .work_orders import initialize_order_schema
+            initialize_order_schema(db)
+            db.execute("PRAGMA user_version=7")
             self._draft_revisions = {row['conversation_id']: row['revision'] for row in db.execute('SELECT conversation_id,revision FROM drafts')}
 
     @contextmanager
@@ -610,6 +612,8 @@ class Engine:
             db.execute("UPDATE schedules SET enabled=0 WHERE id IN (SELECT schedule_id FROM tasks WHERE id=? AND kind='assistant_briefing' AND state='cancelled')",(task_id,))
 
     def _work(self, task_id):
+        if hasattr(self,'_orders') and self.store.task(task_id)['kind']=='work_order_demo':
+            return self._orders.work_demo(task_id)
         if hasattr(self,'_briefings') and self.store.task(task_id)['kind']=='assistant_briefing':
             return self._briefings.work(task_id)
         if hasattr(self,'_workflows') and self.store.task(task_id)['kind']=='workflow':

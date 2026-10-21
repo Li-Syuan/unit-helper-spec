@@ -1,5 +1,8 @@
 {
   "quick": [
+    "tests.test_tray.TrayTests",
+    "tests.test_work_orders.WorkOrderTests",
+    "tests.test_cli.CliTests",
     "tests.test_about.PublisherInfoTests",
     "tests.test_authentication.AuthenticationTests",
     "tests.test_appearance.AppearancePreferencesTests",

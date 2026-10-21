@@ -1,3 +1,9 @@
+## 0.22.0 共用工作台
+
+work_orders.py 為每日搜尋交辦服務；WebBridge與CLI共用。規劃只提scope/sources/time_hhmm、不開工具，確認試跑才交既有AssistantBriefings／Engine，人工核對與持續授權後才排程。主Store升schema7保存獨立交辦，既有schema1～6一致備份後交易遷移；其餘資料庫版本不變。work_orders的state只是需求整理狀態，執行與排程狀態從既有資料讀取。
+
+WebSession增加start_scheduler（桌面預設true，CLI false），沿用單實例鎖與授權。CLI為固定操作入口、無shell/eval/任意bridge。WebView tray.py用既有WinForms NotifyIcon保留同程序；失敗不隱藏、真正退出drain不持bridge鎖。Skill是操作指引而非授權。詳見[工作台](WORKBENCH.md)。下方schema6是歷史功能說明，當前主Store以本節schema7為準。
+
 ## 離線登入展示與現有AD閘門
 
 `demo_login.py` 僅記憶體fixture；`--demo-login`／`start-demo-login.bat` 先原生登入，再建立空白暫存WebSession，禁公司設定／probe，登出撤銷並關閉。company_auth既有可信hook不變；人事資格尚未接線。詳細邊界見 LOGIN-AND-APP-ACCESS.md。

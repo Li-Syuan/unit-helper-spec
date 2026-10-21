@@ -17,3 +17,5 @@ disable-model-invocation: false
 核對對話與工作request ID、防重、cancel晚到結果、助理版本隔離、核准工具、刪除交易及快取、草稿未啟用、schema備份回復。檢查離線包所有wheels/hash/lock，新環境真安裝與組織測試分開。組織說普通聊天可用不能推論四角色已驗收；單個助理失敗也不能推論所有服務不可用。
 
 UI文字與服務實際狀態一致；新刪除不能保留可見敏感成果或丟掉防重，日誌不能洩漏正文。檢查未完成限制如實記錄；full失敗不得改成skip或用mock補綠。
+
+0.22.0工作台：主Store schema7，work_orders為交辦共用服務，CLI與Web使用同一批准／防重契約；規劃不開工具，試跑後人工核對再啟用每日排程。WebView系統匣不另造runner。接手先讀docs/WORKBENCH.md與最新VALIDATION，不能以demo或Skill冒充使用者批准。

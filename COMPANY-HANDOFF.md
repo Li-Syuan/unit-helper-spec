@@ -1,3 +1,9 @@
+## 0.22.0 交辦工作接手
+
+先讀[工作台操作](docs/WORKBENCH.md)及[驗證紀錄](docs/VALIDATION.md)。無新套件，沿用69wheels；主DB升schema7先backup，勿用舊版直接開新庫。第一件驗收只用一位已核准搜尋助理：每日台股／美股／總經需求 → 工具停用的結構化補問 → 本機預覽 → 試跑 → 人工核對日期來源 → 每日持續同意。未核准工具、缺欄位、格式錯誤、變更連線與失敗不可默默啟用。
+
+入口為桌面「交辦工作」與qa.bat。公司 agent 先完成合成展示，再由使用者設定 endpoint／key／assistant ID及搜尋policy；勿手改verified解鎖，這條路徑不需要四角色。測試主畫面關閉選背景、系統匣重開保留內容、AD到期停止新派發、真正退出停止排程。CLI不啟動排程器，不能與桌面共用資料目錄同時跑。操作Skill見[qa-daily-briefing](docs/skills/qa-daily-briefing/SKILL.md)，不得由agent代填使用者確認。
+
 [**公司 Code ZIP 首次安裝：直接複製給 Copilot**](COPILOT-START-HERE.md)
 
 ## GitHub Code ZIP 離線入口（2026-10-01）

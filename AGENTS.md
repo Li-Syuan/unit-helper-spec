@@ -1,3 +1,9 @@
+# 0.22.0 交辦與CLI（優先於下方schema6限制）
+
+使用者已批准單助理每日搜尋交辦、CLI共用服務及WebView系統匣。主Store升schema7，舊1～6先backup再交易新增work_orders；dialogue task_drafts CHECK=0不變。work_orders.py保存獨立需求、修訂、綁定及工作／排程連結；真實狀態仍讀既有task/schedule，不另造runner。規劃purpose=workflow_plan/operation=task_draft強制零工具，只接受scope/sources/time_hhmm建議；預覽純本機、十分鐘token，確認試跑與人工核對後每日持續同意分開。demo只能合成試跑，不能啟用真排程。試跑及連結、排程及連結各自同交易，取消晚到不復活，未知POST不重送。可檢查遠端收據，僅已知規劃回覆可沿原ID恢復。
+
+qa.bat／desktop_app.cli不執行shell或任意bridge命令。與桌面互斥、預設不啟動scheduler；Skill不得代填確認字串。WebView縮到系統匣保持同程序；首次X詢問ask/background/exit，圖示失敗不可hide，真正退出依原保存/drain且不持bridge全域鎖等待IO。Tk無新增tray。依賴69wheels保持不變，交付界線與操作見docs/WORKBENCH.md；公司實測不得以mock代替。
+
 # 2026-10-01 Code ZIP 離線來源（使用者明確授權）
 
 公司可取 Code Download ZIP、不能取 Release。允許正式App缺少的21個wheels進Git的offline-app/packages；48個相同wheels重用experiments/langgraph-lab/packages，來源與SHA256由offline-app/bundle-manifest.json固定。禁止LFS指標、連外補件、覆寫既有環境或對損壞wheelhouse回退；69套件lock不變。此明確授權優先於下方「正式wheels不進Git」舊規則。舊Release、AD與其他功能不更動。

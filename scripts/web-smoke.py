@@ -62,6 +62,37 @@ def main():
                 time.sleep(.1)
                 assert window.evaluate_js("document.getElementById('author-popover').hidden"),'author_late_reply_reopened'
                 report['checks'].append('author_popover_readonly_escape_outside_and_late_reply_fence')
+                # Work palette is local navigation, not an execution/approval surface.
+                window.evaluate_js("document.getElementById('dialogue-input').value='保留主對話草稿';document.getElementById('dialogue-input').focus();document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}))")
+                assert window.evaluate_js("document.getElementById('modal').open&&document.activeElement.id==='work-entry-search'"),'work_entry_shortcut_focus'
+                assert window.evaluate_js("document.querySelectorAll('[data-work-entry]').length")==10,'work_entry_missing_destinations'
+                window.evaluate_js("document.getElementById('work-entry-search').value='不存在的入口';document.getElementById('work-entry-search').dispatchEvent(new Event('input'))")
+                assert window.evaluate_js("document.querySelectorAll('[data-work-entry]').length")==0,'work_entry_filter'
+                window.evaluate_js("document.getElementById('work-entry-search').value='成果';document.getElementById('work-entry-search').dispatchEvent(new Event('input'));document.getElementById('work-entry-search').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))")
+                assert window.evaluate_js("document.activeElement.dataset.workEntry==='activity'"),'work_entry_arrow_navigation'
+                window.evaluate_js("document.activeElement.click()")
+                assert window.evaluate_js("document.getElementById('page-title').textContent==='活動紀錄'&&document.getElementById('dialogue-input').value==='保留主對話草稿'"),'work_entry_draft_lost'
+                window.evaluate_js("document.getElementById('work-entry').click();document.querySelector('[data-work-entry=chat]').click()")
+                assert window.evaluate_js("document.getElementById('plan-mode').classList.contains('active')"),'work_entry_empty_plan_mode'
+                window.evaluate_js("document.getElementById('chat-mode').click();document.getElementById('message-input').value='保留進階草稿';document.getElementById('work-entry').click();document.querySelector('[data-work-entry=chat]').click()")
+                assert window.evaluate_js("document.getElementById('message-input').value==='保留進階草稿'&&document.getElementById('chat-mode').classList.contains('active')"),'work_entry_changed_draft_mode'
+                window.evaluate_js("document.getElementById('work-entry').click();document.querySelector('[data-work-entry=briefing]').click()")
+                time.sleep(.3)
+                assert window.evaluate_js("document.getElementById('modal-title').textContent==='財經日報'&&!document.getElementById('modal').classList.contains('work-palette')"),'work_entry_briefing_preview'
+                # Do not replace an already open preview when Ctrl+K is pressed.
+                window.evaluate_js("document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}))")
+                assert window.evaluate_js("document.getElementById('modal-title').textContent==='財經日報'"),'work_entry_replaced_preview'
+                window.evaluate_js("document.getElementById('modal-close').click();document.getElementById('work-entry').focus();document.getElementById('work-entry').click()")
+                capture('work-entry-dark.png')
+                window.resize(1050,700);time.sleep(.2);capture('work-entry-small.png')
+                assert window.evaluate_js("(()=>{const r=document.getElementById('modal').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;})()"),'work_entry_small_bounds'
+                window.evaluate_js("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))")
+                time.sleep(.1)
+                assert window.evaluate_js("!document.getElementById('modal').open&&document.activeElement.id==='work-entry'"),'work_entry_escape_focus'
+                window.resize(1280,860)
+                assert not session.store.tasks(),'work_entry_dispatched_work'
+                window.evaluate_js("document.getElementById('message-input').value='';document.getElementById('dialogue-input').value='';document.querySelector('[data-page=dialogue]').click()")
+                report['checks'].append('work_entry_keyboard_search_draft_preservation_preview_only_small_window')
                 # Theme choices use existing widgets; unsaved connection inputs stay local.
                 window.evaluate_js("document.querySelector('[data-page=settings]').click()")
                 time.sleep(.3)
@@ -76,6 +107,9 @@ def main():
                 for theme in ('dark','light'):
                     window.evaluate_js("document.querySelector('[data-theme-choice="+theme+"]').click()")
                     wait_script("document.body.dataset.theme==="+json.dumps(theme)+"&&!document.querySelector('[data-theme-choice="+theme+"]').disabled")
+                    window.evaluate_js("document.getElementById('work-entry').click()")
+                    capture('work-entry-'+theme+'.png')
+                    window.evaluate_js("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))")
                     for style in ('ocean','violet','forest'):
                         window.evaluate_js("document.querySelector('[data-color-choice="+style+"]').click()")
                         wait_script("document.body.dataset.colorStyle==="+json.dumps(style)+"&&!document.querySelector('[data-color-choice="+style+"]').disabled")
@@ -87,6 +121,8 @@ def main():
                         capture('style-'+theme+'-'+style+'.png')
                 assert not session.store.tasks(),'style_choice_dispatched_work'
                 from desktop_app.preferences import load_color_style
+                if load_color_style(session.preferences_path)!='forest':
+                    report['appearance_failure']={'disk':load_color_style(session.preferences_path),'ui':window.evaluate_js('document.body.dataset.colorStyle'),'status':window.evaluate_js("document.getElementById('appearance-status').textContent")}
                 assert load_color_style(session.preferences_path)=='forest','style_not_persisted'
                 from unittest.mock import patch
                 with patch('desktop_app.web_bridge.save_appearance',side_effect=OSError('synthetic_write_failure')):
@@ -451,6 +487,90 @@ def main():
                 assert window.evaluate_js("document.getElementById('dialogue-input').value")=='更換金鑰後要保留的合成草稿','revision_fork_lost_draft'
                 assert len(company_mock.runs)==before_fork,'revision_fork_dispatched'
                 report['checks'].append('credential_revision_fork_explicit_destination_and_preserved_draft_zero_dispatch')
+                # One-assistant work orders use synthetic data, and preserve the chat draft.
+                order_tasks_before={t['id'] for t in session.store.tasks()}
+                order_runs_before=len(company_mock.runs)
+                window.evaluate_js("document.getElementById('dialogue-order').click()")
+                wait_script("!!document.getElementById('order-goal')")
+                window.evaluate_js("document.getElementById('order-assistant').value='demo';document.getElementById('order-goal').value='請幫我規劃每天的日報';document.getElementById('order-goal').dispatchEvent(new Event('input'));document.getElementById('order-create').click()")
+                wait_script("!!document.getElementById('order-discuss')&&!document.getElementById('order-planning')")
+                assert window.evaluate_js("document.getElementById('order-content').textContent.includes('要關注哪些新聞')"),'order_missing_questions'
+                window.evaluate_js("document.getElementById('order-reply').value='台股、美股與總經，公開網路可靠來源，每天08:00';document.getElementById('order-reply').dispatchEvent(new Event('input'));document.getElementById('order-discuss').click()")
+                wait_script("document.getElementById('order-time').value==='08:00'&&!document.getElementById('order-planning')")
+                assert {t['id'] for t in session.store.tasks()}==order_tasks_before,'order_planning_dispatched'
+                window.evaluate_js("document.getElementById('order-trial-preview').click()")
+                wait_script("document.getElementById('order-preview').textContent.includes('確認試跑一次')")
+                window.evaluate_js("Array.from(document.querySelectorAll('#order-preview button')).find(b=>b.textContent==='取消').click()")
+                assert {t['id'] for t in session.store.tasks()}==order_tasks_before,'order_preview_cancel_dispatched'
+                for theme in ('dark','light'):
+                    api.call('appearance',{'theme':theme})
+                    time.sleep(1.7)
+                    capture('work-order-'+theme+'.png')
+                window.resize(1050,700);time.sleep(.3);capture('work-order-small.png')
+                window.evaluate_js("document.getElementById('order-trial-preview').scrollIntoView({block:'center'});document.getElementById('order-trial-preview').click()")
+                wait_script("document.getElementById('order-preview').textContent.includes('確認試跑一次')")
+                window.evaluate_js("Array.from(document.querySelectorAll('#order-preview button')).find(b=>b.textContent==='確認試跑一次').click()")
+                wait_script("document.getElementById('order-outcome').textContent.includes('離線示範成果')")
+                assert window.evaluate_js("document.getElementById('order-outcome').textContent.includes('不能啟用真實排程')"),'order_demo_enable_exposed'
+                assert window.evaluate_js("document.getElementById('order-scope').readOnly&&document.getElementById('order-discuss').disabled"),'order_executed_revision_editable'
+                assert window.evaluate_js("document.getElementById('dialogue-input').value")=='更換金鑰後要保留的合成草稿','order_lost_chat_draft'
+                assert len(company_mock.runs)==order_runs_before,'demo_order_called_company'
+                capture('work-order-result-small.png')
+                # Minimal expiry cancellation receipt must not replace visible results.
+                original_order_state=session.orders.state
+                original_order_cancel=session.orders.cancel
+                def expired_running_state(oid):
+                    r=original_order_state(oid)
+                    r['task']['state']='running'
+                    return r
+                try:
+                    session.orders.state=expired_running_state
+                    session.orders.cancel=lambda oid:{'id':oid,'cancelled':True,'identity_expired':True}
+                    window.evaluate_js("Array.from(document.querySelectorAll('#order-actions button')).find(b=>b.textContent==='工作紀錄').click()")
+                    wait_script("document.getElementById('order-content').textContent.includes('交辦紀錄')")
+                    window.evaluate_js("document.querySelector('#order-content button').click()")
+                    wait_script("document.getElementById('order-outcome')?.textContent.includes('取消這次試跑')")
+                    before_expired=window.evaluate_js("document.getElementById('order-outcome').textContent")
+                    window.evaluate_js("Array.from(document.querySelectorAll('#order-outcome button')).find(b=>b.textContent==='取消這次試跑').click()")
+                    wait_script("document.getElementById('order-error').textContent.includes('登入已到期')")
+                    assert window.evaluate_js("document.getElementById('order-outcome').textContent")==before_expired,'expired_cancel_replaced_outcome'
+                    assert not window.evaluate_js("document.getElementById('order-outcome').textContent.includes('尚未試跑')"),'expired_cancel_reset_trial'
+                finally:
+                    session.orders.state=original_order_state
+                    session.orders.cancel=original_order_cancel
+                window.resize(1280,860)
+                report['checks'].append('work_order_demo_discussion_questions_preview_cancel_trial_readonly_and_chat_draft_preserved')
+                # Register a real Windows tray icon before hiding; no model or remote calls.
+                from desktop_app.tray import TrayController,WinFormsTray
+                tray_backend=WinFormsTray(window,lambda:'合成測試 · 0 個自動工作',lambda:None)
+                tray=TrayController(tray_backend)
+                try:
+                    assert tray.background(),'native_tray_register_failed'
+                    visibility=[]
+                    tray_backend._ui(lambda:visibility.extend([bool(window.native.Visible),bool(tray_backend.notify.Visible)]))
+                    assert visibility==[False,True],'native_tray_hide_before_icon'
+                    tray.show();visibility=[]
+                    tray_backend._ui(lambda:visibility.append(bool(window.native.Visible)))
+                    assert visibility==[True],'native_tray_restore_failed'
+                finally:tray.close()
+                assert tray_backend.notify is None,'native_tray_not_disposed'
+                report['checks'].append('real_winforms_tray_register_hide_restore_dispose_local_only')
+                # First-close UI offers an explicit choice; no implicit approval of a task.
+                close_choices=[]
+                api._host_close=lambda value,remember:close_choices.append((value,remember)) or {'value':value,'saved':True}
+                window.evaluate_js("window.qaRequestClose()")
+                assert window.evaluate_js("document.getElementById('modal-title').textContent.includes('繼續自動工作')"),'close_choice_missing'
+                window.evaluate_js("document.querySelector('#modal-body input[type=checkbox]').checked=true;Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='留在系統匣').click()")
+                wait_script("!document.getElementById('modal').open")
+                assert close_choices==[('background',True)],'close_choice_changed'
+                window.evaluate_js("window.qaRequestClose(true)")
+                assert window.evaluate_js("document.getElementById('modal-body').textContent.includes('尚未提交')"),'close_unsaved_warning_missing'
+                window.evaluate_js("Array.from(document.querySelectorAll('#modal-actions button')).find(b=>b.textContent==='返回保存').click()")
+                assert close_choices==[('background',True)],'close_unsaved_cancel_exited'
+                assert api.call('close_behavior',{'value':'background'})['data']['saved'],'close_preference_not_saved'
+                assert api.call('close_behavior',{})['data']['value']=='background','close_preference_not_restored'
+                api.call('close_behavior',{'value':'ask'})
+                report['checks'].append('close_choice_explicit_remember_unsaved_cancel_and_preference_roundtrip')
                 # Real desktop WebView2, synthetic personal work only; never user data.
                 inbox_baseline={t['id'] for t in session.store.tasks()}
                 from datetime import datetime, timezone, timedelta
