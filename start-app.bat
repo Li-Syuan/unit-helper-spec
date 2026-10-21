@@ -13,7 +13,8 @@ exit /b 0
 
 :missing
 echo Project Python environment is missing.
-echo Please follow docs/DEVELOPMENT.md to run scripts\setup.ps1 first.
+echo Run install-offline.bat with your approved Python 3.10.4 first.
+echo See offline-app/README.md for the complete offline installation steps.
 goto failed
 
 :failed

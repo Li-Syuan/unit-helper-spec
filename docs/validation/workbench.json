@@ -82,7 +82,7 @@
   "company_real": "not_tested",
   "physical_IME": "not_tested",
   "human_usability": "not_tested",
-  "fresh_offline_reinstall_this_release": "not_run_dependencies_unchanged_hashes_verified",
+  "fresh_offline_reinstall_this_release": "passed_github_code_zip",
   "formal_1_0": "blocked_pending_onsite_DVC_search_and_applicable_AD_acceptance",
   "native_login_logout": {
     "status": "passed",
@@ -94,5 +94,95 @@
       "native_webview_closed_and_temporary_workspace_removed"
     ]
   },
-  "webview_browser_cache_cleanup": "warning_WinError_32_not_confirmed_app_workspace_cleanup_passed"
+  "webview_browser_cache_cleanup": "warning_WinError_32_not_confirmed_app_workspace_cleanup_passed",
+  "code_zip_clean_install": {
+    "source_commit": "b3bec455fe6c284b28ad67e15afa6b7b059ed9d2",
+    "download": "github_code_zip",
+    "zip_sha256": "5e5a2afffe66c978dbfd120bd522864a21f1a83b29f653728e308d7eb210dd34",
+    "source_manifest_files": 731,
+    "source_manifest": "passed",
+    "private_settings_in_zip": false,
+    "install": {
+      "status": "passed",
+      "environment_created": true,
+      "checks": [
+        {
+          "name": "bundle_integrity",
+          "status": "passed"
+        },
+        {
+          "name": "base_python",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "create_environment",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "offline_install",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "pip_check",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "environment_diagnostic",
+          "exit_code": 0,
+          "status": "passed"
+        },
+        {
+          "name": "lock_match",
+          "status": "passed"
+        }
+      ],
+      "full_regression": "not_tested",
+      "company_real": "not_tested",
+      "wheels": 69,
+      "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b"
+    },
+    "company_real": "not_tested",
+    "quick": {
+      "passed": true,
+      "selected": 443,
+      "seconds": 97.0194,
+      "result": {
+        "count": 443,
+        "seconds": 92.8817,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "webview": {
+      "status": "passed",
+      "scope": "v1",
+      "checks": [
+        "bridge_ready",
+        "local_auto_title_folder_create_move_collapse_reload_search_rename_delete_keeps_conversation_recent_preference",
+        "main_dialogue_selected_memory_preview_cancel_confirm_newchat_optout_fixed_snapshot_recent_search_rename_pin_draft_restore",
+        "skill_memory_default_none_explicit_selection_visible_method_snapshot_zero_execution",
+        "explicit_summary_editable_continuation_preview_newdraft_original_and_source_retained_no_autosend",
+        "memory_manage_disable_delete_cancel_preserves_existing_snapshot_dark_light_small",
+        "optional_deployment_setup_entry_no_task_dispatch",
+        "three_field_activation_explicit_consent_endpoint_change_cancel_confirm_key_cleared_no_real_credentials"
+      ],
+      "not_tested": [
+        "company_api",
+        "real_two_turn_activation",
+        "AD",
+        "human_usability",
+        "physical_IME",
+        "clipboard"
+      ]
+    },
+    "launcher_check": "passed",
+    "temporary_environment_removed": true,
+    "shared_site_packages": false,
+    "full_in_clean_environment": "not_run_existing_full_separately_recorded"
+  }
 }

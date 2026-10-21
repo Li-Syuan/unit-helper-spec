@@ -46,9 +46,9 @@ def main():
         '   或直接用核准Python執行scripts/install-offline.py --offline-bundle wheelhouse。\n'
         '   安裝後執行 test-company.bat：完整離線回歸與WebView合成旅程。公司API仍未驗證。\n'
         '4. 雙擊start-demo-login.bat，admin/admin僅進入暫存離線合成工作區，關閉清除，不授予公司權限。\n'
-        '5. 正式部署先接AD與App使用資格，identity_mode=company未登入不開資料；再用start-app.bat登入並設定核准DVC連線。AD失敗不回退展示。\n6. 依docs/ONE-CLICK-TEST.md分別驗metadata、聊天、核准搜尋與來源；AD／人事／DVC／Oracle本次未實測，勿啟用日報排程作替代。\n\n'
+        '5. 一般入口用start-app.bat，填endpoint、Assistant ID、API key；CA預設系統信任。明確同意兩輪聊天測試後開始使用。選用AD的部署先由部署者接authenticate及使用資格，identity_mode=company未登入不開資料；AD失敗不回退展示。\n6. 先讀TO-AGENT.md；聊天、Skill格式、核准搜尋、來源及適用的AD分別驗收，metadata不是聊天先決條件。真人核對成功試跑後才能另行授權日報排程；不能用本機合成測試替代現場驗收。\n\n'
         '含完整已提交原始碼、文件、測試及69個鎖定wheels。沒有Python／WebView2／.NET安裝程式、API key、.env、.venv、對話或SQLite。\n'
-        '這是正式App的69套件來源，不使用experiments/langgraph-lab的52套件。Clone本身不含正式wheelhouse。\n'
+        '這是App的69套件來源，不套用lab的52套件lock。Code ZIP及clone也已包含完整來源：21個App wheels加48個共用lab wheels，安裝器會依固定來源與雜湊組合，不必另下載Release。\n'
         '套件缺件、雜湊或lock不符立即停止，不連外補件。不更改執行政策、防毒或TLS。\n'
         '本機回歸、正式服務及人工驗收狀態分開記錄，請以docs/VALIDATION.md為準；本機通過不代表正式服務已驗收。\n'
         'MANIFEST.sha256驗證原始碼；wheelhouse/manifest.json驗證wheels；PACKAGE-CONTENTS.sha256驗證整包。雜湊不是數位簽章。\n',encoding='utf-8-sig')
