@@ -1,3 +1,13 @@
+## 1.0 候選版三欄連線與選用預填
+
+1. 用既有離線安裝入口及69wheels建立環境；符合lock的既有`.venv`不重建。Python 3.10.4、WebView2、.NET與核准網路由部署者先準備。
+2. 同仁可直接在App填HTTPS endpoint、Assistant ID、API key，沒有deployment.json也能啟用。CA預設系統信任，不顯示CA輸入欄位，也不關閉TLS驗證。
+3. 若要預填，可選用複製`deployment.example.json`為`deployment.json`，填endpoint，protocol固定`assistants`、version固定1、ca_bundle預設null。只有核准環境確需額外信任時，才由部署者提供有效PEM；不是一般使用者的前置工作。此檔Git忽略，也可用`UNITHELPER_DEPLOYMENT_FILE`指定，不能放API key或員工資料。已有手動端點不被預填覆寫；檔案或CA損壞明確報錯。
+4. 三欄入口使用個別keyring憑證，保存同ID提升連線修訂並撤銷舊能力。更換端點/協定會先確認，再清除舊目的地憑證索引/能力；不帶舊key過去，舊對話保留閱讀。示範登入、CLI --demo及Groq隔離入口不啟用真實連線。
+5. 基本啟用明確兩輪合成測試，Skill及搜尋另外驗證；metadata不是聊天先決條件。沒有設定時本機仍可示範，不假造組織連線。
+
+主SQLite仍schema8，DialogueStore升schema4，舊1/2/3先`.pre-v4-*.bak`備份再交易。降版須關閉App並還原整個一致資料備份，勿直接改user_version。新接口與限制見使用手冊。發布保留`1.0.0rc1`，實際DVC十輪、多對話重開、搜尋來源與AD未驗收不可改成正式1.0。
+
 ## GitHub Code ZIP 離線入口（2026-10-01）
 
 公司允許 GitHub Code → Download ZIP 時，下載目前 main 並解壓**整個資料夾**到新位置；不需要 Release。根目錄 `install-offline.bat` 會驗證並共用 lab 的 48 個 wheels、加入 `offline-app/packages` 的 21 個，依 App 自己的 69 套件 lock 安裝；不使用 lab lock。不連網補件、不覆蓋既有 `.venv`，既有 wheelhouse 若失效仍停止。最短步驟及前置條件見 [Code ZIP 說明](../offline-app/README.md)。

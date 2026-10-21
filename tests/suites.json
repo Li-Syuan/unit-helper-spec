@@ -1,5 +1,6 @@
 {
   "quick": [
+    "tests.test_continuity.ContinuityTests",
     "tests.test_tray.TrayTests",
     "tests.test_work_orders.WorkOrderTests",
     "tests.test_cli.CliTests",

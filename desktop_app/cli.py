@@ -52,6 +52,22 @@ HELP = """QA agent 工作台
 /cancel <工作ID>              請求取消，不保證遠端停止
 /inspect 或 /recover          檢查或取回目前對話原請求，不重送未知POST
 /help 或 /quit
+/activation                   查看部署與分項能力狀態
+/activate <AssistantID>       互動輸入endpoint及遮蔽金鑰並保存（不呼叫模型）
+/activation-test <profileID>  確認後發送兩輪合成訊息
+/memories [聊天助理ID]         列出本機記憶
+/remember <JSON>              預覽確認保存 {data:{title,text,category,assistant_id},id?,revision?}
+/memory-manage <ID> <enable|disable|delete> 預覽後確認
+/new-memory <聊天助理ID>       預覽確認記憶後建立新對話（不送出）
+/rename <標題> 或 /pin on|off  管理目前主對話
+/draft <文字>                 保存目前對話草稿
+/summarize <選取原文>          明確呼叫一次，輸出可修改摘要（不建立對話）
+/continue <摘要文字>           預覽後建立同助理接續草稿
+/continue-to <聊天助理ID> <摘要文字>  舊連線失效時明確選新目的助理
+/skill-with-memory <JSON>     指定id/revision/profile_id/memory_ids建立規劃，不派發
+/folders                     列出主對話資料夾
+/folder-create <名稱>         建立本機資料夾
+/folder-move <ID|none>        將目前對話移入資料夾或未分類
 排程器在CLI停用；已啟用的排程需關閉CLI後開桌面運作。
 CLI與桌面不可同時開同一工作區。Ctrl+C取消本次對話等待。
 """
@@ -82,8 +98,8 @@ class Workbench:
         if not self.order:raise ValueError('請先 /order 或 /order-open 選取交辦。')
         return self.call('order_state',id=self.order)
 
-    def call(self, name, **payload):
-        result = self.bridge.call(name, payload)
+    def call(self, operation, **payload):
+        result = self.bridge.call(operation, payload)
         if not result['ok']:
             raise ValueError(result['error'])
         return result['data']
@@ -167,6 +183,55 @@ def execute_line(w, line, input_stream, output):
     argument=argument.strip()
     if command=='/quit':return False
     if command=='/help':emit(HELP,output)
+    elif command=='/activation':emit(w.call('activation_status'),output)
+    elif command=='/activate':
+        if not input_stream.isatty():raise ValueError('金鑰只接受互動遮蔽輸入，不接受命令列或管線。')
+        setup=w.call('activation_status')
+        if not setup['available']:raise ValueError(setup['message'])
+        output.write('HTTPS endpoint（留空沿用既有設定）：');output.flush()
+        endpoint=input_stream.readline().strip() or setup['endpoint']
+        changed=bool(setup['endpoint'] and endpoint!=setup['endpoint']) or setup['wire_mode'] not in ('unconfigured','assistants')
+        if changed and not confirm({'endpoint':endpoint,'notice':'撤銷舊憑證及能力，舊對話保留唯讀。'},'變更服務端點與協定？',input_stream,output):return True
+        key=getpass.getpass('API key（遮蔽）：')
+        try:emit(w.call('activation_save',assistant_id=argument,api_key=key,endpoint=endpoint,confirm_endpoint_change=changed),output)
+        finally:key=None
+    elif command=='/activation-test':
+        if confirm({'profile_id':argument,'requests':2},'傳送兩輪合成測試？',input_stream,output):emit(w.call('activation_test',profile_id=argument,consent=True),output)
+    elif command=='/memories':emit(w.call('memory_list',assistant_id=argument or None),output)
+    elif command=='/folders':emit(w.call('dialogue_folders'),output)
+    elif command=='/folder-create':emit(w.call('dialogue_folder_create',name=argument),output)
+    elif command=='/folder-move':
+        if not w.thread:raise ValueError('請先開啟主對話。')
+        emit(w.call('dialogue_folder_move',thread_id=w.thread['id'],folder_id=None if argument=='none' else argument),output)
+    elif command=='/remember':
+        p=w.call('memory_preview',**json.loads(argument))
+        if confirm(p,'保存以上記憶（未送出）？',input_stream,output):emit(w.call('memory_confirm',token=p['token']),output)
+    elif command=='/memory-manage':
+        mid,_,action=argument.partition(' ');r=next((r for r in w.call('memory_list') if r['id']==mid),None)
+        if not r:raise ValueError('記憶不存在。')
+        p=w.call('memory_manage_preview',id=mid,revision=r['revision'],action=action)
+        if confirm(p,'套用以上記憶變更？',input_stream,output):emit(w.call('memory_manage_confirm',token=p['token']),output)
+    elif command=='/new-memory':
+        p=w.call('chat_start_preview',mode='chat',assistant_id=argument)
+        if confirm(p,'下次送出將使用以上記憶，建立新對話？',input_stream,output):
+            w.thread=w.call('chat_start_confirm',token=p['token'],use_memory=True);emit(w.thread,output)
+    elif command in ('/rename','/pin','/draft','/summarize','/continue','/continue-to'):
+        if not w.thread:raise ValueError('請先開啟主對話。')
+        t=w.call('dialogue_state',id=w.thread['id'])
+        if command=='/rename':w.thread=w.call('dialogue_rename',id=t['id'],title=argument);emit(w.thread,output)
+        elif command=='/pin':
+            if argument not in ('on','off'):raise ValueError('使用 /pin on 或 /pin off。')
+            w.thread=w.call('dialogue_pin',id=t['id'],pinned=argument=='on');emit(w.thread,output)
+        elif command=='/draft':emit(w.call('dialogue_view_save',id=t['id'],text=argument,scroll=t['scroll'],revision=t['view_revision']),output)
+        elif command=='/summarize':
+            if confirm({'selected':argument,'assistant_id':t['assistant_id']},'傳送選取內容產生摘要一次？',input_stream,output):emit(w.call('continuation_summary',id=t['id'],text=argument,assistant_id=t['assistant_id'],consent=True),output)
+        else:
+            aid=t['assistant_id'];value=argument
+            if command=='/continue-to':aid,_,value=argument.partition(' ')
+            p=w.call('continuation_preview',id=t['id'],assistant_id=aid,text=value)
+            if confirm(p,'建立接續草稿（不送出）？',input_stream,output):w.thread=w.call('continuation_confirm',token=p['token']);emit(w.thread,output)
+    elif command=='/skill-with-memory':
+        options=json.loads(argument);r=w.call('skill_start',**options);w.workflow=r['id'];w.skill_values=options.get('values',{});emit(r,output)
     elif command=='/skills':emit(w.skills(),output)
     elif command=='/skill':
         sid,_,pid=argument.partition(' ');s=w.call('skill_get',id=sid)
@@ -331,7 +396,7 @@ def open_session(args, input_stream, output):
             password=getpass.getpass('密碼：')
             try:login=authenticate(employee,password)
             finally:password=None
-        session=WebSession(directory=directory,config=config,login_session=login,start_scheduler=False)
+        session=WebSession(directory=directory,config=config,login_session=login,start_scheduler=False,deployment_defaults=not args.demo,activation_enabled=not args.demo)
         yield session
     finally:
         if session:session.close()

@@ -33,10 +33,10 @@ class WebBridge:
                     raise ValueError('離線登入展示禁止公司連線、金鑰與工具設定；請關閉並改用公司登入。')
                 if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel','order_cancel','skill_cancel','host_close'}:
                     self._s.assert_identity()
-                if self._closing and name not in {'state','save_draft'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
+                if self._closing and name not in {'state','save_draft','dialogue_view_save'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','skill_generate','skill_probe','skill_discuss','skill_inspect','skill_recover','host_close'}:
+                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','skill_generate','skill_probe','skill_discuss','skill_inspect','skill_recover','activation_test','continuation_summary','host_close'}:
                     return {'ok':True,'data':handler(payload or {})}
             # Provider I/O must not block theme/state/cancellation/close commands.
             return {'ok':True,'data':handler(payload or {})}
@@ -52,6 +52,28 @@ class WebBridge:
     def _handlers(self):
         s=self._s
         return {
+            'activation_status':lambda p:s.activation.status(),
+            'activation_save':lambda p:s.activation.save(p['assistant_id'],p['api_key'],p.get('endpoint'),p.get('confirm_endpoint_change',False)),
+            'activation_test':lambda p:s.activation.test(p['profile_id'],p.get('consent',False)),
+            'memory_list':lambda p:s.continuity.memories(p.get('assistant_id')),
+            'memory_preview':lambda p:s.continuity.memory_preview(p['data'],p.get('id'),p.get('revision')),
+            'memory_confirm':lambda p:s.continuity.memory_confirm(p['token']),
+            'memory_manage_preview':lambda p:s.continuity.manage_preview(p['id'],p['revision'],p['action']),
+            'memory_manage_confirm':lambda p:s.continuity.manage_confirm(p['token']),
+            'chat_start_preview':lambda p:s.continuity.start_preview(p.get('mode','chat'),p['assistant_id']),
+            'chat_start_confirm':lambda p:s.continuity.start_confirm(p['token'],p.get('use_memory',False)),
+            'dialogue_view_save':lambda p:s.continuity.view_save(p['id'],p['text'],p['scroll'],p['revision']),
+            'dialogue_rename':lambda p:s.continuity.metadata(p['id'],title=p['title']),
+            'dialogue_pin':lambda p:s.continuity.metadata(p['id'],pinned=p['pinned']),
+            'dialogue_folders':lambda p:s.continuity.folders(),
+            'dialogue_folder_create':lambda p:s.continuity.folder_create(p['name']),
+            'dialogue_folder_update':lambda p:s.continuity.folder_update(p['folder_id'],p['revision'],name=p.get('name'),collapsed=p.get('collapsed')),
+            'dialogue_folder_delete':lambda p:s.continuity.folder_update(p['folder_id'],p['revision'],delete=True),
+            'dialogue_folder_move':lambda p:s.continuity.folder_move(p['thread_id'],p.get('folder_id')),
+            'dialogue_recent_preference':self._dialogue_recent_preference,
+            'continuation_summary':lambda p:s.continuity.summarize(p['id'],p['text'],p['assistant_id'],p.get('consent',False)),
+            'continuation_preview':lambda p:s.continuity.continuation_preview(p['id'],p['assistant_id'],p['text']),
+            'continuation_confirm':lambda p:s.continuity.continuation_confirm(p['token']),
             'skill_list':lambda p:s.skills.list(),'skill_catalog':lambda p:s.skills.catalog(),
             'skill_runs':lambda p:s.skills.runs(),'skill_get':lambda p:s.skills.get(p['id']),
             'skill_template':self._skill_template,
@@ -63,7 +85,7 @@ class WebBridge:
             'skill_manage_confirm':lambda p:s.skills.manage_confirm(p['token']),
             'skill_import':self._skill_import,'skill_export':self._skill_export,
             'skill_probe':lambda p:s.skills.probe(p['profile_id'],p.get('search',False),p.get('consent',False)),
-            'skill_start':lambda p:s.skills.start(p['id'],p['revision'],p['profile_id'],p.get('values',{}),p.get('goal','')),
+            'skill_start':lambda p:s.skills.start(p['id'],p['revision'],p['profile_id'],p.get('values',{}),p.get('goal',''),p.get('memory_ids',[])),
             'skill_discuss':lambda p:s.skills.discuss(p['wid'],p['revision'],p.get('text',''),p.get('values',{})),
             'skill_state':lambda p:s.skills.state(p['wid']),
             'skill_inspect':lambda p:s.skills.inspect(p['wid']),
@@ -420,6 +442,15 @@ class WebBridge:
     def _sidebar(self,p):
         if type(p['collapsed']) is not bool:raise ValueError('側欄偏好無效。')
         update_preferences(self._s.preferences_path,{'sidebar_collapsed':p['collapsed']})
+
+    def _dialogue_recent_preference(self,p):
+        if set(p)-{'collapsed'}:raise ValueError('對話清單偏好無效。')
+        if 'collapsed' in p:
+            if type(p['collapsed']) is not bool:raise ValueError('對話清單偏好無效。')
+            try:update_preferences(self._s.preferences_path,{'dialogue_recent_collapsed':p['collapsed']})
+            except OSError:return {'collapsed':p['collapsed'],'saved':False}
+        value=load_preferences(self._s.preferences_path).get('dialogue_recent_collapsed',False)
+        return {'collapsed':value is True,'saved':True}
 
     def _help(self,p):
         if p['name'] not in {'USER-GUIDE','DATA-USAGE','THIRD-PARTY-LICENSES','SKILLS'}:raise ValueError('說明不存在。')

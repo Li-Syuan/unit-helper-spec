@@ -1,6 +1,14 @@
 # QA agent
 
-**0.23.0 本機候選版 · Windows x64 · Python 3.10.4 · WebView2 主介面／Tkinter 備用**
+**1.0.0rc1 候選版 · Windows x64 · Python 3.10.4 · WebView2 主介面／Tkinter 備用**
+
+## 三個參數開始、原對話續談、可控記憶
+
+使用者在「設定助理」直接填 **endpoint、Assistant ID、API key**，明確測試兩輪後開始聊天。CA預設使用系統信任，不需另外填寫；不關閉TLS驗證。`deployment.json`只是選用的預填方式（[範本](deployment.example.json)），不是啟用前提，不覆寫手動保存的端點。實際設定不提交Git。
+
+主側欄以第一則訊息自動取本機短標題，可搜尋、置頂、重新命名及切回對話，並以可收合資料夾自行分類，保留草稿與閱讀位置。「我的記憶」需預覽確認保存，新對話可選不用；每段對話固定記憶快照。長對話可選內容整理後接續，原文保留。詳見[使用手冊](docs/USER-GUIDE.md)與[部署指南](docs/DEVELOPMENT.md)。**這是候選版；實際達哥、搜尋來源與 AD 驗收完成前，不標示正式 1.0 上線通過。**
+
+帶回現場直接交給開發 Agent：[TO-AGENT.md](TO-AGENT.md)，包含三欄接線、續談與 Skill 驗收，以及尚未實作的 SMTP 自動寄信規格。
 
 ## 自建 Skill＋單助理 Plan mode
 
@@ -8,7 +16,7 @@
 
 ## 交辦工作與 CLI
 
-**0.22.0 本機候選版**新增「交辦工作」：說需求、補條件、預覽試跑，再由人核對來源後啟用每日排程。WebView可留在系統匣，CLI與桌面共用服務。雙擊 `start-app.bat`，或執行 `qa.bat --demo` 做一次性離線展示。正式達哥服務仍需現場驗收；請以[最新驗證](docs/VALIDATION.md)為準，不沿用下方歷史測試數字。詳見[工作台與CLI](docs/WORKBENCH.md)。
+「交辦工作」讓你說需求、補條件、預覽試跑，再由人核對來源後啟用每日排程。WebView可留在系統匣，CLI與桌面共用服務。雙擊 `start-app.bat`，或執行 `qa.bat --demo` 做一次性離線展示。正式達哥服務仍需現場驗收；請以[最新驗證](docs/VALIDATION.md)為準。詳見[工作台與CLI](docs/WORKBENCH.md)。
 
 ## 離線登入展示
 

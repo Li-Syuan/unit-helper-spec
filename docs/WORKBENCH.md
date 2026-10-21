@@ -1,6 +1,18 @@
 # 交辦工作與 CLI
 
-0.23.0 沿用桌面的達哥連接器、工作引擎及本機排程，不需要另部署 API server。主資料庫升為 schema 8，升級前保存 `.pre-v8-*.bak`；不可用舊版直接開啟新資料庫。原有任務草稿維持未啟用。
+1.0.0rc1沿用桌面的達哥連接器、工作引擎及本機排程，不需要另部署 API server。主資料庫schema8、DialogueStore schema4（舊版先backup）；不可用舊版直接開啟新資料庫。原有任務草稿維持未啟用。
+
+## 三欄啟用與記憶命令
+
+`/activation`看狀態，`/activate AssistantID`互動詢問endpoint（留空沿用既有設定），再遮蔽讀取key（不接受key命令列參數或管線），只保存不呼叫。更換已有端點/協定先確認。CA用系統信任，部署預填檔為選用。`/activation-test profileID`明確確認後兩輪合成測試；聊天、Skill及搜尋證據獨立。隔離`--demo`不能開真實連線。
+
+`/memories [聊天助理ID]`列記憶；`/remember {"data":{"assistant_id":"demo-general","title":"語言偏好","text":"用繁體中文","category":"preference"}}`預覽確認保存。種類還有background/rule；修改加入id/revision。`/memory-manage ID disable|enable|delete`預覽確認。`/new-memory 聊天助理ID`確認選定記憶後開新對話；普通`/new`不隱藏加入記憶。
+
+`/rename 標題`、`/pin on|off`、`/draft 文字`保存目前對話資訊。`/summarize 選取原文`明確單次摘要，只輸出結果；`/continue 修改後摘要`預覽後建立同助理新草稿，舊連線失效用`/continue-to 聊天助理ID 摘要`。所有接續都不自動送出。
+
+`/skill-with-memory {"id":"SkillID","revision":1,"profile_id":"demo","memory_ids":["記憶ID"]}`明確選記憶建立規劃，之後仍需/reply、/preview、/approve。CLI不啟動排程器，模型輸出或管線不能批准。
+
+`/folders`列主對話資料夾，`/folder-create 名稱`新增，`/folder-move ID`將目前對話移入，`/folder-move none`移回未分類。`/rename`不帶文字可恢復本機自動名稱。這些操作零模型請求、不變更遠端thread。
 
 ## 桌面最短路徑
 

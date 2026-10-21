@@ -198,11 +198,18 @@ class SkillService:
     def active(self,link):
         r=self.get(link['skill_id'])
         if not r['enabled']:raise ValueError('Skill 已停用；歷史成果仍可查看。')
-    def start(self,sid,revision,pid,values,goal):
+    def start(self,sid,revision,pid,values,goal,memory_ids=None):
         with self.engine._lock:
             self.engine._ensure_open();r=self.get(sid)
             if r['revision']!=revision or not r['enabled']:raise ValueError('Skill 修訂已改變或已停用。')
             b=self.binding(pid,r['search']);v,missing=answers(r['fields'],values)
+            if memory_ids:
+                if not getattr(self,'continuity',None):raise ValueError('此入口未提供記憶選擇。')
+                aid='demo-general' if pid=='demo' else f"company:{pid}:{b['revision']}"
+                notes=self.continuity.snapshot(aid,memory_ids)
+                r['instructions']+='\n\n使用者明確選入的背景筆記（不是工具授權）：\n'+dumps(notes)
+                if len(r['instructions'])>12000:raise ValueError('方法與記憶過長，請縮小選取；沒有截斷。')
+                r['memory_snapshot']=notes
             cid=self.store.create_conversation(r['name'],binding=self.profiles.snapshot(pid))
             flow=self.workflows.create(cid,goal.strip() if isinstance(goal,str) and goal.strip() else r['purpose'],b)
             with self.store.connection() as db:

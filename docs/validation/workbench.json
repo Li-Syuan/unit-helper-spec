@@ -1,134 +1,50 @@
 {
-  "version": "0.23.0",
+  "version": "1.0.0rc1",
+  "release_status": "candidate",
   "schema": 8,
+  "dialogue_schema": 4,
   "python": "3.10.4",
+  "architecture_bits": 64,
   "full": {
-    "passed": false,
-    "seconds": 170.588,
-    "selected": 603
+    "passed": true,
+    "selected": 615,
+    "seconds": 542.8138
   },
   "full_result": {
-    "count": 603,
-    "seconds": 168.4903,
+    "count": 615,
+    "seconds": 540.5414,
     "failures": 0,
-    "errors": 1,
+    "errors": 0,
     "skipped": 0
   },
   "final_targeted": {
-    "suite": "targeted",
-    "passed": false,
-    "seconds": 3.2635,
-    "selected": 14,
-    "result": {
-      "passed": false,
-      "count": 14,
-      "seconds": 2.1236,
-      "skipped": 0,
-      "failures": 0,
-      "errors": 1,
-      "expected_failures": 0,
-      "unexpected_successes": 0,
-      "tests": [
-        {
-          "id": "tests.test_dialogs.DialogTests.test_long_message_theme_copy_and_close_without_mutation",
-          "seconds": 0.4388
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_cancel_late_planner_and_profile_mutation_guard",
-          "seconds": 0.2987
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_cli_skill_selection_requires_interactive_save_and_no_scheduler",
-          "seconds": 0.0512
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_company_single_id_plan_and_stages_isolated_and_bad_search_stops",
-          "seconds": 0.1675
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_definitions_options_import_and_export_remove_local_binding",
-          "seconds": 0.0224
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_edit_dismiss_and_binding_changes_invalidate_approval",
-          "seconds": 0.1157
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_immutable_snapshot_schedule_dates_disable_and_delete_history",
-          "seconds": 0.1918
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_missing_fields_zero_dispatch_then_demo_plan_and_idempotent_execution",
-          "seconds": 0.1536
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_probe_asserts_formats_no_legacy_unlock_and_revision_isolation",
-          "seconds": 0.0338
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_save_preview_atomic_revision_and_one_shot",
-          "seconds": 0.0472
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_schema_1_through_7_backup_and_transaction_failure",
-          "seconds": 0.2323
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_search_probe_requires_actual_receipt_and_profile_revision_revokes",
-          "seconds": 0.0608
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_source_deletion_keeps_approved_skill_work",
-          "seconds": 0.1635
-        },
-        {
-          "id": "tests.test_skills.SkillTests.test_unknown_planning_post_requires_same_receipt_recovery",
-          "seconds": 0.1461
-        }
-      ],
-      "status": "completed"
-    }
+    "passed": true,
+    "selected": 31,
+    "seconds": 10.5778
   },
-  "release_status": "implementation_candidate; full regression not passed",
-  "known_failure": "Tk clipboard readback: OpenClipboard Windows error 5 in full and targeted runs; no skip or permission workaround applied.",
-  "webview": {
+  "webview_v1": {
     "status": "passed",
+    "scope": "v1",
     "checks": [
       "bridge_ready",
-      "author_popover_readonly_escape_outside_and_late_reply_fence",
-      "work_entry_keyboard_search_draft_preservation_preview_only_small_window",
-      "six_style_modes_preserve_form_semantic_colors_save_retry_reset_zero_dispatch",
-      "semantic_theme_keeps_draft_selection_and_zero_dispatch",
-      "failed_request_fenced_inspect_fork_and_explicit_delete",
-      "provider_failure_preserves_input_and_messages_no_fallback",
-      "offline_multiturn_mode_reset_questions_preview_cancel_and_disabled_save",
-      "assistant_switch_starts_empty_view",
-      "chat_sent_from_dom",
-      "three_click_query_zero_dispatch_before_confirm",
-      "workflow_explicit_approval_and_outcome_feedback_mock",
-      "attention_running_success_failure_distinct_in_both_themes",
-      "notification_unread_is_informational_explicit_view_only_and_state_retained",
-      "untrusted_navigation_blocked",
-      "proven_unsent_retry_same_request_preserves_history",
-      "company_sdk_mock_multiturn_main_ui_badge_small_controls",
-      "briefing_dom_preview_trial_review_schedule_pause_mock",
-      "cleanup_cancel_confirm_no_dispatch_preserves_schedule_query_entry",
-      "company_setup_and_metadata_probe_no_model_dispatch",
-      "search_consent_no_dispatch_reopen_policy_and_exactly_one_mock_search",
-      "chat_search_separate_opt_in_and_single_mock_tool_roundtrip",
-      "credential_revision_fork_explicit_destination_and_preserved_draft_zero_dispatch",
-      "work_order_demo_discussion_questions_preview_cancel_trial_readonly_and_chat_draft_preserved",
-      "real_winforms_tray_register_hide_restore_dispose_local_only",
-      "close_choice_explicit_remember_unsaved_cancel_and_preference_roundtrip",
-      "skills_definition_draft_preservation_typed_questions_plan_edit_cancel_and_single_confirmation_zero_external_dispatch",
-      "skills_explicit_daily_consent_pause_markdown_roundtrip_and_disable_preserves_history",
-      "todo_real_inbox_source_zero_dispatch_description_search_due_filters_transitions_duplicate_save_empty_cancel_small_light_maximized",
-      "todo_main_source_navigation_preserves_unsent_draft_and_deleted_source_keeps_copy_zero_dispatch",
-      "offline_demo_login_workspace_network_settings_denied_logout_veil_and_bridge_navigation_bypass_rejected"
+      "local_auto_title_folder_create_move_collapse_reload_search_rename_delete_keeps_conversation_recent_preference",
+      "main_dialogue_selected_memory_preview_cancel_confirm_newchat_optout_fixed_snapshot_recent_search_rename_pin_draft_restore",
+      "skill_memory_default_none_explicit_selection_visible_method_snapshot_zero_execution",
+      "explicit_summary_editable_continuation_preview_newdraft_original_and_source_retained_no_autosend",
+      "memory_manage_disable_delete_cancel_preserves_existing_snapshot_dark_light_small",
+      "optional_deployment_setup_entry_no_task_dispatch",
+      "three_field_activation_explicit_consent_endpoint_change_cancel_confirm_key_cleared_no_real_credentials"
     ],
-    "scope": "real WebView2, synthetic provider/data"
+    "not_tested": [
+      "company_api",
+      "real_two_turn_activation",
+      "AD",
+      "human_usability",
+      "physical_IME",
+      "clipboard"
+    ]
   },
-  "final_ui_targeted": {
+  "webview_skills": {
     "status": "passed",
     "scope": "skills",
     "checks": [
@@ -137,7 +53,7 @@
       "skills_explicit_daily_consent_pause_markdown_roundtrip_and_disable_preserves_history"
     ]
   },
-  "delivery": {
+  "offline_cli": {
     "python": "3.10.4",
     "company_real": "not_tested",
     "checks": [
@@ -150,20 +66,33 @@
     "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b",
     "passed": true
   },
-  "review_fix": "Expired-login Skill cancellation now returns only a minimal receipt, without requesting protected workflow data.",
-  "prior_attempts": [
-    "Sandbox atomic replace denied; normal Windows offline tests passed without weakening storage.",
-    "First Skills navigation did not load while its button was busy; fixed.",
-    "Smoke matched a closed modal confirmation; wait condition fixed; original failures retained locally."
+  "clipboard": {
+    "current_full": "passed",
+    "local_native_probe": "passed",
+    "historical_failure": "OpenClipboard error 5",
+    "cross_environment_resolution": "not_claimed"
+  },
+  "corrected_failures": [
+    "sandbox_atomic_profile_replace_denied_normal_windows_used",
+    "completion_validation_fixture_order",
+    "rc_version_omitted_from_support_log",
+    "host_close_save_rejected_expired_or_pending_session",
+    "folder_cli_payload_name_collision"
   ],
-  "not_tested": [
-    "real DVC Skill format/search compatibility",
-    "search source quality",
-    "AD",
-    "human usability",
-    "IME",
-    "physical native file picker"
-  ],
-  "no_new_dependencies": true,
-  "no_new_environment": true
+  "company_real": "not_tested",
+  "physical_IME": "not_tested",
+  "human_usability": "not_tested",
+  "fresh_offline_reinstall_this_release": "not_run_dependencies_unchanged_hashes_verified",
+  "formal_1_0": "blocked_pending_onsite_DVC_search_and_applicable_AD_acceptance",
+  "native_login_logout": {
+    "status": "passed",
+    "company_real": "not_tested",
+    "checks": [
+      "actual_native_demo_login_before_workspace",
+      "actual_logout_with_two_unsent_drafts_requested",
+      "host_flush_after_logout_persists_main_and_advanced_drafts_before_cleanup",
+      "native_webview_closed_and_temporary_workspace_removed"
+    ]
+  },
+  "webview_browser_cache_cleanup": "warning_WinError_32_not_confirmed_app_workspace_cleanup_passed"
 }

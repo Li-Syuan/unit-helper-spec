@@ -24,7 +24,7 @@ def clean_record(value):
     if not re.fullmatch(r'\d{4}-\d\d-\d\dT[\d:.+Z-]{8,32}',value['time']):return None
     result={k:value[k] for k in ('id','time','stage','code')}
     version=value.get('version')
-    if isinstance(version,str) and re.fullmatch(r'\d{1,3}\.\d{1,3}\.\d{1,3}',version):result['version']=version
+    if isinstance(version,str) and re.fullmatch(r'\d{1,3}\.\d{1,3}\.\d{1,3}(?:rc\d{1,3})?',version):result['version']=version
     status=value.get('http_status')
     if type(status) is int and 100<=status<=599:result['http_status']=status
     from .assistant_errors import REMOTE_CODES

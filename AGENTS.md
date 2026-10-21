@@ -1,3 +1,15 @@
+# 1.0.0rc1 啟用、續談與記憶（優先於下方）
+
+主Store仍schema8；DialogueStore升schema4，1/2/3先backup再交易新增thread_views、memories、continuation_requests、activation_checks。主對話草稿CAS及閱讀位置、固定記憶快照、來源在同一DialogueStore；task_drafts CHECK=0不變。既有主/進階歷史不搬移。刪主對話包含視圖與接續請求，另存記憶保留，來源失效明示；刪記憶不宣稱撤回已送出快照。
+
+依使用者最新更正，activation為endpoint/Assistant ID/API key三欄；CA預設系統信任，不要求另填。deployment.json或UNITHELPER_DEPLOYMENT_FILE僅選用預填，無金鑰且忽略Git，不覆寫手動保存端點；demo/trial隔離入口不啟用真實連線。既有端點/協定變更需明確確認，沿Profiles撤銷舊憑證/能力，不把舊key轉送新端點。金鑰個別keyring保存、提升修訂，背景請求guard不變；明確兩輪工具停用合成測試才寫chat證據，metadata不是前提，Skill/search仍獨立。
+
+continuity.py為共用本機記憶/接續服務。記憶手動保存並預覽確認，按本機助理隔離；新對話明示目標和內容並固定快照，不在每次送出重建歷史。背景筆記不是授權。Skill只能選入記憶並呈現在方法預覽；不背景取全部。接續摘要明確單次模型請求、工具停用、真pending/取消guard；未知結果不重送，可手動接續。接續確認只建立新草稿，原thread保留。UI/CLI共用服務；版本為1.0.0rc1，實際DVC/AD/來源品質及完整驗收未過不得改成正式1.0。
+
+關閉時宿主先封鎖新操作，再以save_view_for_close保存目前session的畫面草稿，最後取消並等待真實請求。這個本機寫入只保留既有thread與CAS，不經一般身分讀取，因此登出/到期也可安全退出；不可暴露到bridge/CLI，不得用它讀歷史或派發。保存衝突/失敗保留視窗，不盲目覆寫或丟稿。
+
+主對話自動名稱使用第一則輸入的本機短標題，不呼叫模型；手動名稱優先，清空恢復自動。dialogue_folders與thread_views.folder_id只管本機分類，刪資料夾ON DELETE SET NULL保留對話，改名/移動不動thread、批准修訂或草稿CAS。資料夾修訂防舊操作；recent收合偏好另存ui-preferences。遷移含schema3回復測試。現場接手入口為TO-AGENT.md，SMTP章節是未實作提案，不得當成已有mail CLI或寄信授權。
+
 # 0.23.0 自建 Skill（優先於下方歷史 schema）
 
 主Store schema8，schema1～7先backup再交易；skills.py保存定義、不可變版本、流程來源、實測能力及原規劃請求。Skill僅資料；無shell／檔案工具／任意bridge。Markdown匯入為新草稿、預覽確認保存，不含本機綁定或授權；正文仍可能由使用者自行寫入私密資料，勿宣稱自動去識別。

@@ -13,7 +13,7 @@ def application_html():
     nonce=secrets.token_urlsafe(24)
     html=(folder/'index.html').read_text('utf-8')
     css=(folder/'app.css').read_text('utf-8')
-    script='\n'.join((folder/name).read_text('utf-8') for name in ('app.js','dialogue.js','author.js','orders.js','skills.js'))
+    script='\n'.join((folder/name).read_text('utf-8') for name in ('app.js','dialogue.js','author.js','orders.js','skills.js','memories.js','activation.js'))
     policy=("default-src 'none'; img-src data:; style-src 'nonce-"+nonce+"'; script-src 'nonce-"+nonce+"' 'unsafe-eval'; "
             "connect-src 'none'; font-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'")
     html=html.replace('<!--APP_STYLE-->',f'<meta http-equiv="Content-Security-Policy" content="{policy}"><style nonce="{nonce}">{css}</style>')
@@ -53,7 +53,7 @@ def launch(config_path=None, groq_trial=False, *, demo_login=False):
             from .login_view import show_login
             login_session=show_login(data_directory())
             if login_session is None:return True
-        session=WebSession(directory=Path(temporary.name) if temporary else None,config=config,groq_trial=groq_trial,login_session=login_session,demo_session=demo_session)
+        session=WebSession(directory=Path(temporary.name) if temporary else None,config=config,groq_trial=groq_trial,login_session=login_session,demo_session=demo_session,deployment_defaults=not (groq_trial or demo_login))
         api=WebBridge(session)
         webview.settings['ALLOW_DOWNLOADS']=False
         webview.settings['OPEN_EXTERNAL_LINKS_IN_BROWSER']=False
@@ -113,6 +113,13 @@ def launch(config_path=None, groq_trial=False, *, demo_login=False):
                     if draft:
                         result=api.call('save_draft',draft)
                         if not result['ok']:raise ValueError('draft_save_failed')
+                    main_draft=window.evaluate_js('window.qaDialogueViewSnapshot ? window.qaDialogueViewSnapshot() : null')
+                    if main_draft:
+                        # Host-only local flush also works after logout/expiry and
+                        # during a request; ordinary bridge authorization is unchanged.
+                        result=session.continuity.save_view_for_close(main_draft)
+                        import json
+                        window.evaluate_js('window.qaDialogueViewSaved && window.qaDialogueViewSaved('+json.dumps({'id':main_draft['id'],'revision':result['revision']})+')')
                     # No bridge lock across pending remote I/O or scheduler shutdown.
                     session.close()
                 except Exception:

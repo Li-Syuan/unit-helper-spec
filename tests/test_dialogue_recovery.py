@@ -216,6 +216,7 @@ class DialogueRecoveryTests(unittest.TestCase):
     def test_v1_backup_transaction_upgrade_and_enabled_constraint(self):
         self.service.close()
         with sqlite3.connect(self.path) as db:
+            for table in ('thread_views','dialogue_folders','memories','continuation_requests','activation_checks'):db.execute('DROP TABLE '+table)
             db.execute('DROP TABLE requests');db.execute('PRAGMA user_version=1')
             db.execute("INSERT INTO threads VALUES('old','chat','demo-general','{}',1,'now')")
             db.execute("INSERT INTO messages(thread_id,role,text) VALUES('old','user','保留')")
@@ -228,12 +229,12 @@ class DialogueRecoveryTests(unittest.TestCase):
             self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='requests'").fetchone())
         self.service=DialogueService(DialogueStore(self.path))
         self.assertEqual(self.service.state('old')['messages'][0]['text'],'保留')
-        backups=list(self.path.parent.glob('*.pre-v2-*.bak'));self.assertEqual(len(backups),2)
+        backups=list(self.path.parent.glob('*.pre-v4-*.bak'));self.assertEqual(len(backups),2)
         for backup in backups:
             with sqlite3.connect(backup) as db:
                 self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],1)
                 self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
         with self.service.store.connect() as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],2)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],4)
             with self.assertRaises(sqlite3.IntegrityError):
                 db.execute("INSERT INTO task_drafts VALUES('invalid','old',1,'demo-general','{}',1,'now')")

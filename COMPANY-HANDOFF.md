@@ -1,3 +1,20 @@
+## 1.0 候選版部署與現場驗收
+
+直接貼給接手 Agent 的指令與 SMTP 後續工作見 [TO-AGENT.md](TO-AGENT.md)。SMTP 尚未實作，不能直接執行寄信。
+
+同仁直接填endpoint、Assistant ID與API key，CA預設系統信任，不要求另提供。可依[部署指南](docs/DEVELOPMENT.md)選用deployment.json預填端點，但不是啟用前提。不要改寫前端、關閉TLS、猜Assistant ID是model，或為測試通過自動啟用工具。當前主schema8、Dialogue schema4；升級前保留一致備份。
+
+| 工作 | 修改/操作入口 | 完成條件 |
+|---|---|---|
+| 三欄連線 | activation.py；選用deployment.example.json | 同仁直接填endpoint/ID/key即可測試，CA用系統信任；真實key只入keyring |
+| 聊天接續 | 設定助理兩輪測試、scripts/check-assistants.py明確--live | 真實助理十輪、切兩對話、關閉重開、失敗恢復；未知POST不重送 |
+| 記憶 | 主對話/我的記憶、continuity.py | 同助理快照、可關閉、來源/刪除清楚；不同登入者隔離 |
+| 單助理Skill | 我的Skills相容性、既有核准搜尋 | Plan批准後執行，人工核對來源，再同意每日排程 |
+| 登入 | company_auth.py既有authenticate契約 | AD登入/拒絕/到期實測，不能用單一True假授權 |
+| 發布 | scripts/verify.py development及受影響WebView smoke | 本機full已通過，仍保留歷史剪貼簿失敗及瀏覽器快取清理警告；所有現場項目完成才正式1.0，詳見最新VALIDATION |
+
+先跑定向`python scripts/test_runner.py --suite targeted --tests tests.test_continuity tests.test_dialogue_recovery`；交付整合才跑一次verify，不重複full。`python`須為專案`.venv\Scripts\python.exe`3.10.4。真實API檢查須由使用者明確啟動，可能耗用token，不把合成通過當現場驗收。
+
 ## 0.23.0 最短接手路徑
 
 1. 用既有69wheels離線安裝，勿重裝已符合lock的環境。主Store升schema8前自動備份；保留原資料一致備份。

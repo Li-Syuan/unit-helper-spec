@@ -1,4 +1,12 @@
-# 0.23.0 自建 Skill 與單助理規劃
+# 1.0.0rc1：三欄啟用、對話續談與記憶
+
+主Store維持schema8，DialogueStore目前schema4。`activation.py`提供endpoint/ID/key直接設定、選用部署預填與明確兩輪聊天斷言，CA預設系統信任；`continuity.py`提供記憶預覽/確認、對話草稿CAS/閱讀位置、固定快照與接續。WebView與CLI共用；Tk保留舊功能。記憶只在明確的新對話預覽或Skill選取後傳送，不背景挖掘或共享。
+
+新資料在目前登入者既有資料目錄；對話來源可失效，不搬移舊進階歷史。記憶加入送出的固定歷史前綴，但顯示與原訊息分開；不在重試時換用最新記憶。摘要工具停用，未知摘要請求不重送，人工整理仍可建立新草稿。1.0正式版需現場驗收，候選版不代表DVC/AD已通過。
+
+主對話資料夾由continuity.py共用服務管理，dialogue_folders保存名稱/收合/修訂，thread_views外鍵刪資料夾時只清分類。自動名稱為本機第一句摘取、手動名稱優先；不新增模型請求。WebView顯示單層可收合分組，CLI可列出、新增及移動。
+
+## 0.23.0 自建 Skill 與單助理規劃
 
 主 Store 當前 schema **8**；下方舊版 schema 敘述為歷史。skills.py 管定義、不可變修訂、分享、相容性證據與 Skill 流程來源，WorkflowService／LangGraph仍是唯一執行管線。規劃與執行只提供所選單一助理、rag與compose；不套四角色提示。能力證據獨立於舊 workflow verified，必須經明確合成實測；修改連線或重新測試使舊證據失效。批准快照固定方法、條件、助理版本，每次排程注入當次台北日期。
 
@@ -8,7 +16,7 @@ Skill Plan請求先保存原訊息與識別；未知POST阻止再次討論，檢
 
 work_orders.py 為每日搜尋交辦服務；WebBridge與CLI共用。規劃只提scope/sources/time_hhmm、不開工具，確認試跑才交既有AssistantBriefings／Engine，人工核對與持續授權後才排程。主Store升schema7保存獨立交辦，既有schema1～6一致備份後交易遷移；其餘資料庫版本不變。work_orders的state只是需求整理狀態，執行與排程狀態從既有資料讀取。
 
-WebSession增加start_scheduler（桌面預設true，CLI false），沿用單實例鎖與授權。CLI為固定操作入口、無shell/eval/任意bridge。WebView tray.py用既有WinForms NotifyIcon保留同程序；失敗不隱藏、真正退出drain不持bridge鎖。Skill是操作指引而非授權。詳見[工作台](WORKBENCH.md)。下方schema6是歷史功能說明，當前主Store以本節schema7為準。
+WebSession增加start_scheduler（桌面預設true，CLI false），沿用單實例鎖與授權。CLI為固定操作入口、無shell/eval/任意bridge。WebView tray.py用既有WinForms NotifyIcon保留同程序；失敗不隱藏、真正退出drain不持bridge鎖。Skill是操作指引而非授權。詳見[工作台](WORKBENCH.md)。schema6/7為歷史，當前主Store為schema8。
 
 ## 離線登入展示與現有AD閘門
 

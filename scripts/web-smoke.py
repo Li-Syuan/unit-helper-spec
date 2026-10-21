@@ -156,11 +156,203 @@ def skills_journey(session, api, window, capture, wait_script, report, tmp, comp
     report['checks'].append('skills_explicit_daily_consent_pause_markdown_roundtrip_and_disable_preserves_history')
 
 
+def v1_journey(session,api,window,capture,wait,report):
+    def js(script):return window.evaluate_js(script)
+    def click(text,root='#modal-actions'):
+        js("Array.from(document.querySelectorAll("+json.dumps(root+' button')+")).find(b=>b.textContent==="+json.dumps(text)+").click()")
+    def input_value(selector,value):
+        js("window.f=document.querySelector("+json.dumps(selector)+");f.value="+json.dumps(value)+";f.dispatchEvent(new Event('input',{bubbles:true}))")
+    def field(label,value):
+        js("window.f=Array.from(document.querySelectorAll('#modal-body .field')).find(r=>r.querySelector('label').textContent==="+json.dumps(label)+").querySelector('input,textarea,select');f.value="+json.dumps(value)+";f.dispatchEvent(new Event('input',{bubbles:true}))")
+    def modal_actions_reachable():
+        assert js("Array.from(document.querySelectorAll('#modal-actions button')).every(b=>{const r=b.getBoundingClientRect();return r.width>0&&r.height>0&&r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth})"),'modal_actions_outside_viewport'
+    source='合成工作筆記：所有報告使用繁體中文，數字須附來源，不要編造期限。'
+    input_value('#dialogue-input',source);js("document.getElementById('dialogue-send').click();document.getElementById('dialogue-send').click()")
+    wait("document.querySelectorAll('#dialogue-messages .message').length===2&&!document.getElementById('dialogue-send').disabled")
+    original=js('window.qaDialogueViewSnapshot().id')
+    automatic=next(row for row in session.dialogue.history() if row['id']==original)
+    assert automatic['title_source']=='auto' and automatic['title']!='新對話' and source.startswith(automatic['title'].rstrip('…')),'first_message_local_title_missing'
+    js("window.r=document.createRange();r.selectNodeContents(document.querySelector('#dialogue-messages .message-body'));window.getSelection().removeAllRanges();window.getSelection().addRange(r);document.dispatchEvent(new Event('selectionchange'));document.getElementById('dialogue-remember').click()")
+    wait("document.getElementById('modal-title').textContent==='記住這件事'")
+    field('標題','合成報告偏好');click('預覽保存')
+    wait("document.getElementById('modal-title').textContent==='確認保存這份記憶'")
+    assert not api.call('memory_list',{})['data'],'memory_preview_saved'
+    click('取消');assert not api.call('memory_list',{})['data'],'memory_cancel_saved'
+    js("document.getElementById('dialogue-remember').click()")
+    wait("document.getElementById('modal-title').textContent==='記住這件事'")
+    field('標題','合成報告偏好');click('預覽保存')
+    wait("document.getElementById('modal-title').textContent==='確認保存這份記憶'");click('確認保存')
+    wait("!document.getElementById('modal').open")
+    memories=api.call('memory_list',{})['data'];assert len(memories)==1,'memory_not_saved'
+    mid=memories[0]['id'];assert memories[0]['text']==source,'selection_truncated'
+    input_value('#dialogue-input','原對話尚未送出的草稿')
+    js("document.getElementById('new-chat').click()")
+    wait("document.getElementById('modal-title').textContent==='新對話將使用這些記憶'&&document.getElementById('modal').open")
+    assert session.dialogue.state(original)['draft_text']=='原對話尚未送出的草稿','main_draft_not_saved'
+    js("document.getElementById('chat-use-memory').checked=false");click('開始新對話')
+    wait("!document.getElementById('modal').open&&document.getElementById('dialogue-input').value===''")
+    no_memory=js('window.qaDialogueViewSnapshot().id');assert not session.dialogue.state(no_memory)['memory_snapshot'],'memory_optout_ignored'
+    js("document.querySelector('[data-dialogue-id=\""+original+"\"] .recent-item').click()")
+    wait("document.getElementById('dialogue-input').value==='原對話尚未送出的草稿'")
+    js("document.querySelector('[data-dialogue-id=\""+original+"\"] .icon-button').click()")
+    wait("document.getElementById('modal-title').textContent==='管理這段對話'")
+    field('對話名稱','合成置頂專案');click('保存名稱');wait("!document.getElementById('modal').open")
+    js("document.querySelector('[data-dialogue-id=\""+original+"\"] .icon-button').click()")
+    wait("document.getElementById('modal').open");click('置頂');wait("!document.getElementById('modal').open")
+    assert session.dialogue.state(original)['pinned'],'pin_not_saved'
+    input_value('#recent-search','合成置頂');assert js("document.querySelectorAll('#recent-chats .recent-row').length")==1,'recent_search_wrong'
+    input_value('#recent-search','')
+    # Sidebar organization is entirely local and never changes the selected
+    # assistant, conversation contents, pending draft or remote thread.
+    before_folder=session.dialogue.state(original)
+    js("document.getElementById('new-dialogue-folder').click()")
+    wait("document.getElementById('modal-title').textContent==='新增資料夾'")
+    field('資料夾名稱','合成日常工作');click('建立資料夾');wait("!document.getElementById('modal').open")
+    folder=api.call('dialogue_folders',{})['data'][0];fid=folder['id']
+    js("document.querySelector('[data-dialogue-id=\""+original+"\"] .icon-button').click()")
+    wait("document.getElementById('modal').open");field('資料夾',fid);click('移至選定資料夾','#modal-body')
+    wait("!document.getElementById('modal').open&&!!document.querySelector('[data-folder-id=\""+fid+"\"] [data-dialogue-id=\""+original+"\"]')")
+    assert session.dialogue.state(original)['folder_id']==fid,'folder_move_not_saved'
+    js("document.querySelector('[data-folder-id=\""+fid+"\"] .folder-toggle').click()")
+    wait("document.querySelector('[data-folder-id=\""+fid+"\"] .folder-content').hidden")
+    assert api.call('dialogue_folders',{})['data'][0]['collapsed'],'folder_collapse_not_saved'
+    js("document.dispatchEvent(new Event('qa-dialogue-enter'))")
+    wait("document.querySelector('[data-folder-id=\""+fid+"\"] .folder-toggle').getAttribute('aria-expanded')==='false'")
+    input_value('#recent-search','合成置頂')
+    assert not js("document.querySelector('[data-folder-id=\""+fid+"\"] .folder-content').hidden"),'folder_search_not_expanded'
+    input_value('#recent-search','')
+    assert js("document.querySelector('[data-folder-id=\""+fid+"\"] .folder-content').hidden"),'search_overwrote_saved_collapse'
+    js("document.getElementById('recent-toggle').click()")
+    wait("document.getElementById('recent-chats').hidden")
+    wait("!document.getElementById('recent-toggle').disabled")
+    preference=api.call('dialogue_recent_preference',{})
+    assert preference['data']['collapsed'],'recent_collapse_not_saved'
+    js("document.getElementById('recent-toggle').click()")
+    wait("!document.getElementById('recent-chats').hidden")
+    js("document.querySelector('[data-folder-id=\""+fid+"\"] .folder-heading .icon-button').click()")
+    wait("document.getElementById('modal-title').textContent==='管理資料夾'")
+    field('資料夾名稱','合成已改名工作');click('保存資料夾名稱');wait("!document.getElementById('modal').open")
+    assert api.call('dialogue_folders',{})['data'][0]['name']=='合成已改名工作','folder_rename_not_saved'
+    capture('v1-folders-dark.png')
+    window.resize(1050,700);time.sleep(.3)
+    js("document.querySelector('[data-folder-id=\""+fid+"\"] .folder-heading .icon-button').click()")
+    wait("document.getElementById('modal-title').textContent==='管理資料夾'")
+    assert js("document.querySelector('#modal-body .field input').maxLength")==60,'folder_name_limit_drift'
+    modal_actions_reachable();capture('v1-folders-small.png');click('刪除資料夾')
+    wait("document.getElementById('modal-title').textContent==='刪除資料夾 · 對話保留'");click('取消')
+    assert api.call('dialogue_folders',{})['data'],'folder_delete_cancel_deleted'
+    js("document.querySelector('[data-folder-id=\""+fid+"\"] .folder-heading .icon-button').click()")
+    wait("document.getElementById('modal-title').textContent==='管理資料夾'");click('刪除資料夾')
+    wait("document.getElementById('modal-title').textContent==='刪除資料夾 · 對話保留'");click('確認刪除資料夾');wait("!document.getElementById('modal').open")
+    after_folder=session.dialogue.state(original)
+    assert not after_folder['folder_id'] and not api.call('dialogue_folders',{})['data'],'folder_delete_did_not_unfile'
+    assert all(after_folder[k]==before_folder[k] for k in ('messages','draft_text','assistant_id','memory_snapshot')),'folder_changed_conversation'
+    assert js("document.getElementById('dialogue-input').value")=='原對話尚未送出的草稿','folder_lost_visible_draft'
+    js("document.querySelector('[data-dialogue-id=\""+original+"\"] .icon-button').click()")
+    wait("document.getElementById('modal').open");modal_actions_reachable();click('恢復自動命名');wait("!document.getElementById('modal').open")
+    assert next(row for row in session.dialogue.history() if row['id']==original)['title_source']=='auto','restore_auto_title_failed'
+    window.resize(1280,860)
+    report['checks'].append('local_auto_title_folder_create_move_collapse_reload_search_rename_delete_keeps_conversation_recent_preference')
+    js("document.getElementById('new-chat').click()")
+    wait("document.getElementById('modal').open&&!!document.getElementById('chat-use-memory')");click('開始新對話')
+    wait("!document.getElementById('modal').open&&document.getElementById('dialogue-memory-status').textContent.includes('1 份記憶')")
+    fixed=js('window.qaDialogueViewSnapshot().id');assert session.dialogue.state(fixed)['memory_snapshot'][0]['text']==source,'snapshot_wrong'
+    report['checks'].append('main_dialogue_selected_memory_preview_cancel_confirm_newchat_optout_fixed_snapshot_recent_search_rename_pin_draft_restore')
+    # Selected memories enter the visible approved method only; default is none.
+    skill_definition={'name':'合成記憶報告','purpose':'整理測試筆記','instructions':'只整理提供內容。','output_format':'列出重點與限制。','fields':[],'search':False,'default_profile_id':'demo'}
+    p=api.call('skill_save_preview',{'data':skill_definition});assert p['ok'],'skill_memory_fixture_preview'
+    assert api.call('skill_save_confirm',{'token':p['data']['token']})['ok'],'skill_memory_fixture_save'
+    js("document.querySelector('[data-page=skills]').click()")
+    wait("!!document.querySelector('.skill-card')")
+    click('使用 Skill','.skill-card');wait("!!document.querySelector('.memory-choices input[type=checkbox]')")
+    assert not js("document.querySelector('.memory-choices input').checked"),'skill_memory_auto_selected'
+    js("document.querySelector('.memory-choices input').checked=true;document.querySelector('.memory-choices input').dispatchEvent(new Event('change'));document.getElementById('skill-start').click()")
+    wait("!!document.getElementById('skill-discuss')")
+    w=session.skills.runs()[0];assert source in session.skills.state(w['id'])['skill']['instructions'],'skill_memory_not_visible_method'
+    assert not session.store.tasks(),'skill_memory_started_work'
+    report['checks'].append('skill_memory_default_none_explicit_selection_visible_method_snapshot_zero_execution')
+    # Explicit continuation: an isolated demo summary call, then an editable local preview.
+    js("document.querySelector('[data-dialogue-id=\""+original+"\"] .recent-item').click()")
+    wait("document.getElementById('dialogue-input').value==='原對話尚未送出的草稿'")
+    js("window.r=document.createRange();r.selectNodeContents(document.querySelector('#dialogue-messages .message-body'));window.getSelection().removeAllRanges();window.getSelection().addRange(r);document.dispatchEvent(new Event('selectionchange'));document.getElementById('dialogue-continue').click()")
+    wait("document.getElementById('modal-title').textContent==='整理後接續 · 原對話完整保留'")
+    click('請助理整理選取內容（一次請求）')
+    wait("Array.from(document.querySelectorAll('#modal-body .field')).find(r=>r.querySelector('label').textContent==='可編輯的接續摘要').querySelector('textarea').value.length>0")
+    field('可編輯的接續摘要','合成接續摘要，原文與限制須保留。');click('預覽接續草稿')
+    wait("document.getElementById('modal-title').textContent==='確認建立接續對話'")
+    before=len(session.dialogue.history());click('建立接續對話')
+    wait("!document.getElementById('modal').open&&document.getElementById('dialogue-input').value==='合成接續摘要，原文與限制須保留。'")
+    continued=js('window.qaDialogueViewSnapshot().id');t=session.dialogue.state(continued)
+    assert len(session.dialogue.history())==before+1 and not t['messages'] and not t['memory_snapshot'] and t['source_thread_id']==original,'continuation_not_inert'
+    assert len(session.dialogue.state(original)['messages'])==2,'continuation_changed_original'
+    report['checks'].append('explicit_summary_editable_continuation_preview_newdraft_original_and_source_retained_no_autosend')
+    js("document.querySelector('[data-page=memories]').click()")
+    wait("!!document.querySelector('[data-memory-id]')")
+    for theme in ('dark','light'):
+        api.call('appearance',{'theme':theme});time.sleep(1.7);capture('v1-memories-'+theme+'.png')
+    window.resize(1050,700);time.sleep(.3);capture('v1-memories-small.png')
+    assert js("document.getElementById('memories-page').scrollWidth<=document.getElementById('memories-page').clientWidth+2"),'memory_small_overflow'
+    click('停用','#memory-content');wait("document.getElementById('modal').open");click('確認停用');wait("!document.getElementById('modal').open")
+    assert not api.call('memory_list',{})['data'][0]['enabled'],'memory_disable_failed'
+    assert session.dialogue.state(fixed)['memory_snapshot'],'disable_changed_snapshot'
+    click('刪除','#memory-content');wait("document.getElementById('modal').open");click('取消');assert api.call('memory_list',{})['data'],'delete_cancel_deleted'
+    click('刪除','#memory-content');wait("document.getElementById('modal').open");click('確認刪除');wait("!document.getElementById('modal').open")
+    assert not api.call('memory_list',{})['data'] and session.dialogue.state(fixed)['memory_snapshot'],'delete_retracted_snapshot'
+    report['checks'].append('memory_manage_disable_delete_cancel_preserves_existing_snapshot_dark_light_small')
+    # No live endpoint, key or network. Setup works without deployment defaults.
+    js("document.querySelector('[data-page=settings]').click()")
+    wait("document.getElementById('activation-settings').textContent.includes('啟用你的助理')")
+    assert js("document.querySelector('#page-content details').open===false"),'deployment_controls_not_collapsed'
+    assert not session.store.tasks(),'continuity_dispatched_work'
+    capture('v1-settings-small.png')
+    report['checks'].append('optional_deployment_setup_entry_no_task_dispatch')
+    # UI contract fixture only: no keyring, deployment mutation or model transport.
+    from unittest.mock import patch
+    activation_calls=[]
+    def fake_save(assistant_id,api_key,endpoint=None,confirm_endpoint_change=False):
+        activation_calls.append(('save',endpoint,confirm_endpoint_change));assert assistant_id=='synthetic-assistant' and api_key=='synthetic-not-a-secret'
+        return {'saved':True,'profile_id':'synthetic-profile','assistant_id':'demo-general'}
+    def fake_test(profile_id,consent):
+        activation_calls.append('test');assert profile_id=='synthetic-profile' and consent is True
+        return {'passed':True,'checks':[{'name':'two_turns','status':'synthetic_passed'}],'message':'合成介面測試，並非真實助理驗收。','assistant_id':'demo-general'}
+    with patch.object(session.activation,'status',return_value={'available':True,'configured':False,'needed':False,'endpoint':'','wire_mode':'unconfigured','chat_profiles':[],'message':''}),patch.object(session.activation,'save',side_effect=fake_save),patch.object(session.activation,'test',side_effect=fake_test):
+        js("document.dispatchEvent(new Event('qa-activation-open'))")
+        wait("!!document.getElementById('activation-assistant-id')&&document.getElementById('modal').open")
+        assert js("Array.from(document.querySelectorAll('#modal-body .field label')).map(e=>e.textContent)")==['Endpoint','Assistant ID','API key'],'activation_not_three_fields'
+        input_value('#modal-body #activation-endpoint','https://synthetic.invalid/api/assts/v1')
+        input_value('#modal-body #activation-assistant-id','synthetic-assistant');input_value('#modal-body #activation-api-key','synthetic-not-a-secret')
+        click('測試並開始使用');time.sleep(.2);assert not activation_calls,'activation_no_consent_dispatched'
+        js("document.querySelector('#modal-body #activation-consent').checked=true");click('測試並開始使用')
+        wait("document.querySelector('#modal-body .activation-result').textContent.includes('synthetic_passed')")
+        assert activation_calls==[('save','https://synthetic.invalid/api/assts/v1',False),'test'],'activation_duplicate_or_missing'
+        assert js("document.querySelector('#modal-body #activation-api-key').value")==''
+        capture('v1-activation-small.png')
+        # Same form now has an existing destination. Editing it requires human
+        # confirmation before any backend save; cancelling must leave it intact.
+        input_value('#modal-body #activation-endpoint','https://other-synthetic.invalid/api/assts/v1')
+        input_value('#modal-body #activation-api-key','synthetic-not-a-secret')
+        click('只保存，不測試');wait("document.querySelector('#modal-body .activation-result').textContent.includes('確認更換連線')")
+        assert len(activation_calls)==2,'endpoint_changed_before_confirmation'
+        click('取消更換','#modal-body');wait("!document.querySelector('#modal-body #activation-endpoint').disabled")
+        assert len(activation_calls)==2,'cancel_endpoint_dispatched'
+        click('只保存，不測試');wait("document.querySelector('#modal-body .activation-result').textContent.includes('確認更換連線')")
+        click('確認更換連線','#modal-body');wait("document.querySelector('#modal-body .activation-result').textContent.includes('已保存')")
+        assert activation_calls[-1]==('save','https://other-synthetic.invalid/api/assts/v1',True) and len(activation_calls)==3,'endpoint_confirmation_not_bound'
+        click('稍後設定')
+    report['checks'].append('three_field_activation_explicit_consent_endpoint_change_cancel_confirm_key_cleared_no_real_credentials')
+    window.resize(1280,860);window.maximize();time.sleep(.3)
+    js("document.querySelector('[data-page=dialogue]').click()")
+    wait("!document.getElementById('dialogue-page').hidden")
+    capture('v1-dialogue-maximized.png')
+    report['not_tested']=['company_api','real_two_turn_activation','AD','human_usability','physical_IME','clipboard']
+
+
 def main():
     destination=Path(__file__).resolve().parents[1]/'artifacts'/'web-smoke'
     destination.mkdir(parents=True,exist_ok=True)
     skills_only='--skills-only' in sys.argv
-    report={'status':'failed','scope':'skills' if skills_only else 'full','checks':[]}
+    v1_only='--v1-only' in sys.argv
+    report={'status':'failed','scope':'v1' if v1_only else 'skills' if skills_only else 'full','checks':[]}
     with tempfile.TemporaryDirectory() as tmp:
         from desktop_app import about
         publisher_root=about.ROOT;about.ROOT=Path(tmp)
@@ -179,6 +371,10 @@ def main():
                 from desktop_app.web_chrome import seal_navigation
                 seal_navigation(window)
                 report['checks'].append('bridge_ready')
+                # Fresh ordinary workspaces offer optional setup; this offline
+                # journey explicitly defers it, then tests setup below with fixtures.
+                time.sleep(.4)
+                window.evaluate_js("(() => {const m=document.getElementById('modal');if(m.open&&m.textContent.includes('三個欄位開始')){const b=Array.from(document.querySelectorAll('#modal-actions button')).find(e=>e.textContent==='稍後設定');if(b)b.click();}})()")
                 from System import Action
                 from System.IO import FileStream, FileMode
                 from Microsoft.Web.WebView2.Core import CoreWebView2CapturePreviewImageFormat
@@ -190,6 +386,15 @@ def main():
                         window.native.Invoke(Action(start))
                         if not pending[0].Wait(10000):raise AssertionError('capture_timeout')
                     finally:stream.Dispose()
+                if v1_only:
+                    def wait_v1(script):
+                        for _ in range(160):
+                            if window.evaluate_js(script):return
+                            time.sleep(.1)
+                        raise AssertionError('v1_wait_timeout: '+script)
+                    v1_journey(session,api,window,capture,wait_v1,report)
+                    report['status']='passed'
+                    return
                 if skills_only:
                     def wait_skills(script):
                         for _ in range(100):
@@ -786,18 +991,17 @@ def main():
                 assert len(session.store.todos())==before_todos+1,'cancel_created_todo'
                 inbox_row=next(row for row in api.call('state',{})['data']['work_inbox'] if row['kind']=='dialogue')
                 target=inbox_row['id'];pending=session.dialogue.state(target)['request']['pending_text']
+                before_source=window.evaluate_js('window.qaDialogueViewSnapshot().id')
                 window.evaluate_js("document.getElementById('dialogue-input').value='尚未送出的合成草稿'")
                 source_button="document.querySelector('[data-inbox-id=\""+target+"\"] button').click()"
                 window.evaluate_js(source_button)
-                wait_script("document.getElementById('dialogue-status').textContent.includes('輸入框仍有未送出內容')")
-                assert window.evaluate_js("document.getElementById('dialogue-input').value")=='尚未送出的合成草稿','inbox_overwrote_main_draft'
-                window.evaluate_js("document.getElementById('dialogue-input').value='';document.querySelector('[data-page=todo]').click()")
-                window.evaluate_js(source_button)
-                wait_script("document.getElementById('dialogue-input').value==="+json.dumps(pending))
+                wait_script("window.qaDialogueViewSnapshot().id==="+json.dumps(target))
+                assert session.dialogue.state(before_source)['draft_text']=='尚未送出的合成草稿','inbox_overwrote_main_draft'
+                assert window.evaluate_js("document.getElementById('dialogue-input').value")==pending,'inbox_pending_not_restored'
                 assert {t['id'] for t in session.store.tasks()}==inbox_baseline,'main_inbox_dispatched'
                 window.evaluate_js("document.querySelector('[data-page=todo]').click()")
-                # Move off the source first, as the real delete UI updates its active cid.
-                window.evaluate_js("document.getElementById('new-chat').click()")
+                # Move off the advanced source before deleting its independent record.
+                window.evaluate_js("document.querySelector('[data-page=chat]').click();document.getElementById('new-chat').click()")
                 wait_script("!document.getElementById('chat-page').hidden && document.getElementById('page-title').textContent!=='我的待辦'")
                 time.sleep(.3)
                 p=api.call('delete_preview',{'ids':[source]});assert p['ok'], 'todo_source_delete_preview_failed'
@@ -859,7 +1063,7 @@ def main():
                 try:capture('failure.png')
                 except Exception:pass
             finally:
-                (destination/('result-skills.json' if skills_only else 'result.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+                (destination/('result-v1.json' if v1_only else 'result-skills.json' if skills_only else 'result.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
                 window.destroy()
         try:webview.start(inspect,gui='edgechromium',debug=False,private_mode=True)
         finally:

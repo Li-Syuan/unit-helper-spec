@@ -25,6 +25,8 @@ class SupportTests(unittest.TestCase):
         text=(self.root/'logs/events.jsonl').read_text('utf-8');self.assertNotIn(self.secret,text)
         value=json.loads(text);self.assertEqual(value['code'],'FORBIDDEN');self.assertEqual(value['http_status'],403)
         self.assertEqual(value['id'],result['id']);self.assertIn('version',value)
+        self.assertEqual(support.clean_record(dict(value,version='1.0.0rc1'))['version'],'1.0.0rc1')
+        self.assertNotIn('version',support.clean_record(dict(value,version='1.0.0rc1-'+self.secret)))
         self.assertEqual(value['frames'],[])  # The test module is outside the permitted app source directory.
         from desktop_app.assistant_errors import AssistantFailure
         support.record(self.root,'ui',AssistantFailure('RUN_FAILED','run_poll',remote_code='server_error'))

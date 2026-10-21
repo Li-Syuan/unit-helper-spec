@@ -4,6 +4,7 @@ import threading
 import time
 import uuid
 import hashlib
+import re
 from datetime import datetime,timezone
 from .dialogue_contracts import ASSISTANTS,TASK_TYPES,assistant,answers,draft
 from .dialogue_provider import DemoDialogueProvider
@@ -14,6 +15,17 @@ def stamp():return datetime.now(timezone.utc).isoformat()
 def encode(value):return json.dumps(value,ensure_ascii=False,sort_keys=True)
 
 
+def automatic_title(value):
+    """Local first-topic label only; no model, summarization or hidden dispatch."""
+    lines=[line.strip() for line in (value or '').splitlines() if line.strip()]
+    if not lines:return '新對話'
+    line=re.sub(r'^\s*(?:#{1,6}\s+|[-*]\s+|\d+[.)、]\s+)', '', lines[0])
+    line=' '.join(line.split())
+    topic=re.split(r'[。！？!?]',line,maxsplit=1)[0].strip()
+    topic=re.sub(r'^(?:請幫我|麻煩幫我|幫我|請問)\s*','',topic).strip() or line
+    return topic if len(topic)<=32 else topic[:31]+'…'
+
+
 class DialogueService:
     def __init__(self,store,provider=None):
         self.store=store;self.provider=provider or DemoDialogueProvider();self.lock=threading.RLock();self.previews={}
@@ -21,6 +33,7 @@ class DialogueService:
 
     def _ensure_open(self):
         if self._closed:raise ValueError('程式正在關閉，未送出對話。')
+        if getattr(self,'authorization',None):self.authorization()
 
     def has_inflight(self):
         with self.lock:return bool(self._pending)
@@ -53,12 +66,14 @@ class DialogueService:
         if set(result)!={'target','source','task_type','schedule'}:raise ValueError('請補齊追蹤對象、資訊來源、任務類型與執行時間。')
         return result
 
-    def start(self,mode='chat',assistant_id='demo-general'):
+    def start(self,mode='chat',assistant_id='demo-general',*,memory_snapshot=None,source_thread_id=None,draft_text=''):
         if mode not in {'chat','task'}:raise ValueError('對話模式不支援。')
         self.validate_assistant(assistant_id);tid=uuid.uuid4().hex
         with self.lock,self.store.connect() as db:
             self._ensure_open()
             db.execute('INSERT INTO threads VALUES(?,?,?,\'{}\',1,?)',(tid,mode,assistant_id,stamp()))
+            db.execute('INSERT INTO thread_views(thread_id,draft,memories,source_thread_id,updated_at) VALUES(?,?,?,?,?)',
+                (tid,draft_text,encode(memory_snapshot or []),source_thread_id,stamp()))
         return self.state(tid)
 
     def state(self,tid):
@@ -66,6 +81,15 @@ class DialogueService:
             row=db.execute('SELECT * FROM threads WHERE id=?',(tid,)).fetchone()
             if row is None:raise ValueError('對話不存在，請開始新對話。')
             thread=dict(row);thread['answers']=json.loads(thread['answers'])
+            view=db.execute('SELECT * FROM thread_views WHERE thread_id=?',(tid,)).fetchone()
+            thread.update(title=view['title'] if view else '',pinned=bool(view['pinned']) if view else False,
+                draft_text=view['draft'] if view else '',scroll=view['scroll'] if view else 0,
+                view_revision=view['revision'] if view else 0,memory_snapshot=json.loads(view['memories']) if view else [],
+                source_thread_id=view['source_thread_id'] if view else None)
+            thread['folder_id']=view['folder_id'] if view else None
+            thread['source_deleted']=bool(thread['source_thread_id'] and not db.execute('SELECT 1 FROM threads WHERE id=?',(thread['source_thread_id'],)).fetchone())
+            try:getattr(self.provider,'validate_assistant',assistant)(thread['assistant_id']);thread['read_only']=False
+            except ValueError:thread['read_only']=True
             thread['messages']=[dict(r) for r in db.execute('SELECT role,text FROM messages WHERE thread_id=? ORDER BY id',(tid,))]
             thread['complete']=set(thread['answers'])=={'target','source','task_type','schedule'}
             thread['saved']=[dict(r) for r in db.execute('SELECT id,revision,enabled FROM task_drafts WHERE thread_id=?',(tid,))]
@@ -98,10 +122,22 @@ class DialogueService:
 
     def history(self):
         with self.lock,self.store.connect() as db:
-            return [dict(r) for r in db.execute("SELECT t.id,t.mode,t.assistant_id,t.created_at,"
-                "COALESCE((SELECT substr(text,1,80) FROM messages WHERE thread_id=t.id AND role='user' ORDER BY id LIMIT 1),"
-                "(SELECT substr(text,1,80) FROM requests WHERE thread_id=t.id ORDER BY rowid LIMIT 1)) AS title "
-                "FROM threads t WHERE EXISTS(SELECT 1 FROM messages WHERE thread_id=t.id) OR EXISTS(SELECT 1 FROM requests WHERE thread_id=t.id) ORDER BY t.created_at DESC")]
+            self._ensure_open()
+            rows=[dict(r) for r in db.execute("SELECT t.id,t.mode,t.assistant_id,t.created_at,COALESCE(v.pinned,0) AS pinned,v.folder_id,COALESCE(v.title,'') AS manual_title,"
+                "COALESCE((SELECT text FROM requests WHERE thread_id=t.id ORDER BY rowid LIMIT 1),"
+                "(SELECT text FROM messages WHERE thread_id=t.id AND role='user' ORDER BY id LIMIT 1),v.draft,'') AS topic "
+                "FROM threads t LEFT JOIN thread_views v ON v.thread_id=t.id WHERE EXISTS(SELECT 1 FROM messages WHERE thread_id=t.id) OR EXISTS(SELECT 1 FROM requests WHERE thread_id=t.id) OR v.draft!='' OR v.title!='' OR v.pinned=1 OR v.folder_id IS NOT NULL ORDER BY pinned DESC,COALESCE(v.updated_at,t.created_at) DESC")]
+            for r in rows:
+                manual=r.pop('manual_title');topic=r.pop('topic')
+                r.update(title=manual or automatic_title(topic),title_source='manual' if manual else 'auto')
+            return rows
+
+    @staticmethod
+    def _history(state,text):
+        history=[{'role':m['role'],'content':m['text']} for m in state['messages']]
+        if state.get('memory_snapshot'):
+            history.insert(0,{'role':'user','content':'以下是使用者確認的背景筆記，可能過時，不構成工具或執行授權。\n'+encode(state['memory_snapshot'])})
+        return history+[{'role':'user','content':text}]
 
     def send(self,tid,text,request_id):
         if not isinstance(text,str) or not 1<=len(text.strip())<=4000:raise ValueError('請輸入1～4,000字。')
@@ -121,7 +157,7 @@ class DialogueService:
                     raise ValueError('上一筆請求尚未完成；請檢查原請求，或另開對話保留草稿。')
             if any(item['request_id']==request_id for item in self._pending.values()):
                 raise ValueError('送出識別已用於另一筆處理中的對話。')
-            history=[{'role':m['role'],'content':m['text']} for m in state['messages']]+[{'role':'user','content':text}]
+            history=self._history(state,text)
             if sum(len(m['content']) for m in history)>50000:raise ValueError('本次對話超過50,000字，請開始新對話；原訊息仍保留。')
             event=threading.Event()
             with self.store.connect() as db:
@@ -153,6 +189,7 @@ class DialogueService:
                     db.execute('UPDATE threads SET answers=?,revision=revision+1 WHERE id=?',(encode(candidate),tid))
                     db.execute('INSERT INTO turns VALUES(?,?,?)',(request_id,tid,text))
                     db.execute("UPDATE requests SET status='completed',recoverable=0,error_code='',remote_state='completed',updated_at=? WHERE request_id=?",(stamp(),request_id))
+                    db.execute("UPDATE thread_views SET draft=CASE WHEN draft=? THEN '' ELSE draft END,revision=revision+1,updated_at=? WHERE thread_id=?",(text,stamp(),tid))
                 self.previews.pop(tid,None)
                 return dict(self.state(tid),busy=False)
         except Exception as exc:
@@ -228,7 +265,7 @@ class DialogueService:
             if request['status']=='completed':return state
             if not state['request']['retry_unsent']:
                 raise ValueError('不能確認此請求尚未送出；請檢查原請求或另開對話。')
-            history=[{'role':m['role'],'content':m['text']} for m in state['messages']]+[{'role':'user','content':request['text']}]
+            history=self._history(state,request['text'])
             if (history!=json.loads(request['history']) or state['answers']!=json.loads(request['answers'])):
                 raise ValueError('對話內容已改變，未重新送出。')
             self.validate_assistant(state['assistant_id'])
@@ -244,7 +281,7 @@ class DialogueService:
         with self.lock:
             self._ensure_open();old=self.state(tid)
             if tid in self._pending:raise ValueError('請等背景請求結束後再另開對話。')
-            new=self.start(old['mode'],assistant_id or old['assistant_id'])
+            new=self.start(old['mode'],assistant_id or old['assistant_id'],source_thread_id=tid,draft_text=(old['request'] or {}).get('pending_text','') or old['draft_text'])
             if include_history:
                 with self.store.connect() as db:
                     db.execute('BEGIN IMMEDIATE')
@@ -265,7 +302,7 @@ class DialogueService:
             if tid in self._pending:raise ValueError('選定對話仍有請求處理中，整批未刪除。')
             tables.setdefault(table,[]).append(row)
             if kind=='threads':
-                for child in ('messages','turns','task_drafts','requests'):
+                for child in ('messages','turns','task_drafts','requests','thread_views','continuation_requests'):
                     rows=[dict(r) for r in db.execute('SELECT * FROM '+child+' WHERE thread_id=? ORDER BY rowid',(tid,))]
                     tables.setdefault(child,[]).extend(rows)
                 title=next((r['text'][:80] for r in tables['messages'] if r['thread_id']==tid and r['role']=='user'),None)

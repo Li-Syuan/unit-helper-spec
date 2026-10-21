@@ -16,7 +16,7 @@ from .outcomes import OutcomeService
 
 
 class WebSession:
-    def __init__(self, directory=None, config=None, config_path=None, groq_trial=False, login_session=None, demo_session=None, *, start_scheduler=True):
+    def __init__(self, directory=None, config=None, config_path=None, groq_trial=False, login_session=None, demo_session=None, *, start_scheduler=True, deployment_defaults=None, activation_enabled=True):
         if groq_trial and (config is not None or config_path is not None):
             raise ValueError('試用不能載入連線設定。')
         if demo_session is not None and (config_path is not None or config is None
@@ -24,7 +24,7 @@ class WebSession:
             raise ValueError('展示登入不能載入公司或使用者設定。')
         self.directory=Path(directory or data_directory())
         if groq_trial:self.directory /= 'groq-trial'
-        self.trial=groq_trial
+        self.trial=groq_trial;self.activation_enabled=activation_enabled is True
         self.config=copy.deepcopy(DEFAULT) if groq_trial else config or load_config(config_path or self.directory/'config.json')
         self.demo_session=demo_session
         if demo_session is not None:
@@ -77,8 +77,14 @@ class WebSession:
             from .dialogue_service import DialogueService
             from .dialogue_provider import ProfileDialogueProvider
             self.dialogue=DialogueService(DialogueStore(self.directory/'dialogue-v1.sqlite3'),ProfileDialogueProvider(self.profiles))
+            self.dialogue.authorization=self.assert_identity
             from .company_readiness import CompanyProbe
             self.company_probe=CompanyProbe(self.profiles)
+            from .continuity import Continuity
+            from .activation import Activation
+            self.continuity=Continuity(self);self.skills.continuity=self.continuity
+            use_defaults=(config is None) if deployment_defaults is None else deployment_defaults is True
+            self.activation=Activation(self,load_defaults=use_defaults and not (groq_trial or demo_session))
             self.scheduler_error=False
             self.scheduler=None
             if start_scheduler:

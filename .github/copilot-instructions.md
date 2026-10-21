@@ -1,6 +1,6 @@
 # Copilot 接手入口
 
-0.22.0先讀[工作台](../docs/WORKBENCH.md)：單助理交辦由work_orders共用服務處理，主Store為schema7（先backup），CLI不啟動排程器。規劃零工具、試跑與每日持續授權分開；不要讓模型或Skill代填確認。WebView系統匣只是同一程序背景運作，不是Windows服務。依賴69wheels不變，來源與公司API效果仍須現場驗收。
+0.22.0先讀[工作台](../docs/WORKBENCH.md)：單助理交辦由work_orders共用服務處理，主Store為schema8（先backup），CLI不啟動排程器。規劃零工具、試跑與每日持續授權分開；不要讓模型或Skill代填確認。WebView系統匣只是同一程序背景運作，不是Windows服務。依賴69wheels不變，來源與公司API效果仍須現場驗收。
 
 版本與實測結果以 [README](../README.md)、[驗證紀錄](../docs/VALIDATION.md) 為準。先讀 [AGENTS](../AGENTS.md) 與 [組織工作單](../COMPANY-HANDOFF.md)，保留組織成功程式及設定後再比對合併。
 
@@ -18,3 +18,7 @@
 
 
 0.23.0：自建Skill／單助理Plan見docs/SKILLS.md與AGENTS最新節。沿用SkillService→WorkflowService→LangGraph；不得另造引擎或以prompt解鎖工具。真實能力只由明確相容性測試產生證據，規劃無工具，批准與持續排程分開；Markdown匯入僅草稿。
+
+1.0.0rc1：依使用者最新更正，直接填endpoint/Assistant ID/API key三欄；CA預設系統信任，deployment.json僅選用預填。更換已有端點/協定先確認並撤銷舊綁定，預填不覆寫手動設定；不要把內部端點或憑證提交Git。activation兩輪工具停用合成斷言與metadata/Skill/search各自驗收。continuity提供明確記憶預覽確認、固定thread快照、草稿CAS、來源接續；Dialogue schema4先backup交易遷移，主Store仍8。未知摘要POST不重送、接續只建草稿；記憶不自動跨助理或登入者傳送。舊進階歷史保留原入口，不強制遷移。先驗證主對話十輪/重開/故障恢復，再單助理Skill與排程；實際DVC/AD/來源品質未驗收維持候選版。
+
+1.0候選版現場接手先讀 [TO-AGENT](../TO-AGENT.md)。主對話本機命名/可收合資料夾不派發；SMTP僅後續規格，尚未實作。
