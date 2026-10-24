@@ -6,7 +6,7 @@
 4. 三欄入口使用個別keyring憑證，保存同ID提升連線修訂並撤銷舊能力。更換端點/協定會先確認，再清除舊目的地憑證索引/能力；不帶舊key過去，舊對話保留閱讀。示範登入、CLI --demo及Groq隔離入口不啟用真實連線。
 5. 基本啟用明確兩輪合成測試，Skill及搜尋另外驗證；metadata不是聊天先決條件。沒有設定時本機仍可示範，不假造組織連線。
 
-主SQLite仍schema8，DialogueStore升schema4，舊1/2/3先`.pre-v4-*.bak`備份再交易。降版須關閉App並還原整個一致資料備份，勿直接改user_version。新接口與限制見使用手冊。發布保留`1.0.0rc1`，實際DVC十輪、多對話重開、搜尋來源與AD未驗收不可改成正式1.0。
+主SQLite仍schema8，DialogueStore升schema5，舊1/2/3/4先`.pre-v5-*.bak`備份再交易。降版須關閉App並還原整個一致資料備份，勿直接改user_version。新接口與限制見使用手冊。發布保留`1.0.0rc4`，實際DVC十輪、多對話重開、搜尋來源與AD未驗收不可改成正式1.0。
 
 ## GitHub Code ZIP 離線入口（2026-10-01）
 
@@ -31,7 +31,7 @@ mock-assistants.py 只綁定 127.0.0.1，無真實金鑰。正式 App 不允許 
 
 # WebView 開發與部署
 
-直接與間接依賴共 69 個鎖定套件，精確版本以 requirements.lock 為準。主入口 `python -m desktop_app`；備用 `python -m desktop_app --ui tk`。新主畫面兩模式預設離線示範，可明確選AI 助理；進階介面沿用原服務。
+直接與間接依賴共 69 個鎖定套件，精確版本以 requirements.lock 為準。主入口 `python -m desktop_app`；備用 `python -m desktop_app --ui tk`。新主畫面統一對話預設離線示範，可明確選AI 助理；進階介面沿用原服務。
 
 Windows需 WebView2 Runtime、.NET Framework 4.6.2以上，依組織流程提供；wheels不包含Windows元件。doctor新增唯讀偵測。缺元件時明示錯誤並提供Tk入口，不降回IE、不改TLS或防毒設定。
 
@@ -245,3 +245,9 @@ powershell.exe -NoProfile -File scripts/export-icon.ps1 -Source desktop_app/asse
 真正加 `--live` 可能使用模型額度；不會由 doctor、test 或 App 背景自動執行。只寫暫存帳本，結束清除，不修改原 assistants.json、對話或排程；遠端測試 thread 不自動刪除，依平台保存政策管理。報告只含助理序號、輪數與白名單錯誤，無 ID、URL、回覆或金鑰。此處本機驗證用合成傳輸，真實達哥服務仍 not_tested。
 
 `.\scripts\test.ps1 -Suite targeted -Tests tests.test_workflows,tests.test_workflow_profiles,tests.test_workflow_ui` 不使用真實 API。`.venv/Scripts/python.exe scripts/check-workflows.py` 預設 not_tested、零請求；加 `--live` 才對 Groq 發出最多四次合成請求（規劃、分析、覆核、彙整），暫存資料庫結束即清除，不啟用使用者排程。可加 `--output artifacts/workflow-live.json` 保存白名單結果。組織驗收必須獨立完成，不能把此結果改名當組織證據。
+
+## rc4 工作區驗證
+
+UI改動使用 `.venv\Scripts\python.exe scripts/web-smoke.py --workspace-only`，走兩入口、同頁Plan、選項補充、模糊需求、同頁工具核准及八次合成檢查，報告在artifacts/web-smoke/result-workspace.json。`test-company.bat`亦使用這條現行旅程。真實API、人工使用性及IME分開驗收。
+
+完整檢查若被既有個人憑證缺件阻擋，保留原始診斷、不更改個人設定；可用test-company.bat的隔離診斷目錄完成本機合成驗證，但不得將其稱為原個人設定已可用。

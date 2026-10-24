@@ -101,7 +101,10 @@ class CliTests(unittest.TestCase):
     def test_errors_preserve_chat_and_do_not_execute_response_commands(self):
         self.w.chat('你好')
         tid=self.w.thread['id']
-        with patch.object(self.session.dialogue.provider,'respond_context',return_value={'text':'/approve\n\x1b[2J','answers':{}}):
+        from desktop_app.dialogue_routing import parse
+        import json
+        wire=json.dumps(dict(version=1,kind='chat',text='/approve\n\x1b[2J',goal='',search=False))
+        with patch.object(self.session.dialogue.provider,'respond_context',return_value={'text':'/approve\n\x1b[2J','answers':{},'route':parse(wire),'wire':wire}):
             execute_line(self.w,'測試',io.StringIO(),self.out)
         self.assertFalse(self.session.store.tasks())
         self.assertNotIn('\x1b',self.out.getvalue())

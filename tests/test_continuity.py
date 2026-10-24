@@ -98,9 +98,9 @@ class ContinuityTests(unittest.TestCase):
         self.assertEqual(state['draft_text'],'舊草稿');self.assertEqual(state['title'],'原名稱')
         self.assertEqual(state['memory_snapshot'],[{'text':'固定筆記'}]);self.assertFalse(state['saved'][0]['enabled'])
         with store.connect() as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],4)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],5)
             self.assertEqual(db.execute('SELECT text FROM memories').fetchone()[0],'不編造')
-        backups=list(self.root.glob('v3.sqlite3.pre-v4-*.bak'));self.assertEqual(len(backups),2)
+        backups=list(self.root.glob('v3.sqlite3.pre-v5-*.bak'));self.assertEqual(len(backups),2)
         for backup in backups:
             with sqlite3.connect(backup) as db:
                 self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
@@ -272,7 +272,7 @@ class ContinuityTests(unittest.TestCase):
     def test_v2_migration_backup_and_atomic_rollback(self):
         path=self.root/'old.sqlite3';DialogueStore(path)
         with sqlite3.connect(path) as db:
-            for t in ('thread_views','dialogue_folders','memories','continuation_requests','activation_checks'):db.execute('DROP TABLE '+t)
+            for t in ('workspace_views','dialogue_routes','routing_checks','thread_views','dialogue_folders','memories','continuation_requests','activation_checks'):db.execute('DROP TABLE '+t)
             db.execute('PRAGMA user_version=2');db.execute("INSERT INTO threads VALUES('old','chat','demo-general','{}',1,'now')")
         original=DialogueStore._continuity_upgrade
         def fail(db):original(db);raise RuntimeError('synthetic rollback')
@@ -281,7 +281,7 @@ class ContinuityTests(unittest.TestCase):
         with sqlite3.connect(path) as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],2)
         store=DialogueStore(path)
         self.assertEqual(DialogueService(store).state('old')['memory_snapshot'],[])
-        for backup in self.root.glob('old.sqlite3.pre-v4-*.bak'):
+        for backup in self.root.glob('old.sqlite3.pre-v5-*.bak'):
             with sqlite3.connect(backup) as db:self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
     def test_skill_opt_in_memory_and_cli_confirmation_no_dispatch(self):
         note=self.note();from desktop_app.skills import TEMPLATE

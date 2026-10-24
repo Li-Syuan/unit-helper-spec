@@ -47,6 +47,11 @@ class ProfileDialogueProvider:
         except AuthenticationError:raise
         except ValueError:raise AssistantFailure('LOCAL_SETUP','preflight',sent=False) from None
         if not isinstance(binding,dict):return DemoDialogueProvider().respond(history,mode,current,assistant_id)
+        if mode=='auto':
+            from .dialogue_routing import parse
+            raw=self.profiles.respond(history,'chat',binding,context=dict(context,operation='dialogue_route',search_authorized=False))
+            route=parse(raw)
+            return {'text':route['text'],'answers':{},'route':route,'wire':raw}
         if mode=='chat':
             return {'text':self.profiles.respond(history,'chat',binding,context=dict(context,operation='ordinary_chat')),'answers':{}}
         from .workflows import json_object
@@ -121,6 +126,10 @@ class DemoDialogueProvider:
                'schedule':'預計什麼時間？例如「每天08:00」「每週一09:30」或「2026-10-01 08:00」。時間以台北為準。'}
     def respond(self,history,mode,current,assistant_id):
         text=history[-1]['content'];state=copy.deepcopy(current)
+        if mode=='auto':
+            from .dialogue_routing import demo,parse
+            raw=demo(text);route=parse(raw)
+            return {'text':route['text'],'answers':{},'route':route,'wire':raw}
         if mode=='chat':
             count=sum(m['role']=='user' for m in history)
             previous=next((m['content'] for m in reversed(history[:-1]) if m['role']=='user'),None)

@@ -67,7 +67,7 @@ class AgentJobs:
         return b
 
     def create(self,profile_id,goal,source_thread=None,skill_id=None,skill_revision=None,values=None,
-               memory_ids=None,search=False,team_ids=None,limits_value=None,autonomous=True,prior_task_id=None):
+               memory_ids=None,search=False,team_ids=None,limits_value=None,autonomous=True,prior_task_id=None,*,source_request_id=None):
         from .autonomous import limits as autonomous_limits
         if type(autonomous) is not bool:raise ValueError('自主模式格式不正確。')
         goal=bounded_text(goal,'交辦需求',5000);budget=(autonomous_limits if autonomous else limits)(limits_value)
@@ -75,6 +75,15 @@ class AgentJobs:
         if not isinstance(team_ids or [],list) or len(team_ids or [])>4 or len(set(team_ids or []))!=len(team_ids or []):raise ValueError('額外助理最多四位且不可重複。')
         with self.engine._lock:
             self.engine._ensure_open()
+            if source_request_id:
+                if not source_thread or not isinstance(source_request_id,str) or len(source_request_id)>150:raise ValueError('來源請求無效。')
+                import hashlib
+                fixed_id='turn-'+hashlib.sha256((source_thread+':'+source_request_id).encode()).hexdigest()
+                with self.store.connection() as db:prior=db.execute('SELECT data FROM work_orders WHERE id=?',(fixed_id,)).fetchone()
+                if prior:
+                    data=json.loads(prior[0])
+                    if data.get('source_thread')!=source_thread or data.get('source_request_id')!=source_request_id:raise ValueError('工作來源不一致。')
+                    return self.state(fixed_id)
             if prior_task_id:
                 prior=self.store.task(prior_task_id)
                 if prior['state']!='failed' or prior['kind']!='workflow' or not re.match(r'^AGENT_(NEEDS_INPUT|ACTION_LIMIT|REQUEST_LIMIT|TIME_LIMIT|NO_PROGRESS|CONTEXT_LIMIT)[：:]',prior.get('error') or ''):
@@ -99,10 +108,11 @@ class AgentJobs:
             vals,missing=answers(fields,values or {})
             aid='demo-general' if profile_id=='demo' else f"company:{profile_id}:{b['revision']}"
             notes=self.session.continuity.snapshot(aid,memory_ids) if memory_ids else []
-            cid=uid();flow={'id':uid(),'revision':1};oid=uid()
+            cid=uid();flow={'id':uid(),'revision':1};oid=fixed_id if source_request_id else uid()
             data={'kind':'agent-v1','workflow_id':flow['id'],'profile_id':profile_id,'source_thread':source_thread,
                 'search':search,'skill':skill,'values':vals,'memories':notes,'team':team,'limits':budget,'autonomous':autonomous,
-                'search_tools':copy.deepcopy(self.profiles.validate(b).get('search_policy',{}).get('tools',[])) if search else [],'prior_task_id':prior_task_id}
+                'search_tools':copy.deepcopy(self.profiles.validate(b).get('search_policy',{}).get('tools',[])) if search else [],'prior_task_id':prior_task_id,
+                'source_request_id':source_request_id}
             with self.store.connection() as db:
                 db.execute('BEGIN IMMEDIATE')
                 db.execute('INSERT INTO conversations(id,title,created_at,binding) VALUES(?,?,?,?)',(cid,goal[:80],stamp(),dumps(self.profiles.snapshot(profile_id))))
@@ -277,7 +287,7 @@ class AgentJobs:
             'instructions':'\n'.join(s['instruction'] for s in r['steps']), 'output_format':'結論／來源與限制／待確認事項',
             'fields':[],'search':r['search'],'default_profile_id':r['profile_id']})}
 
-    def probe(self,pid,consent=False,search=False):
+    def probe(self,pid,consent=False,search=False,*,cancelled=None):
         if consent is not True:raise ValueError('請明確同意合成模型測試。')
         def run(binding):
             roles=['rag'] if search else ['planner','compose','assess']
@@ -295,7 +305,8 @@ class AgentJobs:
             for role in roles:
                 try:
                     self.engine._ensure_open()
-                    context={'run_id':rid,'step_id':role,'search_authorized':role=='rag','cancelled':lambda:self.engine._closed}
+                    if cancelled and cancelled():raise ValueError('檢查已取消。')
+                    context={'run_id':rid,'step_id':role,'search_authorized':role=='rag','cancelled':lambda:self.engine._closed or bool(cancelled and cancelled())}
                     obj=json_object(self.profiles.respond([{'role':'user','content':prompts[role]}],'workflow_plan' if role in {'planner','assess'} else 'workflow_step',binding,context=context))
                     if role=='planner':
                         if set(obj)!={'message','questions','steps'} or obj['questions']!=[] or not isinstance(obj['steps'],list) or len(obj['steps'])!=1:raise ValueError('規劃格式不符。')
@@ -314,6 +325,7 @@ class AgentJobs:
                             key,request_id,_,_=session_context(binding,'workflow_step',context)
                             rec=AssistantSessions(self.profiles.path.parent/'assistant-sessions.sqlite3').get_request(key,request_id) or {}
                             if rec.get('state')!='completed' or not any(batch.get('submit_state')=='submitted' and batch.get('calls') and all(c.get('state')=='completed' for c in batch['calls']) for batch in rec.get('tool_batches',[])) or not re.search(r'https://[^\s]+',obj['text']):raise ValueError('缺少完成的搜尋收據或來源。')
+                    if cancelled and cancelled():raise ValueError('檢查已取消。')
                     passed.add(role);checks.append({'role':role,'status':'passed','message':'合成斷言通過；真實成果品質仍需核對。'})
                 except Exception:
                     checks.append({'role':role,'status':'failed','message':'連線、格式或證據未通過；未重試，也未解鎖此能力。'});break
@@ -323,7 +335,7 @@ class AgentJobs:
             return {'checks':checks,'passed':len(checks)==len(roles) and all(c['status']=='passed' for c in checks),'roles':sorted(passed),'source_quality':'not_tested'}
         return self.skills._remote(pid,run)
 
-    def autonomy_probe(self,pid,consent=False):
+    def autonomy_probe(self,pid,consent=False,*,cancelled=None):
         from .autonomous import DECISION_HINT,validate_decision
         if consent is not True:raise ValueError('請明確同意最多三次自主格式測試。')
         def run(binding):
@@ -340,11 +352,12 @@ class AgentJobs:
             for i,(scenario,sources,expected) in enumerate(cases):
                 try:
                     self.engine._ensure_open()
+                    if cancelled and cancelled():raise ValueError('檢查已取消。')
                     prompt=DECISION_HINT+'\n合成案例：'+scenario+'\n主助理ID：'+pid+'\n來源：'+dumps(sources)
                     obj=json_object(self.profiles.respond([{'role':'user','content':prompt}],'workflow_plan',binding,
-                        context={'run_id':rid,'step_id':f'decision_{i+1}','cancelled':lambda:self.engine._closed}))
+                        context={'run_id':rid,'step_id':f'decision_{i+1}','cancelled':lambda:self.engine._closed or bool(cancelled and cancelled())}))
                     validate_decision(obj,spec,sources)
-                    if obj['action']!=expected:raise ValueError('決策不符合案例。')
+                    if obj['action']!=expected or (cancelled and cancelled()):raise ValueError('決策不符合案例或已取消。')
                     checks.append({'role':'autonomous','name':str(i+1),'status':'passed','message':'合成決策斷言通過。'})
                 except Exception:
                     checks.append({'role':'autonomous','name':str(i+1),'status':'failed','message':'連線或決策未通過；未重試、未解鎖。'});break

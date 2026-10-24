@@ -1,3 +1,10 @@
+# 1.0.0rc4 統一入口
+
+新主對話與CLI共用WorkspaceTurns，一次無工具回覆同時取得聊天文字／工作建議。CLI直接輸入即可；待補問時文字交給目前計畫，確認仍用 `/job-run`（TTY人工確認）。`/activation-run <profileID>` 同意後最多8次；`/use-skill <ID|none>` 選方法；`/work-choose <requestID> <chat|work>` 回答模糊建議。用 `/job-reply` 可傳選項答案。原 `/job` 等手動入口保留，能力不足不偷換示範。
+
+WebView只保留對話／我的工作，Skill在composer，設定集中助理／記憶／外觀，舊入口在更多工具。需求、補問、修改、一次確認及成果在原頁面；排程另核對及同意。主Store8、DialogueStore5，舊1～4先backup交易遷移。下方舊交辦命令保持相容，但日常不用先切換交辦模式。
+
+
 # 交辦工作與 CLI
 
 1.0.0rc3沿用桌面的達哥連接器、工作引擎及本機排程，不需要另部署 API server。主資料庫schema8、DialogueStore schema4（舊版先backup）；不可用舊版直接開啟新資料庫。原有任務草稿維持未啟用。

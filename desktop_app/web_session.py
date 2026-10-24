@@ -85,6 +85,8 @@ class WebSession:
             self.continuity=Continuity(self);self.skills.continuity=self.continuity
             from .agent_jobs import AgentJobs
             self.agents=AgentJobs(self)
+            from .workspace_turns import WorkspaceTurns
+            self.workspace=WorkspaceTurns(self)
             use_defaults=(config is None) if deployment_defaults is None else deployment_defaults is True
             self.activation=Activation(self,load_defaults=use_defaults and not (groq_trial or demo_session))
             self.scheduler_error=False

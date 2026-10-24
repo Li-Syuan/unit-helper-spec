@@ -10,15 +10,24 @@ class DialogueStore:
         self.path=Path(path);self.path.parent.mkdir(parents=True,exist_ok=True)
         with self.connect() as db:
             version=db.execute('PRAGMA user_version').fetchone()[0]
-            if version not in (0,1,2,3,4):raise ValueError('對話資料版本不相容。')
-            if version==4:return
+            if version not in (0,1,2,3,4,5):raise ValueError('對話資料版本不相容。')
+            if version==5:return
             if version:
-                backup=self.path.with_name(self.path.name+'.pre-v4-'+uuid.uuid4().hex+'.bak')
+                backup=self.path.with_name(self.path.name+'.pre-v5-'+uuid.uuid4().hex+'.bak')
                 with sqlite3.connect(backup) as destination:db.backup(destination)
             db.execute('BEGIN IMMEDIATE')
             if version<2:self._upgrade(db)
             if version<3:self._continuity_upgrade(db)
-            self._folders_upgrade(db)
+            if version<4:self._folders_upgrade(db)
+            self._workspace_upgrade(db)
+
+    @staticmethod
+    def _workspace_upgrade(db):
+        db.execute("CREATE TABLE workspace_views(thread_id TEXT PRIMARY KEY REFERENCES threads(id) ON DELETE CASCADE,active_job TEXT,skill_id TEXT)")
+        db.execute("CREATE TABLE dialogue_routes(request_id TEXT PRIMARY KEY REFERENCES requests(request_id) ON DELETE CASCADE,thread_id TEXT NOT NULL REFERENCES threads(id) ON DELETE CASCADE,contract INTEGER NOT NULL,wire TEXT NOT NULL DEFAULT '',proposal TEXT,selection TEXT NOT NULL DEFAULT '{}',job_id TEXT,decision TEXT NOT NULL DEFAULT '')")
+        db.execute('CREATE INDEX dialogue_routes_thread ON dialogue_routes(thread_id)')
+        db.execute('CREATE TABLE routing_checks(profile_id TEXT PRIMARY KEY,revision INTEGER NOT NULL,contract INTEGER NOT NULL,passed INTEGER NOT NULL,checked_at TEXT NOT NULL)')
+        db.execute('PRAGMA user_version=5')
 
     @staticmethod
     def _folders_upgrade(db):

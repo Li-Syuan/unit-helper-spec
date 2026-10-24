@@ -41,7 +41,7 @@ def main(argv=None):
         commands.append(('regression', ['scripts/test_runner.py','--suite','quick']) if args.mode == 'quick'
                         else ('full_regression', ['scripts/verify.py','development']))
     if args.mode in ('local','ui'):
-        commands.append(('webview_synthetic', ['scripts/web-smoke.py']))
+        commands.append(('webview_synthetic', ['scripts/web-smoke.py','--workspace-only']))
         commands.append(('demo_login_lifecycle', ['scripts/login-smoke.py']))
     for name, arguments in commands:
         print('Running '+name+'; company services NOT tested.', flush=True)
@@ -52,7 +52,7 @@ def main(argv=None):
                                 'status':'passed' if result.returncode == 0 else 'failed'})
         save()
         if result.returncode:
-            print('FAILED: '+name+'. See artifacts/testing/latest.json or artifacts/web-smoke/result.json.', file=sys.stderr)
+            print('FAILED: '+name+'. See artifacts/testing/latest.json or artifacts/web-smoke/result-workspace.json.', file=sys.stderr)
             return 1
     report['status']='passed';save()
     print('LOCAL PASSED. Company API/search/AD/Oracle remain NOT TESTED.')

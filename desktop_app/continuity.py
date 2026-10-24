@@ -121,8 +121,8 @@ class Continuity:
     def start_preview(self,mode,assistant_id):
         with self.lock:
             self.ensure();self.dialogue.validate_assistant(assistant_id)
-            if mode not in {'chat','task'}:raise ValueError('不支援的模式。')
-            data={'mode':mode,'assistant_id':assistant_id,'memories':self.snapshot(assistant_id,enforce_limit=False) if mode=='chat' else []}
+            if mode not in {'chat','task','auto'}:raise ValueError('不支援的模式。')
+            data={'mode':mode,'assistant_id':assistant_id,'memories':self.snapshot(assistant_id,enforce_limit=False) if mode in {'chat','auto'} else []}
             data['memory_error']='記憶總長超過12,000字；請停用不需要項目，或本次不使用記憶。' if len(encode(data['memories']))>12000 else ''
             return dict(data,token=self.token('start',data))
 
@@ -238,7 +238,8 @@ class Continuity:
         with self.lock:
             self.ensure();p=self.consume(token,'continue');old=self.dialogue.state(p['id'])
             if old['revision']!=p['revision'] or p['id'] in self.dialogue._pending:raise ValueError('來源對話已變更，請重新確認。')
-            return self.dialogue.start('chat',p['assistant_id'],source_thread_id=p['id'],draft_text=p['text'])
+            mode='auto' if self.session.workspace.allowed(p['assistant_id']) else 'chat'
+            return self.dialogue.start(mode,p['assistant_id'],source_thread_id=p['id'],draft_text=p['text'])
 
     def summarize(self,tid,value,assistant_id,consent):
         if consent is not True:raise ValueError('產生摘要會呼叫助理一次，請先確認。')

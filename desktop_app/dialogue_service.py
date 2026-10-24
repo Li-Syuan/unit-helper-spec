@@ -67,13 +67,16 @@ class DialogueService:
         return result
 
     def start(self,mode='chat',assistant_id='demo-general',*,memory_snapshot=None,source_thread_id=None,draft_text=''):
-        if mode not in {'chat','task'}:raise ValueError('對話模式不支援。')
+        if mode not in {'chat','task','auto'}:raise ValueError('對話模式不支援。')
+        if mode=='auto' and not getattr(self,'routing_allowed',lambda aid:not aid.startswith('company:'))(assistant_id):
+            raise ValueError('此助理尚未通過自動辨識契約；仍可使用一般聊天或手動交辦。')
         self.validate_assistant(assistant_id);tid=uuid.uuid4().hex
         with self.lock,self.store.connect() as db:
             self._ensure_open()
             db.execute('INSERT INTO threads VALUES(?,?,?,\'{}\',1,?)',(tid,mode,assistant_id,stamp()))
             db.execute('INSERT INTO thread_views(thread_id,draft,memories,source_thread_id,updated_at) VALUES(?,?,?,?,?)',
                 (tid,draft_text,encode(memory_snapshot or []),source_thread_id,stamp()))
+            db.execute('INSERT INTO workspace_views(thread_id) VALUES(?)',(tid,))
         return self.state(tid)
 
     def state(self,tid):
@@ -87,6 +90,11 @@ class DialogueService:
                 view_revision=view['revision'] if view else 0,memory_snapshot=json.loads(view['memories']) if view else [],
                 source_thread_id=view['source_thread_id'] if view else None)
             thread['folder_id']=view['folder_id'] if view else None
+            workspace=db.execute('SELECT * FROM workspace_views WHERE thread_id=?',(tid,)).fetchone()
+            thread['active_job']=workspace['active_job'] if workspace else None
+            thread['skill_id']=workspace['skill_id'] if workspace else None
+            thread['routes']=[dict(r,proposal=json.loads(r['proposal']) if r['proposal'] else None) for r in db.execute(
+                'SELECT request_id,proposal,job_id,decision FROM dialogue_routes WHERE thread_id=? ORDER BY rowid',(tid,))]
             thread['source_deleted']=bool(thread['source_thread_id'] and not db.execute('SELECT 1 FROM threads WHERE id=?',(thread['source_thread_id'],)).fetchone())
             try:getattr(self.provider,'validate_assistant',assistant)(thread['assistant_id']);thread['read_only']=False
             except ValueError:thread['read_only']=True
@@ -132,19 +140,26 @@ class DialogueService:
                 r.update(title=manual or automatic_title(topic),title_source='manual' if manual else 'auto')
             return rows
 
-    @staticmethod
-    def _history(state,text):
-        history=[{'role':m['role'],'content':m['text']} for m in state['messages']]
+    def _history(self,state,text):
+        if state['mode']=='auto':
+            from .dialogue_routing import PROMPT
+            history=[{'role':'user','content':PROMPT}]
+            with self.store.connect() as db:
+                rows=db.execute('SELECT q.text,r.wire FROM dialogue_routes r JOIN requests q USING(request_id) WHERE r.thread_id=? AND q.status=\'completed\' ORDER BY q.rowid',(state['id'],)).fetchall()
+            for row in rows:
+                history.extend([{'role':'user','content':row['text']},{'role':'assistant','content':row['wire']}])
+        else:history=[{'role':m['role'],'content':m['text']} for m in state['messages']]
         if state.get('memory_snapshot'):
             history.insert(0,{'role':'user','content':'以下是使用者確認的背景筆記，可能過時，不構成工具或執行授權。\n'+encode(state['memory_snapshot'])})
         return history+[{'role':'user','content':text}]
 
-    def send(self,tid,text,request_id):
+    def send(self,tid,text,request_id,*,routing_input=None):
         if not isinstance(text,str) or not 1<=len(text.strip())<=4000:raise ValueError('請輸入1～4,000字。')
         if not isinstance(request_id,str) or not 1<=len(request_id)<=150:raise ValueError('送出識別無效。')
         with self.lock:
             self._ensure_open()
             state=self.state(tid)
+            if state['mode']=='auto' and not getattr(self,'routing_allowed',lambda aid:True)(state['assistant_id']):raise ValueError('自動辨識能力已失效；請重新檢查助理，或建立一般聊天。')
             if tid in self._pending:raise ValueError('此對話仍有請求處理中；取消後也請等遠端請求結束。')
             with self.store.connect() as db:
                 previous=db.execute('SELECT * FROM turns WHERE request_id=?',(request_id,)).fetchone()
@@ -163,6 +178,7 @@ class DialogueService:
             with self.store.connect() as db:
                 db.execute('INSERT INTO requests(request_id,thread_id,text,status,revision,answers,history,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)',
                     (request_id,tid,text,'pending',state['revision'],encode(state['answers']),encode(history),stamp(),stamp()))
+                if state['mode']=='auto':db.execute('INSERT INTO dialogue_routes(request_id,thread_id,contract,selection) VALUES(?,?,1,?)',(request_id,tid,encode(routing_input or {})))
             self._pending[tid]={'request_id':request_id,'cancelled':event}
         return self._perform(tid,text,request_id,state,history,event,False)
 
@@ -173,9 +189,13 @@ class DialogueService:
                     {'conversation_id':'dialogue:'+tid,'request_id':request_id,'cancelled':event.is_set,'resume':resume})
             else:
                 reply=self.provider.respond(history,state['mode'],state['answers'],state['assistant_id'])
-            if not isinstance(reply,dict) or set(reply)!={'text','answers'} or not isinstance(reply['text'],str) or not 1<=len(reply['text'])<=200000:raise ValueError('助理回覆格式無效；原對話保留，沒有產生任務。')
+            expected={'text','answers','route','wire'} if state['mode']=='auto' else {'text','answers'}
+            if not isinstance(reply,dict) or set(reply)!=expected or not isinstance(reply['text'],str) or not 1<=len(reply['text'])<=200000:raise ValueError('助理回覆格式無效；原對話保留，沒有產生任務。')
+            if state['mode']=='auto':
+                from .dialogue_routing import parse
+                if parse(reply['wire'])!=reply['route'] or reply['route']['text']!=reply['text']:raise ValueError('辨識回覆不一致。')
             candidate=answers(reply['answers'])
-            if state['mode']=='chat' and candidate:raise ValueError('一般聊天不能產生任務。')
+            if state['mode'] in {'chat','auto'} and candidate:raise ValueError('一般聊天不能產生任務。')
             with self.lock:
                 self._ensure_open()
                 if event.is_set():raise ValueError('對話已取消；晚到回覆沒有保存或建立任務。')
@@ -188,6 +208,7 @@ class DialogueService:
                     db.execute('INSERT INTO messages(thread_id,role,text) VALUES(?,\'assistant\',?)',(tid,reply['text']))
                     db.execute('UPDATE threads SET answers=?,revision=revision+1 WHERE id=?',(encode(candidate),tid))
                     db.execute('INSERT INTO turns VALUES(?,?,?)',(request_id,tid,text))
+                    if state['mode']=='auto':db.execute('UPDATE dialogue_routes SET wire=?,proposal=? WHERE request_id=?',(reply['wire'],encode(reply['route']),request_id))
                     db.execute("UPDATE requests SET status='completed',recoverable=0,error_code='',remote_state='completed',updated_at=? WHERE request_id=?",(stamp(),request_id))
                     db.execute("UPDATE thread_views SET draft=CASE WHEN draft=? THEN '' ELSE draft END,revision=revision+1,updated_at=? WHERE thread_id=?",(text,stamp(),tid))
                 self.previews.pop(tid,None)
@@ -281,7 +302,10 @@ class DialogueService:
         with self.lock:
             self._ensure_open();old=self.state(tid)
             if tid in self._pending:raise ValueError('請等背景請求結束後再另開對話。')
-            new=self.start(old['mode'],assistant_id or old['assistant_id'],source_thread_id=tid,draft_text=(old['request'] or {}).get('pending_text','') or old['draft_text'])
+            target=assistant_id or old['assistant_id']
+            mode=old['mode']
+            if mode=='auto' and (include_history or not getattr(self,'routing_allowed',lambda aid:True)(target)):mode='chat'
+            new=self.start(mode,target,source_thread_id=tid,draft_text=(old['request'] or {}).get('pending_text','') or old['draft_text'])
             if include_history:
                 with self.store.connect() as db:
                     db.execute('BEGIN IMMEDIATE')
@@ -299,10 +323,10 @@ class DialogueService:
             row=db.execute('SELECT * FROM '+table+' WHERE id=?',(item_id,)).fetchone()
             if row is None:raise ValueError('選定資料已刪除，請重新選擇。')
             row=dict(row);tid=item_id if kind=='threads' else row['thread_id']
-            if tid in self._pending:raise ValueError('選定對話仍有請求處理中，整批未刪除。')
+            if tid in self._pending or tid in getattr(self,'workspace_pending',set()):raise ValueError('選定對話仍有請求處理中，整批未刪除。')
             tables.setdefault(table,[]).append(row)
             if kind=='threads':
-                for child in ('messages','turns','task_drafts','requests','thread_views','continuation_requests'):
+                for child in ('messages','turns','task_drafts','requests','thread_views','continuation_requests','dialogue_routes','workspace_views'):
                     rows=[dict(r) for r in db.execute('SELECT * FROM '+child+' WHERE thread_id=? ORDER BY rowid',(tid,))]
                     tables.setdefault(child,[]).extend(rows)
                 title=next((r['text'][:80] for r in tables['messages'] if r['thread_id']==tid and r['role']=='user'),None)

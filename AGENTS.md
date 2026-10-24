@@ -1,3 +1,15 @@
+# 1.0.0rc4 精簡工作區（優先於下方歷史規則）
+
+WebView 日常只保留「對話／我的工作」。Skill 在輸入框選單，記憶／助理／外觀在設定，舊工具在更多工具。workspace_turns.py 共用 Web／CLI 的聊天建議、固定來源工作連結及補充；AgentJobs→WorkflowService→LangGraph 仍是唯一執行服務。
+
+新 auto 對話使用 dialogue_routing.py 的 version=1 嚴格 JSON；同一次工具停用回覆包含 text 與 chat/clarify/work 建議。建議不是批准，工作規劃另呼叫原服務，執行一定要明確確認；搜尋與排程授權不變。舊 chat/task 對話保持原 thread／歷史；接續建立新草稿。原始 wire 回覆與顯示文字分開，固定記憶及 raw 前綴，不以解析文字重寫遠端歷史。
+
+DialogueStore5（舊1～4 backup後交易升級），主Store8不變。dialogue_routes 先存建議，work_orders 以來源thread/request固定識別防重；跨兩庫連結中斷可唯讀定位既有工作，不自動派發。工作規劃的真future阻擋來源刪除，來源刪除保留獨立成果。workspace_views 保存輸入目標／Skill，routing_checks 按助理修訂記錄辨識；未知POST不重送。
+
+啟用順序：三欄保存→選用搜尋宣告與人工核准→一次同意最多8次（聊天／辨識2、工作格式3、自主3）。每項實際斷言、同修訂證據；搜尋另單次測試。聊天可用與自動交辦分開，能力不足用一般聊天／明確手動入口，不降級假裝全部通過。取消停止後續請求，版本變更中止。CA沿系統信任、keyring、不背景測試。
+
+Python3.10.4／69wheels不變；Tk備用。選測 tests.test_workspace_turns／test_continuity／test_dialogue_recovery／test_cli，UI 用 scripts/web-smoke.py --workspace-only。發布仍為候選版；真實達哥、AD、來源品質與人工使用性另驗收，不宣稱完整Hermes。
+
 # 1.0.0rc3 自主工作（優先於下方固定步驟規則）
 
 使用者已批准搜尋／選入助理分工／成果的自主決策。agent_create預設autonomous=true，新批准agent.version=2；舊缺值false／version1不轉換。autonomous.py固定動作目錄search/delegate/compose/ask，JSON建議不是授權；主助理決策role=autonomous必須獨立最多3次無工具斷言才寫同修訂能力。舊格式證據不解鎖；搜尋仍核准policy＋實測，實際結果核對工具收據及來源引用，不冒充事實驗證。

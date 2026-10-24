@@ -31,12 +31,12 @@ class WebBridge:
                 if self._s.demo_session and (name.startswith('profile_') or name.startswith('search_policy_')
                         or name in {'connection_save','key_remove','company_probe'}):
                     raise ValueError('離線登入展示禁止公司連線、金鑰與工具設定；請關閉並改用公司登入。')
-                if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel','order_cancel','skill_cancel','agent_cancel','host_close'}:
+                if name not in {'activation_cancel','save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel','order_cancel','skill_cancel','agent_cancel','host_close'}:
                     self._s.assert_identity()
                 if self._closing and name not in {'state','save_draft','dialogue_view_save'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','skill_generate','skill_probe','skill_discuss','skill_inspect','skill_recover','activation_test','continuation_summary','host_close','agent_probe','agent_search_probe','agent_autonomy_probe','agent_reply','agent_inspect','agent_recover'}:
+                if name not in {'workspace_send','workspace_reply','activation_run','activation_route_test','dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','skill_generate','skill_probe','skill_discuss','skill_inspect','skill_recover','activation_test','continuation_summary','host_close','agent_probe','agent_search_probe','agent_autonomy_probe','agent_reply','agent_inspect','agent_recover'}:
                     return {'ok':True,'data':handler(payload or {})}
             # Provider I/O must not block theme/state/cancellation/close commands.
             return {'ok':True,'data':handler(payload or {})}
@@ -52,6 +52,16 @@ class WebBridge:
     def _handlers(self):
         s=self._s
         return {
+            'workspace_catalog':lambda p:s.workspace.catalog(),
+            'workspace_state':lambda p:s.workspace.state(p['id']),
+            'workspace_send':lambda p:s.workspace.send(p['id'],p['text'],p['request_id'],p.get('skill_id')),
+            'workspace_select':lambda p:s.workspace.select(p['id'],p.get('job_id'),p.get('skill_id')),
+            'workspace_reply':lambda p:s.workspace.reply(p['id'],p['job_id'],p['revision'],p.get('text',''),p.get('answers')),
+            'workspace_choose':lambda p:s.workspace.choose(p['id'],p['request_id'],p['choice']),
+            'activation_run':lambda p:s.activation.run(p['profile_id'],p.get('consent',False)),
+            'activation_route_test':lambda p:s.activation.test(p['profile_id'],p.get('consent',False),routing=True),
+            'activation_progress':lambda p:s.activation.progress(p['profile_id']),
+            'activation_cancel':lambda p:s.activation.cancel(p['profile_id']),
             'agent_catalog':lambda p:s.agents.catalog(),'agent_list':lambda p:s.agents.list(),
             'agent_create':lambda p:s.agents.create(p['profile_id'],p['goal'],p.get('source_thread'),p.get('skill_id'),p.get('skill_revision'),p.get('values',{}),p.get('memory_ids',[]),p.get('search',False),p.get('team_ids',[]),p.get('limits'),p.get('autonomous',True),p.get('prior_task_id')),
             'agent_state':lambda p:s.agents.state(p['id']),
@@ -278,6 +288,7 @@ class WebBridge:
         from .dialogue_contracts import ASSISTANTS,TASK_TYPES
         provider=self._s.dialogue.provider
         rows=provider.catalog() if hasattr(provider,'catalog') else copy.deepcopy(ASSISTANTS)
+        rows=[dict(r,automatic=self._s.workspace.allowed(r['id'])) for r in rows]
         return {'assistants':rows,'task_types':TASK_TYPES[:],
                 'mode_label':'示範模式 · 完全離線','company_enabled':any(r['id'].startswith('company:') for r in rows),
                 'company_fields':['endpoint','API key','assistant_id'],
@@ -315,7 +326,7 @@ class WebBridge:
             planners=[{k:v for k,v in row.items() if k in fields} for row in s.profiles.workflow_catalog() if 'planner' in row['workflow']['roles']],
             tasks=s.store.tasks(),plans=s.store.plans(),workflows=[s.workflows.snapshot(r['id']) for r in s.workflows.list(cid)],
             actions=[dict(s.actions.snapshot(a['id']),parse_note=self._parse_notes.get(a['id'],'')) for a in s.actions.list(cid)],catalog=s.queries.catalog(),
-            work_inbox=work_inbox(s),todos=s.store.todos(),schedules=s.store.schedules(),notifications=s.store.notifications(),issues=s.store.issues(),
+            work_inbox=work_inbox(s),work_jobs=s.workspace.jobs(),todos=s.store.todos(),schedules=s.store.schedules(),notifications=s.store.notifications(),issues=s.store.issues(),
             draft=s.store.draft(cid),attachment=self._attachment_info(cid),busy=s.engine.has_inflight(),
             scheduler_error=s.scheduler_error,close_behavior=self._close_behavior({})['value'],settings={'endpoint':s.profiles.data.get('endpoint','') if not s.trial else '',
                 'wire_mode':s.profiles.data.get('wire_mode','unconfigured'),

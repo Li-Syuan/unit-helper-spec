@@ -19,7 +19,7 @@
 
 `test-company.bat quick` 僅核心離線測試；`test-company.bat ui` WebView 與原生展示登入生命週期操作。不要把 quick 或 ui 說成 full。
 
-報告：`artifacts/company-test/latest.json`、`artifacts/testing/latest.json`、`artifacts/web-smoke/result.json`、`artifacts/login-launch/result.json`。合成畫面在 `artifacts/web-smoke/`。可能包含本機路徑，分享前去識別。
+報告：`artifacts/company-test/latest.json`、`artifacts/testing/latest.json`、`artifacts/web-smoke/result-workspace.json`、`artifacts/login-launch/result.json`。合成畫面在 `artifacts/web-smoke/`。可能包含本機路徑，分享前去識別。
 
 ## 公司搜尋助理另行驗收
 

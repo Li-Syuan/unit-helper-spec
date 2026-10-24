@@ -1,5 +1,6 @@
 {
   "quick": [
+    "tests.test_workspace_turns.WorkspaceTurnTests",
     "tests.test_autonomous.AutonomousTests",
     "tests.test_agent_jobs.AgentJobTests",
     "tests.test_continuity.ContinuityTests",

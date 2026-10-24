@@ -1,47 +1,49 @@
 (() => {
 'use strict';
 const U=window.qaSkillUI,e=U.el;
-function button(label,fn,cls='button'){const b=e('button',cls,label);b.type='button';b.onclick=async()=>{if(b.disabled)return;b.disabled=true;try{await fn();}catch(error){U.notify(error.message,true);}finally{b.disabled=false;}};return b;}
-async function form(root,info){
- root.replaceChildren();if(root.id!=='modal-body')root.append(e('span','eyebrow','START WITH ONE ASSISTANT'),e('h2','','啟用你的助理'));
- root.append(e('p','muted','填入助理端點、Assistant ID 與 API key 即可開始設定。連線預設使用系統信任的憑證。'));
- if(!info.available){if(root.id==='modal-body')U.modalButtons(button('稍後設定',U.closeModal));root.append(e('p','notice',info.message||'此工作區不能修改助理連線。'));return;}
- const endpoint=U.field(root,'Endpoint',info.endpoint||'','url'),id=U.field(root,'Assistant ID','','text'),key=U.field(root,'API key','','password');
- for(const [input,name]of [[endpoint,'endpoint'],[id,'assistant-id'],[key,'api-key']]){input.id='activation-'+name;input.previousElementSibling.htmlFor=input.id;}
- endpoint.placeholder='https://…/api/assts/v1';endpoint.autocomplete='url';key.autocomplete='new-password';
- const notice=e('p','notice','金鑰只存 Windows 認證管理員。測試會傳送兩輪非敏感合成訊息，可能產生 API 費用；不測搜尋。'),result=e('div','activation-result');root.append(notice);
- const show=e('label','check-field'),toggle=e('input');toggle.type='checkbox';toggle.onchange=()=>key.type=toggle.checked?'text':'password';show.append(toggle,document.createTextNode('顯示金鑰'));root.append(show);
- const consent=e('label','check-field'),yes=e('input');yes.type='checkbox';yes.id='activation-consent';consent.append(yes,document.createTextNode('我同意傳送兩輪合成訊息，測試連續對話。'));root.append(consent);
- const controls=e('div','card-actions');root.append(controls,result);let busy=false;
- function endpointApproval(value){
-  result.replaceChildren(e('h3','','更換連線前，請先確認'),e('p','notice','此變更會撤銷舊目的地的憑證與能力核准，原對話保留為唯讀。這次輸入的 API key 將只用於新的連線；不會自動重送任何工作。'),e('p','plain-text','原端點：'+(info.endpoint||'未設定')+'\n新端點：'+value+'\n協定：Assistants'));
-  return new Promise(resolve=>{const row=e('div','card-actions'),cancel=button('取消更換',()=>{result.replaceChildren(e('p','muted','已取消，設定與金鑰未變更。'));resolve(false);}),approve=button('確認更換連線',()=>{row.querySelectorAll('button').forEach(b=>b.disabled=true);resolve(true);},'button danger');row.append(cancel,approve);result.append(row);cancel.focus();result.scrollIntoView({block:'nearest'});});
- }
- async function submit(testing){
-  if(busy)return;if(!endpoint.value.trim()||!id.value.trim()||!key.value.trim())throw Error('請填寫 Endpoint、Assistant ID 與 API key。');if(testing&&!yes.checked)throw Error('請先勾選同意兩輪合成測試。');
-  busy=true;const payload={endpoint:endpoint.value.trim(),assistant_id:id.value.trim(),api_key:key.value,confirm_endpoint_change:false};
-  const fields=[endpoint,id,key,toggle,yes];fields.forEach(input=>input.disabled=true);
-  try{
-   if((info.endpoint&&info.endpoint!==payload.endpoint)||!['unconfigured','assistants'].includes(info.wire_mode||'unconfigured')){if(!await endpointApproval(payload.endpoint))return;payload.confirm_endpoint_change=true;}
-   const saved=await U.call('activation_save',payload);key.value='';info.endpoint=payload.endpoint;info.wire_mode='assistants';
-   if(testing)await test(saved.profile_id,saved.assistant_id);else result.replaceChildren(e('p','notice','已保存。聊天尚未實測，沒有呼叫模型。'));
-   document.dispatchEvent(new Event('qa-dialogue-catalog-refresh'));
-  }finally{busy=false;fields.forEach(input=>input.disabled=false);}
- }
- controls.append(button('只保存，不測試',()=>submit(false)),button('測試並開始使用',()=>submit(true),'button primary'));
- if(root.id==='modal-body')U.modalButtons(button('稍後設定',U.closeModal),...controls.children);
- async function test(profileId,assistantId){
-  result.replaceChildren(e('span','busy-spinner'),e('p','muted','正在測試兩輪對話，請稍候；不會自動重試。'));
-  try{const r=await U.call('activation_test',{profile_id:profileId,consent:true});result.replaceChildren(e('p',r.passed?'notice':'error',r.message||(r.passed?'聊天可用；Skill 格式與搜尋需另行驗證。':'測試未通過，設定已保留。')));
-   for(const check of r.checks||[])result.append(e('p','muted',typeof check==='string'?check:[check.name||check.code||check.stage||(check.round?'第 '+check.round+' 輪':''),check.status||'',check.message||'',check.incident?.id?'錯誤編號 '+check.incident.id:''].filter(Boolean).join(' · ')));
-   if(r.passed)result.append(button('開始聊天',()=>{U.closeModal();U.navigate('dialogue');document.dispatchEvent(new CustomEvent('qa-dialogue-activate',{detail:{assistant_id:r.assistant_id||assistantId}}));},'button primary'));
-  }catch(error){result.replaceChildren(e('p','error',error.message),e('p','muted','已保存的設定仍在；請依錯誤編號檢查。沒有切換示範或自動重送。'));}
- }
- for(const profile of info.chat_profiles||[]){const line=e('section','activation-profile');line.append(e('h3','',profile.name),e('p','muted','聊天：'+(profile.chat_status||'尚未測試')+' · Skill：'+((profile.skill_roles||[]).join('、')||'尚未測試')+' · 搜尋：'+(profile.search_approved?'已核准（來源仍須核對）':'未核准')));line.append(button('測試此助理兩輪對話',async()=>{if(busy)return;if(!yes.checked)throw Error('請先勾選同意兩輪合成測試。');busy=true;try{await test(profile.id,profile.assistant_id);}finally{busy=false;}}));root.append(line);}
- const workChecks=e('section','activation-profile');workChecks.append(e('h3','','交辦工作與搜尋 · 分開驗證'),e('p','muted','聊天通過即可聊天。只有按下測試並確認，才會傳送合成訊息；不會由設定頁自動啟用能力。'));root.append(workChecks);
- try{const catalog=await U.call('agent_catalog');for(const profile of catalog.assistants||[]){if(profile.demo)continue;const line=e('div','activation-work-check');line.append(e('h4','',profile.name),e('p','muted','工作格式：'+(profile.agent_ready?'已通過合成檢查':'未通過／尚未測試')+' · 自主處理：'+(profile.autonomous_ready?'已通過合成檢查':'未通過／尚未測試')+' · 搜尋：'+(profile.search_approved?(profile.search_tested?'已核准且已實測':'已核准，尚未實測'):'尚未核准')));line.append(button('測試工作格式（最多三次）',()=>document.dispatchEvent(new CustomEvent('qa-agent-probe',{detail:{profile_id:profile.id,search:false}}))),button('測試自主處理能力（最多三次）',()=>document.dispatchEvent(new CustomEvent('qa-agent-probe',{detail:{profile_id:profile.id,autonomous:true}}))));const search=button('另行測試核准搜尋',()=>document.dispatchEvent(new CustomEvent('qa-agent-probe',{detail:{profile_id:profile.id,search:true}})));search.disabled=!profile.search_approved;line.append(search);if(!profile.search_approved)line.append(e('p','muted','先於進階連線設定核對並核准搜尋工具。'));workChecks.append(line);}if(!(catalog.assistants||[]).some(p=>!p.demo))workChecks.append(e('p','muted','保存真實助理後，會在這裡列出可測試的助理。'));}catch(error){workChecks.append(e('p','error','工作能力狀態讀取失敗：'+error.message));}
+function button(label,fn,cls='button'){const b=e('button',cls,label);b.type='button';b.onclick=async()=>{if(b.disabled)return;b.disabled=true;try{await fn();}catch(error){U.notify(error.message,true);}finally{if(b.isConnected)b.disabled=false;}};return b;}
+function check(root,label,id){const row=e('label','check-field'),input=e('input');input.type='checkbox';if(id)input.id=id;row.append(input,document.createTextNode(label));root.append(row);return input;}
+async function profilePanel(root,pid){
+ const info=await U.call('activation_status'),p=info.chat_profiles.find(p=>p.id===pid);if(!p)return;
+ root.replaceChildren(e('h3','',p.name));const roles=p.skill_roles||[],ready=['planner','compose','assess','autonomous'].every(r=>roles.includes(r))&&p.routing_status==='passed';
+ const summary=e('p','capability-summary');const showCapabilities=q=>{const rs=q.skill_roles||[],ok=['planner','compose','assess','autonomous'].every(r=>rs.includes(r))&&q.routing_status==='passed';summary.textContent='聊天：'+(q.chat_status==='passed'?'可用':'待檢查')+' · 自動交辦：'+(ok?'可用':'待檢查')+' · 搜尋：'+(q.search_approved?(rs.includes('rag')?'已核准且測試通過':'已核准，待測試'):'尚未核准');};showCapabilities(p);root.append(summary);
+ const search=e('details','activation-search');search.append(e('summary','','① 搜尋設定（選用，請先完成再測試）'),e('p','muted','需要助理上網時，先讀取工具宣告並人工核准。這只讀設定，不呼叫模型。變更工具會撤銷原版本能力，需要重新測試。'));root.append(search);
+ const tools=e('div');search.append(button('讀取這位助理的工具宣告',async()=>{
+  const result=await U.call('company_probe',{profile_id:pid});tools.replaceChildren();const rows=[];
+  for(const t of result.search_candidates||[]){const c=check(tools,t.name+' · '+(t.description||'未提供說明'));rows.push([t.name,c]);const detail=e('details');detail.append(e('summary','','查看參數限制'),e('pre','plain-text',JSON.stringify(t.parameters||{},null,2)));tools.append(detail);}
+  if(!rows.length){tools.append(e('p','notice','沒有可核准的搜尋工具；仍可先測試聊天及文字工作。'));return;}
+  const consent=check(tools,'我已核對選取項目，只允許唯讀搜尋，不包含寫入或其他副作用。');
+  tools.append(button('保存選取的搜尋核准',async()=>{if(!consent.checked)throw Error('請先核對工具並明確同意。');await U.call('search_policy_save',{token:result.policy_token,names:rows.filter(([,c])=>c.checked).map(([n])=>n),consent:true,chat_enabled:false});await profilePanel(root,pid);document.dispatchEvent(new Event('qa-dialogue-catalog-refresh'));},'button primary'));
+ }),tools);
+ const test=e('section','activation-tests');test.append(e('h4','','② 一次完成基本檢查'),e('p','muted','最多八次非敏感合成模型請求：兩輪聊天與辨識、三次工作格式、三次自主決策。停用所有工具；可能產生 API 費用，失敗不自動重試。'));
+ const consent=check(test,'我同意發送上述合成測試。','activation-consent-'+pid),progress=e('div','activation-progress');progress.setAttribute('role','status');let timer=null;
+ function stages(r){progress.replaceChildren();for(const s of r.stages||[]){progress.append(e('p',s.passed?'notice':'error',({chat:'聊天與上下文',work:'工作格式',autonomous:'自主決策'})[s.stage]+' · '+(s.passed?'通過':'未通過')));if(s.stage==='chat')progress.append(e('p','muted','自動辨識格式：'+(s.routing_passed?'通過':'未通過；可保留一般聊天')));for(const c of s.checks||[])if(c.status==='failed')progress.append(e('p','error',c.message||c.code||'請檢查設定或服務回覆。'));}if(r.running)progress.append(e('p','muted','檢查中…請等待目前請求結束。'));if(r.cancelled)progress.append(e('p','notice','已要求停止後續檢查；遠端請求可能仍在結束中。'));}
+ const stop=button('停止後續檢查',()=>U.call('activation_cancel',{profile_id:pid}));stop.hidden=true;
+ test.append(button('測試並開始使用',async()=>{
+  if(!consent.checked)throw Error('請先同意合成測試。');const controls=[...root.querySelectorAll('button,input')];controls.forEach(n=>n.disabled=true);stop.disabled=false;stop.hidden=false;
+  progress.replaceChildren(e('p','muted','開始檢查，沒有啟用搜尋或排程。'));
+  timer=setInterval(()=>U.call('activation_progress',{profile_id:pid}).then(stages).catch(()=>{}),900);
+  try{const r=await U.call('activation_run',{profile_id:pid,consent:true});stages(r);document.dispatchEvent(new Event('qa-dialogue-catalog-refresh'));const current=r.capabilities?.chat_profiles.find(p=>p.id===pid);if(current)showCapabilities(current);if(current?.chat_status==='passed')progress.append(button('開始使用',()=>{U.closeModal();U.navigate('dialogue');document.dispatchEvent(new CustomEvent('qa-dialogue-activate',{detail:{assistant_id:current.assistant_id}}));},'button primary'));if(current?.search_approved)progress.append(button('接著測試核准搜尋',()=>searchTest(pid,progress),'button'));
+  }finally{clearInterval(timer);stop.hidden=true;controls.forEach(n=>{if(n.isConnected)n.disabled=false;});}
+ },'button primary'),stop,progress);root.append(test);
+ const separate=e('details');separate.append(e('summary','','分項重測與詳細能力'),e('p','muted','已驗證角色：'+(roles.join('、')||'無')));
+ separate.append(button('重測聊天與辨識（兩次）',async()=>{if(!consent.checked)throw Error('請先同意合成測試。');const r=await U.call('activation_route_test',{profile_id:pid,consent:true});stages({stages:[{stage:'chat',...r}]});document.dispatchEvent(new Event('qa-dialogue-catalog-refresh'));}),button('重測工作格式',()=>document.dispatchEvent(new CustomEvent('qa-agent-probe',{detail:{profile_id:pid}}))),button('重測自主決策',()=>document.dispatchEvent(new CustomEvent('qa-agent-probe',{detail:{profile_id:pid,autonomous:true}}))));root.append(separate);
+ const searchButton=button('③ 另行測試核准搜尋（一次請求）',()=>searchTest(pid,progress));searchButton.disabled=!p.search_approved;root.append(searchButton,e('p','muted','搜尋實測與來源品質分開；測試通過後，工作仍須由你確認才執行。'));
+ if(p.chat_status==='passed')root.append(button('使用這位助理',()=>{U.closeModal();U.navigate('dialogue');document.dispatchEvent(new CustomEvent('qa-dialogue-activate',{detail:{assistant_id:p.assistant_id}}));},'button primary'));
 }
-async function open(){const info=await U.call('activation_status'),body=U.modal('設定助理 · 三個欄位開始');await form(body,info);}
+async function searchTest(pid,result){const body=U.modal('單次搜尋測試');body.append(e('p','notice','將傳送一筆合成搜尋需求，只使用已核准工具，可能產生 API 費用。來源品質仍須人工核對。'));U.modalButtons(button('取消',U.closeModal),button('同意並測試一次',async()=>{const r=await U.call('agent_search_probe',{profile_id:pid,consent:true});body.replaceChildren(e('p',r.passed?'notice':'error',r.passed?'搜尋收據及格式通過，請另外核對來源品質。':'搜尋未通過，沒有自動重試。'));for(const c of r.checks||[])body.append(e('p','muted',c.message||c.status));U.modalButtons(button('關閉',U.closeModal));document.dispatchEvent(new Event('qa-dialogue-catalog-refresh'));},'button primary'));}
+async function form(root,info){
+ root.replaceChildren(e('h2','','啟用你的助理'),e('p','muted','填一次設定，在這裡完成檢查，之後直接從對話交辦工作。'));
+ if(!info.available){root.append(e('p','notice',info.message));return;}
+ const details=e('details');details.open=!info.chat_profiles.length;details.append(e('summary','','設定 endpoint、Assistant ID 與 API key'));root.append(details);
+ const endpoint=U.field(details,'Endpoint',info.endpoint||'','url'),id=U.field(details,'Assistant ID','','text'),key=U.field(details,'API key','','password');
+ for(const [input,name]of [[endpoint,'endpoint'],[id,'assistant-id'],[key,'api-key']]){input.id='activation-'+name;input.previousElementSibling.htmlFor=input.id;}key.autocomplete='new-password';
+ const show=check(details,'顯示金鑰');show.onchange=()=>key.type=show.checked?'text':'password';details.append(e('p','muted','金鑰存於 Windows 認證管理員；保存不呼叫模型。CA 預設系統信任。'));
+ const destination=check(details,'若變更既有端點／協定，我確認撤銷原憑證與能力；舊對話保留。');destination.parentElement.hidden=!info.endpoint;const saved=e('div');details.append(saved);
+ details.append(button('保存並繼續',async()=>{if(!endpoint.value.trim()||!id.value.trim()||!key.value.trim())throw Error('請填三個欄位。');const changed=!!info.endpoint&&info.endpoint!==endpoint.value.trim()||!['unconfigured','assistants'].includes(info.wire_mode);if(changed&&!destination.checked)throw Error('更換既有端點或協定前，請明確確認。');const r=await U.call('activation_save',{endpoint:endpoint.value.trim(),assistant_id:id.value.trim(),api_key:key.value,confirm_endpoint_change:changed&&destination.checked});key.value='';details.open=false;await form(root,await U.call('activation_status'));document.dispatchEvent(new Event('qa-dialogue-catalog-refresh'));},'button primary'));
+ for(const p of info.chat_profiles){const box=e('section','card activation-profile');root.append(box);await profilePanel(box,p.id);}
+}
+async function open(){const info=await U.call('activation_status'),body=U.modal('設定助理');await form(body,info);U.modalButtons(button('返回工作區',U.closeModal));}
 document.addEventListener('qa-activation-open',()=>open().catch(error=>U.notify(error.message,true)));
 document.addEventListener('qa-activation-settings',event=>U.call('activation_status').then(info=>form(event.detail,info)).catch(error=>event.detail.append(e('p','error',error.message))));
 window.addEventListener('pywebviewready',()=>setTimeout(async()=>{try{const info=await U.call('activation_status');if(info.needed&&!document.getElementById('modal').open)await open();}catch(error){U.notify(error.message,true);}},200));

@@ -1,16 +1,18 @@
 # 給接手 Agent：把 QA agent 接到現場服務
 
-將下方指令貼給 GPT 6 sol／SOL 6.1，並讓它讀取本檔。版本為 **1.0.0rc3 候選版**；不要把本機合成測試通過寫成真實服務已驗收。
+將下方指令貼給 GPT 6 sol／SOL 6.1，並讓它讀取本檔。版本為 **1.0.0rc4 候選版**；不要把本機合成測試通過寫成真實服務已驗收。
 
-本版驗證結果以[驗證紀錄](docs/VALIDATION.md)為準；既有Windows剪貼簿限制須分開判讀，不能靠重裝69個套件解決。版本仍為候選版。
+本版驗證結果以[驗證紀錄](docs/VALIDATION.md)為準；剪貼簿應依本次實際Windows結果判讀，不能靠重裝69個套件解決。版本仍為候選版。
 
-先讀[工作代理契約](docs/AGENT-WORK.md)。設定三欄後測聊天；明確啟動工作格式測試，再啟動獨立「自主處理能力」測試，最多三次停用工具合成請求，不能把舊planner／assess證據當新能力。搜尋另核准並測工具收據。先跑「純文字交辦 → Plan授權範圍 → 確認 → 成果」，再驗證「搜尋日期不符時改查詢 → 選入助理依序分工 → 核對來源 → 另行同意排程」。不要求四位助理。
+先讀[工作代理契約](docs/AGENT-WORK.md)。rc4日常直接在對話輸入，Skill選用；側欄只留對話／我的工作。設定三欄保存後，如需搜尋先核准工具，再一次明確啟動最多8次基本檢查（2聊天兼辨識、3工作格式、3自主決策），最後另做單次搜尋測試。各項結果分開，不假裝全部啟用；聊天成功但工作未過時仍可聊天，手動入口在更多工具。
+
+新契約位於`dialogue_routing.py`：嚴格欄位version/kind/text/goal/search；kind=chat/clarify/work。同一次回覆辨識，不額外分類；工作建議不是授權。`workspace_turns.py`以原thread/request固定識別連AgentJobs，已知工作不重建；原始wire與畫面文字分開，舊thread不改契約。若平台只回純文字，先保留聊天，對照去識別失敗樣本修mapping，不放寬JSON或手改證據。
 
 自主模式以達哥JSON建議驅動本機固定工具目錄；當前不需要自訂本機function calling。每輪的角色、目的助理、輸入來源與預算須由程式檢查；規劃與決策停工具。固定12請求／6動作／600秒，未知POST不重送。收據／checkpoint及原request ID是恢復依據，不能為測試方便改成新請求。新格式請依錯誤及合成測試修改最小範圍，不改整套UI／runner／資料庫。
 
 維持Python3.10.4與現有核心；完整Hermes仍有[移植缺口](docs/HERMES-COMPATIBILITY.md)，SMTP未實作。
 
-> 請先讀 AGENTS.md、TO-AGENT.md、docs/VALIDATION.md 及 COMPANY-HANDOFF.md，檢查目前分支和未提交修改。保留現場既有接線及設定，不重寫整套 UI 或 agent 引擎。先驗環境，再使用我提供的 endpoint、Assistant ID 和 API key 接通一位達哥助理，完成兩輪啟用、十輪續談及單助理 Skill／Plan／搜尋日報旅程。金鑰只從本機遮蔽設定取得，不要要求我貼進對話或文件。遇到問題先依錯誤編號定位，做最小修正，完成受影響測試。不要循環重裝套件、猜 API 格式、改用示範答案或重送結果未知的請求。實測前說明會呼叫哪個助理及可能耗用的請求；缺少資訊時集中提出具體問題。交付時分列已完成、未驗證、修改檔案和可重現結果。SMTP 為下一階段，依本檔規格實作前先取得必要資訊；本版沒有寄信命令，不要直接寄信。
+> 請先讀 AGENTS.md、TO-AGENT.md、docs/VALIDATION.md 及 COMPANY-HANDOFF.md，檢查目前分支和未提交修改。保留現場既有接線及設定，不重寫整套 UI 或 agent 引擎。先驗環境，再使用我提供的 endpoint、Assistant ID 和 API key 接通一位達哥助理，完成八次基本檢查、十輪續談及單助理 Skill／Plan／搜尋日報旅程。金鑰只從本機遮蔽設定取得，不要要求我貼進對話或文件。遇到問題先依錯誤編號定位，做最小修正，完成受影響測試。不要循環重裝套件、猜 API 格式、改用示範答案或重送結果未知的請求。實測前說明會呼叫哪個助理及可能耗用的請求；缺少資訊時集中提出具體問題。交付時分列已完成、未驗證、修改檔案和可重現結果。SMTP 為下一階段，依本檔規格實作前先取得必要資訊；本版沒有寄信命令，不要直接寄信。
 
 ## 先取得的資訊（不要把秘密填進本檔）
 
@@ -54,14 +56,14 @@ install-offline.bat "C:\approved\Python3104\python.exe"
 
 保持 App 開啟或留在系統匣才有排程。CLI 不啟動排程器，CLI 和桌面不能同時開同一資料目錄。日常工作不必設四位角色；多助理留作後續能力驗收。
 
-資料庫：主 Store schema8、DialogueStore schema4。既有對話庫1／2／3先 SQLite backup，再交易升級；勿直接降低版本或搬移組織舊資料庫。對話資料夾只改本機分類，不改遠端 thread／助理／記憶快照。
+資料庫：主 Store schema8、DialogueStore schema5。既有對話庫1／2／3／4先 SQLite backup，再交易升級；勿直接降低版本或搬移組織舊資料庫。對話資料夾只改本機分類，不改遠端 thread／助理／記憶快照。
 
 ## 3. 測試與問題回報
 
 修改連線或續談後先跑相關範圍：
 
 ```bat
-.venv\Scripts\python.exe scripts\test_runner.py --suite targeted --tests tests.test_continuity tests.test_dialogue_recovery tests.test_assistants_gateway
+.venv\Scripts\python.exe scripts\test_runner.py --suite targeted --tests tests.test_workspace_turns tests.test_continuity tests.test_dialogue_recovery tests.test_assistants_gateway
 ```
 
 先核對模組存在；其他修改依 `tests/suites.json` 選受影響案例。日常使用 quick；交付或核心整合只跑以下一次，不先 full 再重複 verify：
@@ -70,7 +72,7 @@ install-offline.bat "C:\approved\Python3104\python.exe"
 .venv\Scripts\python.exe scripts\verify.py development
 ```
 
-真實服務測試必須另外明確啟動。UI 兩輪與 Skill 檢查會耗用 API；`scripts/check-assistants.py` 預設零請求，`--help` 可查 `--live`、現有設定路徑及本機 profile ID 用法。十輪腳本通過仍須人工驗證對話內容與搜尋來源，不能只看 HTTP 成功。
+真實服務測試必須另外明確啟動。UI 基本檢查最多8次，搜尋另測，會耗用 API；`scripts/check-assistants.py` 預設零請求，`--help` 可查 `--live`、現有設定路徑及本機 profile ID 用法。十輪腳本通過仍須人工驗證對話內容與搜尋來源，不能只看 HTTP 成功。
 
 回報提供版本、操作順序、預期／實際結果、問題編號及 App 匯出的安全支援 ZIP。不要附 key、內網網址、原始 HTTP body、整個 SQLite 或未審查的終端紀錄。保存首次失敗證據，修正後再列結果；不把 skip、demo 或 metadata 成功當成驗收。
 

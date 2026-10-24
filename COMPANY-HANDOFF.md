@@ -1,10 +1,19 @@
+# rc4 現場最短驗收（下方舊路徑由本節取代）
+
+先依TO-AGENT保留現場修改、核對69wheels與環境；同仁填endpoint／ID／key後保存。需要搜尋先核准宣告（會提升revision），再一次8次基本測試，最後另測搜尋。不依metadata失敗判聊天壞掉，不手填能力證據。
+
+先驗「直接聊天十輪、切換兩對話、重開」；再驗「每天08:00財經新聞→原地補問→修改→一次確認→成果→核對後排程」。UI只有對話／我的工作；助理／記憶在設定，Skill在輸入框，舊功能在更多工具。修改入口workspace_turns.py、dialogue_routing.py、activation.py、web_assets/workspace-ui.js。錯誤先對原request／receipt，未知POST不重新生成工作。
+
+驗收需確認raw JSON歷史前綴、來源工作固定識別、能力不足仍可一般聊天、舊對話原契約及選用接續。不新建API server、不更換Python／核心／依賴、不宣稱完整Hermes。合成UI結果不能代替真實來源、AD及人工操作。
+
+
 ## 1.0 候選版部署與現場驗收
 
-本次 **1.0.0rc3** 新增依成果決定下一步的自主交辦，接手先看[工作代理](docs/AGENT-WORK.md)。一位助理完成工作格式測試後可做固定純文字工作；自主模式再明確完成最多三次自主決策測試，舊證據不自動升級；搜尋需另行核准工具及單次收據測試。現場第一件事建議以市場情報驗證補問、可修改Plan、自主調整搜尋、選入助理分工、來源及每日/每週排程，不要求四位角色。額外助理只選已驗證角色；未實測不得改證據或開放工具。
+本次 **1.0.0rc4** 新增依成果決定下一步的自主交辦，接手先看[工作代理](docs/AGENT-WORK.md)。一位助理完成工作格式測試後可做固定純文字工作；自主模式再明確完成最多三次自主決策測試，舊證據不自動升級；搜尋需另行核准工具及單次收據測試。現場第一件事建議以市場情報驗證補問、可修改Plan、自主調整搜尋、選入助理分工、來源及每日/每週排程，不要求四位角色。額外助理只選已驗證角色；未實測不得改證據或開放工具。
 
 直接貼給接手 Agent 的指令與 SMTP 後續工作見 [TO-AGENT.md](TO-AGENT.md)。SMTP 尚未實作，不能直接執行寄信。
 
-同仁直接填endpoint、Assistant ID與API key，CA預設系統信任，不要求另提供。可依[部署指南](docs/DEVELOPMENT.md)選用deployment.json預填端點，但不是啟用前提。不要改寫前端、關閉TLS、猜Assistant ID是model，或為測試通過自動啟用工具。當前主schema8、Dialogue schema4；升級前保留一致備份。
+同仁直接填endpoint、Assistant ID與API key，CA預設系統信任，不要求另提供。可依[部署指南](docs/DEVELOPMENT.md)選用deployment.json預填端點，但不是啟用前提。不要改寫前端、關閉TLS、猜Assistant ID是model，或為測試通過自動啟用工具。當前主schema8、Dialogue schema5；升級前保留一致備份。
 
 | 工作 | 修改/操作入口 | 完成條件 |
 |---|---|---|

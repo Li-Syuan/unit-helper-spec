@@ -294,7 +294,7 @@ class Profiles:
                 if context.get('operation')=='ordinary_chat':
                     context['search_authorized']=bool(purpose=='chat' and p.get('chat_search_enabled') is True
                         and p.get('search_policy',{}).get('tools'))
-                elif context.get('operation')=='task_draft' or purpose=='workflow_plan':
+                elif context.get('operation') in {'task_draft','dialogue_route','activation'} or purpose=='workflow_plan':
                     context['search_authorized']=False
             client=self._assistants_client(d,p,key,binding) if config is None else CompanyAssistant(config,api_key=key)
         except AuthenticationError:raise

@@ -3,6 +3,7 @@ import json
 import os
 import ssl
 import uuid
+import threading
 from pathlib import Path
 from urllib.parse import urlsplit
 from .assistant_errors import AssistantFailure
@@ -29,7 +30,7 @@ def deployment(path=None):
 
 class Activation:
     def __init__(self,session,*,load_defaults=True):
-        self.s=session;self.error=''
+        self.s=session;self.error='';self._lock=threading.RLock();self._runs={}
         if load_defaults:
             try:
                 d=deployment()
@@ -51,11 +52,14 @@ class Activation:
         rows=[]
         for row in p.items(True):
             if row['id']=='demo':continue
-            with self.s.dialogue.store.connect() as db:r=db.execute('SELECT * FROM activation_checks WHERE profile_id=?',(row['id'],)).fetchone()
+            with self.s.dialogue.store.connect() as db:
+                r=db.execute('SELECT * FROM activation_checks WHERE profile_id=?',(row['id'],)).fetchone()
+                route=db.execute('SELECT * FROM routing_checks WHERE profile_id=?',(row['id'],)).fetchone()
             proof=self.s.skills.proof(row['id'],row['revision'])
             rows.append({'id':row['id'],'name':row['name'],'revision':row['revision'],
                 'assistant_id':f"company:{row['id']}:{row['revision']}",
                 'chat_status':'passed' if r and r['revision']==row['revision'] and r['passed'] else 'not_tested',
+                'routing_status':'passed' if route and route['revision']==row['revision'] and route['contract']==1 and route['passed'] else 'not_tested',
                 'skill_roles':proof['roles'] if proof else [],'search_approved':bool(row.get('search_policy',{}).get('tools'))})
         return {'available':available,'configured':configured,'needed':available and not rows,'chat_profiles':rows,
             'endpoint':d.get('endpoint',''),'wire_mode':d.get('wire_mode','unconfigured'),
@@ -83,19 +87,33 @@ class Activation:
             b=s.profiles.snapshot(pid)
             return {'profile_id':pid,'assistant_id':f"company:{pid}:{b['revision']}",'saved':True}
 
-    def test(self,pid,consent):
+    def test(self,pid,consent,*,routing=False,cancelled=None):
         if consent is not True:raise ValueError('測試會傳送兩輪合成訊息，請先確認。')
         if not self.status()['configured']:raise ValueError(self.status()['message'])
         if pid=='demo':raise ValueError('示範模式不是真實啟用測試。')
         def perform(binding):
             marker='QA-'+uuid.uuid4().hex[:12];cid='activation:'+uuid.uuid4().hex
-            history=[];checks=[];passed=False
+            history=[];checks=[];passed=False;route_ok=routing
+            stopped=cancelled or (lambda:False)
             try:
-                for n,prompt in enumerate((f'這是合成連線測試。請記住測試代號 {marker}，只回答 OK。不要使用工具。','請只回覆上一輪的測試代號，不要使用工具。')):
+                prompts=(f'這是合成連線測試。請記住測試代號 {marker}，只回答 OK。不要使用工具。','請只回覆上一輪的測試代號，不要使用工具。')
+                if routing:
+                    from .dialogue_routing import PROMPT,parse
+                    history=[{'role':'user','content':PROMPT}]
+                    prompts=(f'合成測試，請記住代號 {marker}。這是普通聊天，text只填 OK。',
+                        '請幫我把上一輪測試代號整理成一份文字成果，不搜尋。這是工作建議測試，text只填上一輪代號，goal必須包含代號；不執行。')
+                for n,prompt in enumerate(prompts):
+                    if stopped():raise ValueError('cancelled')
                     s=self.s;s.assert_identity();history.append({'role':'user','content':prompt})
                     result=s.profiles.respond(history,'chat',binding,context={'conversation_id':cid,'request_id':cid+':'+str(n),
-                        'operation':'activation','search_authorized':False,'cancelled':lambda:s.engine._closed})
-                    if not isinstance(result,str) or not result.strip() or (n==1 and result.strip()!=marker):raise ValueError('context_assertion_failed')
+                        'operation':'activation','search_authorized':False,'cancelled':lambda:s.engine._closed or stopped()})
+                    shown=result
+                    if routing:
+                        try:
+                            obj=parse(result);shown=obj['text']
+                            route_ok=route_ok and obj['kind']==('chat' if n==0 else 'work') and not obj['search'] and (n==0 or marker in obj['goal'])
+                        except ValueError:route_ok=False
+                    if stopped() or not isinstance(shown,str) or not shown.strip() or (n==1 and shown.strip()!=marker):raise ValueError('context_assertion_failed')
                     history.append({'role':'assistant','content':result});checks.append({'round':n+1,'status':'passed'})
                 passed=True;message='聊天兩輪及上下文斷言通過；Skill 與搜尋需另外測試。'
             except Exception as exc:
@@ -108,6 +126,38 @@ class Activation:
                 checks.append({'round':len(checks)+1,'status':'failed','code':code,'incident':incident})
             self.s.assert_identity();self.s.profiles.validate(binding)
             if self.s.engine._closed:raise ValueError('工作區已關閉。')
-            with self.s.dialogue.store.connect() as db:db.execute('INSERT OR REPLACE INTO activation_checks VALUES(?,?,?,?)',(pid,binding['revision'],int(passed),stamp()))
-            return {'passed':passed,'checks':checks,'message':message,'assistant_id':f"company:{pid}:{binding['revision']}"}
+            with self.s.dialogue.store.connect() as db:
+                db.execute('INSERT OR REPLACE INTO activation_checks VALUES(?,?,?,?)',(pid,binding['revision'],int(passed),stamp()))
+                if routing:db.execute('INSERT OR REPLACE INTO routing_checks VALUES(?,?,1,?,?)',(pid,binding['revision'],int(passed and route_ok),stamp()))
+            return {'passed':passed,'routing_passed':bool(passed and route_ok),'checks':checks,'message':message,'assistant_id':f"company:{pid}:{binding['revision']}"}
         return self.s.skills._remote(pid,perform)
+
+    def progress(self,pid):
+        with self._lock:
+            r=self._runs.get(pid)
+            return {'running':bool(r and r['running']),'stages':list(r['stages']) if r else [],'cancelled':bool(r and r['cancel'].is_set())}
+
+    def cancel(self,pid):
+        with self._lock:
+            r=self._runs.get(pid)
+            if r:r['cancel'].set()
+        return self.progress(pid)
+
+    def run(self,pid,consent):
+        if consent is not True:raise ValueError('請明確同意最多八次合成請求。')
+        binding=self.s.profiles.snapshot(pid)
+        with self._lock:
+            if any(r['running'] for r in self._runs.values()):raise ValueError('啟用檢查仍在進行。')
+            record={'running':True,'stages':[],'cancel':threading.Event()};self._runs[pid]=record
+        try:
+            for name,operation in [('chat',lambda:self.test(pid,True,routing=True,cancelled=record['cancel'].is_set)),
+                    ('work',lambda:self.s.agents.probe(pid,True,cancelled=record['cancel'].is_set)),
+                    ('autonomous',lambda:self.s.agents.autonomy_probe(pid,True,cancelled=record['cancel'].is_set))]:
+                self.s.engine._ensure_open();self.s.profiles.validate(binding)
+                if record['cancel'].is_set():break
+                result=operation()
+                record['stages'].append({'stage':name,**result})
+                if not result['passed']:break
+            return dict(self.progress(pid),running=False,assistant_id=f"company:{pid}:{binding['revision']}",capabilities=self.status())
+        finally:
+            with self._lock:record['running']=False

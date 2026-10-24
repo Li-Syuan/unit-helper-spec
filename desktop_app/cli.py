@@ -11,7 +11,10 @@ from pathlib import Path
 
 
 HELP = """QA agent 工作台
-直接輸入文字：送給目前助理（預設本機示範）
+直接輸入文字：聊天或討論工作建議；執行仍需確認（預設本機示範）
+/activation-run <profileID>    同意後最多八次基本檢查；搜尋另測
+/use-skill <ID|none>           選擇後續工作的方法，不執行
+/work-choose <requestID> <chat|work> 回答模糊需求選項
 /jobs 或 /job-open <ID>       列出／選取一般交辦工作
 /job <profileID> <需求>       提出一般工作計畫，不搜尋或執行
 /job-create <JSON>            帶入 Skill、記憶及限制建立交辦
@@ -68,6 +71,9 @@ HELP = """QA agent 工作台
 /activation                   查看部署與分項能力狀態
 /activate <AssistantID>       互動輸入endpoint及遮蔽金鑰並保存（不呼叫模型）
 /activation-test <profileID>  確認後發送兩輪合成訊息
+/activation-run <profileID>   一次啟用：明確同意最多八次合成請求
+/use-skill <ID|none>          選擇下一件對話工作的 Skill
+/work-choose <requestID> <chat|work>  回答意圖選項，不批准執行
 /memories [聊天助理ID]         列出本機記憶
 /remember <JSON>              預覽確認保存 {data:{title,text,category,assistant_id},id?,revision?}
 /memory-manage <ID> <enable|disable|delete> 預覽後確認
@@ -101,6 +107,7 @@ class Workbench:
         self.workflow = None
         self.order = None
         self.skill_values = None
+        self.skill = None
         self.job = None
 
     def jobs(self):return self.call('agent_list')
@@ -133,13 +140,19 @@ class Workbench:
                              self.session.profiles.workflow_catalog() if 'planner' in r['workflow']['roles']]}
 
     def start(self, assistant_id='demo-general'):
-        result = self.call('dialogue_start', assistant_id=assistant_id, mode='chat')
+        available=self.call('workspace_catalog')
+        automatic=any(r['id']==assistant_id and r['automatic'] for r in available)
+        result = self.call('dialogue_start', assistant_id=assistant_id, mode='auto' if automatic else 'chat')
         self.thread = result
         return result
 
     def chat(self, text):
         if self.thread is None:self.start()
-        self.thread = self.call('dialogue_send', id=self.thread['id'], text=text, request_id=uuid.uuid4().hex)
+        current=self.call('workspace_state',id=self.thread['id'])
+        if current['composing_work']:
+            self.thread=self.call('workspace_reply',id=current['id'],job_id=current['work']['id'],revision=current['work']['revision'],text=text)
+        else:self.thread = self.call('workspace_send', id=self.thread['id'], text=text, request_id=uuid.uuid4().hex,skill_id=self.skill)
+        if self.thread.get('work'):self.job=self.thread['work']['id']
         return self.thread
 
     def plan(self, profile_id, text):
@@ -246,6 +259,17 @@ def execute_line(w, line, input_stream, output):
         key=getpass.getpass('API key（遮蔽）：')
         try:emit(w.call('activation_save',assistant_id=argument,api_key=key,endpoint=endpoint,confirm_endpoint_change=changed),output)
         finally:key=None
+    elif command=='/activation-run':
+        if confirm({'profile_id':argument,'requests':8},'傳送最多八次合成測試？搜尋另行核准及測試。',input_stream,output):emit(w.call('activation_run',profile_id=argument,consent=True),output)
+    elif command=='/use-skill':
+        if argument!='none':w.call('skill_get',id=argument)
+        w.skill=None if argument=='none' else argument;emit({'skill_id':w.skill,'dispatched':False},output)
+    elif command=='/work-choose':
+        request,choice=argument.split(maxsplit=1)
+        if not w.thread:raise ValueError('請先選擇對話。')
+        w.thread=w.call('workspace_choose',id=w.thread['id'],request_id=request,choice=choice)
+        if w.thread.get('work'):w.job=w.thread['work']['id']
+        emit(w.thread,output)
     elif command=='/activation-test':
         if confirm({'profile_id':argument,'requests':2},'傳送兩輪合成測試？',input_stream,output):emit(w.call('activation_test',profile_id=argument,consent=True),output)
     elif command=='/memories':emit(w.call('memory_list',assistant_id=argument or None),output)

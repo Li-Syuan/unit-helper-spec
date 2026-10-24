@@ -1,14 +1,25 @@
-# 1.0.0rc3：自主決策與共用工作核心
+# 1.0.0rc4：統一對話與兩入口工作區
+
+當前主Store8、DialogueStore5、Python3.10.4及69wheels。下方版本段落為既有模組的沿革；本節為目前主畫面與對話契約。
+
+`workspace_turns.py` 協調 DialogueService 與 AgentJobs，Web／CLI共用。新對話 mode=auto 的單次回覆以 `dialogue_routing.py` version1 取得文字與意圖建議；chat直接顯示、clarify請使用者選擇、work以固定來源識別建立待確認計畫。後續補充走原AgentJobs，不送回聊天thread；工作及成果僅顯示，不自動加入聊天歷史。工作確認後composer回一般聊天。
+
+schema5的dialogue_routes分開保存raw wire與顯示建議，workspace_views保存active_job／skill_id，routing_checks保存分項能力。舊1～4先backup再交易升級；舊chat/task不改協定。兩庫連結以來源thread/request的固定雜湊識別防重，不宣稱跨庫斷電原子性。讀取／重開只還原畫面；真future仍保護取消、刪除及關閉。
+
+`activation.run`依序最多8次，工具核准必須先做；2輪同thread聊天兼驗辨識、3次工作格式、3次自主格式，各項證據同助理revision，失敗／取消不自動重測。搜尋是另一次明確測試。metadata失敗不阻擋聊天驗證。畫面 `workspace-ui.js` 與 `activation.js` 不自行判定工作成功或批准；原WorkflowService／LangGraph仍執行所有工作。
+
+
+## 自主決策與共用工作核心
 
 新交辦預設自主處理：`autonomous.py` 提供固定的搜尋、文字分工、彙整與補問動作目錄，主助理每輪提出結構化建議，由服務驗證後執行。`graph_runner.py` 在原 LangGraph 中加入 decide／act 條件循環；WorkflowService 仍是唯一工作狀態及執行服務，不新增另一個 runner／排程器。舊 agent.version=1 與無 agent 的流程沿原固定圖執行。
 
-批准快照 agent.version=2 固定目標、要求、Skill／記憶、所選助理版本、搜尋工具及限額。主 Store schema8、DialogueStore4不變；動態決策與動作保存在既有 workflow_steps，定義、訊息與收據先保存，checkpoint只保存控制位置及指紋。每次派發前檢查身分／綁定並保留額度；預設6動作／12模型請求／600秒，工具結果續答也計數，恢復不重置。未知送出不retry；確定原run／快取才明確恢復。搜尋結果需工具收據；最終引用只能來自已取得搜尋文字，內容真實性仍需人核對。
+批准快照 agent.version=2 固定目標、要求、Skill／記憶、所選助理版本、搜尋工具及限額。主 Store schema8、DialogueStore5；動態決策與動作保存在既有 workflow_steps，定義、訊息與收據先保存，checkpoint只保存控制位置及指紋。每次派發前檢查身分／綁定並保留額度；預設6動作／12模型請求／600秒，工具結果續答也計數，恢復不重置。未知送出不retry；確定原run／快取才明確恢復。搜尋結果需工具收據；最終引用只能來自已取得搜尋文字，內容真實性仍需人核對。
 
 規劃與自主決策停用工具；`autonomous` 能力須另外最多3次合成格式斷言，舊planner／assess不能替代。分工只在所選已驗證文字角色依序執行，不是並行子代理。停止後明確新建可保存來源task識別，不自動轉交成果、記憶或批准。畫面／CLI共用服務；真實DVC、AD及來源品質仍須現場驗收。Python3.10.4與69wheels未變，完整Hermes尚未移植。詳見[工作代理](AGENT-WORK.md)。
 
 ## 三欄啟用、對話續談與記憶
 
-主Store維持schema8，DialogueStore目前schema4。`activation.py`提供endpoint/ID/key直接設定、選用部署預填與明確兩輪聊天斷言，CA預設系統信任；`continuity.py`提供記憶預覽/確認、對話草稿CAS/閱讀位置、固定快照與接續。WebView與CLI共用；Tk保留舊功能。記憶只在明確的新對話預覽或Skill選取後傳送，不背景挖掘或共享。
+主Store維持schema8，DialogueStore目前schema5。`activation.py`提供endpoint/ID/key直接設定、選用部署預填與明確兩輪聊天斷言，CA預設系統信任；`continuity.py`提供記憶預覽/確認、對話草稿CAS/閱讀位置、固定快照與接續。WebView與CLI共用；Tk保留舊功能。記憶只在明確的新對話預覽或Skill選取後傳送，不背景挖掘或共享。
 
 新資料在目前登入者既有資料目錄；對話來源可失效，不搬移舊進階歷史。記憶加入送出的固定歷史前綴，但顯示與原訊息分開；不在重試時換用最新記憶。摘要工具停用，未知摘要請求不重送，人工整理仍可建立新草稿。1.0正式版需現場驗收，候選版不代表DVC/AD已通過。
 
@@ -71,7 +82,7 @@ support.py白名單logs/events.jsonl輪替與ZIP匯出；嚴禁原始exception�
 
 正式依賴加入 LangGraph 1.2.12、SQLite checkpoint 3.1.1 及其間接依賴，不使用高階 LangChain agent 或 langchain-openai。試驗包保持獨立，正式 lock 由 App 的乾淨環境重新建立。
 
-WorkflowService 保留需求討論、純本機預覽、十分鐘確認、版本綁定與 task 狀態。graph_runner 將已驗證的最多六個順序步驟編譯為 StateGraph，沒有循環、平行、工具節點、自動 retry 或雲端 tracing。checkpoint 僅保存工作／步驟識別及定義指紋；業務成果仍以主 Store 為準。重開不自動呼叫，恢復前核對步驟收據與 checkpoint；任一不一致停止。
+WorkflowService 保留需求討論、純本機預覽、十分鐘確認、版本綁定與 task 狀態。graph_runner保留已驗證順序步驟，agent.version=2另使用decide／act有界循環；沒有平行派發、自動retry或雲端tracing。checkpoint 僅保存工作／步驟識別及定義指紋；業務成果仍以主 Store 為準。重開不自動呼叫，恢復前核對步驟收據與 checkpoint；任一不一致停止。
 
 AssistantsGateway 使用 Threads/Messages/Runs。Profiles.respond 增加可選 context；workflow_call 傳遞 run_id、step_id、取消檢查與明確 resume。assistant-sessions.sqlite3(schema1) 保存遠端 ID、請求收據、歷史雜湊及回覆快取，不存金鑰或 endpoint。訊息／run 建立前先保存結果可能不明的狀態；未知寫入不重送，已知 run 可明確查詢及恢復。獨立資料庫首次建立，主 Store 維持schema6；獨立dialogue目前schema2。
 

@@ -662,7 +662,8 @@ def main():
     agent_only='--agent-only' in sys.argv
     agent_followup_only='--agent-followup-only' in sys.argv
     autonomy_only='--autonomy-only' in sys.argv
-    report={'status':'failed','scope':'autonomy' if autonomy_only else 'agent-followup' if agent_followup_only else 'agent' if agent_only else 'v1' if v1_only else 'skills' if skills_only else 'full','checks':[]}
+    workspace_only='--workspace-only' in sys.argv
+    report={'status':'failed','scope':'workspace' if workspace_only else 'autonomy' if autonomy_only else 'agent-followup' if agent_followup_only else 'agent' if agent_only else 'v1' if v1_only else 'skills' if skills_only else 'full','checks':[]}
     with tempfile.TemporaryDirectory() as tmp:
         from desktop_app import about
         publisher_root=about.ROOT;about.ROOT=Path(tmp)
@@ -696,6 +697,16 @@ def main():
                         window.native.Invoke(Action(start))
                         if not pending[0].Wait(10000):raise AssertionError('capture_timeout')
                     finally:stream.Dispose()
+                if workspace_only:
+                    from workspace_smoke import journey
+                    def wait_workspace(script):
+                        for _ in range(220):
+                            if window.evaluate_js(script):return
+                            time.sleep(.1)
+                        raise AssertionError('workspace_wait_timeout: '+script)
+                    journey(session,api,window,capture,wait_workspace,report)
+                    report['status']='passed'
+                    return
                 if agent_only or agent_followup_only or autonomy_only:
                     def wait_agent(script):
                         for _ in range(220):
@@ -1383,7 +1394,7 @@ def main():
                 try:capture('failure.png')
                 except Exception:pass
             finally:
-                (destination/('result-autonomy.json' if autonomy_only else 'result-agent-followup.json' if agent_followup_only else 'result-agent.json' if agent_only else 'result-v1.json' if v1_only else 'result-skills.json' if skills_only else 'result.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+                (destination/('result-workspace.json' if workspace_only else 'result-autonomy.json' if autonomy_only else 'result-agent-followup.json' if agent_followup_only else 'result-agent.json' if agent_only else 'result-v1.json' if v1_only else 'result-skills.json' if skills_only else 'result.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
                 window.destroy()
         try:webview.start(inspect,gui='edgechromium',debug=False,private_mode=True)
         finally:
