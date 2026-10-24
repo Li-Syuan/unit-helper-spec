@@ -14,6 +14,26 @@
 
 > 請先讀 AGENTS.md、TO-AGENT.md、docs/VALIDATION.md 及 COMPANY-HANDOFF.md，檢查目前分支和未提交修改。保留現場既有接線及設定，不重寫整套 UI 或 agent 引擎。先驗環境，再使用我提供的 endpoint、Assistant ID 和 API key 接通一位達哥助理，完成八次基本檢查、十輪續談及單助理 Skill／Plan／搜尋日報旅程。金鑰只從本機遮蔽設定取得，不要要求我貼進對話或文件。遇到問題先依錯誤編號定位，做最小修正，完成受影響測試。不要循環重裝套件、猜 API 格式、改用示範答案或重送結果未知的請求。實測前說明會呼叫哪個助理及可能耗用的請求；缺少資訊時集中提出具體問題。交付時分列已完成、未驗證、修改檔案和可重現結果。SMTP 為下一階段，依本檔規格實作前先取得必要資訊；本版沒有寄信命令，不要直接寄信。
 
+## 在 VS Code Copilot 接手
+
+以VS Code開啟專案根目錄，使用公司允許的Copilot帳號、模型與工具。這些檔案是開發指引，不會替App增加Hermes能力，也不保證模型一定完成；請核對實際修改與證據。
+
+- [共用指引](.github/copilot-instructions.md) 保存當前規則，四個既有 [開發角色](.github/agents/coordinator.agent.md) 各自只保留職責，避免重複長指示。日常選 `UnitHelper-Coordinator`；不指定模型，沿用你在Copilot選的模型。Backend／Desktop供已授權的分工，QA唯讀審查。
+- 支援prompt files的VS Code Chat可手動使用下表。依目前官方說明，prompt files限Local harness；若版本／管理政策／session不支援，直接附上對應Markdown，要求照內容操作即可，不要修改公司政策或擴大工具權限。
+- 先確認Copilot已載入專案指引；可從Chat的Customizations／使用的參考內容檢查。沒有顯示角色時，使用一般Agent模式並明確附上本檔和共用指引。工具名稱與子代理支援依session而異；角色檔沿用Local內建工具別名，若所選Copilot執行環境未提供必要工具，改用已有工具的一般Agent依序處理，不假稱分工已執行。
+
+| 手動入口 | 用途 |
+|---|---|
+| [/qa-takeover](.github/prompts/qa-takeover.prompt.md) | 先查環境，再依序接通單助理；不自動呼叫真實API |
+| [/qa-diagnose](.github/prompts/qa-diagnose.prompt.md) | 帶錯誤編號與去識別步驟，定位並做最小修正 |
+| [/qa-hermes-plan](.github/prompts/qa-hermes-plan.prompt.md) | 只規劃一項Hermes類功能，列修改入口、必要資訊及驗收；不安裝／執行 |
+
+第一次可直接貼：「請依 TO-AGENT.md 與 qa-takeover.prompt.md 接手。先完成離線環境盤點，不重建已正常的環境；接著讓我在App設定助理，真實呼叫前說明測試範圍。一次跑通聊天→Plan→搜尋成果，再處理排程。」
+
+GitHub Code ZIP也含 `.github`；它不要求GitHub Actions或再部署API server。未實測公司VS Code版本／政策的自動載入；上述手動附檔方式是備用入口。
+
+格式依2026-10-25官方文件核對：[共用指引](https://code.visualstudio.com/docs/agent-customization/custom-instructions)、[自訂角色](https://code.visualstudio.com/docs/agent-customization/custom-agents)、[prompt files](https://code.visualstudio.com/docs/agent-customization/prompt-files)。
+
 ## 先取得的資訊（不要把秘密填進本檔）
 
 - **聊天**：正式 HTTPS endpoint、一位有效 Assistant ID、該使用者的 API key。API key 在 App 遮蔽輸入並存 Windows 認證管理員。
@@ -24,7 +44,7 @@
 
 ## 1. 環境只處理一次
 
-保留現場修改及資料。Code ZIP 需完整解壓；正式 69 個 wheels 由 `offline-app/bundle-manifest.json` 固定來源與 SHA256，部分重用 lab 目錄。不要單獨複製 lab lock，也不要從網路補件。
+保留現場修改及資料。Code ZIP 需完整解壓；正式69個wheels全部在 `offline-app/packages`，由 `offline-app/bundle-manifest.json` 固定來源與SHA256。不要使用舊lab lock或從網路補件。
 
 已有 `.venv` 先診斷；符合 lock 就不重裝：
 

@@ -31,7 +31,7 @@ start-app.bat
 
 ## 接手與驗證
 
-- 給開發 Agent：[TO-AGENT.md](TO-AGENT.md)，環境與現場工作：[COMPANY-HANDOFF.md](COMPANY-HANDOFF.md)。
+- 給開發 Agent：[TO-AGENT.md](TO-AGENT.md)，環境與現場工作：[COMPANY-HANDOFF.md](COMPANY-HANDOFF.md)。VS Code Copilot的角色、三個手動prompt與不支援時的附檔方式見[接手入口](TO-AGENT.md#在-vs-code-copilot-接手)。
 - 使用者：[使用手冊](docs/USER-GUIDE.md)、[資料使用](docs/DATA-USAGE.md)、[工作代理](docs/AGENT-WORK.md)、[CLI](docs/WORKBENCH.md)。
 - 開發者：[AGENTS](AGENTS.md)、[架構](docs/PROJECT.md)、[目前驗證結果](docs/VALIDATION.md)。
 - `test-company.bat` 做隔離的本機完整檢查與WebView合成旅程；日常改動用 `scripts/test.ps1` quick 或 targeted，不重複跑full。

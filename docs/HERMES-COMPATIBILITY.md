@@ -45,3 +45,20 @@ rc3自主模式已採文字JSON建議＋App驗證派發核准搜尋／助理操�
 先完成現場聊天／工作格式／核准搜尋及一次完整工作；再依序補通用工具回圈、並行代理、Skills／記憶學習、常駐排程與投遞，最後外掛／多媒體／研究入口。這是執行順序，不是刪除完整功能需求。
 
 每一群都需列出實際操作入口、可重現案例、缺少外部服務時的狀態、資料及批准界線；完整功能聲明須附固定上游版本的逐工具對照，而非只比八個類別名稱。此矩陣目前仍有未移植功能，因此 **1.0.0rc3 是 QA agent 工作代理候選版，不是完整 Hermes，也不是正式 1.0 驗收完成**。
+
+## 接手開發者的程式入口
+
+目前版本為 **1.0.0rc4**。上方rc3是自主回圈落地階段；目前側欄／統一輸入框依rc4。下表供Copilot定位現有程式，不表示已完成上游同名功能或現場驗收。測試命令依 [TO-AGENT](../TO-AGENT.md#3-測試與問題回報) 選targeted，勿將所有模組每次都跑一遍。
+
+| 工作面向 | 目前共用入口 | 相關現有測試 |
+|---|---|---|
+| 達哥服務與工具往返 | [assistants_gateway](../desktop_app/assistants_gateway.py)、[search_tools](../desktop_app/search_tools.py) | `tests.test_assistants_gateway`、`tests.test_search_tools` |
+| 對話／工作辨識與連結 | [workspace_turns](../desktop_app/workspace_turns.py)、[agent_jobs](../desktop_app/agent_jobs.py) | `tests.test_workspace_turns`、`tests.test_agent_jobs` |
+| 自主決策／有限工具／恢復 | [autonomous](../desktop_app/autonomous.py)、[graph_runner](../desktop_app/graph_runner.py)、[workflows](../desktop_app/workflows.py) | `tests.test_autonomous`、`tests.test_graph_runner`、`tests.test_workflows` |
+| Skill、記憶與接續 | [skills](../desktop_app/skills.py)、[continuity](../desktop_app/continuity.py) | `tests.test_skills`、`tests.test_continuity`、`tests.test_dialogue_recovery` |
+| CLI／畫面共用 | [cli](../desktop_app/cli.py)、[workspace-ui](../desktop_app/web_assets/workspace-ui.js) | `tests.test_cli`；受影響UI用既有 `scripts/web-smoke.py` 旅程 |
+| SMTP（待開發） | [既有提案](../TO-AGENT.md#4-下一階段核准-smtp-自動寄信尚未實作)；日後接現有成果與排程服務 | 尚無正式郵件adapter／CLI；需補傳送未知、部分拒收與重複派發案例 |
+
+每次擴充先選一項旅程，列現有能力、缺口、修改入口、正反驗收及現場資訊；使用者批准範圍後再實作。無需為了Copilot閱讀而把Hermes整庫複製進來；上游文件連結與此對照已能提供方向。
+
+若確實移植上游程式，先固定提交與檔案、核對Python3.10.4和Windows相容性、間接依賴／離線wheels及MIT授權，保留來源及授權文字。沿現有服務及批准／收據／取消規則整合，不建立第二套狀態資料庫、scheduler或隱藏工具權限。裝好套件、複製程式或修改prompt都不能替代功能驗收；並行代理、MCP、shell／檔案等仍按上表缺口處理。

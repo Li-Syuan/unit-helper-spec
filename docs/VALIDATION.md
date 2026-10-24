@@ -10,6 +10,12 @@
 
 受影響的離線來源／安裝器／手冊／素材 **29項全部通過**（測試8.683秒、含入口10.27秒）；啟動預檢確認Python3.10.4、Tk、OpenAI SDK、LangGraph與WebView可用；69wheels完整性及本機文件引用通過。未新增環境、未重新安裝、未重跑full或付費API。下方646項full是rc4開發的既有證據，沒有冒充本次重跑。
 
+## 2026-10-25 Copilot接手指引
+
+精簡既有四個開發角色的重複規則，新增三個手動prompt（接手／排錯／單項Hermes規劃），補現行程式與測試對照，修正已移除lab的來源文案。四個角色與三個prompt的YAML解析、名稱／角色引用、唯讀QA工具限制、本機連結／章節及測試模組路徑檢查通過；依官方VS Code格式核對，沒有新增套件或改App程式。
+
+本輪純文件，未跑App回歸或模型請求。公司VS Code／Copilot版本、政策、角色與prompt實際載入仍為not_tested；TO-AGENT提供不支援時的手動附檔方式，不能以靜態格式檢查宣稱現場可用。原始本機檢查摘要為artifacts/copilot-handoff-check.json。
+
 ## 實際結果
 
 | 範圍 | 結果與界線 |

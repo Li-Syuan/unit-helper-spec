@@ -2,6 +2,8 @@
 
 當前 **1.0.0rc4候選版**。要直接交給SOL／Copilot的指令見[TO-AGENT](TO-AGENT.md)；此檔集中列出現場所需資訊與完成條件，不重複歷代交接。現場已有成功接線須保留，再做最小修改。
 
+VS Code Copilot先依[接手入口](TO-AGENT.md#在-vs-code-copilot-接手)選Coordinator或附上接手prompt；先離線診斷，再取得明確授權做現場驗收，不需匯入Hermes核心。
+
 ## 最短操作路徑
 
 1. 完整clone或解壓Code ZIP。核准Python3.10.4 x64完整版、WebView2與.NET準備好後，首次用`install-offline.bat`建立環境；已有符合lock的環境不重建。69個wheels全在`offline-app/packages`。

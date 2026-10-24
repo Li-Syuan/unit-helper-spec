@@ -1,19 +1,15 @@
 ---
 name: UnitHelper-Backend
-description: 沿用現有 Protocol，接組織 chatbot、AD／owner 授權與核准查詢 adapters。
+description: 修復達哥接線、續談、代理執行及資料契約；保留既有共用服務。
 tools: ['read', 'search', 'edit', 'execute']
 user-invocable: false
 disable-model-invocation: false
 ---
 
-目前版本1.0.0rc4候選版。先讀../../AGENTS.md、../../TO-AGENT.md、../../docs/PROJECT.md及../../docs/VALIDATION.md。保留現場既有接線、資料與設定，再做最小修正；不把合成通過當DVC／AD／來源品質驗收。
+讀 [共用指引](../copilot-instructions.md)、[AGENTS](../../AGENTS.md) 與 [接手工作單](../../TO-AGENT.md)。只修改分配的服務範圍，不再委派。
 
-Python恰好3.10.4、主Store8、DialogueStore5、69個鎖定wheels。升級先backup再交易，不降低schema、不循環重裝套件、不新增依賴。WebView主介面、Tk備用。工作仍由WorkflowService／LangGraph執行，沒有第二套狀態或排程器。
-
-日常對話／我的工作兩入口；Skill在composer，助理／記憶／外觀在設定，舊入口在更多工具。workspace_turns.py共用CLI/Web的版本化建議與固定來源工作連結；raw wire與顯示文字分存。舊chat/task沿原thread。辨識與規劃停工具，JSON不是批准；只有明確確認才執行，持續排程另行核對同意。未知POST不重送，真future守護取消、刪除與close，金鑰只keyring，TLS不關閉，失敗無demo fallback。
-
-啟用先保存三欄，再核准選用搜尋工具，最後最多8次基本檢查；搜尋另一次。每項同修訂實測證據，不手填verified。聊天可用與工作可用分開；metadata失敗不是聊天失敗。
-
-功能修改targeted＋quick，核心／發布由整合者一次verify full。UI改動跑web-smoke.py --workspace-only。新增案例保護具體行為，class必須分類，不以數量為目標。保留失敗證據，未測列not_tested；不改防毒或系統執行政策。
-
-維護workspace_turns、dialogue_routing、activation、DialogueStore及可信adapters。原始reply與顯示分開；建議先持久保存，固定來源ID防重，跨庫中斷只修連結不派發。AD／搜尋接線依真實契約，不猜憑證或工具能力。
+- 依證據定位 `desktop_app/assistants_gateway.py`／`profiles.py`、`dialogue_service.py`／`continuity.py` 或 `workspace_turns.py`／`agent_jobs.py`，不要重寫UI或所有adapter。
+- 達哥契約與JSON驗證分層；保留原始reply與畫面文字、固定request ID、助理revision及原thread。未知送出不retry；連結中斷只修連結，不重派發。
+- 沿 `workflows.py`／`graph_runner.py`／`autonomous.py` 擴充；規劃無工具、批准及額度由服務層強制，checkpoint不能當exactly-once保證。
+- 身分、核准搜尋、能力證據與遷移依最新AGENTS；沒有真實資訊就提供接線缺口，不猜AD／Oracle／認證格式。
+- 選受影響模組做targeted，回報命令／結果及需要整合者驗證的範圍。不要自行跑另一份full、修改鎖檔或呼叫真實模型。
