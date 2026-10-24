@@ -8,7 +8,7 @@
 - [插件對話：2720034](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2720034)：插件用途、選擇、安裝、上架和自動選擇說明。
 - [DSE：2719790](https://dvcaiplatform.atlassian.net/wiki/spaces/DW/pages/2719790)：知識庫與臨時文件差異、命名、描述、文件限制、安裝與更新。
 - [官方資源入口](https://dvcbot.net/docs)：對話、助理、插件、文件及知識庫的產品區分。
-- 本機對照：`AGENTS.md`、`README.md`、`COMPANY-HANDOFF.md`、`docs/ASSISTANT-INTEGRATION.md`、`docs/COMPANY-IMPLEMENTATION.md`、`docs/ADAPTER-TEST-KIT.md`、`docs/DEVELOPMENT.md`、`docs/PROJECT.md`、`docs/VALIDATION.md`。
+- 本機對照：`AGENTS.md`、`README.md`、`COMPANY-HANDOFF.md`、`docs/ASSISTANT-INTEGRATION.md`、`TO-AGENT.md`、`docs/ADAPTER-TEST-KIT.md`、`docs/DEVELOPMENT.md`、`docs/PROJECT.md`、`docs/VALIDATION.md`。
 
 舊站 Task Management 223084553 的完整內容目前無法重新取得（匿名 REST 404，新站同名查詢無結果）；不宣稱本輪已讀完該頁，也不依它接遠端任務或推論循環排程。這不阻塞本次本機待辦；目前相關 API／插件／DSE 已讀完。
 

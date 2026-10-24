@@ -1,6 +1,6 @@
 ## GitHub Code ZIP 離線入口（2026-10-01）
 
-公司允許 GitHub Code → Download ZIP 時，下載目前 main 並解壓**整個資料夾**到新位置；不需要 Release。根目錄 `install-offline.bat` 會驗證並共用 lab 的 48 個 wheels、加入 `offline-app/packages` 的 21 個，依 App 自己的 69 套件 lock 安裝；不使用 lab lock。不連網補件、不覆蓋既有 `.venv`，既有 wheelhouse 若失效仍停止。最短步驟及前置條件見 [Code ZIP 說明](../offline-app/README.md)。
+公司允許 GitHub Code → Download ZIP 時，下載目前 main 並解壓**整個資料夾**到新位置；不需要 Release。根目錄 `install-offline.bat` 會驗證 `offline-app/packages` 的全部69個 wheels，依根目錄 `requirements.lock` 安裝。不連網補件、不覆蓋既有 `.venv`，既有 wheelhouse 若失效仍停止。最短步驟及前置條件見 [Code ZIP 說明](../offline-app/README.md)。
 
 ## 離線登入展示
 
@@ -42,4 +42,4 @@ AD／Oracle／舊資料與多 ID 隔離仍由公司填可信 hook、核准能力
 
 「我的下一步」由人記錄具體行動、阻塞及完成紀錄，支援今天／逾期、未完成、全部及已完成篩選；台北日期、到期排序、標題及說明搜尋。待辦狀態不標記 AI 工作成功。來源刪除時保留副本，明示失效。Tk 備用維持原看板，工作成果可從活動紀錄開啟。
 
-[新版待辦實際畫面（合成資料）](images/todo-inbox-dark.png)。
+目前待辦入口為「我的工作 → 待辦」；新版介面見[使用手冊](USER-GUIDE.md)。

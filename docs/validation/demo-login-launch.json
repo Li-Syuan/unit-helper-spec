@@ -1,9 +1,0 @@
-{
-  "status": "passed",
-  "company_real": "not_tested",
-  "checks": [
-    "actual_native_demo_login_before_workspace",
-    "actual_logout_with_unsent_draft_requested",
-    "native_webview_closed_and_temporary_workspace_removed"
-  ]
-}

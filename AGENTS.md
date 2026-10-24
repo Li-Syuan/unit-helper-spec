@@ -1,3 +1,7 @@
+# 2026-10-25 目錄精簡（優先於下方歷史路徑）
+
+正式69wheels全部在offline-app/packages；bundle-manifest.json仍逐檔固定SHA256與原lock。已刪獨立lab、過期驗證材料及重複Copilot／0.20接手文件；唯一接手提示為TO-AGENT.md，工作單為COMPANY-HANDOFF.md。保留全部產品功能、測試、授權文字、正式素材與公司接線範本；不以清理刪除未完成需求。既有.venv與.runtime/python3104相依，必須同時保留；私人.env／設定／資料不屬於可清快取。最新與失敗原始證據留artifacts，舊原始碼與文件由Git查閱，不另複製歷史包。
+
 # 1.0.0rc4 精簡工作區（優先於下方歷史規則）
 
 WebView 日常只保留「對話／我的工作」。Skill 在輸入框選單，記憶／助理／外觀在設定，舊工具在更多工具。workspace_turns.py 共用 Web／CLI 的聊天建議、固定來源工作連結及補充；AgentJobs→WorkflowService→LangGraph 仍是唯一執行服務。
@@ -60,7 +64,7 @@ qa.bat／desktop_app.cli不執行shell或任意bridge命令。與桌面互斥、
 
 # 2026-10-01 Code ZIP 離線來源（使用者明確授權）
 
-公司可取 Code Download ZIP、不能取 Release。允許正式App缺少的21個wheels進Git的offline-app/packages；48個相同wheels重用experiments/langgraph-lab/packages，來源與SHA256由offline-app/bundle-manifest.json固定。禁止LFS指標、連外補件、覆寫既有環境或對損壞wheelhouse回退；69套件lock不變。此明確授權優先於下方「正式wheels不進Git」舊規則。舊Release、AD與其他功能不更動。
+公司可取Code Download ZIP。正式69個wheels集中於offline-app/packages，來源與SHA256由offline-app/bundle-manifest.json固定。禁止LFS指標、連外補件、覆寫既有環境或對損壞wheelhouse回退；69套件lock不變。此明確授權優先於下方「正式wheels不進Git」舊規則。舊Release、AD與其他功能不更動。
 
 # 0.20.0 官方契約修正（優先於下方舊版限制）
 
@@ -125,7 +129,7 @@ graph_runner.py 接管已批准順序步驟；WorkflowService 保持唯一業務
 
 # 0.15.0 新增規則（優先於下方舊版介面限制）
 
-`experiments/langgraph-lab` 是使用者明確要求隨 GitHub 提供 wheels 的獨立試驗包，例外僅限該目錄的 `packages/*.whl`。不得把其 lock 合併到 App、把 LangGraph 範例當正式多助理整合，或啟用組織任務。試裝使用自身暫時 .venv，完成驗證後清除；原 App requirements 與常駐 .venv 保持不變。環境試跑見該目錄 README。
+獨立LangGraph試驗已完成並由正式整合取代；試驗程式及四個僅lab套件於2026-10-25清理，歷史保留在Git。正式69wheels集中offline-app/packages；不可套用舊lab lock。
 
 使用者已允許pywebview>=6,<7、markdown-it-py>=4,<5、bleach>=6,<7、python-dotenv>=1,<2。WebView2為主介面、Tkinter保留--ui tk備用。宿主／bridge／session／render與web_assets分層，不從模型載入HTML或外部URL，禁止任意bridge方法、檔案路径或eval命令。
 

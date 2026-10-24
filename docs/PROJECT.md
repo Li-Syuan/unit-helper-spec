@@ -96,7 +96,6 @@ ProfileDialogueProvider 讓主畫面明確選擇示範／組織；一般聊天�
 
 # WebView 介面與兩模式對話
 
-可選的 `experiments/langgraph-lab` 提供真正 LangChain／LangGraph 套件與合成節點試驗，使用獨立環境及 checkpoint 資料，不被 App import、不修改上述正式對話／排程。其離線包與驗證說明見 [試驗入口](../experiments/langgraph-lab/README.md)。
 
 主入口是 pywebview + WebView2，HTML/CSS/JS 全部隨專案提供，無 CDN／遠端字型／遠端頁面。`web_app.py` 管宿主，`web_bridge.py` 僅允許列舉命令，`web_session.py` 組合既有 Engine／Profiles／Store。`web_render.py` 使用 markdown-it-py 與 bleach，回覆移除腳本、屬性、圖片及連結，不執行模型 HTML。Tkinter 保留 `--ui tk`／start-tk.bat。
 

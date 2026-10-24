@@ -16,7 +16,7 @@
 
 ## 安裝與啟動
 
-GitHub **Code → Download ZIP** 含完整69個鎖定wheels（48個共用lab來源、21個App補件）。請解壓整個專案；Python3.10.4完整版（含Tk）、WebView2與.NET由部署者提供，不含在wheel包內。
+GitHub **Code → Download ZIP** 含完整69個鎖定wheels，統一放在 `offline-app/packages`。請解壓整個專案；Python3.10.4完整版（含Tk）、WebView2與.NET由部署者提供，不含在wheel包內。
 
 ```bat
 install-offline.bat "C:\approved\Python3104\python.exe"
@@ -37,3 +37,17 @@ start-app.bat
 - `test-company.bat` 做隔離的本機完整檢查與WebView合成旅程；日常改動用 `scripts/test.ps1` quick 或 targeted，不重複跑full。
 
 這是受限自主工作候選版，**尚未完成正式1.0或全部Hermes功能**。實際達哥契約／搜尋來源品質、AD、人工使用性需要現場驗收。SMTP、任意shell／檔案工具、MCP與並行子代理未實作；詳見[Hermes相容性清單](docs/HERMES-COMPATIBILITY.md)。不隨Git提供金鑰、內部設定、Python環境或個人資料。
+
+## 資料夾怎麼看
+
+| 位置 | 用途 |
+|---|---|
+| `desktop_app/` | 現行介面、服務、正式圖示與程式 |
+| `offline-app/packages/` | 唯一正式來源：69個離線wheels |
+| `scripts/` | 環境、啟動、診斷、測試與打包工具 |
+| `tests/`、`test_support/` | 現有行為驗證與合成資料，不需要交給使用者操作 |
+| `docs/`、`company_templates/` | 使用手冊、契約、授權文字與接線範本 |
+| `.venv/`、`.runtime/python3104/` | 此開發機的執行環境與基礎Python，不進Git；兩者相依，勿單獨刪除 |
+| `artifacts/` | 本機驗證及失敗證據，不進Git；無需隨公司Code ZIP分發 |
+
+舊離線包、獨立lab與重複交接已清理；舊原始碼由Git提交`301c3f8`查閱，不另保留archive副本。給接手Agent的提示統一使用`TO-AGENT.md`。

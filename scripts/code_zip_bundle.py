@@ -1,4 +1,4 @@
-"""Reuse tracked lab wheels and verified App additions without any network access."""
+"""Materialize the single verified App wheel source without network access."""
 from contextlib import contextmanager
 import json
 import os
@@ -27,8 +27,7 @@ def materialize(project, destination):
                 raise BundleError('code_zip_source_invalid')
             relative=PurePosixPath(location)
             if ('\\' in location or relative.is_absolute() or '..' in relative.parts
-                    or relative.name != name or relative.parent.as_posix() not in
-                    ('experiments/langgraph-lab/packages','offline-app/packages')):
+                    or relative.name != name or relative.parent.as_posix() != 'offline-app/packages'):
                 raise BundleError('code_zip_source_invalid')
             source=project.joinpath(*relative.parts)
             if (not source.is_file() or any(project.joinpath(*relative.parts[:i]).is_symlink()
@@ -57,7 +56,7 @@ def installation_bundle(project, requested):
     if requested == project/'wheelhouse' and not os.path.lexists(requested):
         with tempfile.TemporaryDirectory(prefix='qa-code-wheels-') as temporary:
             materialize(project,temporary)
-            print('Verified Code ZIP wheels: reuse lab sources + App additions; no downloads.',flush=True)
+            print('Verified Code ZIP wheels: offline-app/packages; no downloads.',flush=True)
             yield Path(temporary)
     else:
         yield requested

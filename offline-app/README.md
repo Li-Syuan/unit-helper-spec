@@ -1,29 +1,27 @@
 # Code ZIP：完整 App 離線安裝
 
-GitHub **Code → Download ZIP** 下載目前 main，解壓整個資料夾到新位置。不要只下載 experiment 或移動 wheels；不要覆蓋公司既有專案與 `.venv`。此入口不依賴 Release 或 Git LFS。
+下載 GitHub **Code → Download ZIP** 並完整解壓，或 clone 專案。本目錄的 `packages/` 包含正式App全部 **69個鎖定wheels**，不依賴另一個試驗資料夾、Release或Git LFS。
 
-公司先提供核准的 **Windows Python 3.10.4 x64 完整安裝（含 Tcl/Tk、venv、pip）**。WebView 主介面另需 **Microsoft Edge WebView2 Runtime、.NET Framework 4.6.2 以上**；這些 Windows/Python 前置軟體不在 Code ZIP 中。缺軟體時交公司核准管道處理，不擅自連網安裝。需可寫入解壓資料夾及使用者暫存目錄。
+前置條件：Windows x64、核准的 **Python恰好3.10.4完整版**（含Tk、venv、pip）、WebView2 Runtime及.NET Framework4.6.2以上。這些前置軟體不在wheels內。
 
-在解壓後包含 `install-offline.bat` 的根目錄，使用 CMD：
+在專案根目錄以CMD執行（將路徑換成實際核准Python）：
 
 ```bat
 install-offline.bat "C:\approved\Python3104\python.exe"
 test-company.bat
-start-demo-login.bat
+start-app.bat
 ```
 
-第一行必須改為公司實際核准的 Python 3.10.4 x64 路徑。每行成功才繼續；`test-company.bat` 已包含完整本機回歸、合成 WebView 操作與展示登入生命週期，不必另外重跑 full。展示帳密 admin/admin 僅用於暫存離線 fixture，登出即清除；不代表公司帳號或授權。公司 AD＋App 使用資格接好並驗收後，才進公司模式驗證真實 DVC。完整步驟見 [一鍵測試](../docs/ONE-CLICK-TEST.md)、[登入邊界](../docs/LOGIN-AND-APP-ACCESS.md)。
+每一步成功才繼續。已有符合lock的`.venv`不需重裝；安裝器拒絕覆寫舊環境。`test-company.bat`包含一次full與合成UI驗證，不需再重跑full。展示登入另用`start-demo-login.bat`，不授予真實組織權限。
 
-## 檔案與完整性
+## 完整性與資料界線
 
-- `experiments/langgraph-lab/packages` 既有 52 個：正式 App 共用其中 48 個；其餘 4 個僅供 lab（langchain、langchain-openai、regex、tiktoken），不裝入 App。
-- `offline-app/packages` 只新增正式 App 缺少的 21 個（3,101,202 bytes），含 pywebview、pythonnet、keyring 等。
-- `bundle-manifest.json` 指定 69 個來源、版本及 SHA256。所有 wheels 的 tags 相容 Windows CPython 3.10.4 x64；仍以目標平台及完整 App `requirements.lock` 為準。
-- 安裝診斷預設使用暫存資料目錄，避免讀取或修改既有使用者的公司 profiles／金鑰；明確指定 `--data-dir` 時才診斷該目錄。這只驗證軟體就緒，不代表公司設定通過。
-- installer 暫存組合 69 個 wheels，核對原正式包雜湊、lock 指紋及套件身份後，使用 pip `--no-index --no-deps`；安裝後核對 freeze 與 pip check，暫存 wheels 隨即移除。
-- 若已有 root wheelhouse，仍驗證它，**不因 lock／雜湊錯誤改用其他來源**；缺檔、LFS 指標、不安全路徑或完整性錯誤均停止，不連網。既有 `.venv` 亦拒絕覆蓋。
-- 原正式包的 license/notices 保留於 [THIRD-PARTY-NOTICES](../docs/THIRD-PARTY-NOTICES.md) 與 `docs/licenses`（包含 wheel 本身缺少的 upstream license）；此次沿用已核對的原二進位，不另造依賴版本。
+- `bundle-manifest.json`固定69個檔案、來源與SHA256；根目錄`requirements.lock`是唯一正式依賴清單。
+- 安裝前驗證檔案身份、平台、雜湊及lock指紋，以暫存wheelhouse執行`--no-index --no-deps`，完成後核對freeze、pip check及診斷。
+- 已存在的root wheelhouse仍需驗證；損壞不回退、不連外補件。缺件、LFS指標或不安全路徑一律停止。
+- 原始碼、wheels與[授權文字](../docs/THIRD-PARTY-NOTICES.md)隨Git提供；金鑰、內部設定、使用者資料與Python環境不在交付範圍。
+- 安裝診斷預設使用暫存資料，不修改個人profiles或keyring。軟體環境正常不代表達哥、AD與來源品質已驗收。
 
-錯誤時保留終端錯誤與 `artifacts/company-test/latest.json`；分享前遮密及去識別。公司 API、AD、人事資料與 Oracle 真實驗證仍未執行。VS Code Copilot 接手先開啟整個解壓資料夾，讀 AGENTS、README、ONE-CLICK-TEST、COMPANY-IMPLEMENTATION、DVC-REVIEW、VALIDATION；使用公司核准模型及權限，不宣稱 Copilot 可離線使用。
+操作見[開發指南](../docs/DEVELOPMENT.md)、[一鍵驗證](../docs/ONE-CLICK-TEST.md)；接手Agent只需先讀[TO-AGENT](../TO-AGENT.md)，現況以[驗證紀錄](../docs/VALIDATION.md)為準。
 
-剪貼簿與真實服務的未測限制請以[目前驗證結果](../docs/VALIDATION.md)判讀，不把較早的通過紀錄當成此次結果。1.0.0rc3依賴未變，保留原69wheels，沒有重建常駐環境或新增下載來源。
+本次僅集中原有69個二進位，版本與雜湊不變；四個只供舊lab的套件及其試驗程式已移除。歷史由清理前提交`301c3f8`查閱。

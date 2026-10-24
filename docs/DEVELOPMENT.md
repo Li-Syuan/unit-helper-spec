@@ -10,7 +10,7 @@
 
 ## GitHub Code ZIP 離線入口（2026-10-01）
 
-公司允許 GitHub Code → Download ZIP 時，下載目前 main 並解壓**整個資料夾**到新位置；不需要 Release。根目錄 `install-offline.bat` 會驗證並共用 lab 的 48 個 wheels、加入 `offline-app/packages` 的 21 個，依 App 自己的 69 套件 lock 安裝；不使用 lab lock。不連網補件、不覆蓋既有 `.venv`，既有 wheelhouse 若失效仍停止。最短步驟及前置條件見 [Code ZIP 說明](../offline-app/README.md)。
+公司允許 GitHub Code → Download ZIP 時，下載目前 main 並解壓**整個資料夾**到新位置；不需要 Release。根目錄 `install-offline.bat` 會驗證 `offline-app/packages` 的全部69個 wheels，依根目錄 `requirements.lock` 安裝。不連網補件、不覆蓋既有 `.venv`，既有 wheelhouse 若失效仍停止。最短步驟及前置條件見 [Code ZIP 說明](../offline-app/README.md)。
 
 ## 本機問題紀錄
 
@@ -92,9 +92,11 @@ setup 建立專屬 `.venv`，拒絕覆寫既有環境，不借用其他專案的
 
 ## 離線安裝
 
+正式來源只有 `offline-app/packages/`，69個檔案由 `offline-app/bundle-manifest.json` 固定；舊lab及開發機的三套過期wheelhouse已清除。不要從Git歷史取舊lock覆蓋目前環境。需要交付時直接使用完整Code ZIP即可。
+
 ### 組織已取得完整正式 ZIP（建議）
 
-適用於核准索引缺少 Bleach／OpenAI／LangGraph 鎖定版本，或 PowerShell 拒絕執行腳本的環境。不要單獨降版某個套件，也不要把獨立 lab 的 52 套件 lock 套到 App。
+適用於核准索引缺少 Bleach／OpenAI／LangGraph 鎖定版本，或 PowerShell 拒絕執行腳本的環境。不要單獨降版某個套件，只使用根目錄的正式 requirements.lock。
 
 1. 由核准管道帶入正式 ZIP，確認來源及交付 SHA-256；完整解壓到**新的資料夾**。保留組織既有修改與 `.venv`，不要直接覆蓋。
 2. 關閉舊 App。準備組織核准的 Python **恰好 3.10.4 x64** 完整安裝（含 Tk）、WebView2 與 .NET。這些系統元件不含在 wheel 包內。

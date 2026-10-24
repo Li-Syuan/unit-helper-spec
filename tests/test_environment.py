@@ -137,9 +137,9 @@ class OfflineBundleTests(unittest.TestCase):
 
     def code_zip_fixture(self):
         import shutil
-        source=self.root/'experiments/langgraph-lab/packages'/self.wheel.name
+        source=self.root/'offline-app/packages'/self.wheel.name
         source.parent.mkdir(parents=True);shutil.copyfile(self.wheel,source)
-        manifest=self.root/'offline-app/bundle-manifest.json';manifest.parent.mkdir()
+        manifest=self.root/'offline-app/bundle-manifest.json';manifest.parent.mkdir(exist_ok=True)
         item={'schema_version':1,'bundle':self.manifest,'sources':{self.wheel.name:source.relative_to(self.root).as_posix()}}
         manifest.write_text(json.dumps(item),encoding='utf-8')
         return source,manifest,item
