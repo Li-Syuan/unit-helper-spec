@@ -92,7 +92,7 @@ class SkillProfiles:
         if not isinstance(binding,dict) or 'skill_capability' not in binding:return self.base.validate_workflow(binding,role)
         p=self.base.validate(binding)
         if p['id'] in self.service.busy:raise ValueError('此助理仍在測試或產生草稿，請等待請求結束。')
-        if role not in {'planner','compose','rag','assess'}:raise ValueError('此能力不支援指定角色。')
+        if role not in {'planner','compose','rag','assess','autonomous'}:raise ValueError('此能力不支援指定角色。')
         if p['id']=='demo':
             if binding['skill_capability']!='demo-v1':raise ValueError('示範能力識別無效。')
             return p
@@ -105,9 +105,12 @@ class SkillProfiles:
         self.validate_workflow(binding,role)
         if not context.get('run_id') or not context.get('step_id'):raise ValueError('缺少隔離識別。')
         if binding['profile_id']=='demo':
+            if role=='autonomous':
+                from .autonomous import demo_decision
+                return dumps(demo_decision(json.loads(messages[0]['content'].split('\n工作資料：',1)[1]),binding['profile_id']))
             if role=='assess':return dumps({'decision':'complete','step_id':'','reason':'離線示範已取得合成成果；不代表真實來源已驗證。'})
             return dumps({'text':'【離線示範】已依指定資料展示'+('搜尋' if role=='rag' else '整理')+'流程；沒有查詢即時資料，也不是真實 AI 分析。','facts':{}})
-        return self.base.respond(messages,'workflow_plan' if role in {'planner','assess'} else 'workflow_step',binding,
+        return self.base.respond(messages,'workflow_plan' if role in {'planner','assess','autonomous'} else 'workflow_step',binding,
             context=dict(context,search_authorized=role=='rag'))
 
 class SkillService:

@@ -22,7 +22,7 @@ def agent_followup_journey(session,api,window,capture,wait,report):
     skill=session.skills.save_confirm(session.skills.save_preview(definition)['token'])
     js("document.getElementById('dialogue-agent-mode').click()")
     wait("!!document.getElementById('agent-create')")
-    job=session.agents.create('demo','合成原需求：只整理已提供的工作記錄',skill_id=skill['id'],skill_revision=skill['revision'])
+    job=session.agents.create('demo','合成原需求：只整理已提供的工作記錄',skill_id=skill['id'],skill_revision=skill['revision'],autonomous=False)
     for _ in range(100):
         if not session.engine.has_inflight():break
         time.sleep(.05)
@@ -75,8 +75,11 @@ def agent_journey(session,api,window,capture,wait,report):
         js(f"Array.from(document.querySelectorAll({json.dumps(root+' button')})).find(b=>b.textContent==={json.dumps(text)}).click()")
     def answer(label,value):
         js(f"(()=>{{const label=Array.from(document.querySelectorAll('#agent-job-panel label')).find(n=>n.textContent==={json.dumps(label)});const input=document.getElementById(label.htmlFor);input.value={json.dumps(value)};input.dispatchEvent(new Event('input',{{bubbles:true}}));}})()")
+    def legacy():js("document.getElementById('agent-execution-mode').value='fixed';document.getElementById('agent-execution-mode').dispatchEvent(new Event('change'))")
     put('#dialogue-input','保留中的合成聊天草稿')
     click('#dialogue-agent-mode');wait("!!document.getElementById('agent-create')")
+    assert js("document.getElementById('agent-execution-mode').value")=='autonomous'
+    legacy()
     assert js("document.getElementById('dialogue-input').value")=='保留中的合成聊天草稿'
     put('#agent-goal','將合成工作筆記整理成重點，不編造期限。')
     click('#dialogue-chat-mode');wait("document.getElementById('modal').open")
@@ -108,6 +111,7 @@ def agent_journey(session,api,window,capture,wait,report):
     text_button('開啟工作','#agent-job-panel');wait("!!document.getElementById('agent-save-skill')")
     report['checks'].append('agent_chat_draft_preserved_mode_guard_ime_preview_edit_single_confirmation_result_and_reopen')
     click('#agent-new');wait("!!document.getElementById('agent-create')")
+    legacy()
     put('#agent-goal','合成取消測試：不執行這份計畫')
     click('#agent-create');wait("!!document.getElementById('agent-preview')")
     click('#agent-cancel');wait("!document.getElementById('agent-cancel') && document.getElementById('agent-job-heading').textContent.includes('已取消')")
@@ -119,6 +123,7 @@ def agent_journey(session,api,window,capture,wait,report):
     definition['fields']=[{'id':'short','text':'是否精簡','type':'boolean','options':[]},{'id':'style','text':'採用語氣','type':'single','options':['正式','簡單']},{'id':'parts','text':'需要段落','type':'multi','options':['重點','待辦']},{'id':'note','text':'補充背景','type':'text','options':[]}]
     skill=session.skills.save_confirm(session.skills.save_preview(definition)['token'])
     click('#agent-new');wait("!!document.getElementById('agent-create')")
+    legacy()
     put('#agent-goal','整理成文字工作報告')
     js(f"document.getElementById('agent-skill').value={json.dumps(skill['id'])};document.getElementById('agent-skill').dispatchEvent(new Event('change'))")
     click('#agent-create');wait("!!document.getElementById('agent-reply-send')")
@@ -145,6 +150,7 @@ def agent_journey(session,api,window,capture,wait,report):
     with patch.object(p,'respond',side_effect=respond):
         for limit,expected in ((2,'succeeded'),(0,'failed')):
             click('#agent-new');wait("!!document.getElementById('agent-create')")
+            legacy()
             js(f"document.getElementById('agent-profile').value={json.dumps(pid)};document.getElementById('agent-profile').dispatchEvent(new Event('change'))")
             put('#agent-goal','合成台美市場資料來源核對');js("document.getElementById('agent-search').checked=true")
             assert js("document.getElementById('connection').textContent.includes('合成工作助理') && !document.getElementById('connection').textContent.includes('離線示範')"),'agent_connection_label_mismatched'
@@ -207,6 +213,111 @@ def agent_journey(session,api,window,capture,wait,report):
     js("document.getElementById('agent-job-result').scrollIntoView({block:'start'})")
     capture('agent-maximized.png')
     report['checks'].append('agent_real_webview_dark_light_1050x700_normal_maximized_reachable_controls')
+
+
+def autonomous_journey(session,api,window,capture,wait,report):
+    """Real controls and runner, synthetic adaptive replies, no service network."""
+    from unittest.mock import patch
+    from desktop_app.core import dumps,stamp
+    from tests.test_search_tools import SEARCH_TOOL
+    def js(script):return window.evaluate_js(script)
+    def click(selector):js(f"document.querySelector({json.dumps(selector)}).click()")
+    def put(selector,value):js(f"(()=>{{const n=document.querySelector({json.dumps(selector)});n.value={json.dumps(value)};n.dispatchEvent(new Event('input',{{bubbles:true}}));}})()")
+    def text_button(text,root='#modal-actions'):js(f"Array.from(document.querySelectorAll({json.dumps(root+' button')})).find(b=>b.textContent==={json.dumps(text)}).click()")
+    p=session.profiles;p.set_endpoint('https://synthetic.example.test/v1');p.set_wire_mode('assistants')
+    pid=p.save('合成自主助理','asst_autonomous');p.set_search_policy(p.snapshot(pid),{'tools':[SEARCH_TOOL]})
+    other=p.save('合成分析助理','asst_analysis');p.set_workflow_capability(other,['analysis'],True,'synthetic-ui-fixture')
+    binding=p.snapshot(pid)
+    with session.store.connection() as db:db.execute('INSERT INTO skill_capabilities VALUES(?,?,?,?,?)',(pid,binding['revision'],'autonomy-ui-fixture',dumps(['planner','compose','assess','rag']),stamp()))
+    calls=[];stuck=False
+    def decision(action,who,role,instruction,inputs,reason):return dumps(dict(action=action,profile_id=who,role=role,instruction=instruction,inputs=inputs,reason=reason))
+    def respond(messages,purpose,binding,context=None):
+        prompt=messages[0]['content'];calls.append((purpose,binding['profile_id'],dict(context),prompt));sid=context['step_id']
+        if context['run_id'].startswith('autonomy-probe:'):
+            if sid=='decision_3':return decision('ask','','','請提供查詢對象',[],'缺少必要條件')
+            return decision('compose',pid,'compose','只整理合成文字',['qa_action_1'] if sid=='decision_2' else [],'已有指定文字')
+        if sid=='planner':return dumps({'message':'合成策略：先查資料再整理；實際順序由成果決定。','questions':[],'steps':[{'id':'search','title':'取得指定市場資料','kind':'assistant','role':'rag','profile_id':pid,'instruction':'只查指定台美市場及日期','inputs':[]},{'id':'compose','title':'整理成果','kind':'assistant','role':'compose','profile_id':pid,'instruction':'附日期與來源限制','inputs':['search']}]})
+        if sid.startswith('qa_decide_'):
+            data=json.loads(prompt.split('\n工作資料：',1)[1]);sources=data['sources'];content=dumps(sources)
+            if stuck or not sources:return decision('search',pid,'rag','查指定台美市場當日資料',[],'需要先取得資料')
+            if '日期已核對' not in content:return decision('search',pid,'rag','補查當日台美市場，排除已過期內容',list(sources),'第一批日期落後，需要調整關鍵字')
+            if '分析已完成' not in content:return decision('delegate',other,'analysis','核對指定成果的資料日期與限制',list(sources),'資料已齊，交由核准分析助理核對')
+            return decision('compose',pid,'compose','整理指定來源、日期與待確認事項',list(sources),'分析已完成，可以整理成果')
+        data=json.loads(prompt.split('核准工作與輸入：',1)[1])
+        if context.get('search_authorized'):
+            from desktop_app.assistant_sessions import AssistantSessions
+            from desktop_app.assistants_gateway import session_context
+            key,rid,_,_=session_context(binding,purpose,context)
+            # Explicit synthetic tool receipt, only inside the temporary smoke workspace.
+            AssistantSessions(session.store.path.with_name('assistant-sessions.sqlite3')).save(key,{'thread_id':'synthetic-ui'},rid,
+                {'state':'completed','tool_batches':[{'submit_state':'submitted','calls':[{'state':'completed','id':'synthetic-search'}]}]})
+            if context.get('reserve_tool_round'):context['reserve_tool_round']('synthetic-search-return')
+        if binding['profile_id']==other:text='分析已完成；來源日期與限制已列出，仍需人工核對。'
+        elif '補查當日' in data.get('instruction',''):text='日期已核對：合成當日來源 https://example.test/current'
+        elif '查指定台美' in data.get('instruction',''):text='第一批合成資料日期落後 https://example.test/old'
+        else:text='合成自主成果：依來源整理完成，非即時資料。https://example.test/current'
+        return dumps({'text':text,'facts':{}})
+    with patch.object(p,'respond',side_effect=respond),patch('httpx.Client.send',side_effect=AssertionError('network_not_allowed')):
+        api.call('appearance',{'theme':'dark'});js("document.body.dataset.theme='dark'")
+        js("document.dispatchEvent(new CustomEvent('qa-navigate',{detail:'settings'}))")
+        wait("Array.from(document.querySelectorAll('.activation-work-check')).some(n=>n.textContent.includes('合成自主助理'))")
+        js("Array.from(document.querySelectorAll('.activation-work-check')).find(n=>n.textContent.includes('合成自主助理')).querySelectorAll('button')[1].click()")
+        wait("!!document.getElementById('agent-probe-confirm')");assert not calls
+        click('#agent-probe-confirm');wait("document.getElementById('modal-title').textContent==='工作能力檢查結果'")
+        assert len(calls)==3 and all(c[0]=='workflow_plan' and not c[2].get('search_authorized') for c in calls),'autonomy_probe_bounds'
+        assert session.skills.proof(pid,binding['revision'])['roles'].count('autonomous')==1
+        wait("Array.from(document.querySelectorAll('#modal-actions button')).some(b=>b.textContent==='關閉')")
+        text_button('關閉');wait("!document.getElementById('modal').open")
+        click('#agent-jobs-nav');wait("!!document.getElementById('agent-job-search')")
+        click('#agent-new');wait("!!document.getElementById('agent-create')")
+        assert js("document.getElementById('agent-execution-mode').value")=='autonomous'
+        js(f"document.getElementById('agent-profile').value={json.dumps(pid)};document.getElementById('agent-profile').dispatchEvent(new Event('change'));document.getElementById('agent-search').checked=true;Array.from(document.querySelectorAll('[data-team-id]')).find(n=>n.dataset.teamId==={json.dumps(other)}).checked=true")
+        put('#agent-goal','整理當日台美市場資訊，核對日期及來源。')
+        before=len(session.store.tasks());click('#agent-create');wait("!!document.getElementById('agent-preview')")
+        click('#agent-preview');wait("!!document.getElementById('agent-confirm')")
+        assert len(session.store.tasks())==before,'autonomy_preview_executed'
+        assert js("document.querySelector('.agent-approval').textContent.includes('6 個動作') && document.querySelector('.agent-authority').textContent.includes('合成分析助理')")
+        capture('autonomy-preview-dark.png')
+        click('#agent-confirm');wait("!!document.getElementById('agent-save-skill')")
+        job=session.agents.list()[0];assert job['task']['state']=='succeeded',job['task']['error']
+        decisions=[r['output']['decision']['action'] for r in job['steps_status'] if (r.get('output') or {}).get('decision')]
+        assert decisions==['search','search','delegate','compose'],decisions
+        assert len(job['budget']['actions'])==4 and len(job['budget']['requests'])==10
+        assert js("document.querySelectorAll('.agent-decision').length")==4
+        assert js("(()=>{const n=document.querySelector('.agent-step-records');return Array.from(n.querySelectorAll('h4')).some(h=>h.textContent==='決策 1') && Array.from(n.querySelectorAll('h4')).some(h=>h.textContent==='動作 1') && n.textContent.includes('使用成果：動作 1') && !/qa_(decide|action)_\\d+/.test(n.textContent);})()"),'autonomy_readable_activity_labels'
+        assert js("document.getElementById('agent-job-result').textContent.includes('第一批日期落後') && document.getElementById('agent-job-result').textContent.includes('合成分析助理')")
+        assert any(c[1]==other for c in calls),'selected_assistant_not_used'
+        for theme,size,name in [('dark',(1280,860),'autonomy-dark.png'),('light',(1050,700),'autonomy-light-small.png')]:
+            api.call('appearance',{'theme':theme});js(f"document.body.dataset.theme={json.dumps(theme)}")
+            window.resize(*size);time.sleep(.3);js("document.getElementById('toast').hidden=true;document.getElementById('agent-job-result').scrollIntoView({block:'start'})")
+            capture(name);js("document.getElementById('agent-save-skill').scrollIntoView({block:'center'})")
+            assert js("(()=>{const r=document.getElementById('agent-save-skill').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()")
+        window.maximize();time.sleep(.3);capture('autonomy-maximized.png')
+        report['checks'].append('autonomy_explicit_three_call_probe_default_mode_authority_preview_adaptive_search_synthetic_receipts_selected_delegate_compose_budget_and_themes')
+        stuck=True;click('#agent-new');wait("!!document.getElementById('agent-create')")
+        js(f"document.getElementById('agent-profile').value={json.dumps(pid)};document.getElementById('agent-profile').dispatchEvent(new Event('change'));document.getElementById('agent-search').checked=true")
+        put('#agent-goal','合成無進展案例，保留當日來源限制');click('#agent-create');wait("!!document.getElementById('agent-preview')")
+        click('#agent-preview');wait("!!document.getElementById('agent-confirm')");click('#agent-confirm');wait("!!document.getElementById('agent-restart-draft')")
+        stopped=session.agents.list()[0];assert 'AGENT_NO_PROGRESS' in stopped['task']['error']
+        before=len(calls);count=len(session.store.tasks());click('#agent-restart-draft');wait("!!document.getElementById('agent-create')")
+        assert len(calls)==before and len(session.store.tasks())==count,'restart_implicitly_dispatched'
+        assert js("document.getElementById('agent-execution-mode').value")=='autonomous'
+        put('#agent-goal','補充明確條件後重新規劃');click('#agent-create');wait("!!document.getElementById('agent-preview')")
+        revised=session.agents.list()[0];assert revised['prior_task_id']==stopped['task']['id'] and not revised['task']
+        assert js("!!document.getElementById('agent-prior-task')")
+        click('#agent-cancel');wait("!document.getElementById('agent-cancel')")
+        assert len(session.store.tasks())==count
+        report['checks'].append('autonomy_no_progress_preserves_partial_restart_only_draft_explicit_new_planning_source_link_and_cancel')
+        # Advanced history routes autonomous jobs to the same authority-aware UI.
+        before=len(calls)
+        js("document.dispatchEvent(new CustomEvent('qa-navigate',{detail:'chat'}))")
+        wait("Array.from(document.querySelectorAll('#recent-chats button')).some(b=>b.textContent==="+json.dumps(stopped['goal'])+")")
+        text_button(stopped['goal'],'#recent-chats')
+        wait("Array.from(document.querySelectorAll('#workflow-panel button')).some(b=>b.textContent==='開啟自主工作')")
+        assert js("!document.getElementById('workflow-panel').textContent.includes('重試未完成步驟') && !document.getElementById('workflow-panel').textContent.includes('檢視並確認')")
+        text_button('開啟自主工作','#workflow-panel');wait("!!document.getElementById('agent-restart-draft') && !document.getElementById('dialogue-page').hidden")
+        assert len(calls)==before and len(session.store.tasks())==count
+        report['checks'].append('autonomy_advanced_history_routes_to_authority_ui_without_fixed_plan_approval_or_retry')
 
 
 def skills_journey(session, api, window, capture, wait_script, report, tmp, company_mock):
@@ -550,7 +661,8 @@ def main():
     v1_only='--v1-only' in sys.argv
     agent_only='--agent-only' in sys.argv
     agent_followup_only='--agent-followup-only' in sys.argv
-    report={'status':'failed','scope':'agent-followup' if agent_followup_only else 'agent' if agent_only else 'v1' if v1_only else 'skills' if skills_only else 'full','checks':[]}
+    autonomy_only='--autonomy-only' in sys.argv
+    report={'status':'failed','scope':'autonomy' if autonomy_only else 'agent-followup' if agent_followup_only else 'agent' if agent_only else 'v1' if v1_only else 'skills' if skills_only else 'full','checks':[]}
     with tempfile.TemporaryDirectory() as tmp:
         from desktop_app import about
         publisher_root=about.ROOT;about.ROOT=Path(tmp)
@@ -584,13 +696,14 @@ def main():
                         window.native.Invoke(Action(start))
                         if not pending[0].Wait(10000):raise AssertionError('capture_timeout')
                     finally:stream.Dispose()
-                if agent_only or agent_followup_only:
+                if agent_only or agent_followup_only or autonomy_only:
                     def wait_agent(script):
                         for _ in range(220):
                             if window.evaluate_js(script):return
                             time.sleep(.1)
                         raise AssertionError('agent_wait_timeout: '+script)
-                    (agent_followup_journey if agent_followup_only else agent_journey)(session,api,window,capture,wait_agent,report)
+                    (autonomous_journey if autonomy_only else agent_followup_journey if agent_followup_only else agent_journey)(session,api,window,capture,wait_agent,report)
+                    if agent_only:autonomous_journey(session,api,window,capture,wait_agent,report)
                     report['status']='passed'
                     return
                 if v1_only:
@@ -1270,7 +1383,7 @@ def main():
                 try:capture('failure.png')
                 except Exception:pass
             finally:
-                (destination/('result-agent-followup.json' if agent_followup_only else 'result-agent.json' if agent_only else 'result-v1.json' if v1_only else 'result-skills.json' if skills_only else 'result.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+                (destination/('result-autonomy.json' if autonomy_only else 'result-agent-followup.json' if agent_followup_only else 'result-agent.json' if agent_only else 'result-v1.json' if v1_only else 'result-skills.json' if skills_only else 'result.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
                 window.destroy()
         try:webview.start(inspect,gui='edgechromium',debug=False,private_mode=True)
         finally:

@@ -57,6 +57,7 @@ class AgentJobs:
             proof=self.skills.proof(p['id'],self.profiles.snapshot(p['id'])['revision'])
             roles=['planner','compose','rag','assess'] if p['demo'] else (proof['roles'] if proof else [])
             rows.append(dict(p,roles=roles,agent_ready=all(r in roles for r in ('planner','compose','assess')),
+                autonomous_ready=p['demo'] or all(r in roles for r in ('planner','compose','assess','autonomous')),
                 search_tested='rag' in roles,team_roles=advanced.get(p['id'],[])))
         return {'assistants':rows,'skills':self.skills.list()}
 
@@ -66,17 +67,25 @@ class AgentJobs:
         return b
 
     def create(self,profile_id,goal,source_thread=None,skill_id=None,skill_revision=None,values=None,
-               memory_ids=None,search=False,team_ids=None,limits_value=None):
-        goal=bounded_text(goal,'交辦需求',5000);budget=limits(limits_value)
+               memory_ids=None,search=False,team_ids=None,limits_value=None,autonomous=True,prior_task_id=None):
+        from .autonomous import limits as autonomous_limits
+        if type(autonomous) is not bool:raise ValueError('自主模式格式不正確。')
+        goal=bounded_text(goal,'交辦需求',5000);budget=(autonomous_limits if autonomous else limits)(limits_value)
         if type(search) is not bool:raise ValueError('搜尋選擇格式不正確。')
         if not isinstance(team_ids or [],list) or len(team_ids or [])>4 or len(set(team_ids or []))!=len(team_ids or []):raise ValueError('額外助理最多四位且不可重複。')
         with self.engine._lock:
             self.engine._ensure_open()
+            if prior_task_id:
+                prior=self.store.task(prior_task_id)
+                if prior['state']!='failed' or prior['kind']!='workflow' or not re.match(r'^AGENT_(NEEDS_INPUT|ACTION_LIMIT|REQUEST_LIMIT|TIME_LIMIT|NO_PROGRESS|CONTEXT_LIMIT)[：:]',prior.get('error') or ''):
+                    raise ValueError('原工作不適用補充後重新交辦；請先檢查原請求。')
+                if any(t==prior_task_id and not f.done() for f,t in self.engine._future_tasks.items()):raise ValueError('原工作仍在結束中。')
             if source_thread:self.session.dialogue.state(source_thread)
             skill=self.skills.get(skill_id) if skill_id else None
             if skill and (not skill['enabled'] or skill['revision']!=skill_revision):raise ValueError('Skill 已停用或修訂改變。')
             if skill:search=skill['search']
             b=self._binding(profile_id,search)
+            if autonomous:self.skills.wrapper.validate_workflow(b,'autonomous')
             team=[]
             for pid in team_ids or []:
                 if pid==profile_id:continue
@@ -92,7 +101,8 @@ class AgentJobs:
             notes=self.session.continuity.snapshot(aid,memory_ids) if memory_ids else []
             cid=uid();flow={'id':uid(),'revision':1};oid=uid()
             data={'kind':'agent-v1','workflow_id':flow['id'],'profile_id':profile_id,'source_thread':source_thread,
-                'search':search,'skill':skill,'values':vals,'memories':notes,'team':team,'limits':budget}
+                'search':search,'skill':skill,'values':vals,'memories':notes,'team':team,'limits':budget,'autonomous':autonomous,
+                'search_tools':copy.deepcopy(self.profiles.validate(b).get('search_policy',{}).get('tools',[])) if search else [],'prior_task_id':prior_task_id}
             with self.store.connection() as db:
                 db.execute('BEGIN IMMEDIATE')
                 db.execute('INSERT INTO conversations(id,title,created_at,binding) VALUES(?,?,?,?)',(cid,goal[:80],stamp(),dumps(self.profiles.snapshot(profile_id))))
@@ -106,10 +116,17 @@ class AgentJobs:
     def state(self,oid):
         self.engine._ensure_open();r=self.get(oid);flow=self.workflows.snapshot(r['workflow_id'])
         source_deleted=False
+        prior_deleted=False
+        if r.get('prior_task_id'):
+            try:prior_deleted=self.store.task(r['prior_task_id'])['state']=='deleted'
+            except ValueError:prior_deleted=True
         if r['source_thread']:
             try:self.session.dialogue.state(r['source_thread'])
             except ValueError:source_deleted=True
+        authority=self.approved_spec(r['workflow_id'])['agent'] if flow['state']!='approved' else self.workflows._spec(r['workflow_id'],flow['revision'])['agent']
         return dict(flow,id=oid,workflow_id=r['workflow_id'],profile_id=r['profile_id'],source_thread=r['source_thread'],
+            autonomous=r.get('autonomous',False),authority=dict(authority,goal=flow['goal']),
+            prior_task_id=r.get('prior_task_id'),prior_task_deleted=prior_deleted,
             source_deleted=source_deleted,limits=r['limits'],search=r['search'],skill=r['skill'],values=r['values'],
             memory_snapshot=r['memories'],busy=r['workflow_id'] in self.workflows.planning,
             demo=r['profile_id']=='demo',budget=(flow['task'] or {}).get('payload',{}).get('agent_budget'))
@@ -149,6 +166,7 @@ class AgentJobs:
         r=order or self.link(wid)
         if not r:return
         flow=self.workflows.get(wid);self.skills.wrapper.validate_workflow(flow['planner'],'assess')
+        if r.get('autonomous'):self.skills.wrapper.validate_workflow(flow['planner'],'autonomous')
         if r['skill']:
             self.skills.active({'skill_id':r['skill']['id']})
             if answers(r['skill']['fields'],r['values'])[1]:raise ValueError('請補齊 Skill 條件。')
@@ -156,7 +174,7 @@ class AgentJobs:
         if any(s['kind']!='assistant' or s['id'].startswith('qa_') or not any(s['binding']==p['binding'] and s['role'] in p['roles'] for p in candidates) for s in steps):raise ValueError('計畫超出所選助理、核准搜尋及文字工作範圍。')
         if steps[-1]['role']!='compose':raise ValueError('最後一步必須整理成果。')
         if r['search'] and not any(s['role']=='rag' for s in steps):raise ValueError('已要求搜尋，計畫缺少搜尋步驟。')
-        minimum=len(steps)+1
+        minimum=2 if r.get('autonomous') else len(steps)+1
         if r['limits']['max_requests']<minimum:raise ValueError('模型請求上限不足以完成此計畫及一次成果判斷。')
 
     def planning(self,flow,resume=False):
@@ -198,7 +216,9 @@ class AgentJobs:
     def approved_spec(self,wid):
         r=self.link(wid)
         if not r:return {}
-        return {'agent':{'version':1,'order_id':r['id'],'limits':r['limits'],'search':r['search'],'values':r['values'],
+        search_tools=copy.deepcopy(r.get('search_tools',[]))
+        return {'agent':{'version':2 if r.get('autonomous') else 1,'order_id':r['id'],'limits':r['limits'],'search':r['search'],'values':r['values'],
+            'team':copy.deepcopy(r['team']),'search_tools':search_tools,
             'requirements':[m['content'] for m in self.workflows.get(wid)['discussion'] if m['role']=='user'],
             'memories':r['memories'],'method':{k:r['skill'][k] for k in ('name','purpose','instructions','output_format')} if r['skill'] else None}}
 
@@ -206,7 +226,9 @@ class AgentJobs:
         with self.engine._lock:
             self.engine._ensure_open()
             r=self.get(oid);flow=self.workflows.get(r['workflow_id']);self.workflows._editable(flow,revision)
-            if limits_value is not None:r['limits']=limits(limits_value)
+            if limits_value is not None:
+                from .autonomous import limits as autonomous_limits
+                r['limits']=(autonomous_limits if r.get('autonomous') else limits)(limits_value)
             clean=self.workflows.validate_steps(steps);self.validate_plan(flow['id'],clean,order=r)
             with self.store.connection() as db:
                 db.execute('BEGIN IMMEDIATE')
@@ -299,4 +321,37 @@ class AgentJobs:
                 self.engine._ensure_open();self.profiles.validate(binding)
                 with self.store.connection() as db:db.execute('INSERT OR REPLACE INTO skill_capabilities VALUES(?,?,?,?,?)',(pid,binding['revision'],uid(),dumps(sorted(passed)),stamp()))
             return {'checks':checks,'passed':len(checks)==len(roles) and all(c['status']=='passed' for c in checks),'roles':sorted(passed),'source_quality':'not_tested'}
+        return self.skills._remote(pid,run)
+
+    def autonomy_probe(self,pid,consent=False):
+        from .autonomous import DECISION_HINT,validate_decision
+        if consent is not True:raise ValueError('請明確同意最多三次自主格式測試。')
+        def run(binding):
+            if pid=='demo':return {'passed':False,'checks':[{'role':'autonomous','status':'demo','message':'離線合成，不是實際能力證據。'}]}
+            if self.profiles.data.get('wire_mode')!='assistants':raise ValueError('自主處理需 Assistants 契約。')
+            old=self.skills.proof(pid,binding['revision'])
+            passed=set(old['roles'] if old else [])-{'autonomous'}
+            if not {'planner','compose','assess'}<=passed:raise ValueError('請先完成工作格式測試，再測試自主處理。')
+            spec={'planner':binding,'agent':{'search':False,'team':[]}}
+            cases=[('只有使用者明確提供的文字需要整理，選主助理compose，inputs空。',{},'compose'),
+                   ('已取得一份合成來源，選主助理compose並引用qa_action_1。',{'qa_action_1':{'text':'合成測試','facts':{'sample':'6.60'}}},'compose'),
+                   ('需求是查詢未指定對象的機密資料，且沒有搜尋授權或來源。請用ask補問，不假設完成。',{},'ask')]
+            checks=[];rid='autonomy-probe:'+uid()
+            for i,(scenario,sources,expected) in enumerate(cases):
+                try:
+                    self.engine._ensure_open()
+                    prompt=DECISION_HINT+'\n合成案例：'+scenario+'\n主助理ID：'+pid+'\n來源：'+dumps(sources)
+                    obj=json_object(self.profiles.respond([{'role':'user','content':prompt}],'workflow_plan',binding,
+                        context={'run_id':rid,'step_id':f'decision_{i+1}','cancelled':lambda:self.engine._closed}))
+                    validate_decision(obj,spec,sources)
+                    if obj['action']!=expected:raise ValueError('決策不符合案例。')
+                    checks.append({'role':'autonomous','name':str(i+1),'status':'passed','message':'合成決策斷言通過。'})
+                except Exception:
+                    checks.append({'role':'autonomous','name':str(i+1),'status':'failed','message':'連線或決策未通過；未重試、未解鎖。'});break
+            ok=len(checks)==3 and all(c['status']=='passed' for c in checks)
+            if ok:passed.add('autonomous')
+            with self.engine._lock:
+                self.engine._ensure_open();self.profiles.validate(binding)
+                with self.store.connection() as db:db.execute('INSERT OR REPLACE INTO skill_capabilities VALUES(?,?,?,?,?)',(pid,binding['revision'],uid(),dumps(sorted(passed)),stamp()))
+            return {'passed':ok,'checks':checks,'roles':sorted(passed),'source_quality':'not_tested'}
         return self.skills._remote(pid,run)

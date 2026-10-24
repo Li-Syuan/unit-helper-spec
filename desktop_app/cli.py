@@ -24,6 +24,7 @@ HELP = """QA agent 工作台
 /job-skill                    取得可編輯 Skill 草稿，不保存
 /agent-probe <profileID>      確認後最多三次合成工作格式測試
 /agent-search-probe <profileID> 確認後單次核准搜尋測試
+/agent-autonomy-probe <profileID> 確認後最多三次自主決策測試
 /assistants                   列出聊天助理及已驗證規劃角色
 /skills                       列出我的 Skills
 /skill <ID> [profileID]        選取 Skill，建立零派發規劃；預設使用其本機助理
@@ -216,7 +217,7 @@ def execute_line(w, line, input_stream, output):
         r=w.current_job();preview=w.call('agent_preview',id=r['id'],revision=r['revision'])
         if command=='/job-preview':emit(preview,output)
         elif not preview['ready']:raise ValueError(preview['error'])
-        elif confirm(preview,'核對資料、步驟、目的助理與補查上限後執行？',input_stream,output):
+        elif confirm(preview,'核對目標、資料、核准助理與上限後執行？自主模式可在此範圍調整順序與搜尋。',input_stream,output):
             emit(w.call('agent_confirm',id=r['id'],revision=r['revision'],consent=True),output)
         else:
             w.session.workflows.previews.pop(r['workflow_id'],None);emit('未執行。',output)
@@ -229,10 +230,10 @@ def execute_line(w, line, input_stream, output):
         if not r['task'] or r['task']['state']!='succeeded':raise ValueError('需成功試跑並核對來源。')
         if confirm({'work':r,'schedule':data},'已核對成果來源，並同意持續傳送？',input_stream,output):
             emit(w.call('agent_schedule',id=r['id'],revision=r['revision'],reviewed=True,consent=True,**data),output)
-    elif command in ('/agent-probe','/agent-search-probe'):
+    elif command in ('/agent-probe','/agent-search-probe','/agent-autonomy-probe'):
         search=command=='/agent-search-probe'
         if confirm({'profile_id':argument,'requests':1 if search else 3,'search':search},'啟動非敏感合成測試？',input_stream,output):
-            emit(w.call('agent_search_probe' if search else 'agent_probe',profile_id=argument,consent=True),output)
+            emit(w.call('agent_autonomy_probe' if command=='/agent-autonomy-probe' else 'agent_search_probe' if search else 'agent_probe',profile_id=argument,consent=True),output)
     elif command=='/activation':emit(w.call('activation_status'),output)
     elif command=='/activate':
         if not input_stream.isatty():raise ValueError('金鑰只接受互動遮蔽輸入，不接受命令列或管線。')

@@ -1,8 +1,8 @@
 # 交辦工作與 CLI
 
-1.0.0rc2沿用桌面的達哥連接器、工作引擎及本機排程，不需要另部署 API server。主資料庫schema8、DialogueStore schema4（舊版先backup）；不可用舊版直接開啟新資料庫。原有任務草稿維持未啟用。
+1.0.0rc3沿用桌面的達哥連接器、工作引擎及本機排程，不需要另部署 API server。主資料庫schema8、DialogueStore schema4（舊版先backup）；不可用舊版直接開啟新資料庫。原有任務草稿維持未啟用。
 
-新一般工作使用 `/job`、`/job-create`、`/job-reply`、`/job-preview`、`/job-run`，與主對話「交辦工作」共用服務；`qa.bat jobs`列JSON。可選Skill、記憶及有限補查，並支援核對後每日／每週排程。完整格式與操作見[工作代理](AGENT-WORK.md)。下方 `/order` 是原每日搜尋交辦，仍保留相容，UI位於進階入口；不要混用兩種紀錄ID。CLI不啟動排程器，也不能以模型輸出或管線代替批准。
+新一般工作使用 `/job`、`/job-create`、`/job-reply`、`/job-preview`、`/job-run`，與主對話「交辦工作」共用服務；`qa.bat jobs`列JSON。可選Skill、記憶及自主處理；自主模式另需`/agent-autonomy-probe`明確測試，可動態選核准動作，舊模式不變，並支援核對後每日／每週排程。完整格式與操作見[工作代理](AGENT-WORK.md)。下方 `/order` 是原每日搜尋交辦，仍保留相容，UI位於進階入口；不要混用兩種紀錄ID。CLI不啟動排程器，也不能以模型輸出或管線代替批准。
 
 ## 三欄啟用與記憶命令
 

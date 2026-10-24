@@ -18,7 +18,11 @@ def step_rows(record, target):
     record = record or {}
     states = {row['step_id']: row for row in record.get('steps_status', [])}
     rows = []
-    for number, step in enumerate(record.get('steps', []), 1):
+    steps=record.get('steps', [])
+    if (record.get('task') or {}).get('payload',{}).get('workflow',{}).get('agent',{}).get('version')==2:
+        steps=[dict(r['input']['definition'],title=r['input']['definition'].get('title') or '決定下一步')
+               for r in record.get('steps_status',[]) if (r.get('input') or {}).get('definition')]
+    for number, step in enumerate(steps, 1):
         observed = states.get(step['id'], {})
         fallback = 'unknown' if record.get('task') else 'cancelled' if record.get('state') == 'cancelled' else 'unapproved'
         state = observed.get('state', fallback)

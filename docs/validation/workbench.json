@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0rc2",
+  "version": "1.0.0rc3",
   "release_status": "candidate_not_fully_verified",
   "schema": 8,
   "dialogue_schema": 4,
@@ -7,12 +7,12 @@
   "architecture_bits": 64,
   "full": {
     "passed": false,
-    "selected": 628,
-    "seconds": 188.2933
+    "selected": 638,
+    "seconds": 356.439
   },
   "full_result": {
-    "count": 628,
-    "seconds": 186.2359,
+    "count": 638,
+    "seconds": 354.351,
     "failures": 0,
     "errors": 1,
     "skipped": 0
@@ -21,48 +21,52 @@
   "environment": {
     "isolated_settings": "passed",
     "pip_check": "passed",
-    "lock": "passed",
-    "original_user_preflight": "failed_credential_store_unavailable_or_empty_tests_not_run"
+    "lock": "passed"
   },
-  "clipboard": {
-    "full": "failed_OpenClipboard_error_5",
-    "targeted": "failed_OpenClipboard_error_5",
-    "native_probe": {
-      "contents_read": false,
-      "contents_changed": false,
-      "before_app": {
-        "opened": false,
-        "error": 5,
-        "other_window_holds_clipboard": false
-      },
-      "with_own_window": {
-        "opened": false,
-        "error": 5,
-        "other_window_holds_clipboard": false
-      }
-    },
-    "root_cause": "unconfirmed",
-    "physical_webview": "not_tested"
+  "quick": {
+    "passed": true,
+    "selected": 466,
+    "seconds": 86.5121
+  },
+  "quick_target_seconds": 60,
+  "quick_target_met": false,
+  "targeted": {
+    "passed": true,
+    "selected": 10,
+    "seconds": 11.5918
   },
   "webview_agent": {
     "status": "passed",
-    "scope": "agent",
     "checks": [
       "bridge_ready",
       "agent_chat_draft_preserved_mode_guard_ime_preview_edit_single_confirmation_result_and_reopen",
       "agent_skill_four_types_multiple_question_rounds_and_explicit_execution",
       "agent_synthetic_supplement_bound_partial_failure_weekly_consent_pause_and_explicit_three_call_probe",
-      "agent_real_webview_dark_light_1050x700_normal_maximized_reachable_controls"
-    ]
+      "agent_real_webview_dark_light_1050x700_normal_maximized_reachable_controls",
+      "autonomy_explicit_three_call_probe_default_mode_authority_preview_adaptive_search_synthetic_receipts_selected_delegate_compose_budget_and_themes",
+      "autonomy_no_progress_preserves_partial_restart_only_draft_explicit_new_planning_source_link_and_cancel",
+      "autonomy_advanced_history_routes_to_authority_ui_without_fixed_plan_approval_or_retry"
+    ],
+    "scope": "real WebView2; synthetic provider, search receipts and data"
   },
-  "webview_followup": {
+  "webview_autonomy": {
     "status": "passed",
-    "scope": "agent-followup",
     "checks": [
       "bridge_ready",
-      "ui_fixture_restart_prepares_goal_profile_search_skill_only_no_dispatch_stale_skill_unselected_unknown_send_excluded",
-      "ui_fixture_expired_cancel_acknowledged_without_snapshot_repaint_or_dispatch"
-    ]
+      "autonomy_explicit_three_call_probe_default_mode_authority_preview_adaptive_search_synthetic_receipts_selected_delegate_compose_budget_and_themes",
+      "autonomy_no_progress_preserves_partial_restart_only_draft_explicit_new_planning_source_link_and_cancel",
+      "autonomy_advanced_history_routes_to_authority_ui_without_fixed_plan_approval_or_retry"
+    ],
+    "scope": "real WebView2; synthetic provider, search receipts and data"
+  },
+  "autonomy": {
+    "default_new_jobs": true,
+    "old_jobs_changed": false,
+    "max_actions": 6,
+    "max_model_requests": 12,
+    "timeout_seconds": 600,
+    "mock_contracts": "passed",
+    "live_model_requests": 0
   },
   "offline_wheels": {
     "status": "passed",
@@ -78,8 +82,24 @@
   "source_quality": "not_tested",
   "human_usability": "not_tested",
   "physical_IME": "not_tested",
+  "physical_webview_clipboard": "not_tested",
   "norton_effect": "not_confirmed",
   "full_hermes": "not_implemented",
-  "hermes_direction": "python3104_current_core_incremental_feature_porting",
-  "formal_1_0": "not_released_pending_clipboard_and_onsite_acceptance"
+  "formal_1_0": "not_released",
+  "prior_attempts": [
+    "Restricted environment rejected atomic profile replace; normal Windows targeted run passed without changing persistence.",
+    "Early GUI fixture timing and selector failures were corrected; original reports remain in ignored artifacts.",
+    "Cached decision replay originally saw later outputs; sources are now restricted to the decision position and receipt order is checked."
+  ],
+  "full_failed_cases": [
+    {
+      "id": "tests.test_dialogs.DialogTests.test_long_message_theme_copy_and_close_without_mutation",
+      "status": "error"
+    }
+  ],
+  "clipboard": {
+    "current_full": "failed_OpenClipboard_error_5",
+    "root_cause": "unconfirmed",
+    "physical_webview": "not_tested"
+  }
 }

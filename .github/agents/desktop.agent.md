@@ -25,6 +25,6 @@ disable-model-invocation: false
 
 1.0候選版：直接填endpoint/Assistant ID/API key三欄；CA預設系統信任，deployment.json僅選用預填。改已有端點/協定先確認並撤銷舊綁定，不提交內部設定。activation兩輪聊天、Skill/search各自驗收；continuity記憶預覽確認、固定快照、草稿CAS及接續保持。Dialogue schema4、主Store8不變；未知POST不重送。實際DVC/AD/來源品質未驗收維持候選版。
 
-1.0.0rc2：先讀[工作代理](../../docs/AGENT-WORK.md)。agent_jobs為UI/CLI共用交辦，agent_execution只擴展既有WorkflowService/LangGraph；未導入Hermes或新依賴。最多2補查/12請求/600秒，派發前保存額度，恢復不重置；補查只重複原核准rag指示，needs_input/超限停下保留部分成果。planner/compose/assess最多3次明確無工具合成測試，搜尋另外單次核准工具收據。不能手填能力或自動同意排程；示範不能啟用真排程。修改後舊預覽失效，取消晚到/來源刪除/快取清理須驗證。先targeted/quick，核心交付一次full＋受影響WebView；維持69wheels與真實現場not_tested界線。
+1.0.0rc3：新交辦預設自主模式，agent.version=2；舊固定流程不變。autonomous.py固定search/delegate/compose/ask目錄，原LangGraph決策／執行條件循環，WorkflowService唯一狀態。獨立自主格式證據不可手填；一次確認固定目標、工具、助理及資料，最多6動作／12請求／600秒，工具結果續答計量，未知POST不retry。來源與收據核對不等於事實正確。先讀docs/AGENT-WORK.md及AGENTS最新節；仍Python3.10.4／69wheels，無schema改動或完整Hermes。
 
 1.0候選版現場接手先讀 [TO-AGENT](../../TO-AGENT.md)。主對話本機命名/可收合資料夾不派發；SMTP僅後續規格，尚未實作。

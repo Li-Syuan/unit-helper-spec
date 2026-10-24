@@ -148,8 +148,13 @@ class DataCleanup:
                     request_keys.append((session_context(binding,'chat',{'conversation_id':'engine:'+row['conversation_id']})[0],row['id']))
             spec=payload.get('workflow',{})
             if 'agent' in spec:
-                from .agent_execution import expanded_steps
-                steps=expanded_steps(spec)
+                if spec['agent'].get('version')==2:
+                    workflows=getattr(self.engine,'_workflows',None)
+                    if not workflows:raise ValueError('無法核對自主工作收據，未刪除。')
+                    steps=list(workflows._runtime_definitions({'payload':payload},workflows.get_task_steps(row['id'])).values())
+                else:
+                    from .agent_execution import expanded_steps
+                    steps=expanded_steps(spec)
             else:steps=spec.get('steps',[])
             for step in steps:
                 binding=step.get('binding')

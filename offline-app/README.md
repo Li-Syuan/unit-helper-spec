@@ -26,4 +26,4 @@ start-demo-login.bat
 
 錯誤時保留終端錯誤與 `artifacts/company-test/latest.json`；分享前遮密及去識別。公司 API、AD、人事資料與 Oracle 真實驗證仍未執行。VS Code Copilot 接手先開啟整個解壓資料夾，讀 AGENTS、README、ONE-CLICK-TEST、COMPANY-IMPLEMENTATION、DVC-REVIEW、VALIDATION；使用公司核准模型及權限，不宣稱 Copilot 可離線使用。
 
-歷史遠端ZIP曾出現Windows剪貼簿error5；後續候選版已有正常Windows驗證。請只以[目前驗證結果](../docs/VALIDATION.md)判讀本版，不把舊數字當成此次結果。1.0.0rc2依賴未變，保留原69wheels，沒有重建常駐環境或新增下載來源。
+剪貼簿與真實服務的未測限制請以[目前驗證結果](../docs/VALIDATION.md)判讀，不把較早的通過紀錄當成此次結果。1.0.0rc3依賴未變，保留原69wheels，沒有重建常駐環境或新增下載來源。

@@ -1,6 +1,6 @@
 ## 1.0 候選版部署與現場驗收
 
-本次 **1.0.0rc2** 新增一般交辦，接手先看[工作代理](docs/AGENT-WORK.md)。一位助理完成三次明確工作格式測試後可做純文字工作；搜尋需另行核准工具及單次收據測試。現場第一件事建議以市場情報驗證補問、可修改Plan、有限補查、來源及每日/每週排程，不要求四位角色。額外助理只選已驗證角色；未實測不得改證據或開放工具。
+本次 **1.0.0rc3** 新增依成果決定下一步的自主交辦，接手先看[工作代理](docs/AGENT-WORK.md)。一位助理完成工作格式測試後可做固定純文字工作；自主模式再明確完成最多三次自主決策測試，舊證據不自動升級；搜尋需另行核准工具及單次收據測試。現場第一件事建議以市場情報驗證補問、可修改Plan、自主調整搜尋、選入助理分工、來源及每日/每週排程，不要求四位角色。額外助理只選已驗證角色；未實測不得改證據或開放工具。
 
 直接貼給接手 Agent 的指令與 SMTP 後續工作見 [TO-AGENT.md](TO-AGENT.md)。SMTP 尚未實作，不能直接執行寄信。
 
@@ -13,7 +13,7 @@
 | 記憶 | 主對話/我的記憶、continuity.py | 同助理快照、可關閉、來源/刪除清楚；不同登入者隔離 |
 | 單助理Skill | 我的Skills相容性、既有核准搜尋 | Plan批准後執行，人工核對來源，再同意每日排程 |
 | 登入 | company_auth.py既有authenticate契約 | AD登入/拒絕/到期實測，不能用單一True假授權 |
-| 發布 | scripts/verify.py development及受影響WebView smoke | 本機full已通過，仍保留歷史剪貼簿失敗及瀏覽器快取清理警告；所有現場項目完成才正式1.0，詳見最新VALIDATION |
+| 發布 | scripts/verify.py development及受影響WebView smoke | 以最新[VALIDATION](docs/VALIDATION.md)為準，不沿用舊版通過結論；釐清剪貼簿讀回、完成本機與所有現場項目後才正式1.0 |
 
 先跑定向`python scripts/test_runner.py --suite targeted --tests tests.test_continuity tests.test_dialogue_recovery`；交付整合才跑一次verify，不重複full。`python`須為專案`.venv\Scripts\python.exe`3.10.4。真實API檢查須由使用者明確啟動，可能耗用token，不把合成通過當現場驗收。
 

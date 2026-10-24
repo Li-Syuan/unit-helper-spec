@@ -1,8 +1,10 @@
-# 1.0.0rc2：一般交辦與有限工作代理
+# 1.0.0rc3：自主決策與共用工作核心
 
-新增 `agent_jobs.py` 共用服務，主對話「交辦工作」與CLI沿同一WorkflowService／LangGraph／排程。既有work_orders保存agent-v1版本化JSON，主schema8／Dialogue4不變。規劃可使用所選Skill／記憶，一位助理即可；額外角色需明確選取與實測。`agent_execution.py`將有限判斷及補查展開為原graph中的有界節點；不新增引擎或全域狀態。所有額度在派發前持久保存，恢復不重置截止時間或請求數。舊固定流程維持原行為。
+新交辦預設自主處理：`autonomous.py` 提供固定的搜尋、文字分工、彙整與補問動作目錄，主助理每輪提出結構化建議，由服務驗證後執行。`graph_runner.py` 在原 LangGraph 中加入 decide／act 條件循環；WorkflowService 仍是唯一工作狀態及執行服務，不新增另一個 runner／排程器。舊 agent.version=1 與無 agent 的流程沿原固定圖執行。
 
-預設2補查／12模型請求／600秒，只能重查核准步驟原指示。主助理的三次無工具格式檢查與單次核准搜尋分開；補查／缺資料判斷不等於事實正確。正式1.0仍需DVC與現場驗收。詳見[工作代理](AGENT-WORK.md)。Python、69個依賴與離線來源未變。
+批准快照 agent.version=2 固定目標、要求、Skill／記憶、所選助理版本、搜尋工具及限額。主 Store schema8、DialogueStore4不變；動態決策與動作保存在既有 workflow_steps，定義、訊息與收據先保存，checkpoint只保存控制位置及指紋。每次派發前檢查身分／綁定並保留額度；預設6動作／12模型請求／600秒，工具結果續答也計數，恢復不重置。未知送出不retry；確定原run／快取才明確恢復。搜尋結果需工具收據；最終引用只能來自已取得搜尋文字，內容真實性仍需人核對。
+
+規劃與自主決策停用工具；`autonomous` 能力須另外最多3次合成格式斷言，舊planner／assess不能替代。分工只在所選已驗證文字角色依序執行，不是並行子代理。停止後明確新建可保存來源task識別，不自動轉交成果、記憶或批准。畫面／CLI共用服務；真實DVC、AD及來源品質仍須現場驗收。Python3.10.4與69wheels未變，完整Hermes尚未移植。詳見[工作代理](AGENT-WORK.md)。
 
 ## 三欄啟用、對話續談與記憶
 

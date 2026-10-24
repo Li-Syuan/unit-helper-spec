@@ -27,6 +27,7 @@ class AgentJobTests(unittest.TestCase):
         while self.s.engine.has_inflight() and time.monotonic()<until:time.sleep(.01)
         self.assertFalse(self.s.engine.has_inflight())
     def ready(self,**kw):
+        kw.setdefault('autonomous',False)
         r=self.a.create(kw.pop('profile_id','demo'),'整理指定工作資料',**kw);self.wait()
         r=self.a.state(r['id']);self.assertEqual(r['state'],'ready',r['error']);return r
     def run_job(self,r):
@@ -66,7 +67,7 @@ class AgentJobTests(unittest.TestCase):
     def test_questions_options_edit_expiry_and_fixed_skill_revision(self):
         d=copy.deepcopy(TEMPLATE);d['fields']=[{'id':'q'+str(i),'text':f'問題{i}','type':'boolean','options':[]} for i in range(4)]
         skill=self.s.skills.save_confirm(self.s.skills.save_preview(d)['token'])
-        r=self.a.create('demo','整理',skill_id=skill['id'],skill_revision=1)
+        r=self.a.create('demo','整理',skill_id=skill['id'],skill_revision=1,autonomous=False)
         self.assertEqual(len(r['questions']),3);self.assertFalse(self.s.engine.has_inflight())
         with self.assertRaises(ValueError):self.a.reply(r['id'],r['revision'],answer_values={'q0':'true'})
         r=self.a.reply(r['id'],r['revision'],answer_values={'q'+str(i):False for i in range(3)})
@@ -152,13 +153,13 @@ class AgentJobTests(unittest.TestCase):
     def test_unknown_planner_not_reposted_and_cancelled_late_result_ignored(self):
         pid=self.company()
         with patch.object(self.s.profiles,'respond',side_effect=RuntimeError('unknown')) as network:
-            r=self.a.create(pid,'搜尋指定來源',search=True);self.wait();r=self.a.state(r['id'])
+            r=self.a.create(pid,'搜尋指定來源',search=True,autonomous=False);self.wait();r=self.a.state(r['id'])
             with self.assertRaises(ValueError):self.a.reply(r['id'],r['revision'],'再試一次')
             self.assertEqual(network.call_count,1)
         gate=threading.Event();entered=threading.Event()
         def slow(*a,**k):entered.set();gate.wait(5);return self.responder(*a,**k)
         with patch.object(self.s.profiles,'respond',side_effect=slow):
-            r=self.a.create(pid,'另一項搜尋',search=True);self.assertTrue(entered.wait(3));self.a.cancel(r['id']);gate.set();self.wait()
+            r=self.a.create(pid,'另一項搜尋',search=True,autonomous=False);self.assertTrue(entered.wait(3));self.a.cancel(r['id']);gate.set();self.wait()
         self.assertEqual(self.a.state(r['id'])['state'],'cancelled');self.assertFalse(self.s.store.tasks())
 
     def test_probe_explicit_max_three_no_tools_and_failure_revokes_role(self):

@@ -11,6 +11,7 @@ def expanded_steps(spec):
     base=copy.deepcopy(spec['steps'])
     if 'agent' not in spec:return base
     cfg=spec['agent']
+    if cfg.get('version')==2:return []
     if cfg.get('version')!=1:raise ValueError('不支援此工作代理版本。')
     budget=limits(cfg['limits']);steps=base[:-1]
     for index in range(budget['max_supplements']+1):
@@ -37,7 +38,9 @@ def reserve(service,tid,step_id):
         service.engine._ensure_open()
         task=service.store.task(tid)
         if task['state']!='running':raise ValueError('工作已停止。')
-        payload=task['payload'];cfg=limits(payload['workflow']['agent']['limits'])
+        payload=task['payload']
+        from .autonomous import limits as autonomous_limits
+        cfg=(autonomous_limits if payload['workflow']['agent'].get('version')==2 else limits)(payload['workflow']['agent']['limits'])
         budget=payload.get('agent_budget')
         if budget is None:budget={'started_at':stamp(),'deadline':stamp(utcnow()+timedelta(seconds=cfg['timeout_seconds'])),'requests':[]}
         remaining=(datetime.fromisoformat(budget['deadline'])-utcnow()).total_seconds()

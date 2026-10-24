@@ -1,3 +1,11 @@
+# 1.0.0rc3 自主工作（優先於下方固定步驟規則）
+
+使用者已批准搜尋／選入助理分工／成果的自主決策。agent_create預設autonomous=true，新批准agent.version=2；舊缺值false／version1不轉換。autonomous.py固定動作目錄search/delegate/compose/ask，JSON建議不是授權；主助理決策role=autonomous必須獨立最多3次無工具斷言才寫同修訂能力。舊格式證據不解鎖；搜尋仍核准policy＋實測，實際結果核對工具收據及來源引用，不冒充事實驗證。
+
+原graph_runner擴展decide/act條件循環；WorkflowService仍唯一業務狀態。主Store8／Dialogue4／Python3.10.4／69wheels不變。動態定義與固定訊息先入workflow_steps；批准快照固定範圍／綁定／Skill／記憶。預設6動作／12模型請求／600秒，決策和tool submit續答均派發前持久計數；恢復核對receipt/checkpoint不重設額度，未知POST不重送。相同動作及來源無進展停止；取消／到期阻止晚到派發。新交辦可保留prior_task_id但不自動傳送成果／批准／記憶；未知送出不提供新工作重試捷徑。單次依序分工，無shell／檔案／SMTP／動態載入外掛。
+
+新主畫面與CLI共用服務，進階舊入口也須顯示自主授權範圍，不以固定步驟假裝完整批准。排程沿固定自主策略，每次注入日期；成功後另行核對與持續同意。測試沿targeted/quick/full分流，真WebView合成旅程與DVC/AD/來源品質分開；仍為候選版，不宣稱完整Hermes或正式1.0。
+
 # Hermes 完整功能需求（2026-10-24）
 
 使用者要求以達哥接口達到Hermes功能，但最新確認「必須維持Python3.10.4，先不要更換核心」。保留現有QA／LangGraph與本版有界工作代理，不能把Hermes新版塞入現有環境、放寬版本或宣稱全功能。後續逐項移植／外部依賴與驗收見[相容性清單](docs/HERMES-COMPATIBILITY.md)。未完成項目須保留為缺口，不擅自當作已取消需求。SMTP、本機shell／檔案、MCP、並行子代理等目前仍未實作，不因文件或模型回覆自動開放。
