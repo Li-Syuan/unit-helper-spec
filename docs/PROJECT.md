@@ -1,4 +1,10 @@
-# 1.0.0rc1：三欄啟用、對話續談與記憶
+# 1.0.0rc2：一般交辦與有限工作代理
+
+新增 `agent_jobs.py` 共用服務，主對話「交辦工作」與CLI沿同一WorkflowService／LangGraph／排程。既有work_orders保存agent-v1版本化JSON，主schema8／Dialogue4不變。規劃可使用所選Skill／記憶，一位助理即可；額外角色需明確選取與實測。`agent_execution.py`將有限判斷及補查展開為原graph中的有界節點；不新增引擎或全域狀態。所有額度在派發前持久保存，恢復不重置截止時間或請求數。舊固定流程維持原行為。
+
+預設2補查／12模型請求／600秒，只能重查核准步驟原指示。主助理的三次無工具格式檢查與單次核准搜尋分開；補查／缺資料判斷不等於事實正確。正式1.0仍需DVC與現場驗收。詳見[工作代理](AGENT-WORK.md)。Python、69個依賴與離線來源未變。
+
+## 三欄啟用、對話續談與記憶
 
 主Store維持schema8，DialogueStore目前schema4。`activation.py`提供endpoint/ID/key直接設定、選用部署預填與明確兩輪聊天斷言，CA預設系統信任；`continuity.py`提供記憶預覽/確認、對話草稿CAS/閱讀位置、固定快照與接續。WebView與CLI共用；Tk保留舊功能。記憶只在明確的新對話預覽或Skill選取後傳送，不背景挖掘或共享。
 

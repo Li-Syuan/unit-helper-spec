@@ -77,7 +77,7 @@ class WorkOrders:
 
     def list(self):
         self.engine._ensure_open()
-        with self.store.connection() as db:ids=[r[0] for r in db.execute('SELECT id FROM work_orders ORDER BY rowid DESC')]
+        with self.store.connection() as db:ids=[r[0] for r in db.execute("SELECT id FROM work_orders WHERE coalesce(json_extract(data,'$.kind'),'')!='agent-v1' ORDER BY rowid DESC")]
         return [self.state(oid) for oid in ids]
 
     def create(self,profile_id,goal,source_thread=None):

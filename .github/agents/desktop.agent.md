@@ -23,6 +23,8 @@ disable-model-invocation: false
 
 0.23.0：自建Skill／單助理Plan見docs/SKILLS.md與AGENTS最新節。沿用SkillService→WorkflowService→LangGraph；不得另造引擎或以prompt解鎖工具。真實能力只由明確相容性測試產生證據，規劃無工具，批准與持續排程分開；Markdown匯入僅草稿。
 
-1.0.0rc1：依使用者最新更正，直接填endpoint/Assistant ID/API key三欄；CA預設系統信任，deployment.json僅選用預填。更換已有端點/協定先確認並撤銷舊綁定，預填不覆寫手動設定；不要把內部端點或憑證提交Git。activation兩輪工具停用合成斷言與metadata/Skill/search各自驗收。continuity提供明確記憶預覽確認、固定thread快照、草稿CAS、來源接續；Dialogue schema4先backup交易遷移，主Store仍8。未知摘要POST不重送、接續只建草稿；記憶不自動跨助理或登入者傳送。舊進階歷史保留原入口，不強制遷移。先驗證主對話十輪/重開/故障恢復，再單助理Skill與排程；實際DVC/AD/來源品質未驗收維持候選版。
+1.0候選版：直接填endpoint/Assistant ID/API key三欄；CA預設系統信任，deployment.json僅選用預填。改已有端點/協定先確認並撤銷舊綁定，不提交內部設定。activation兩輪聊天、Skill/search各自驗收；continuity記憶預覽確認、固定快照、草稿CAS及接續保持。Dialogue schema4、主Store8不變；未知POST不重送。實際DVC/AD/來源品質未驗收維持候選版。
+
+1.0.0rc2：先讀[工作代理](../../docs/AGENT-WORK.md)。agent_jobs為UI/CLI共用交辦，agent_execution只擴展既有WorkflowService/LangGraph；未導入Hermes或新依賴。最多2補查/12請求/600秒，派發前保存額度，恢復不重置；補查只重複原核准rag指示，needs_input/超限停下保留部分成果。planner/compose/assess最多3次明確無工具合成測試，搜尋另外單次核准工具收據。不能手填能力或自動同意排程；示範不能啟用真排程。修改後舊預覽失效，取消晚到/來源刪除/快取清理須驗證。先targeted/quick，核心交付一次full＋受影響WebView；維持69wheels與真實現場not_tested界線。
 
 1.0候選版現場接手先讀 [TO-AGENT](../../TO-AGENT.md)。主對話本機命名/可收合資料夾不派發；SMTP僅後續規格，尚未實作。

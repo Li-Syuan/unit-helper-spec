@@ -1,3 +1,15 @@
+# Hermes 完整功能需求（2026-10-24）
+
+使用者要求以達哥接口達到Hermes功能，但最新確認「必須維持Python3.10.4，先不要更換核心」。保留現有QA／LangGraph與本版有界工作代理，不能把Hermes新版塞入現有環境、放寬版本或宣稱全功能。後續逐項移植／外部依賴與驗收見[相容性清單](docs/HERMES-COMPATIBILITY.md)。未完成項目須保留為缺口，不擅自當作已取消需求。SMTP、本機shell／檔案、MCP、並行子代理等目前仍未實作，不因文件或模型回覆自動開放。
+
+# 1.0.0rc2 有限工作代理（優先於下方）
+
+新增agent_jobs共用Web/CLI交辦服務；work_orders kind=agent-v1只保存版本化JSON與workflow連結，不另建狀態引擎。主schema8／Dialogue4、Python3.10.4、69wheels不變。無Hermes依賴、shell／寄信／任意檔案工具。單助理planner/compose/assess須明確最多3次工具停用合成斷言；rag另核准工具與單次收據測試，實測才存同修訂能力。可選既有已驗證其他文字角色，不把單模型多階段稱獨立覆核。
+
+agent_execution只擴展既有WorkflowService/LangGraph的有限控制節點：最多2補查/12模型請求/600秒可降低，補查只能重複原核准rag步驟的原指示/範圍。判斷complete/supplement/needs_input是資料；未知欄位或步驟拒絕。額度在派發前存task，恢復核對原receipt/checkpoint，不重設截止時間、不重送未知POST、不建立隱藏retry副本。條件/Skill/記憶/綁定固定，附加結果僅依預覽交最終compose。規劃零工具，批准前零搜尋/工作；持續排程另需成功試跑、人工核對、明確同意，demo不能排程。
+
+主要UI為web_assets/agent-jobs.js；Chat草稿不混入交辦，Skill選用且另存先草稿確認。清理流程一併刪agent交辦與規劃內容，task成果另行刪除且包括所有補查/判斷快取。真實future守護取消、刪除、close與inspect。測試先targeted/quick，核心整合一次verify；WebView --agent-only真視窗合成旅程，不冒充真實DVC/人工/AD驗收。接手讀docs/AGENT-WORK.md與TO-AGENT.md；正式1.0仍需現場實測。
+
 # 1.0.0rc1 啟用、續談與記憶（優先於下方）
 
 主Store仍schema8；DialogueStore升schema4，1/2/3先backup再交易新增thread_views、memories、continuation_requests、activation_checks。主對話草稿CAS及閱讀位置、固定記憶快照、來源在同一DialogueStore；task_drafts CHECK=0不變。既有主/進階歷史不搬移。刪主對話包含視圖與接續請求，另存記憶保留，來源失效明示；刪記憶不宣稱撤回已送出快照。

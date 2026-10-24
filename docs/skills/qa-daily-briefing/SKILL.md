@@ -7,6 +7,8 @@ description: 使用 QA agent 的既有桌面與 CLI 準備每日搜尋日報、�
 
 在 QA agent 專案目錄工作；先讀 `docs/WORKBENCH.md`。不重新安裝正常環境，不讀取或顯示 keyring 金鑰、`.env`、HTTP body。
 
+1.0.0rc2的新交辦優先使用 [工作代理](../../AGENT-WORK.md) 中的 `/job-create`、`/job-preview`、`/job-run`、`/job-schedule`。一般 `/job` 預設純文字；搜尋工作用 `/job-create` 明確指定 `search:true`，只能選已驗證主助理與核准工具。不必先建立Skill。必要補問依實際 `questions` 回答；有限補查最多2輪、12模型請求、600秒，不能自行提高或改用別的工具。`needs_input`／超限時保留部分成果請人核對。由使用者互動確認執行，成功後另核對來源及持續傳送，不能由本Skill代填批准。`/job-skill`只產生可編輯草稿，不自動保存。下方 `/order` 只用於原有每日交辦，不能拿其ID操作新job。
+
 1. 確認桌面已退出：CLI 與桌面（含系統匣）共用工作區鎖。不要繞過鎖或另開副本假裝資料同步。
 2. `qa.bat assistants` 列出可用的本機 profile ID。一般聊天的 `company:...` 識別與工作 profile ID 不可互換。搜尋核准只是授權，不代表來源品質已驗收。
 3. 使用者只想展示時，改用 `qa.bat --demo`。此模式不讀正式設定，關閉後清除暫存資料；不能建立真實排程。

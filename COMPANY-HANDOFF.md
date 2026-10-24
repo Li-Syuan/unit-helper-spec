@@ -1,5 +1,7 @@
 ## 1.0 候選版部署與現場驗收
 
+本次 **1.0.0rc2** 新增一般交辦，接手先看[工作代理](docs/AGENT-WORK.md)。一位助理完成三次明確工作格式測試後可做純文字工作；搜尋需另行核准工具及單次收據測試。現場第一件事建議以市場情報驗證補問、可修改Plan、有限補查、來源及每日/每週排程，不要求四位角色。額外助理只選已驗證角色；未實測不得改證據或開放工具。
+
 直接貼給接手 Agent 的指令與 SMTP 後續工作見 [TO-AGENT.md](TO-AGENT.md)。SMTP 尚未實作，不能直接執行寄信。
 
 同仁直接填endpoint、Assistant ID與API key，CA預設系統信任，不要求另提供。可依[部署指南](docs/DEVELOPMENT.md)選用deployment.json預填端點，但不是啟用前提。不要改寫前端、關閉TLS、猜Assistant ID是model，或為測試通過自動啟用工具。當前主schema8、Dialogue schema4；升級前保留一致備份。

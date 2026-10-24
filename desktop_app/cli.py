@@ -12,6 +12,18 @@ from pathlib import Path
 
 HELP = """QA agent 工作台
 直接輸入文字：送給目前助理（預設本機示範）
+/jobs 或 /job-open <ID>       列出／選取一般交辦工作
+/job <profileID> <需求>       提出一般工作計畫，不搜尋或執行
+/job-create <JSON>            帶入 Skill、記憶及限制建立交辦
+/job-reply <JSON>             補充 {text,answers:{問題ID:答案}}
+/job-edit <JSON>              修改 {steps:[...],limits:{...}}，舊預覽失效
+/job-preview 或 /job-run      預覽／人工確認後執行
+/job-inspect 或 /job-recover  檢查／接續原工作，未知送出不重試
+/job-cancel                   取消目前交辦
+/job-schedule <JSON>          {time_hhmm,frequency,weekday} 核對成果後另行確認
+/job-skill                    取得可編輯 Skill 草稿，不保存
+/agent-probe <profileID>      確認後最多三次合成工作格式測試
+/agent-search-probe <profileID> 確認後單次核准搜尋測試
 /assistants                   列出聊天助理及已驗證規劃角色
 /skills                       列出我的 Skills
 /skill <ID> [profileID]        選取 Skill，建立零派發規劃；預設使用其本機助理
@@ -88,6 +100,13 @@ class Workbench:
         self.workflow = None
         self.order = None
         self.skill_values = None
+        self.job = None
+
+    def jobs(self):return self.call('agent_list')
+
+    def current_job(self):
+        if not self.job:raise ValueError('請先 /job 或 /job-open 選取工作。')
+        return self.call('agent_state',id=self.job)
 
     def skills(self):return self.call('skill_list')
 
@@ -183,6 +202,37 @@ def execute_line(w, line, input_stream, output):
     argument=argument.strip()
     if command=='/quit':return False
     if command=='/help':emit(HELP,output)
+    elif command=='/jobs':emit(w.jobs(),output)
+    elif command=='/job-open':
+        r=w.call('agent_state',id=argument);w.job=r['id'];emit(r,output)
+    elif command in ('/job','/job-create'):
+        if command=='/job':
+            pid,_,goal=argument.partition(' ');data={'profile_id':pid,'goal':goal}
+        else:data=json.loads(argument)
+        r=w.call('agent_create',**data);w.job=r['id'];emit(r,output)
+    elif command in ('/job-reply','/job-edit'):
+        r=w.current_job();emit(w.call('agent_reply' if command=='/job-reply' else 'agent_edit',id=r['id'],revision=r['revision'],**json.loads(argument)),output)
+    elif command in ('/job-preview','/job-run'):
+        r=w.current_job();preview=w.call('agent_preview',id=r['id'],revision=r['revision'])
+        if command=='/job-preview':emit(preview,output)
+        elif not preview['ready']:raise ValueError(preview['error'])
+        elif confirm(preview,'核對資料、步驟、目的助理與補查上限後執行？',input_stream,output):
+            emit(w.call('agent_confirm',id=r['id'],revision=r['revision'],consent=True),output)
+        else:
+            w.session.workflows.previews.pop(r['workflow_id'],None);emit('未執行。',output)
+    elif command in ('/job-inspect','/job-recover','/job-cancel','/job-skill'):
+        r=w.current_job();operation='agent_skill_draft' if command=='/job-skill' else 'agent_'+command[len('/job-'):]
+        emit(w.call(operation,id=r['id']),output)
+    elif command=='/job-schedule':
+        r=w.current_job();data=json.loads(argument)
+        if not isinstance(data,dict) or set(data)-{'time_hhmm','frequency','weekday'}:raise ValueError('排程只接受時間、頻率及星期。')
+        if not r['task'] or r['task']['state']!='succeeded':raise ValueError('需成功試跑並核對來源。')
+        if confirm({'work':r,'schedule':data},'已核對成果來源，並同意持續傳送？',input_stream,output):
+            emit(w.call('agent_schedule',id=r['id'],revision=r['revision'],reviewed=True,consent=True,**data),output)
+    elif command in ('/agent-probe','/agent-search-probe'):
+        search=command=='/agent-search-probe'
+        if confirm({'profile_id':argument,'requests':1 if search else 3,'search':search},'啟動非敏感合成測試？',input_stream,output):
+            emit(w.call('agent_search_probe' if search else 'agent_probe',profile_id=argument,consent=True),output)
     elif command=='/activation':emit(w.call('activation_status'),output)
     elif command=='/activate':
         if not input_stream.isatty():raise ValueError('金鑰只接受互動遮蔽輸入，不接受命令列或管線。')
@@ -409,7 +459,7 @@ def main(argv=None):
     source=parser.add_mutually_exclusive_group()
     source.add_argument('--demo',action='store_true',help='暫存離線示範，不讀取正式設定')
     source.add_argument('--config',help='既有本機設定檔；金鑰仍由原keyring機制取得')
-    parser.add_argument('command',nargs='?',choices=['shell','assistants','skills','orders','status','result','desktop'],default='shell')
+    parser.add_argument('command',nargs='?',choices=['shell','assistants','skills','orders','jobs','status','result','desktop'],default='shell')
     parser.add_argument('task_id',nargs='?')
     args=parser.parse_args(argv)
     if sys.version_info[:3]!=(3,10,4):parser.error('請使用專案 Python 3.10.4。')

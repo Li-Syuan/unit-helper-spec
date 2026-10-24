@@ -241,6 +241,12 @@ class AssistantsGatewayTests(unittest.TestCase):
             gateway.respond(self.messages, context=self.ctx)
         self.assertEqual(len(self.mock.runs), 1)
         self.assertTrue(gateway.inspect_request(context=self.ctx)['recoverable'])
+        # A workflow supplies its remaining total budget, which may be shorter.
+        now[0]=0
+        gateway=self.gateway(clock=lambda:now[0],sleep=lambda seconds:now.__setitem__(0,2))
+        with self.assertRaises(GatewayError):
+            gateway.respond(self.messages,context=dict(self.ctx,request_deadline_seconds=1,resume=True))
+        self.assertEqual(len(self.mock.runs),1)
 
     def test_endpoint_and_ca_validation(self):
         for endpoint in ('http://company.test', 'https://user:pass@company.test', 'https://api.openai.com/v1'):

@@ -43,8 +43,9 @@ function closeModal(){$('modal').close();S.modalVersion++;if(workEntryDismiss){c
 function modalButtons(...items){$('modal-actions').replaceChildren(...items);}
 // This palette only locates existing screens. It never dispatches or approves work.
 const workEntries=[
+ {id:'agent-work',icon:'workflow',title:'交辦一件工作',description:'說明目標、核對 Plan，再交給助理完成；可選 Skill',keywords:'交辦 主代理 agent plan 搜尋 整理'},
  {id:'skills',icon:'spark',title:'我的 Skills',description:'保存工作做法，用一位助理先規劃再執行',keywords:'skill 技能 模板 工作流程'},
- {id:'orders',icon:'clock',title:'交辦工作',description:'把需求聊清楚，先試跑日報再啟用每天執行',keywords:'日報 交辦 主代理 agent'},
+ {id:'orders',icon:'clock',title:'既有每日交辦',description:'保留原本每日搜尋日報與歷史成果',keywords:'日報 舊交辦'},
  {id:'dialogue',icon:'chat',title:'繼續對話',description:'回到目前對話，保留尚未送出的內容',keywords:'聊天 chat assistant'},
  {id:'chat',icon:'workflow',title:'規劃與分工',description:'先討論需求與步驟，確認後才交給助理執行',keywords:'plan 多代理 multi agents 團隊'},
  {id:'team',icon:'team',title:'助理團隊',description:'管理 Assistant ID、角色與能力驗證',keywords:'assistant 設定 主代理 子代理'},
@@ -72,6 +73,7 @@ function openWorkEntry(){
    const row=button('',async()=>{
     // Existing input elements are retained; never fill or clear a draft here.
     workEntryDismiss=null;dialog.classList.remove('work-palette');closeModal();
+    if(item.id==='agent-work'){navigate('dialogue');document.dispatchEvent(new Event('qa-agent-open'));return;}
     if(item.id==='briefing'){await showBriefing();return;}
     if(S.page!==item.id)navigate(item.id);
     if(item.id==='chat'){
@@ -529,6 +531,7 @@ $('selection-todo').addEventListener('click',()=>{const text=S.selectedText||'';
 $('selection-transfer').addEventListener('click',()=>transferDialog({cid:S.selectedCid,text:S.selectedText||''}).catch(e=>notify(e.message,true)));
 const briefingEntry=button('財經日報',()=>showBriefing(),'button quiet');briefingEntry.id='dialogue-briefing';$('dialogue-plan').insertAdjacentElement('afterend',briefingEntry);$('dialogue-plan').parentElement.style.flexWrap='wrap';
 renderNav();navigate('dialogue');
+const agentJobsEntry=button('',()=>{navigate('dialogue');document.dispatchEvent(new Event('qa-agent-history'));},'nav-item');agentJobsEntry.id='agent-jobs-nav';agentJobsEntry.dataset.page='agent-work';agentJobsEntry.title='交辦工作';agentJobsEntry.append(icon('workflow'),el('span','nav-label','交辦工作'));$('navigation').children[0]?.insertAdjacentElement('afterend',agentJobsEntry);
 const closingControls=new Map();let previousInert=false;
 window.qaSetClosing=value=>{if(value===true){if(S.closing)return;S.closing=true;clearTimeout(S.saveTimer);previousInert=document.body.inert;document.body.inert=true;document.querySelectorAll('button,input,textarea,select').forEach(control=>{closingControls.set(control,{disabled:control.disabled,readOnly:control.readOnly});control.disabled=true;if('readOnly'in control)control.readOnly=true;});$('status-text').textContent='正在保存並等待背景工作結束…';}else{S.closing=false;document.body.inert=previousInert;for(const[control,prior]of closingControls){if(control.isConnected){control.disabled=prior.disabled;if('readOnly'in control)control.readOnly=prior.readOnly;}}closingControls.clear();$('send').disabled=S.sending;$('status-text').textContent='關閉未完成，請檢查草稿保存狀態。';}};
 window.qaDraftSnapshot=()=>{clearTimeout(S.saveTimer);window.qaSetClosing(true);if(!S.dirty||!S.cid)return null;return {cid:S.cid,text:$('message-input').value,purpose:S.purpose,planned:S.planned,seq:++S.seq};};
@@ -538,7 +541,7 @@ document.addEventListener('qa-navigate',e=>{if(['settings','team','chat','orders
 window.qaRequestClose=(unsavedExit=false,rememberExit=false)=>{
  if(S.closing)return;
  if($('modal').open&&!unsavedExit){notify('請先完成或關閉目前視窗，再選擇關閉方式。');return;}
- if(unsavedExit){const body=modal('工作內容尚未保存');body.append(el('p','notice','尚未提交的需求、Skill 草稿、補充文字或條件修改將在退出時遺失。已保存的討論、成果與排程保留。可取消並返回保存，或明確放棄這些編輯。'));const cancel=button('返回保存',()=>{closeModal();navigate(window.qaSkillHasUnsaved?.()?'skills':'orders');});modalButtons(cancel,button('放棄未保存編輯並退出',async()=>{window.qaOrderExitConfirmed=true;const result=await call('host_close',{value:'exit',remember:rememberExit});if(!result.pending)closeModal();},'button danger'));cancel.focus();return;}
+ if(unsavedExit){const body=modal('工作內容尚未保存');body.append(el('p','notice','尚未提交的需求、Skill 草稿、補充文字或條件修改將在退出時遺失。已保存的討論、成果與排程保留。可取消並返回保存，或明確放棄這些編輯。'));const cancel=button('返回保存',()=>{closeModal();if(window.qaAgentHasUnsaved?.()){navigate('dialogue');document.dispatchEvent(new Event('qa-agent-open'));}else navigate(window.qaSkillHasUnsaved?.()?'skills':'orders');});modalButtons(cancel,button('放棄未保存編輯並退出',async()=>{window.qaOrderExitConfirmed=true;const result=await call('host_close',{value:'exit',remember:rememberExit});if(!result.pending)closeModal();},'button danger'));cancel.focus();return;}
  const body=modal('關閉視窗後，要繼續自動工作嗎？');
  body.append(el('p','notice','留在系統匣會保持此程式及已啟用的本機排程運作。電腦關機、休眠或登出後不能執行。退出會停止本機自動工作。'));
  const row=el('label','check-field'),remember=el('input');remember.type='checkbox';row.append(remember,document.createTextNode('記住這次選擇（可在設定變更）'));body.append(row);

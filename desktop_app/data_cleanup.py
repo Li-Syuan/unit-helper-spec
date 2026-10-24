@@ -46,6 +46,7 @@ class DataCleanup:
                 if row['schedule_id']:raise ValueError('此流程仍有自動工作，請先刪除其排程。')
                 task_ids.update(r['id'] for r in db.execute("SELECT id FROM tasks WHERE json_extract(payload,'$.workflow.id')=?",(row['id'],)))
             data['versions']=[dict(r) for r in db.execute(f'SELECT * FROM workflow_versions WHERE workflow_id IN ({marks}) ORDER BY workflow_id,revision',ids)]
+            data['agent_orders']=[dict(r) for r in db.execute(f"SELECT * FROM work_orders WHERE json_extract(data,'$.kind')='agent-v1' AND json_extract(data,'$.workflow_id') IN ({marks}) ORDER BY id",ids)]
         if kind=='plans':
             if any(r['state']=='executing' for r in rows):raise ValueError('計畫仍在執行。')
             task_ids.update(r['task_id'] for r in rows if r['task_id'])
@@ -118,6 +119,7 @@ class DataCleanup:
                     elif kind=='workflows':
                         self._forget_planner_cache(db,rows)
                         db.execute(f'DELETE FROM workflow_versions WHERE workflow_id IN ({marks})',ids)
+                        db.execute(f"DELETE FROM work_orders WHERE json_extract(data,'$.kind')='agent-v1' AND json_extract(data,'$.workflow_id') IN ({marks})",ids)
                     elif kind=='plans':
                         db.execute(f'DELETE FROM conversation_actions WHERE plan_id IN ({marks})',ids)
                         db.execute(f'UPDATE tasks SET plan_id=NULL WHERE plan_id IN ({marks})',ids)
@@ -144,7 +146,12 @@ class DataCleanup:
                 keys.add(session_context(binding,'chat',{'conversation_id':'task:'+row['id']})[0])
                 if row['conversation_id']:
                     request_keys.append((session_context(binding,'chat',{'conversation_id':'engine:'+row['conversation_id']})[0],row['id']))
-            for step in payload.get('workflow',{}).get('steps',[]):
+            spec=payload.get('workflow',{})
+            if 'agent' in spec:
+                from .agent_execution import expanded_steps
+                steps=expanded_steps(spec)
+            else:steps=spec.get('steps',[])
+            for step in steps:
                 binding=step.get('binding')
                 if binding:keys.add(session_context(binding,'workflow_step',{'run_id':row['id'],'step_id':step['id']})[0])
         return keys,request_keys

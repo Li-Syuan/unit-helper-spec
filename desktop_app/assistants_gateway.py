@@ -186,6 +186,11 @@ class AssistantsGateway:
         digest = _digest([purpose, clean])
         hashes = [_digest(message) for message in clean]
         deadline = self.clock() + (min(600,self.deadline_seconds) if approved else self.deadline_seconds)
+        remaining=(context or {}).get('request_deadline_seconds')
+        if remaining is not None:
+            if isinstance(remaining,bool) or not isinstance(remaining,(int,float)) or not 0<remaining<=600:
+                raise GatewayError('工作期限無效或已過期；未派發。')
+            deadline=min(deadline,self.clock()+remaining)
         with self.ledger.session(key):
             session = self.ledger.get_session(key) or {'thread_id': None, 'history': [], 'active': None}
             request = self.ledger.get_request(key, rid)
@@ -260,7 +265,7 @@ class AssistantsGateway:
                     if status == 'completed':
                         break
                     if status == 'requires_action':
-                        run=self._search(run,approved,key,session,rid,request,deadline,cancelled)
+                        run=self._search(run,approved,key,session,rid,request,deadline,cancelled,(context or {}).get('reserve_tool_round'))
                         continue
                     if status in ('cancelled', 'failed', 'expired', 'incomplete'):
                         request.update(state='cancelled' if status == 'cancelled' else 'failed', remote_terminal=True)
@@ -293,7 +298,7 @@ class AssistantsGateway:
                     raise
                 raise AssistantFailure('FORMAT','remote_request') from None
 
-    def _search(self,run,approved,key,session,rid,request,deadline,cancelled):
+    def _search(self,run,approved,key,session,rid,request,deadline,cancelled,reserve_tool_round=None):
         """Validate the entire batch before dispatch; unknown writes never replay."""
         import httpx
         def save():self.ledger.save(key,session,rid,request)
@@ -313,6 +318,10 @@ class AssistantsGateway:
                 validated.append({'id':cid,'name':name,'arguments':args,'digest':fingerprint(args)});ids.add(cid)
         except GatewayError as exc:blocked(str(exc))
         signature=fingerprint([{k:c[k] for k in ('id','name','digest')} for c in validated])
+        if reserve_tool_round is not None:
+            if not callable(reserve_tool_round):blocked('工作額度檢查無效；本批未執行。')
+            try:reserve_tool_round(signature)
+            except ValueError as exc:blocked(str(exc))
         batches=request.setdefault('tool_batches',[])
         batch=next((b for b in batches if b['fingerprint']==signature),None)
         if batch:

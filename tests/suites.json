@@ -1,5 +1,6 @@
 {
   "quick": [
+    "tests.test_agent_jobs.AgentJobTests",
     "tests.test_continuity.ContinuityTests",
     "tests.test_tray.TrayTests",
     "tests.test_work_orders.WorkOrderTests",

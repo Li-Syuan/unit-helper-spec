@@ -92,7 +92,7 @@ class SkillProfiles:
         if not isinstance(binding,dict) or 'skill_capability' not in binding:return self.base.validate_workflow(binding,role)
         p=self.base.validate(binding)
         if p['id'] in self.service.busy:raise ValueError('此助理仍在測試或產生草稿，請等待請求結束。')
-        if role not in {'planner','compose','rag'}:raise ValueError('Skill 只允許規劃、搜尋與整理。')
+        if role not in {'planner','compose','rag','assess'}:raise ValueError('此能力不支援指定角色。')
         if p['id']=='demo':
             if binding['skill_capability']!='demo-v1':raise ValueError('示範能力識別無效。')
             return p
@@ -105,8 +105,9 @@ class SkillProfiles:
         self.validate_workflow(binding,role)
         if not context.get('run_id') or not context.get('step_id'):raise ValueError('缺少隔離識別。')
         if binding['profile_id']=='demo':
+            if role=='assess':return dumps({'decision':'complete','step_id':'','reason':'離線示範已取得合成成果；不代表真實來源已驗證。'})
             return dumps({'text':'【離線示範】已依指定資料展示'+('搜尋' if role=='rag' else '整理')+'流程；沒有查詢即時資料，也不是真實 AI 分析。','facts':{}})
-        return self.base.respond(messages,'workflow_plan' if role=='planner' else 'workflow_step',binding,
+        return self.base.respond(messages,'workflow_plan' if role in {'planner','assess'} else 'workflow_step',binding,
             context=dict(context,search_authorized=role=='rag'))
 
 class SkillService:
@@ -226,14 +227,14 @@ class SkillService:
         with self.store.connection() as db:ids=[r[0] for r in db.execute('SELECT workflow_id FROM skill_flows ORDER BY rowid DESC')]
         return [self.state(w) for w in ids]
     def guard_discuss(self,wid):
-        if not self.link(wid):return
+        if not self.link(wid) and not (getattr(self.workflows,'agents',None) and self.workflows.agents.link(wid)):return
         with self.store.connection() as db:
             pending=db.execute("SELECT 1 FROM skill_plan_requests WHERE workflow_id=? AND state='unknown'",(wid,)).fetchone()
         if pending:raise ValueError('原規劃請求結果未明，請先檢查／取回；不重新送出。')
     def inspect(self,wid):
         with self.engine._lock:
             self.engine._ensure_open();r=self.workflows.get(wid)
-            if not self.link(wid) or wid in self.workflows.planning:raise ValueError('請先等待 Skill 規劃結束。')
+            if (not self.link(wid) and not (getattr(self.workflows,'agents',None) and self.workflows.agents.link(wid))) or wid in self.workflows.planning:raise ValueError('請先等待規劃結束。')
             with self.store.connection() as db:
                 row=db.execute('SELECT revision FROM skill_plan_requests WHERE workflow_id=? ORDER BY revision DESC LIMIT 1',(wid,)).fetchone()
             if not row:return {'state':'not_sent','recoverable':False}
@@ -255,7 +256,7 @@ class SkillService:
             future=self.engine._pool.submit(self.workflows._plan,wid,r['revision'],True)
             self.workflows.planning[wid]=future;self.engine._futures.add(future)
             future.add_done_callback(lambda f:self.workflows._planning_done(wid,f))
-        return self.state(wid)
+        return self.state(wid) if self.link(wid) else self.workflows.snapshot(wid)
     def discuss(self,wid,revision,text,values):
         with self.engine._lock:
             self.engine._ensure_open();r=self.workflows.get(wid);self.workflows._editable(r,revision)
@@ -270,6 +271,8 @@ class SkillService:
             self.workflows.discuss(wid,revision,text or '請依已填條件規劃。')
         return self.state(wid)
     def validate_plan(self,wid,steps):
+        if getattr(self.workflows,'agents',None) and self.workflows.agents.link(wid):
+            return self.workflows.agents.validate_plan(wid,steps)
         link=self.link(wid)
         if not link:return
         self.active(link);r=self.workflows.get(wid)

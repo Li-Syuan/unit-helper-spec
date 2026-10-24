@@ -1,188 +1,85 @@
 {
-  "version": "1.0.0rc1",
-  "release_status": "candidate",
+  "version": "1.0.0rc2",
+  "release_status": "candidate_not_fully_verified",
   "schema": 8,
   "dialogue_schema": 4,
   "python": "3.10.4",
   "architecture_bits": 64,
   "full": {
-    "passed": true,
-    "selected": 615,
-    "seconds": 542.8138
+    "passed": false,
+    "selected": 628,
+    "seconds": 188.2933
   },
   "full_result": {
-    "count": 615,
-    "seconds": 540.5414,
+    "count": 628,
+    "seconds": 186.2359,
     "failures": 0,
-    "errors": 0,
+    "errors": 1,
     "skipped": 0
   },
-  "final_targeted": {
-    "passed": true,
-    "selected": 31,
-    "seconds": 10.5778
-  },
-  "webview_v1": {
-    "status": "passed",
-    "scope": "v1",
-    "checks": [
-      "bridge_ready",
-      "local_auto_title_folder_create_move_collapse_reload_search_rename_delete_keeps_conversation_recent_preference",
-      "main_dialogue_selected_memory_preview_cancel_confirm_newchat_optout_fixed_snapshot_recent_search_rename_pin_draft_restore",
-      "skill_memory_default_none_explicit_selection_visible_method_snapshot_zero_execution",
-      "explicit_summary_editable_continuation_preview_newdraft_original_and_source_retained_no_autosend",
-      "memory_manage_disable_delete_cancel_preserves_existing_snapshot_dark_light_small",
-      "optional_deployment_setup_entry_no_task_dispatch",
-      "three_field_activation_explicit_consent_endpoint_change_cancel_confirm_key_cleared_no_real_credentials"
-    ],
-    "not_tested": [
-      "company_api",
-      "real_two_turn_activation",
-      "AD",
-      "human_usability",
-      "physical_IME",
-      "clipboard"
-    ]
-  },
-  "webview_skills": {
-    "status": "passed",
-    "scope": "skills",
-    "checks": [
-      "bridge_ready",
-      "skills_definition_draft_preservation_typed_questions_plan_edit_cancel_and_single_confirmation_zero_external_dispatch",
-      "skills_explicit_daily_consent_pause_markdown_roundtrip_and_disable_preserves_history"
-    ]
-  },
-  "offline_cli": {
-    "python": "3.10.4",
-    "company_real": "not_tested",
-    "checks": [
-      "bat_foreign_cwd_utf8_demo_catalog",
-      "cli_piped_prepare_preview_no_approval",
-      "cli_error_exit_code_and_json",
-      "all_code_zip_wheels_hash_lock_identity"
-    ],
-    "wheel_count": 69,
-    "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b",
-    "passed": true
+  "full_scope": "isolated_synthetic_user_settings_existing_venv",
+  "environment": {
+    "isolated_settings": "passed",
+    "pip_check": "passed",
+    "lock": "passed",
+    "original_user_preflight": "failed_credential_store_unavailable_or_empty_tests_not_run"
   },
   "clipboard": {
-    "current_full": "passed",
-    "local_native_probe": "passed",
-    "historical_failure": "OpenClipboard error 5",
-    "cross_environment_resolution": "not_claimed"
-  },
-  "corrected_failures": [
-    "sandbox_atomic_profile_replace_denied_normal_windows_used",
-    "completion_validation_fixture_order",
-    "rc_version_omitted_from_support_log",
-    "host_close_save_rejected_expired_or_pending_session",
-    "folder_cli_payload_name_collision"
-  ],
-  "company_real": "not_tested",
-  "physical_IME": "not_tested",
-  "human_usability": "not_tested",
-  "fresh_offline_reinstall_this_release": "passed_github_code_zip",
-  "formal_1_0": "blocked_pending_onsite_DVC_search_and_applicable_AD_acceptance",
-  "native_login_logout": {
-    "status": "passed",
-    "company_real": "not_tested",
-    "checks": [
-      "actual_native_demo_login_before_workspace",
-      "actual_logout_with_two_unsent_drafts_requested",
-      "host_flush_after_logout_persists_main_and_advanced_drafts_before_cleanup",
-      "native_webview_closed_and_temporary_workspace_removed"
-    ]
-  },
-  "webview_browser_cache_cleanup": "warning_WinError_32_not_confirmed_app_workspace_cleanup_passed",
-  "code_zip_clean_install": {
-    "source_commit": "b3bec455fe6c284b28ad67e15afa6b7b059ed9d2",
-    "download": "github_code_zip",
-    "zip_sha256": "5e5a2afffe66c978dbfd120bd522864a21f1a83b29f653728e308d7eb210dd34",
-    "source_manifest_files": 731,
-    "source_manifest": "passed",
-    "private_settings_in_zip": false,
-    "install": {
-      "status": "passed",
-      "environment_created": true,
-      "checks": [
-        {
-          "name": "bundle_integrity",
-          "status": "passed"
-        },
-        {
-          "name": "base_python",
-          "exit_code": 0,
-          "status": "passed"
-        },
-        {
-          "name": "create_environment",
-          "exit_code": 0,
-          "status": "passed"
-        },
-        {
-          "name": "offline_install",
-          "exit_code": 0,
-          "status": "passed"
-        },
-        {
-          "name": "pip_check",
-          "exit_code": 0,
-          "status": "passed"
-        },
-        {
-          "name": "environment_diagnostic",
-          "exit_code": 0,
-          "status": "passed"
-        },
-        {
-          "name": "lock_match",
-          "status": "passed"
-        }
-      ],
-      "full_regression": "not_tested",
-      "company_real": "not_tested",
-      "wheels": 69,
-      "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b"
-    },
-    "company_real": "not_tested",
-    "quick": {
-      "passed": true,
-      "selected": 443,
-      "seconds": 97.0194,
-      "result": {
-        "count": 443,
-        "seconds": 92.8817,
-        "failures": 0,
-        "errors": 0,
-        "skipped": 0
+    "full": "failed_OpenClipboard_error_5",
+    "targeted": "failed_OpenClipboard_error_5",
+    "native_probe": {
+      "contents_read": false,
+      "contents_changed": false,
+      "before_app": {
+        "opened": false,
+        "error": 5,
+        "other_window_holds_clipboard": false
+      },
+      "with_own_window": {
+        "opened": false,
+        "error": 5,
+        "other_window_holds_clipboard": false
       }
     },
-    "webview": {
-      "status": "passed",
-      "scope": "v1",
-      "checks": [
-        "bridge_ready",
-        "local_auto_title_folder_create_move_collapse_reload_search_rename_delete_keeps_conversation_recent_preference",
-        "main_dialogue_selected_memory_preview_cancel_confirm_newchat_optout_fixed_snapshot_recent_search_rename_pin_draft_restore",
-        "skill_memory_default_none_explicit_selection_visible_method_snapshot_zero_execution",
-        "explicit_summary_editable_continuation_preview_newdraft_original_and_source_retained_no_autosend",
-        "memory_manage_disable_delete_cancel_preserves_existing_snapshot_dark_light_small",
-        "optional_deployment_setup_entry_no_task_dispatch",
-        "three_field_activation_explicit_consent_endpoint_change_cancel_confirm_key_cleared_no_real_credentials"
-      ],
-      "not_tested": [
-        "company_api",
-        "real_two_turn_activation",
-        "AD",
-        "human_usability",
-        "physical_IME",
-        "clipboard"
-      ]
-    },
-    "launcher_check": "passed",
-    "temporary_environment_removed": true,
-    "shared_site_packages": false,
-    "full_in_clean_environment": "not_run_existing_full_separately_recorded"
-  }
+    "root_cause": "unconfirmed",
+    "physical_webview": "not_tested"
+  },
+  "webview_agent": {
+    "status": "passed",
+    "scope": "agent",
+    "checks": [
+      "bridge_ready",
+      "agent_chat_draft_preserved_mode_guard_ime_preview_edit_single_confirmation_result_and_reopen",
+      "agent_skill_four_types_multiple_question_rounds_and_explicit_execution",
+      "agent_synthetic_supplement_bound_partial_failure_weekly_consent_pause_and_explicit_three_call_probe",
+      "agent_real_webview_dark_light_1050x700_normal_maximized_reachable_controls"
+    ]
+  },
+  "webview_followup": {
+    "status": "passed",
+    "scope": "agent-followup",
+    "checks": [
+      "bridge_ready",
+      "ui_fixture_restart_prepares_goal_profile_search_skill_only_no_dispatch_stale_skill_unselected_unknown_send_excluded",
+      "ui_fixture_expired_cancel_acknowledged_without_snapshot_repaint_or_dispatch"
+    ]
+  },
+  "offline_wheels": {
+    "status": "passed",
+    "wheel_count": 69,
+    "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b",
+    "install": "not_run_dependencies_unchanged",
+    "network_requests": 0
+  },
+  "new_environment_created": false,
+  "dependencies_changed": false,
+  "company_real": "not_tested",
+  "AD": "not_tested",
+  "source_quality": "not_tested",
+  "human_usability": "not_tested",
+  "physical_IME": "not_tested",
+  "norton_effect": "not_confirmed",
+  "full_hermes": "not_implemented",
+  "hermes_direction": "python3104_current_core_incremental_feature_porting",
+  "formal_1_0": "not_released_pending_clipboard_and_onsite_acceptance"
 }

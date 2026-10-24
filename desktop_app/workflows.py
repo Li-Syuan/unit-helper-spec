@@ -120,8 +120,9 @@ class WorkflowService:
                 r=self.get(wid)
                 if self.engine._closed or r['state']!='planning' or r['revision']!=revision:return
                 self.profiles.validate_workflow(r['planner'],'planner')
-            if getattr(self,'skills',None) and self.skills.link(wid):
-                obj=self.skills.planning(r,resume=resume)
+            planner_service=(self.agents if getattr(self,'agents',None) and self.agents.link(wid) else self.skills if getattr(self,'skills',None) and self.skills.link(wid) else None)
+            if planner_service:
+                obj=planner_service.planning(r,resume=resume)
                 history=r['discussion']+[{'role':'assistant','content':obj['message']}]
                 with self.engine._lock,self.store.connection() as db:
                     if self.engine._closed:return
@@ -252,7 +253,8 @@ class WorkflowService:
             return old['id'],False
         tid=uid()
         db.execute("INSERT INTO tasks(id,kind,state,payload,request_id,request_hash,schedule_id,created_at) VALUES(?,'workflow','queued',?,?,?,?,?)",(tid,dumps(payload),request_id,digest,schedule_id,stamp()))
-        for i,s in enumerate(spec['steps']):
+        from .agent_execution import expanded_steps
+        for i,s in enumerate(expanded_steps(spec)):
             cached=(reuse or {}).get(s['id'])
             db.execute('INSERT INTO workflow_steps VALUES(?,?,?,?,?,?,\'\')',(tid,s['id'],i,'succeeded' if cached else 'queued',
                 dumps(cached['input']) if cached else None,dumps(cached['output']) if cached else None))
@@ -269,6 +271,7 @@ class WorkflowService:
             if getattr(self,'skills',None):self.skills.validate_plan(wid,r['steps'])
             spec={'id':wid,'revision':revision,'goal':r['goal'],'planner':r['planner'],'steps':r['steps']}
             if getattr(self,'skills',None):spec.update(self.skills.approved_spec(wid))
+            if getattr(self,'agents',None):spec.update(self.agents.approved_spec(wid))
             with self.store.connection() as db:
                 db.execute('BEGIN IMMEDIATE')
                 db.execute('INSERT INTO workflow_versions VALUES(?,?,?)',(wid,revision,dumps(spec)))
@@ -309,18 +312,36 @@ class WorkflowService:
         try:
             self.profiles.validate_workflow(spec['planner'],'planner')
             steps=self.validate_steps(spec['steps'],occurrence=datetime.fromisoformat(spec.get('occurrence',task['created_at'])))
+            from .agent_execution import expanded_steps,effective_step,control,check_control,reserve,add_inputs
+            if 'agent' in spec:
+                self.profiles.validate_workflow(spec['planner'],'assess')
+                steps=expanded_steps(dict(spec,steps=steps))
             outputs={s['step_id']:s['output'] for s in self.get_task_steps(tid) if s['state']=='succeeded'}
             def dispatch(s):
                 nonlocal current,phase
                 current=s['id'];phase='validating'
                 if current in outputs:
+                    if 'agent' in spec:check_control(spec,s,outputs[current])
                     if outputs[current].get('transfer',{}).get('verdict')=='needs_attention':
                         raise ValueError('覆核尚未通過，不能恢復後續步驟。')
                     phase='committed'
                     return
+                if 'agent' in spec and s['kind'] in {'assessment','supplement'}:
+                    if not self._active(tid):raise ValueError('工作已取消或停止。')
+                    output=control(self,tid,spec,s,outputs,task)
+                    if output is not None:
+                        phase='receipt'
+                        with self.engine._lock,self.store.connection() as db:
+                            if not self._active(tid):raise ValueError('工作已取消或停止。')
+                            db.execute("UPDATE workflow_steps SET state='succeeded',output=? WHERE task_id=? AND step_id=?",(dumps(output),tid,current))
+                            outputs[current]=output
+                        phase='control_check';check_control(spec,s,output);phase='committed'
+                        return
+                    s=effective_step(spec,s,outputs)
                 with self.engine._lock:
                     if not self._active(tid):raise ValueError('工作已取消或停止。')
                     inputs={'goal':spec['goal'],'instruction':s.get('instruction',''),'sources':{ref:outputs[ref]['transfer'] for ref in s['inputs']}}
+                    if 'agent' in spec:add_inputs(spec,task,s,outputs,inputs)
                     if 'skill' in spec:
                         inputs['skill']={k:spec['skill'][k] for k in ('name','purpose','instructions','output_format')}
                         inputs['conditions']=spec['skill_values']
@@ -347,11 +368,16 @@ class WorkflowService:
                     format_hint+=('facts 欄位必須精確等於以下物件，不要再包 numeric_totals 或 facts 層，不重新計算：'+dumps(expected)+'。'
                                   'text 不得聲稱核准、建立排程或實際執行其他步驟。缺乏來源不可捏造，RAG 未提供來源需明示。')
                     try:
+                        budget_context=reserve(self,tid,current) if 'agent' in spec else {}
+                        if 'agent' in spec:
+                            # A tool-output submission resumes model generation too.
+                            budget_context['reserve_tool_round']=lambda signature,sid=current:reserve(self,tid,sid+':tools:'+signature)
                         text=self.profiles.workflow_call([{'role':'user','content':format_hint+'\n角色：'+role+'\n核准工作與輸入：'+dumps(inputs)}],
                             role,s['binding'],{'run_id':tid,'step_id':current,
                                 'cancelled':lambda: not self._active(tid),
-                                'resume':bool(task['payload'].get('resuming'))})
+                                'resume':bool(task['payload'].get('resuming')),**budget_context})
                     except GatewayError:raise
+                    except ValueError:raise
                     except Exception:raise GatewayError('子代理呼叫未完成，請檢查組織 adapter 或連線。') from None
                     result=json_object(text);allowed={'text','facts','verdict'} if role=='review' else {'text','facts'}
                     if set(result)!=allowed:raise ValueError('子代理輸出欄位不符，未繼續交給下一位助理。')
@@ -382,7 +408,7 @@ class WorkflowService:
             with self.engine._lock:
                 if not self._active(tid):return
                 with self.store.connection() as db:
-                    if current and phase!='committed':db.execute("UPDATE workflow_steps SET state='failed',error=? WHERE task_id=? AND step_id=?",(error,tid,current))
+                    if current and phase not in ('committed','control_check'):db.execute("UPDATE workflow_steps SET state='failed',error=? WHERE task_id=? AND step_id=?",(error,tid,current))
                     db.execute("UPDATE workflow_steps SET state='blocked' WHERE task_id=? AND state='queued'",(tid,))
                 self.engine._finish(tid,'failed',{'report':'','steps':self.get_task_steps(tid)},error)
 
@@ -393,10 +419,10 @@ class WorkflowService:
         eligible=(task['kind']=='workflow' and task['payload'].get('runner')=='langgraph-v1'
                   and task['state']=='failed' and any(code in (task['error'] or '') for code in ('應用程式已中斷','WORKFLOW_RECOVERY_REQUIRED')))
         if task['kind']=='workflow' and task['state']=='failed' and hasattr(self.profiles,'inspect_request'):
-            definitions={s['id']:s for s in task['payload']['workflow']['steps']}
+            definitions=self._runtime_definitions(task,rows)
             for row in rows:
-                step=definitions[row['step_id']]
-                if row['state'] not in ('failed','interrupted') or row['input'] is None or step['kind']!='assistant':continue
+                step=definitions.get(row['step_id'])
+                if not step or row['state'] not in ('failed','interrupted') or row['input'] is None or step['kind'] not in {'assistant','assessment'}:continue
                 try:
                     status=self.profiles.inspect_request(step['binding'],{'run_id':tid,'step_id':step['id']})
                     # Completed but invalid structured output is not recoverable.
@@ -407,6 +433,7 @@ class WorkflowService:
                 'message':'恢復前先核對遠端狀態；不會自動重送。' if eligible else '此工作不屬於可恢復的中斷工作。'}
 
     def inspect_recovery(self,tid):
+        from concurrent.futures import Future
         with self.engine._lock:
             task=self.store.task(tid)
             if not self.recovery(tid)['eligible']:raise ValueError('此工作無法恢復。')
@@ -415,17 +442,28 @@ class WorkflowService:
             spec=task['payload']['workflow'];self.profiles.validate_workflow(spec['planner'],'planner')
             steps=self.validate_steps(spec['steps'],occurrence=datetime.fromisoformat(spec.get('occurrence',task['created_at'])))
             rows={r['step_id']:r for r in self.get_task_steps(tid)}
-        statuses=[]
-        for step in steps:
-            row=rows[step['id']]
-            if row['state']=='succeeded':continue
-            if row['input'] is None:continue
-            if step['kind']!='assistant' or not hasattr(self.profiles,'inspect_request'):
-                raise ValueError('中斷步驟無法確認是否已執行，禁止自動重送。')
-            status=self.profiles.inspect_request(step['binding'],{'run_id':tid,'step_id':step['id']},remote=True)
-            statuses.append(status)
-            if not status.get('recoverable'):raise ValueError('遠端結果不明或已終止，不能自動重送此步驟。')
-        return {'eligible':True,'steps':statuses,'message':'狀態已核對，可由你確認繼續。'}
+            if 'agent' in spec:steps=list(self._runtime_definitions(task,list(rows.values())).values())
+            future=Future();self.engine._futures.add(future);self.engine._future_tasks[future]=tid
+        try:
+            statuses=[]
+            for step in steps:
+                row=rows[step['id']]
+                if row['state']=='succeeded':continue
+                if row['input'] is None:continue
+                if step['kind'] not in {'assistant','assessment'} or not hasattr(self.profiles,'inspect_request'):
+                    raise ValueError('中斷步驟無法確認是否已執行，禁止自動重送。')
+                status=self.profiles.inspect_request(step['binding'],{'run_id':tid,'step_id':step['id']},remote=True)
+                statuses.append(status)
+                if not status.get('recoverable'):raise ValueError('遠端結果不明或已終止，不能自動重送此步驟。')
+            return {'eligible':True,'steps':statuses,'message':'狀態已核對，可由你確認繼續。'}
+        finally:
+            with self.engine._lock:
+                future.set_result(None);self.engine._futures.discard(future);self.engine._future_tasks.pop(future,None)
+
+    def _runtime_definitions(self,task,rows):
+        from .agent_execution import expanded_steps,effective_step
+        spec=task['payload']['workflow'];outputs={r['step_id']:r['output'] for r in rows if r['output']}
+        return {s['id']:effective_step(spec,s,outputs) for s in expanded_steps(spec)}
 
     def resume(self,tid):
         self.inspect_recovery(tid)
@@ -467,6 +505,7 @@ class WorkflowService:
         bounded_text(request_id,'重試識別',150)
         with self.engine._lock:
             self.engine._ensure_open();task=self.store.task(tid)
+            if 'agent' in task['payload'].get('workflow',{}):raise ValueError('有限工作不建立重試副本；請檢查原請求並恢復，或明確建立新交辦。')
             if task['kind']!='workflow' or task['state']!='failed':raise ValueError('只可明確重試未完成的協作流程。')
             if any(t==tid and not f.done() for f,t in self.engine._future_tasks.items()):raise ValueError('遠端請求仍在結束中。')
             if hasattr(self.profiles,'inspect_request'):
@@ -506,6 +545,9 @@ class WorkflowService:
             if r['revision']!=revision or r['state']!='approved' or not r['task_id'] or self.store.task(r['task_id'])['state']!='succeeded':
                 raise ValueError('需相同流程版本試跑成功後才能設定排程。')
             spec=self._spec(wid,revision);self.validate_steps(spec['steps']);self.profiles.validate_workflow(spec['planner'],'planner')
+            if 'agent' in spec:
+                if skill_reviewed is not True or spec['planner']['profile_id']=='demo':raise ValueError('請先核對真實成果與來源，再設定工作排程。')
+                self.profiles.validate_workflow(spec['planner'],'assess')
             if r['schedule_id']:return r['schedule_id']
             sid=uid();s={'frequency':frequency,'weekday':weekday,'time_hhmm':time_hhmm}
             with self.store.connection() as db:
@@ -521,6 +563,7 @@ class WorkflowService:
             if not getattr(self,'skills',None):raise ValueError('此入口未支援 Skill 排程，請開啟主要工作區。')
             self.skills.active({'skill_id':spec['skill']['id']})
         self.profiles.validate_workflow(spec['planner'],'planner')
+        if 'agent' in spec:self.profiles.validate_workflow(spec['planner'],'assess')
         spec['steps']=self.validate_steps(spec['steps'],occurrence=when)
         spec['occurrence']=stamp(when)
         return spec
@@ -551,6 +594,8 @@ class WorkflowService:
         marks=','.join('?' for _ in ids)
         rows=[dict(r) for r in db.execute(f'SELECT * FROM workflows WHERE conversation_id IN ({marks}) ORDER BY id',ids)]
         for r in rows:
+            orders=[dict(o) for o in db.execute("SELECT id,data FROM work_orders WHERE json_extract(data,'$.kind')='agent-v1' AND json_extract(data,'$.workflow_id')=? ORDER BY id",(r['id'],))]
+            if orders:r['agent_orders']=orders
             if r['id'] in self.planning:raise ValueError('此對話的主代理請求尚未結束，請稍後再刪除。')
             tasks=[dict(t) for t in db.execute("SELECT id,state FROM tasks WHERE kind='workflow' AND json_extract(payload,'$.workflow.id')=?",(r['id'],))]
             for t in tasks:
@@ -561,5 +606,6 @@ class WorkflowService:
     @staticmethod
     def delete_source(db,ids):
         marks=','.join('?' for _ in ids)
+        db.execute(f"DELETE FROM work_orders WHERE json_extract(data,'$.kind')='agent-v1' AND json_extract(data,'$.workflow_id') IN (SELECT id FROM workflows WHERE conversation_id IN ({marks}) AND state!='approved')",ids)
         db.execute(f"DELETE FROM workflows WHERE conversation_id IN ({marks}) AND state!='approved'",ids)
         db.execute(f'UPDATE workflows SET conversation_id=NULL WHERE conversation_id IN ({marks})',ids)

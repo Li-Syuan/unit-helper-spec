@@ -31,12 +31,12 @@ class WebBridge:
                 if self._s.demo_session and (name.startswith('profile_') or name.startswith('search_policy_')
                         or name in {'connection_save','key_remove','company_probe'}):
                     raise ValueError('離線登入展示禁止公司連線、金鑰與工具設定；請關閉並改用公司登入。')
-                if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel','order_cancel','skill_cancel','host_close'}:
+                if name not in {'save_draft','cancel_task','dialogue_stop','workflow_cancel','plan_cancel','order_cancel','skill_cancel','agent_cancel','host_close'}:
                     self._s.assert_identity()
                 if self._closing and name not in {'state','save_draft','dialogue_view_save'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','skill_generate','skill_probe','skill_discuss','skill_inspect','skill_recover','activation_test','continuation_summary','host_close'}:
+                if name not in {'dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','skill_generate','skill_probe','skill_discuss','skill_inspect','skill_recover','activation_test','continuation_summary','host_close','agent_probe','agent_search_probe','agent_reply','agent_inspect','agent_recover'}:
                     return {'ok':True,'data':handler(payload or {})}
             # Provider I/O must not block theme/state/cancellation/close commands.
             return {'ok':True,'data':handler(payload or {})}
@@ -52,6 +52,19 @@ class WebBridge:
     def _handlers(self):
         s=self._s
         return {
+            'agent_catalog':lambda p:s.agents.catalog(),'agent_list':lambda p:s.agents.list(),
+            'agent_create':lambda p:s.agents.create(p['profile_id'],p['goal'],p.get('source_thread'),p.get('skill_id'),p.get('skill_revision'),p.get('values',{}),p.get('memory_ids',[]),p.get('search',False),p.get('team_ids',[]),p.get('limits')),
+            'agent_state':lambda p:s.agents.state(p['id']),
+            'agent_reply':lambda p:s.agents.reply(p['id'],p['revision'],p.get('text',''),p.get('answers',{})),
+            'agent_edit':lambda p:s.agents.edit(p['id'],p['revision'],p['steps'],p.get('limits')),
+            'agent_preview':lambda p:s.agents.preview(p['id'],p['revision']),
+            'agent_confirm':lambda p:s.agents.confirm(p['id'],p['revision'],p.get('consent',False)),
+            'agent_cancel':lambda p:s.agents.cancel(p['id']),
+            'agent_inspect':lambda p:s.agents.inspect(p['id']),'agent_recover':lambda p:s.agents.recover(p['id']),
+            'agent_schedule':lambda p:s.agents.schedule(p['id'],p['revision'],p['time_hhmm'],p.get('frequency','daily'),p.get('weekday',0),p.get('reviewed',False),p.get('consent',False)),
+            'agent_skill_draft':lambda p:s.agents.skill_draft(p['id']),
+            'agent_probe':lambda p:s.agents.probe(p['profile_id'],p.get('consent',False)),
+            'agent_search_probe':lambda p:s.agents.probe(p['profile_id'],p.get('consent',False),search=True),
             'activation_status':lambda p:s.activation.status(),
             'activation_save':lambda p:s.activation.save(p['assistant_id'],p['api_key'],p.get('endpoint'),p.get('confirm_endpoint_change',False)),
             'activation_test':lambda p:s.activation.test(p['profile_id'],p.get('consent',False)),

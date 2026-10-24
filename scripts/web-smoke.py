@@ -13,6 +13,202 @@ from desktop_app.web_session import WebSession
 from desktop_app.web_bridge import WebBridge
 
 
+def agent_followup_journey(session,api,window,capture,wait,report):
+    """Two UI-only response fixtures; no provider/network requests or execution."""
+    import copy
+    from desktop_app.skills import TEMPLATE
+    def js(script):return window.evaluate_js(script)
+    definition=copy.deepcopy(TEMPLATE);definition.update(name='合成接續方法',search=False,fields=[])
+    skill=session.skills.save_confirm(session.skills.save_preview(definition)['token'])
+    js("document.getElementById('dialogue-agent-mode').click()")
+    wait("!!document.getElementById('agent-create')")
+    job=session.agents.create('demo','合成原需求：只整理已提供的工作記錄',skill_id=skill['id'],skill_revision=skill['revision'])
+    for _ in range(100):
+        if not session.engine.has_inflight():break
+        time.sleep(.05)
+    job=session.agents.state(job['id']);assert job['state']=='ready'
+    fixture=copy.deepcopy(job);fixture['task']={'id':'ui-fixture-only','state':'failed','error':'AGENT_NEEDS_INPUT：缺少指定資料。','result':{'report':''}}
+    def show(value):js('window.qaAgentUI.show('+json.dumps(value,ensure_ascii=False)+')')
+    show(fixture);wait("!!document.getElementById('agent-restart-draft')")
+    before=(len(session.agents.list()),len(session.store.tasks()))
+    js("document.getElementById('agent-restart-draft').click()")
+    wait("!!document.getElementById('agent-create')")
+    assert js("document.getElementById('agent-goal').value")==job['goal']
+    assert js("document.getElementById('agent-profile').value")=='demo'
+    assert js("document.getElementById('agent-skill').value")==skill['id']
+    assert js("document.querySelectorAll('.agent-memory-choices input:checked').length")==0
+    assert before==(len(session.agents.list()),len(session.store.tasks())),'restart_draft_dispatched'
+    assert js("document.getElementById('agent-job-panel').textContent.includes('不帶入舊成果、記憶、批准或排程')")
+    capture('agent-restart-draft.png')
+    fixture['skill']['revision']+=1;fixture['task']['error']='AGENT_REQUEST_LIMIT：已達本機上限。'
+    show(fixture);js("document.getElementById('agent-restart-draft').click()")
+    wait("!!document.getElementById('agent-create')")
+    assert js("document.getElementById('agent-skill').value")==''
+    assert js("document.getElementById('agent-job-panel').textContent.includes('未自動選用其他版本')")
+    fixture['task']['error']='RUN_OUTCOME_UNKNOWN：送出結果未明，不可重送。';show(fixture)
+    assert js("!document.getElementById('agent-restart-draft')"),'unknown_send_shortcut_offered'
+    assert before==(len(session.agents.list()),len(session.store.tasks()))
+    # Expired identity is a cancellation acknowledgement, not a full state snapshot.
+    show(job)
+    js("window.agentFollowupCall=window.qaSkillUI.call;window.agentCancelCalls=0;window.qaSkillUI.call=async(name,payload)=>{if(name==='agent_cancel'){window.agentCancelCalls++;return {cancelled:true,identity_expired:true};}return window.agentFollowupCall(name,payload);}")
+    js("document.getElementById('agent-cancel').click()")
+    wait("document.getElementById('agent-job-heading').textContent.includes('已要求取消；登入已到期')")
+    assert js("window.agentCancelCalls")==1
+    assert js("document.getElementById('agent-job-heading').textContent.includes('合成原需求')"),'expired_cancel_repainted_incomplete_snapshot'
+    assert not session.store.tasks()
+    js("document.getElementById('agent-job-heading').scrollIntoView({block:'start'});window.qaSkillUI.call=window.agentFollowupCall")
+    capture('agent-expired-cancel.png')
+    report['checks'].extend(['ui_fixture_restart_prepares_goal_profile_search_skill_only_no_dispatch_stale_skill_unselected_unknown_send_excluded','ui_fixture_expired_cancel_acknowledged_without_snapshot_repaint_or_dispatch'])
+
+
+def agent_journey(session,api,window,capture,wait,report):
+    """Actual WebView controls over temporary services; all provider replies synthetic."""
+    import copy
+    from unittest.mock import patch
+    from desktop_app.core import dumps,stamp
+    from desktop_app.skills import TEMPLATE
+    from tests.test_search_tools import SEARCH_TOOL
+    def js(script):return window.evaluate_js(script)
+    def click(selector):js(f"document.querySelector({json.dumps(selector)}).click()")
+    def put(selector,value):js(f"(()=>{{const n=document.querySelector({json.dumps(selector)});n.value={json.dumps(value)};n.dispatchEvent(new Event('input',{{bubbles:true}}));}})()")
+    def text_button(text,root='#modal-actions'):
+        js(f"Array.from(document.querySelectorAll({json.dumps(root+' button')})).find(b=>b.textContent==={json.dumps(text)}).click()")
+    def answer(label,value):
+        js(f"(()=>{{const label=Array.from(document.querySelectorAll('#agent-job-panel label')).find(n=>n.textContent==={json.dumps(label)});const input=document.getElementById(label.htmlFor);input.value={json.dumps(value)};input.dispatchEvent(new Event('input',{{bubbles:true}}));}})()")
+    put('#dialogue-input','保留中的合成聊天草稿')
+    click('#dialogue-agent-mode');wait("!!document.getElementById('agent-create')")
+    assert js("document.getElementById('dialogue-input').value")=='保留中的合成聊天草稿'
+    put('#agent-goal','將合成工作筆記整理成重點，不編造期限。')
+    click('#dialogue-chat-mode');wait("document.getElementById('modal').open")
+    text_button('返回工作編輯');wait("!document.getElementById('modal').open")
+    assert js("document.getElementById('agent-goal').value")=='將合成工作筆記整理成重點，不編造期限。'
+    assert js("document.getElementById('dialogue-page').classList.contains('agent-mode')")
+    # Composition Enter must not dispatch; the existing chat draft is kept independently.
+    js("document.getElementById('agent-goal').dispatchEvent(new CompositionEvent('compositionstart'));document.getElementById('agent-goal').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,isComposing:true}));document.getElementById('agent-goal').dispatchEvent(new CompositionEvent('compositionend'))")
+    assert not session.agents.list(),'agent_ime_dispatched'
+    time.sleep(.05);click('#agent-create');wait("!!document.getElementById('agent-preview')")
+    assert not session.store.tasks(),'agent_planning_dispatched'
+    click('#agent-edit');wait("document.getElementById('modal').open")
+    put('#agent-limit-supplements','0');click('#agent-edit-save');wait("!!document.getElementById('agent-confirm')")
+    assert not session.store.tasks(),'agent_preview_dispatched'
+    wait("(()=>{const r=document.getElementById('agent-confirm').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()")
+    assert js("!document.querySelector('#navigation [data-page=dialogue]').classList.contains('active') && document.getElementById('agent-jobs-nav').classList.contains('active')"),'agent_navigation_double_selected'
+    capture('agent-preview-dark.png')
+    click('#agent-confirm');wait("!!document.getElementById('agent-save-skill')")
+    first=session.agents.list()[0];assert first['task']['state']=='succeeded'
+    assert js("!document.getElementById('agent-schedule')"),'demo_schedule_offered'
+    assert js("!document.getElementById('agent-inspect')"),'successful_job_recovery_offered'
+    assert js("document.getElementById('agent-job-result').textContent.includes('離線示範')")
+    click('#agent-save-skill');wait("document.getElementById('modal').open")
+    assert not session.skills.list(),'skill_draft_autosaved'
+    text_button('取消');wait("!document.getElementById('modal').open")
+    click('#dialogue-chat-mode');wait("!document.getElementById('dialogue-page').classList.contains('agent-mode')")
+    assert js("document.getElementById('dialogue-input').value")=='保留中的合成聊天草稿'
+    click('#agent-jobs-nav');wait("!!document.getElementById('agent-job-search')")
+    text_button('開啟工作','#agent-job-panel');wait("!!document.getElementById('agent-save-skill')")
+    report['checks'].append('agent_chat_draft_preserved_mode_guard_ime_preview_edit_single_confirmation_result_and_reopen')
+    click('#agent-new');wait("!!document.getElementById('agent-create')")
+    put('#agent-goal','合成取消測試：不執行這份計畫')
+    click('#agent-create');wait("!!document.getElementById('agent-preview')")
+    click('#agent-cancel');wait("!document.getElementById('agent-cancel') && document.getElementById('agent-job-heading').textContent.includes('已取消')")
+    assert session.agents.list()[0]['state']=='cancelled'
+    assert len(session.store.tasks())==1,'cancelled_plan_dispatched'
+    assert js("!document.getElementById('agent-inspect')"),'cancelled_job_recovery_offered'
+    # Four fields deliberately exercise multiple question rounds and all answer kinds.
+    definition=copy.deepcopy(TEMPLATE);definition.update(name='合成文字 Skill',search=False)
+    definition['fields']=[{'id':'short','text':'是否精簡','type':'boolean','options':[]},{'id':'style','text':'採用語氣','type':'single','options':['正式','簡單']},{'id':'parts','text':'需要段落','type':'multi','options':['重點','待辦']},{'id':'note','text':'補充背景','type':'text','options':[]}]
+    skill=session.skills.save_confirm(session.skills.save_preview(definition)['token'])
+    click('#agent-new');wait("!!document.getElementById('agent-create')")
+    put('#agent-goal','整理成文字工作報告')
+    js(f"document.getElementById('agent-skill').value={json.dumps(skill['id'])};document.getElementById('agent-skill').dispatchEvent(new Event('change'))")
+    click('#agent-create');wait("!!document.getElementById('agent-reply-send')")
+    answer('是否精簡','false');answer('採用語氣','正式')
+    js("(()=>{const n=Array.from(document.querySelectorAll('#agent-job-panel fieldset label')).find(n=>n.textContent==='重點').querySelector('input');n.checked=true;n.dispatchEvent(new Event('change'));})()")
+    click('#agent-reply-send');wait("Array.from(document.querySelectorAll('#agent-job-panel label')).some(n=>n.textContent==='補充背景')")
+    answer('補充背景','只有合成工作紀錄，沒有確定期限');click('#agent-reply-send');wait("!!document.getElementById('agent-preview')")
+    assert len(session.store.tasks())==1,'skill_questions_executed'
+    click('#agent-preview');wait("!!document.getElementById('agent-confirm')");click('#agent-confirm');wait("!!document.getElementById('agent-save-skill')")
+    assert session.agents.list()[0]['task']['state']=='succeeded'
+    report['checks'].append('agent_skill_four_types_multiple_question_rounds_and_explicit_execution')
+    # A local synthetic provider exercises the genuine search/supplement runner.
+    p=session.profiles;p.set_endpoint('https://synthetic.example.test/v1');p.set_wire_mode('assistants')
+    pid=p.save('合成工作助理','asst_synthetic');p.set_search_policy(p.snapshot(pid),{'tools':[SEARCH_TOOL]});binding=p.snapshot(pid)
+    with session.store.connection() as db:db.execute('INSERT INTO skill_capabilities VALUES(?,?,?,?,?)',(pid,binding['revision'],'synthetic-proof',dumps(['planner','compose','assess','rag']),stamp()))
+    calls=[]
+    def respond(messages,purpose,binding,context=None):
+        calls.append(dict(context));sid=context['step_id']
+        if str(context.get('run_id','')).startswith('agent-probe:'):
+            prompt=messages[0]['content'];return prompt.split('請只回覆 ',1)[1] if '請只回覆 ' in prompt else prompt.split('僅回覆 ',1)[1]
+        if sid=='planner':return dumps({'message':'合成核准範圍','questions':[],'steps':[{'id':'search','title':'核對來源','kind':'assistant','role':'rag','profile_id':pid,'instruction':'只搜尋指定市場及來源','inputs':[]},{'id':'compose','title':'整理日報','kind':'assistant','role':'compose','profile_id':pid,'instruction':'保留來源限制','inputs':['search']}]})
+        if sid.startswith('qa_assess_'):return dumps({'decision':'supplement' if sid=='qa_assess_0' else 'complete','step_id':'search' if sid=='qa_assess_0' else '', 'reason':'同範圍補充' if sid=='qa_assess_0' else '合成資料已齊'})
+        return dumps({'text':'合成來源資料，非即時搜尋：https://example.test/source','facts':{}})
+    with patch.object(p,'respond',side_effect=respond):
+        for limit,expected in ((2,'succeeded'),(0,'failed')):
+            click('#agent-new');wait("!!document.getElementById('agent-create')")
+            js(f"document.getElementById('agent-profile').value={json.dumps(pid)};document.getElementById('agent-profile').dispatchEvent(new Event('change'))")
+            put('#agent-goal','合成台美市場資料來源核對');js("document.getElementById('agent-search').checked=true")
+            assert js("document.getElementById('connection').textContent.includes('合成工作助理') && !document.getElementById('connection').textContent.includes('離線示範')"),'agent_connection_label_mismatched'
+            put('#agent-limit-supplements',str(limit));click('#agent-create');wait("!!document.getElementById('agent-preview')")
+            before=len(session.store.tasks());click('#agent-preview');wait("!!document.getElementById('agent-confirm')")
+            assert len(session.store.tasks())==before
+            assert js("document.querySelector('.agent-approval').textContent.includes('internet_search')"),'search_tool_name_missing'
+            click('#agent-confirm')
+            wait("!!document.getElementById('agent-schedule')" if expected=='succeeded' else "!!document.getElementById('agent-restart-draft') && document.getElementById('agent-job-result').textContent.includes('未完成')")
+            job=session.agents.list()[0];assert job['task']['state']==expected
+            if expected=='succeeded':
+                assert any(c['step_id']=='qa_supplement_1' for c in calls)
+                click('#agent-schedule');wait("!!document.getElementById('agent-schedule-confirm')")
+                click('#agent-schedule-confirm');assert not session.store.schedules(),'schedule_without_consent'
+                js("document.getElementById('agent-schedule-frequency').value='weekly';document.getElementById('agent-schedule-frequency').dispatchEvent(new Event('change'));document.getElementById('agent-schedule-weekday').value='4';document.getElementById('agent-reviewed').checked=true;document.getElementById('agent-schedule-consent').checked=true")
+                click('#agent-schedule-confirm');wait("!document.getElementById('modal').open")
+                assert session.agents.state(job['id'])['schedule']['weekday']==4
+                text_button('暫停自動工作','#agent-job-panel');wait("document.getElementById('agent-job-result').textContent.includes('已暫停')")
+            else:
+                assert 'AGENT_SUPPLEMENT_LIMIT' in job['task']['error']
+                assert js("document.getElementById('agent-job-result').textContent.includes('合成來源資料')"),'partial_result_lost'
+                assert js("!document.getElementById('agent-inspect')"),'local_limit_recovery_offered'
+                # Failure remains part of the journey, but release images show a
+                # completed job so the gallery is not four copies of an error.
+                for size in ((1050,700),(1280,860)):
+                    window.resize(*size);time.sleep(.2)
+                    js("document.getElementById('agent-restart-draft').scrollIntoView({block:'center'})")
+                    assert js("(()=>{const r=document.getElementById('agent-restart-draft').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()"),'agent_failure_action_unreachable'
+        # Settings opens consent before three synthetic no-tool capability calls.
+        js("document.dispatchEvent(new CustomEvent('qa-navigate',{detail:'settings'}))")
+        wait("!!document.querySelector('.activation-work-check')")
+        before=len(calls);text_button('測試工作格式（最多三次）','.activation-work-check');wait("!!document.getElementById('agent-probe-confirm')")
+        assert len(calls)==before
+        click('#agent-probe-confirm');wait("document.getElementById('modal-title').textContent==='工作能力檢查結果'")
+        assert len(calls)-before==3 and all(not c['search_authorized'] for c in calls[before:])
+        text_button('關閉');click('#agent-jobs-nav');wait("!!document.getElementById('agent-job-search')")
+        text_button('開啟工作','#agent-job-panel');wait("!!document.getElementById('agent-restart-draft')")
+        assert js("!document.getElementById('agent-inspect')"),'reopened_local_limit_recovery_offered'
+        assert js("document.getElementById('connection').textContent.includes('合成工作助理')"),'reopened_agent_label_mismatched'
+    report['checks'].append('agent_synthetic_supplement_bound_partial_failure_weekly_consent_pause_and_explicit_three_call_probe')
+    # Reopen the earlier successful demo job through the same visible history
+    # controls users have; taking screenshots must not start another execution.
+    before=len(session.store.tasks())
+    click('#agent-jobs-nav');wait("!!document.getElementById('agent-job-search')")
+    put('#agent-job-search',first['goal'])
+    text_button('開啟工作','#agent-job-panel');wait("!!document.getElementById('agent-save-skill')")
+    assert len(session.store.tasks())==before,'reopen_for_capture_dispatched'
+    assert js("document.getElementById('agent-job-result').textContent.includes('已完成')")
+    assert js("!document.getElementById('agent-inspect')"),'reopened_success_recovery_offered'
+    for theme,size,name in [('dark',(1280,860),'agent-dark.png'),('light',(1050,700),'agent-light-small.png')]:
+        api.call('appearance',{'theme':theme});js(f"document.body.dataset.theme={json.dumps(theme)}")
+        js("document.getElementById('toast').hidden=true")
+        window.resize(*size);time.sleep(.4)
+        js("document.getElementById('agent-job-result').scrollIntoView({block:'start'})")
+        capture(name)
+        assert js("document.getElementById('dialogue-scroll').scrollHeight>=document.getElementById('dialogue-scroll').clientHeight")
+        js("document.getElementById('agent-save-skill').scrollIntoView({block:'center'})")
+        assert js("(()=>{const r=document.getElementById('agent-save-skill').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()"),'agent_action_unreachable'
+    window.maximize();time.sleep(.4)
+    js("document.getElementById('agent-job-result').scrollIntoView({block:'start'})")
+    capture('agent-maximized.png')
+    report['checks'].append('agent_real_webview_dark_light_1050x700_normal_maximized_reachable_controls')
+
+
 def skills_journey(session, api, window, capture, wait_script, report, tmp, company_mock):
     expected_chat_draft=window.evaluate_js("document.getElementById('dialogue-input').value")
     # Skills use one assistant, explicit local saves and a separate execution gate.
@@ -352,7 +548,9 @@ def main():
     destination.mkdir(parents=True,exist_ok=True)
     skills_only='--skills-only' in sys.argv
     v1_only='--v1-only' in sys.argv
-    report={'status':'failed','scope':'v1' if v1_only else 'skills' if skills_only else 'full','checks':[]}
+    agent_only='--agent-only' in sys.argv
+    agent_followup_only='--agent-followup-only' in sys.argv
+    report={'status':'failed','scope':'agent-followup' if agent_followup_only else 'agent' if agent_only else 'v1' if v1_only else 'skills' if skills_only else 'full','checks':[]}
     with tempfile.TemporaryDirectory() as tmp:
         from desktop_app import about
         publisher_root=about.ROOT;about.ROOT=Path(tmp)
@@ -386,6 +584,15 @@ def main():
                         window.native.Invoke(Action(start))
                         if not pending[0].Wait(10000):raise AssertionError('capture_timeout')
                     finally:stream.Dispose()
+                if agent_only or agent_followup_only:
+                    def wait_agent(script):
+                        for _ in range(220):
+                            if window.evaluate_js(script):return
+                            time.sleep(.1)
+                        raise AssertionError('agent_wait_timeout: '+script)
+                    (agent_followup_journey if agent_followup_only else agent_journey)(session,api,window,capture,wait_agent,report)
+                    report['status']='passed'
+                    return
                 if v1_only:
                     def wait_v1(script):
                         for _ in range(160):
@@ -1063,7 +1270,7 @@ def main():
                 try:capture('failure.png')
                 except Exception:pass
             finally:
-                (destination/('result-v1.json' if v1_only else 'result-skills.json' if skills_only else 'result.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+                (destination/('result-agent-followup.json' if agent_followup_only else 'result-agent.json' if agent_only else 'result-v1.json' if v1_only else 'result-skills.json' if skills_only else 'result.json')).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
                 window.destroy()
         try:webview.start(inspect,gui='edgechromium',debug=False,private_mode=True)
         finally:

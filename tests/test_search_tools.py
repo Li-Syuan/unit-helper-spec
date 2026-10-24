@@ -31,18 +31,28 @@ class SearchToolTests(unittest.TestCase):
     def run_search(self,gateway=None,context=None,purpose='chat'):
         return (gateway or self.gateway()).respond([{'role':'user','content':'合成需求'}],purpose,context or self.context)
     def test_approved_search_uses_fixed_endpoint_and_correlated_submission_and_cached_result(self):
-        g=self.gateway();text=self.run_search(g)
+        reserved=[]
+        context=dict(self.context,reserve_tool_round=lambda signature:reserved.append(signature))
+        g=self.gateway();text=self.run_search(g,context)
         self.assertIn('合成搜尋',text);self.assertEqual(len(self.mock.plugin_requests),1)
         url,args=self.mock.plugin_requests[0]
         self.assertEqual(httpx.URL(url).path,'/v1/pluginapi')
         self.assertEqual(dict(httpx.URL(url).params),{'tid':'thread_mock_1','aid':'asst_search','pid':'internet_search'})
         self.assertEqual(args,{'query':'合成新聞'})
-        self.assertEqual(self.run_search(g),text);self.assertEqual(len(self.mock.plugin_requests),1)
+        self.assertEqual(self.run_search(g,context),text);self.assertEqual(len(self.mock.plugin_requests),1)
+        self.assertEqual(len(reserved),1)
         run=next(b for m,p,b in self.mock.requests if p.endswith('/runs') and m=='POST')
         self.assertEqual(run['tools'][0]['function']['name'],'internet_search')
         self.assertEqual(run['tool_choice'],'auto')
         submit=next(b for m,p,b in self.mock.requests if p.endswith('/submit_tool_outputs'))
         self.assertEqual(submit['tool_outputs'],[{'tool_call_id':'call_search','output':'synthetic source only'}])
+
+    def test_total_job_budget_stops_before_search_and_model_continuation(self):
+        def exhausted(signature):raise ValueError('AGENT_REQUEST_LIMIT')
+        with self.assertRaisesRegex(GatewayError,'AGENT_REQUEST_LIMIT'):
+            self.run_search(context=dict(self.context,reserve_tool_round=exhausted))
+        self.assertFalse(self.mock.plugin_requests)
+        self.assertFalse(any(p.endswith('/submit_tool_outputs') for m,p,b in self.mock.requests))
     def test_no_policy_cannot_dispatch_even_if_context_requests_it(self):
         self.mock.force_tools=True
         with self.assertRaises(GatewayError):self.run_search(self.gateway(False))
