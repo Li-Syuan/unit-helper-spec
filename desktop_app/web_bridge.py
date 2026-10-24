@@ -36,7 +36,7 @@ class WebBridge:
                 if self._closing and name not in {'state','save_draft','dialogue_view_save'}:raise ValueError('程式正在保存並關閉，請勿派發新工作。')
                 handler=self._handlers().get(name)
                 if handler is None:raise ValueError('不支援的操作。')
-                if name not in {'workspace_send','workspace_reply','activation_run','activation_route_test','dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','skill_generate','skill_probe','skill_discuss','skill_inspect','skill_recover','activation_test','continuation_summary','host_close','agent_probe','agent_search_probe','agent_autonomy_probe','agent_reply','agent_inspect','agent_recover'}:
+                if name not in {'diagnostics_retest','diagnostics_export','workspace_send','workspace_reply','activation_run','activation_route_test','dialogue_send','dialogue_inspect','dialogue_recover','dialogue_retry_unsent','workflow_inspect','workflow_resume','company_probe','order_discuss','order_inspect','order_recover','skill_generate','skill_probe','skill_discuss','skill_inspect','skill_recover','activation_test','continuation_summary','host_close','agent_probe','agent_search_probe','agent_autonomy_probe','agent_reply','agent_inspect','agent_recover'}:
                     return {'ok':True,'data':handler(payload or {})}
             # Provider I/O must not block theme/state/cancellation/close commands.
             return {'ok':True,'data':handler(payload or {})}
@@ -52,6 +52,10 @@ class WebBridge:
     def _handlers(self):
         s=self._s
         return {
+            'diagnostics_status':lambda p:s.diagnostics.status(**self._diagnostic_target(p)),
+            'diagnostics_report':lambda p:s.diagnostics.report(**self._diagnostic_target(p)),
+            'diagnostics_export':self._diagnostics_export,
+            'diagnostics_retest':lambda p:s.diagnostics.retest(p['profile_id'],p['revision'],p['check'],p.get('consent',False)),
             'workspace_catalog':lambda p:s.workspace.catalog(),
             'workspace_state':lambda p:s.workspace.state(p['id']),
             'workspace_send':lambda p:s.workspace.send(p['id'],p['text'],p['request_id'],p.get('skill_id')),
@@ -298,6 +302,20 @@ class WebBridge:
         result=self._s.cleanup.confirm(p['token'])
         self._transfers.clear();self._previews.clear()
         return result
+
+    @staticmethod
+    def _diagnostic_target(p):
+        if set(p)-{'profile_id','thread_id'}:raise ValueError('診斷只接受助理或對話識別。')
+        return p
+
+    def _diagnostics_export(self,p):
+        import webview
+        target=self._diagnostic_target(p)
+        self._s.diagnostics.report(**target)
+        paths=self._window.create_file_dialog(webview.FileDialog.SAVE,save_filename='QA-agent-repair-'+uuid.uuid4().hex[:8]+'.md',file_types=('Markdown (*.md)',))
+        if not paths:return {'saved':False}
+        path=paths if isinstance(paths,str) else paths[0]
+        return self._s.diagnostics.export(path,**target)
 
     def _support_export(self,p):
         import webview

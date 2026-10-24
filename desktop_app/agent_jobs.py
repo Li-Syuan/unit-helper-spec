@@ -6,6 +6,7 @@ import re
 from .core import dumps, stamp, uid, utcnow, TAIPEI
 from .skills import answers, FIELDS, definition
 from .workflows import bounded_text, json_object
+from .connection_diagnostics import measured, diagnostic_respond, failure_details
 
 DEFAULT_LIMITS={'max_supplements':2,'max_requests':12,'timeout_seconds':600}
 
@@ -287,6 +288,7 @@ class AgentJobs:
             'instructions':'\n'.join(s['instruction'] for s in r['steps']), 'output_format':'結論／來源與限制／待確認事項',
             'fields':[],'search':r['search'],'default_profile_id':r['profile_id']})}
 
+    @measured('work')
     def probe(self,pid,consent=False,search=False,*,cancelled=None):
         if consent is not True:raise ValueError('請明確同意合成模型測試。')
         def run(binding):
@@ -307,7 +309,7 @@ class AgentJobs:
                     self.engine._ensure_open()
                     if cancelled and cancelled():raise ValueError('檢查已取消。')
                     context={'run_id':rid,'step_id':role,'search_authorized':role=='rag','cancelled':lambda:self.engine._closed or bool(cancelled and cancelled())}
-                    obj=json_object(self.profiles.respond([{'role':'user','content':prompts[role]}],'workflow_plan' if role in {'planner','assess'} else 'workflow_step',binding,context=context))
+                    obj=json_object(diagnostic_respond(self.session,[{'role':'user','content':prompts[role]}],'workflow_plan' if role in {'planner','assess'} else 'workflow_step',binding,context=context))
                     if role=='planner':
                         if set(obj)!={'message','questions','steps'} or obj['questions']!=[] or not isinstance(obj['steps'],list) or len(obj['steps'])!=1:raise ValueError('規劃格式不符。')
                         bounded_text(obj['message'],'測試說明',4000);step=obj['steps'][0]
@@ -327,14 +329,17 @@ class AgentJobs:
                             if rec.get('state')!='completed' or not any(batch.get('submit_state')=='submitted' and batch.get('calls') and all(c.get('state')=='completed' for c in batch['calls']) for batch in rec.get('tool_batches',[])) or not re.search(r'https://[^\s]+',obj['text']):raise ValueError('缺少完成的搜尋收據或來源。')
                     if cancelled and cancelled():raise ValueError('檢查已取消。')
                     passed.add(role);checks.append({'role':role,'status':'passed','message':'合成斷言通過；真實成果品質仍需核對。'})
-                except Exception:
-                    checks.append({'role':role,'status':'failed','message':'連線、格式或證據未通過；未重試，也未解鎖此能力。'});break
+                except Exception as exc:
+                    stopped=bool(cancelled and cancelled())
+                    checks.append({'role':role,'status':'cancelled' if stopped else 'failed',**failure_details(self.session,exc,'search_assertion' if search else 'work_assertion',stopped),
+                        'message':'檢查未通過；請依安全錯誤代碼定位。未重試，也未解鎖此能力。'});break
             with self.engine._lock:
                 self.engine._ensure_open();self.profiles.validate(binding)
                 with self.store.connection() as db:db.execute('INSERT OR REPLACE INTO skill_capabilities VALUES(?,?,?,?,?)',(pid,binding['revision'],uid(),dumps(sorted(passed)),stamp()))
             return {'checks':checks,'passed':len(checks)==len(roles) and all(c['status']=='passed' for c in checks),'roles':sorted(passed),'source_quality':'not_tested'}
         return self.skills._remote(pid,run)
 
+    @measured('autonomous')
     def autonomy_probe(self,pid,consent=False,*,cancelled=None):
         from .autonomous import DECISION_HINT,validate_decision
         if consent is not True:raise ValueError('請明確同意最多三次自主格式測試。')
@@ -354,13 +359,15 @@ class AgentJobs:
                     self.engine._ensure_open()
                     if cancelled and cancelled():raise ValueError('檢查已取消。')
                     prompt=DECISION_HINT+'\n合成案例：'+scenario+'\n主助理ID：'+pid+'\n來源：'+dumps(sources)
-                    obj=json_object(self.profiles.respond([{'role':'user','content':prompt}],'workflow_plan',binding,
+                    obj=json_object(diagnostic_respond(self.session,[{'role':'user','content':prompt}],'workflow_plan',binding,
                         context={'run_id':rid,'step_id':f'decision_{i+1}','cancelled':lambda:self.engine._closed or bool(cancelled and cancelled())}))
                     validate_decision(obj,spec,sources)
                     if obj['action']!=expected or (cancelled and cancelled()):raise ValueError('決策不符合案例或已取消。')
                     checks.append({'role':'autonomous','name':str(i+1),'status':'passed','message':'合成決策斷言通過。'})
-                except Exception:
-                    checks.append({'role':'autonomous','name':str(i+1),'status':'failed','message':'連線或決策未通過；未重試、未解鎖。'});break
+                except Exception as exc:
+                    stopped=bool(cancelled and cancelled())
+                    checks.append({'role':'autonomous','name':str(i+1),'status':'cancelled' if stopped else 'failed',**failure_details(self.session,exc,'autonomous_assertion',stopped),
+                        'message':'連線或決策未通過；未重試、未解鎖。'});break
             ok=len(checks)==3 and all(c['status']=='passed' for c in checks)
             if ok:passed.add('autonomous')
             with self.engine._lock:

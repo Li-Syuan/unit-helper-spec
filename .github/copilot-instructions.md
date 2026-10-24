@@ -1,6 +1,6 @@
 # QA agent：Copilot 共用指引
 
-目前為 **1.0.0rc4 候選版**。先讀根目錄 [AGENTS](../AGENTS.md) 的最新優先規則與 [TO-AGENT](../TO-AGENT.md)；依任務查 [架構](../docs/PROJECT.md)、[驗證紀錄](../docs/VALIDATION.md)，不要把歷代章節當成新增需求。保留現場未提交修改、已成功接線及個人資料。
+目前為 **1.0.0rc5 候選版**。先讀根目錄 [AGENTS](../AGENTS.md) 的最新優先規則與 [TO-AGENT](../TO-AGENT.md)；依任務查 [架構](../docs/PROJECT.md)、[驗證紀錄](../docs/VALIDATION.md)，不要把歷代章節當成新增需求。保留現場未提交修改、已成功接線及個人資料。
 
 ## 固定架構
 
@@ -18,6 +18,8 @@
 - Hermes是功能參考，沒有內嵌其核心；按 [功能與程式對照](../docs/HERMES-COMPATIBILITY.md#接手開發者的程式入口) 逐項擴充。不整包clone／vendor、不換Python或依賴來繞過相容性；移植需固定上游提交、保留授權及驗證。
 
 ## 工作方式
+
+rc5 連線問題先讀 App 匯出的修復 Markdown，再以 `.github/prompts/qa-diagnose.prompt.md` 排錯。`connection_diagnostics.py` 保存有界白名單摘要，不授予能力；不可把摘要改為通過或以重測繞過未知請求。觀看與匯出零網路，真實分項測試才需明確同意。聊天可用即可使用，AD及四角色不是普通聊天前提。
 
 先定位一條可重現旅程→最小修正→相關targeted；功能改動加quick，核心／交付由整合者一次 `scripts/verify.py development`，不先full再重跑。純文件只查連結／格式／manifest，不執行App回歸。新案例保護具體行為，TestCase class列入 `tests/suites.json`。
 

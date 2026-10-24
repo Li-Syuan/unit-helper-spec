@@ -1,6 +1,6 @@
 # QA agent 現場接手工作單
 
-當前 **1.0.0rc4候選版**。要直接交給SOL／Copilot的指令見[TO-AGENT](TO-AGENT.md)；此檔集中列出現場所需資訊與完成條件，不重複歷代交接。現場已有成功接線須保留，再做最小修改。
+當前 **1.0.0rc5候選版**。要直接交給SOL／Copilot的指令見[TO-AGENT](TO-AGENT.md)；此檔集中列出現場所需資訊與完成條件，不重複歷代交接。現場已有成功接線須保留，再做最小修改。
 
 VS Code Copilot先依[接手入口](TO-AGENT.md#在-vs-code-copilot-接手)選Coordinator或附上接手prompt；先離線診斷，再取得明確授權做現場驗收，不需匯入Hermes核心。
 
@@ -24,6 +24,16 @@ VS Code Copilot先依[接手入口](TO-AGENT.md#在-vs-code-copilot-接手)選Co
 主Store8、DialogueStore5；升級前備份並交易遷移，不能直接降低schema。既有公司SQLite不在本次自動遷移範圍。
 
 ## 現場資訊與驗收
+
+rc5 先在「設定助理 → 連線診斷」定位助理／修訂／檢查項目。聊天通過即可使用，需求辨識、工作格式、自主決策及搜尋分別驗證。失敗時預覽並匯出修復 Markdown，交給 Copilot 配合 TO-AGENT；工作單不含端點、金鑰、Assistant ID、對話或原始 HTTP。不要直接附私人診斷 JSON。
+
+| 項目 | 修改入口／命令 | 現場完成條件 |
+|---|---|---|
+| 診斷與安全工作單 | connection_diagnostics.py；`scripts/test_runner.py --suite targeted --tests tests.test_connection_diagnostics tests.test_support` | 兩位助理的結果不混用；重開保留失敗階段；匯出無秘密 |
+| 聊天中斷 | dialogue_service.py／assistants_gateway.py；依工作單選恢復測試 | 已知 run 沿原請求取回；未知送出不重派，原訊息及草稿保留 |
+| 使用者操作 | WebView設定及原對話診斷入口 | 真人完成查看→預覽→分享→明確分項重測；Copilot能依工作單定位，而非重做整套架構 |
+
+本機合成與自動WebView通過不等於實際達哥或公司Copilot驗收。AD只有採用組織登入才需要接線；四角色不是普通聊天或單助理工作的前提。
 
 秘密只填本機安全設定，不貼入本文件或Git。
 

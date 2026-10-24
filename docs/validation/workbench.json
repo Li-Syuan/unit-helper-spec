@@ -1,119 +1,96 @@
 {
-  "version": "1.0.0rc4",
-  "release_status": "candidate_local_verified_field_acceptance_pending",
+  "version": "1.0.0rc5",
+  "release_status": "candidate_clipboard_regression_and_field_acceptance_pending",
   "schema": 8,
   "dialogue_schema": 5,
   "python": "3.10.4",
   "architecture_bits": 64,
   "full": {
-    "passed": true,
-    "selected": 646,
-    "seconds": 227.6939
+    "passed": false,
+    "selected": 652,
+    "seconds": 346.1091
   },
   "full_result": {
-    "passed": true,
-    "count": 646,
-    "seconds": 225.524,
+    "passed": false,
+    "count": 652,
+    "seconds": 343.7267,
     "skipped": 0,
     "failures": 0,
-    "errors": 0,
+    "errors": 1,
     "expected_failures": 0,
     "unexpected_successes": 0,
     "status": "completed"
   },
-  "full_scope": "isolated_synthetic_user_settings_existing_venv",
-  "final_followup_targeted": {
-    "passed": true,
-    "selected": 29,
-    "seconds": 8.8681
-  },
-  "final_followup_scope": "strict routing, stale choice, link-write failure with running planner; CLI and continuity",
-  "full_before_final_followup": true,
+  "full_scope": "isolated_synthetic_settings_existing_venv",
   "quick": {
-    "passed": true,
-    "selected": 474,
-    "seconds": 83.0279
+    "passed": false,
+    "selected": 480,
+    "seconds": 102.7671
   },
-  "quick_target_seconds": 60,
-  "quick_target_met": false,
-  "webview_workspace": {
+  "quick_failure": "existing_markdown_anchor_treated_as_filename; corrected with file and heading validation",
+  "post_fix_targeted": {
+    "passed": true,
+    "selected": 12,
+    "seconds": 2.0,
+    "scope": "diagnostic service and instruction document references"
+  },
+  "webview": {
     "status": "passed",
-    "scope": "workspace",
     "checks": [
       "bridge_ready",
       "two_primary_entries_unified_chat_plan_edit_approval_dedup_result_work_tabs_draft_preserved_small_light",
       "skill_composer_choice_only_supplement_cancel_and_ambiguous_request_zero_execution",
-      "three_field_save_search_policy_before_eight_explicit_synthetic_checks_start_auto_chat_maximized"
+      "three_field_save_search_policy_before_eight_explicit_synthetic_checks_start_auto_chat_maximized",
+      "diagnostics_two_profiles_partial_capabilities_safe_report_clipboard_denial_save_failure_export_selected_retest_chat_failure_draft_preserved_dark_light_small"
     ],
     "not_tested": [
       "real_DVC",
       "AD",
       "source_quality",
       "human_usability",
-      "physical_IME"
+      "physical_IME",
+      "company_Copilot",
+      "native_file_picker_manual",
+      "diagnostic_physical_clipboard"
     ]
   },
-  "webview_scope": "real WebView2; synthetic transport, memory credential fixture and temporary data",
+  "webview_scope": "real WebView2; synthetic replies, temporary data, native file-dialog result fixture",
+  "clipboard": {
+    "full": "failed_error_5",
+    "targeted": "failed_error_5",
+    "direct_access": "denied_with_and_without_own_window",
+    "another_holder_present": false,
+    "root_cause": "unconfirmed",
+    "diagnostic_failure_fallback": "local_real_passed_with_forced_clipboard_denial",
+    "physical_webview": "not_tested"
+  },
   "environment": {
-    "isolated_settings": "passed",
+    "doctor": "passed_isolated_settings",
     "pip_check": "passed",
     "lock": "passed",
-    "existing_user_preflight": "failed_profile_credential_credential_store_unavailable_or_empty",
-    "existing_user_configuration_changed": false
-  },
-  "clipboard": {
-    "targeted": "passed",
-    "full": "passed",
-    "prior_error_5_root_cause": "unconfirmed",
-    "physical_webview": "not_tested"
+    "user_settings_changed": false
   },
   "offline_wheels": {
     "status": "passed",
     "wheel_count": 69,
     "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b",
-    "install": "not_run_dependencies_unchanged",
-    "network_requests": 0
+    "reinstall": "not_run_dependencies_unchanged"
   },
+  "local_document_links": {
+    "checked": 141,
+    "missing": []
+  },
+  "live_model_requests": 0,
   "new_environment_created": false,
   "dependencies_changed": false,
-  "live_model_requests": 0,
   "company_real": "not_tested",
+  "company_Copilot": "not_tested",
   "AD": "not_tested",
   "source_quality": "not_tested",
   "human_usability": "not_tested",
   "physical_IME": "not_tested",
   "Excel": "not_tested",
   "norton_effect": "not_confirmed",
-  "full_hermes": "not_implemented",
   "formal_1_0": "not_released",
-  "prior_attempts": [
-    "Restricted process denied atomic saves or inherited SSLKEYLOGFILE access; normal Windows execution passed without weakening policies.",
-    "Initial full preflight failed on an existing user credential; no tests ran. Original report retained locally. Fresh diagnostic profile used without changing the existing environment or user secrets.",
-    "Early GUI fixture and selector failures, and unsent Plan edit state, were corrected; current workspace journey passed.",
-    "After full: source-link failure guard, stale ambiguity choice, strict JSON validation and selected Skill isolation were corrected; affected targeted and WebView journeys rerun."
-  ],
-  "maintenance": {
-    "date": "2026-10-25",
-    "source_files_before": 745,
-    "source_files_after": 700,
-    "markdown_before": 38,
-    "markdown_after": 33,
-    "wheel_count": 69,
-    "wheel_integrity": "passed",
-    "lock_sha256": "cb89c89a7d9176eab8bb533a42534370225427aac2d51d1a275ede55c7f75c4b",
-    "local_links_checked": 95,
-    "local_links": "passed",
-    "application_tests_licenses_preserved": true,
-    "dependency_changes": false,
-    "reinstallation": "not_run",
-    "live_service_requests": 0,
-    "targeted": {
-      "passed": true,
-      "selected": 29,
-      "seconds": 10.2738
-    },
-    "launch_check": "passed",
-    "full": "not_rerun_no_product_or_dependency_change",
-    "user_settings_changed": false
-  }
+  "full_hermes": "not_implemented"
 }

@@ -218,6 +218,10 @@ class DialogueService:
             with self.lock,self.store.connect() as db:
                 db.execute("UPDATE requests SET status=?,recoverable=0,error_code=?,updated_at=? WHERE request_id=? AND status!='completed'",
                     ('cancelled' if event.is_set() else 'failed','cancelled' if event.is_set() else failure,stamp(),request_id))
+            observer=getattr(self,'failure_observer',None)
+            if observer:
+                try:observer(tid,request_id,exc,event.is_set())
+                except Exception:pass  # Diagnostic failure cannot replace the original failure or lose messages.
             raise
         finally:
             with self._condition:

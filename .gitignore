@@ -23,6 +23,10 @@ company_local/
 
 # Appearance is personal local data
 ui-preferences.json
+connection-diagnostics.json
+.diagnostics-*
+QA-agent-repair-*.md
+QA-agent-support-*.zip
 
 wheelhouse*/
 assistants.json

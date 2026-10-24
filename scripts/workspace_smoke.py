@@ -137,3 +137,5 @@ def journey(session,api,window,capture,wait,report):
     assert fits('#work-status-filter')
     report['checks'].append('three_field_save_search_policy_before_eight_explicit_synthetic_checks_start_auto_chat_maximized')
     report['not_tested']=['real_DVC','AD','source_quality','human_usability','physical_IME']
+    from diagnostics_smoke import journey as diagnostics_journey
+    diagnostics_journey(session,api,window,capture,wait,report)

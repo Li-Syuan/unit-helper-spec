@@ -64,7 +64,13 @@ class InstructionDocumentTests(unittest.TestCase):
             self.assertIn('## 精確輸出契約', text)
         guide = (ROOT / 'README.md').read_text(encoding='utf-8')
         for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)', guide):
-            self.assertTrue((ROOT / target).resolve().is_file(), target)
+            location, _, fragment = target.partition('#')
+            path = (ROOT / location).resolve()
+            self.assertTrue(path.is_file(), target)
+            if fragment:
+                headings = re.findall(r'^#{1,6}\s+(.+)$', path.read_text('utf-8'), re.M)
+                anchors = {re.sub(r'[^\w\s-]', '', heading).lower().replace(' ', '-') for heading in headings}
+                self.assertIn(fragment, anchors, target)
         self.assertIn('not_tested', guide)
         self.assertIn('不能保證零幻覺', guide)
 

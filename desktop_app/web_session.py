@@ -89,6 +89,9 @@ class WebSession:
             self.workspace=WorkspaceTurns(self)
             use_defaults=(config is None) if deployment_defaults is None else deployment_defaults is True
             self.activation=Activation(self,load_defaults=use_defaults and not (groq_trial or demo_session))
+            from .connection_diagnostics import ConnectionDiagnostics
+            self.diagnostics=ConnectionDiagnostics(self)
+            self.dialogue.failure_observer=self.diagnostics.dialogue_failure
             self.scheduler_error=False
             self.scheduler=None
             if start_scheduler:

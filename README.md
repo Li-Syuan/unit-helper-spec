@@ -1,8 +1,10 @@
 # QA agent
 
-**1.0.0rc4 候選版 · Windows x64 · Python 3.10.4 · WebView2 主介面／Tkinter 備用**
+**1.0.0rc5 候選版 · Windows x64 · Python 3.10.4 · WebView2 主介面／Tkinter 備用**
 
 填入 **endpoint、Assistant ID、API key**，完成明確啟動的能力檢查後，在同一個輸入框聊天或交辦工作。工作會先補問、產生可修改的計畫，按「確認執行」才開始；成果留在原對話。一位助理即可，不必先建立 Skill 或四位角色。
+
+連線失敗時，在「設定助理 → 連線診斷」或原對話的「查看診斷」看失敗階段與下一步；可預覽、複製或另存修復工作單交給 Copilot。查看及匯出不呼叫模型，重測只測明確選定項目。聊天通過即可聊天；AD 僅在部署採用組織登入時接線。
 
 ## 日常入口
 
@@ -34,6 +36,7 @@ start-app.bat
 - 給開發 Agent：[TO-AGENT.md](TO-AGENT.md)，環境與現場工作：[COMPANY-HANDOFF.md](COMPANY-HANDOFF.md)。VS Code Copilot的角色、三個手動prompt與不支援時的附檔方式見[接手入口](TO-AGENT.md#在-vs-code-copilot-接手)。
 - 使用者：[使用手冊](docs/USER-GUIDE.md)、[資料使用](docs/DATA-USAGE.md)、[工作代理](docs/AGENT-WORK.md)、[CLI](docs/WORKBENCH.md)。
 - 開發者：[AGENTS](AGENTS.md)、[架構](docs/PROJECT.md)、[目前驗證結果](docs/VALIDATION.md)。
+- rc5 診斷與 WebView 合成旅程已驗證；完整回歸尚有一項既有 Windows 剪貼簿讀取 error 5，未改記通過。複製受阻可另存 Markdown，現場仍須確認。
 - `test-company.bat` 做隔離的本機完整檢查與WebView合成旅程；日常改動用 `scripts/test.ps1` quick 或 targeted，不重複跑full。
 
 這是受限自主工作候選版，**尚未完成正式1.0或全部Hermes功能**。實際達哥契約／搜尋來源品質、AD、人工使用性需要現場驗收。SMTP、任意shell／檔案工具、MCP與並行子代理未實作；詳見[Hermes相容性清單](docs/HERMES-COMPATIBILITY.md)。不隨Git提供金鑰、內部設定、Python環境或個人資料。

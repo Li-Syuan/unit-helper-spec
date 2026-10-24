@@ -6,7 +6,7 @@
 4. 三欄入口使用個別keyring憑證，保存同ID提升連線修訂並撤銷舊能力。更換端點/協定會先確認，再清除舊目的地憑證索引/能力；不帶舊key過去，舊對話保留閱讀。示範登入、CLI --demo及Groq隔離入口不啟用真實連線。
 5. 基本啟用明確兩輪合成測試，Skill及搜尋另外驗證；metadata不是聊天先決條件。沒有設定時本機仍可示範，不假造組織連線。
 
-主SQLite仍schema8，DialogueStore升schema5，舊1/2/3/4先`.pre-v5-*.bak`備份再交易。降版須關閉App並還原整個一致資料備份，勿直接改user_version。新接口與限制見使用手冊。發布保留`1.0.0rc4`，實際DVC十輪、多對話重開、搜尋來源與AD未驗收不可改成正式1.0。
+主SQLite仍schema8，DialogueStore升schema5，舊1/2/3/4先`.pre-v5-*.bak`備份再交易。降版須關閉App並還原整個一致資料備份，勿直接改user_version。新接口與限制見使用手冊。發布保留`1.0.0rc5`，實際DVC十輪、多對話重開、搜尋來源與AD未驗收不可改成正式1.0。
 
 ## GitHub Code ZIP 離線入口（2026-10-01）
 
@@ -248,7 +248,11 @@ powershell.exe -NoProfile -File scripts/export-icon.ps1 -Source desktop_app/asse
 
 `.\scripts\test.ps1 -Suite targeted -Tests tests.test_workflows,tests.test_workflow_profiles,tests.test_workflow_ui` 不使用真實 API。`.venv/Scripts/python.exe scripts/check-workflows.py` 預設 not_tested、零請求；加 `--live` 才對 Groq 發出最多四次合成請求（規劃、分析、覆核、彙整），暫存資料庫結束即清除，不啟用使用者排程。可加 `--output artifacts/workflow-live.json` 保存白名單結果。組織驗收必須獨立完成，不能把此結果改名當組織證據。
 
-## rc4 工作區驗證
+## rc5 診斷與工作區驗證
+
+`connection_diagnostics.py` 的摘要是本機支援資料，不是能力旗標。用 `tests.test_connection_diagnostics` 覆蓋兩助理隔離、分項錯誤、取消／未知送出、修訂、重開、損壞與保存失敗、工作單秘密白名單；ZIP沿 `tests.test_support`。只選受影響模組，沒有必要每次重跑全部檢查。
+
+現行 WebView 旅程追加失敗→查看診斷→預覽／匯出→指定重測，含深淺、小視窗、剪貼簿拒絕、保存失敗及原對話草稿保留。模擬原生檔案選擇的返回值不等於人工操作驗收；真實服務、來源與Copilot仍各自記錄。
 
 UI改動使用 `.venv\Scripts\python.exe scripts/web-smoke.py --workspace-only`，走兩入口、同頁Plan、選項補充、模糊需求、同頁工具核准及八次合成檢查，報告在artifacts/web-smoke/result-workspace.json。`test-company.bat`亦使用這條現行旅程。真實API、人工使用性及IME分開驗收。
 

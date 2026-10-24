@@ -1,3 +1,11 @@
+# 1.0.0rc5 連線診斷（優先於下方歷史規則）
+
+connection_diagnostics.py 只供說明，不能授予能力。Activation／AgentJobs 的既有測試共同保存白名單代碼、階段、HTTP狀態、錯誤編號及時間；每位助理最近兩個修訂、每項最後結果，原子寫connection-diagnostics.json。最多128助理及128筆匿名對話錯誤關聯，不保存回覆、端點、金鑰或員工資料。舊running重開顯示未完成，缺細節不補造；能力仍讀原activation/routing/skill證據。主Store8／DialogueStore5／Python3.10.4／69wheels不變。
+
+WebView設定助理有五項診斷，原對話失敗可查看。讀取／複製／Markdown與安全ZIP匯出零模型派發，不上傳。重測須指定目前修訂及明確同意：聊天／辨識2次、工作3次、自主3次；搜尋一次測試最多4次模型請求（初始＋最多3批工具續答）。背景請求、未知送出及未結束原對話不得藉重測繞過；known run沿既有檢查／恢復，不改request ID。網路失敗不等於CA問題。摘要壞掉／存不下不丟對話，提示並保留可預覽內容。
+
+工作單只輸出匿名標記、修訂、白名單證據、固定相對程式位置及最小命令，不能序列化整個status／exception／設定。私人摘要與工作單不進Git。TO-AGENT與.github/qa-diagnose接受預覽後分享的工作單，不要求原始HTTP或SQLite。選測tests.test_connection_diagnostics及受影響模組；WebView沿既有--workspace-only旅程。真實DVC、Copilot及人工使用性仍not_tested；Tk僅保留既有支援ZIP。
+
 # 2026-10-25 目錄精簡（優先於下方歷史路徑）
 
 正式69wheels全部在offline-app/packages；bundle-manifest.json仍逐檔固定SHA256與原lock。已刪獨立lab、過期驗證材料及重複Copilot／0.20接手文件；唯一接手提示為TO-AGENT.md，工作單為COMPANY-HANDOFF.md。保留全部產品功能、測試、授權文字、正式素材與公司接線範本；不以清理刪除未完成需求。既有.venv與.runtime/python3104相依，必須同時保留；私人.env／設定／資料不屬於可清快取。最新與失敗原始證據留artifacts，舊原始碼與文件由Git查閱，不另複製歷史包。

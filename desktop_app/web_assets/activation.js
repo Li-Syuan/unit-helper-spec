@@ -5,7 +5,7 @@ function button(label,fn,cls='button'){const b=e('button',cls,label);b.type='but
 function check(root,label,id){const row=e('label','check-field'),input=e('input');input.type='checkbox';if(id)input.id=id;row.append(input,document.createTextNode(label));root.append(row);return input;}
 async function profilePanel(root,pid){
  const info=await U.call('activation_status'),p=info.chat_profiles.find(p=>p.id===pid);if(!p)return;
- root.replaceChildren(e('h3','',p.name));const roles=p.skill_roles||[],ready=['planner','compose','assess','autonomous'].every(r=>roles.includes(r))&&p.routing_status==='passed';
+ root.replaceChildren(e('h3','',p.name));root.dataset.profileId=pid;
  const summary=e('p','capability-summary');const showCapabilities=q=>{const rs=q.skill_roles||[],ok=['planner','compose','assess','autonomous'].every(r=>rs.includes(r))&&q.routing_status==='passed';summary.textContent='聊天：'+(q.chat_status==='passed'?'可用':'待檢查')+' · 自動交辦：'+(ok?'可用':'待檢查')+' · 搜尋：'+(q.search_approved?(rs.includes('rag')?'已核准且測試通過':'已核准，待測試'):'尚未核准');};showCapabilities(p);root.append(summary);
  const search=e('details','activation-search');search.append(e('summary','','① 搜尋設定（選用，請先完成再測試）'),e('p','muted','需要助理上網時，先讀取工具宣告並人工核准。這只讀設定，不呼叫模型。變更工具會撤銷原版本能力，需要重新測試。'));root.append(search);
  const tools=e('div');search.append(button('讀取這位助理的工具宣告',async()=>{
@@ -24,14 +24,13 @@ async function profilePanel(root,pid){
   progress.replaceChildren(e('p','muted','開始檢查，沒有啟用搜尋或排程。'));
   timer=setInterval(()=>U.call('activation_progress',{profile_id:pid}).then(stages).catch(()=>{}),900);
   try{const r=await U.call('activation_run',{profile_id:pid,consent:true});stages(r);document.dispatchEvent(new Event('qa-dialogue-catalog-refresh'));const current=r.capabilities?.chat_profiles.find(p=>p.id===pid);if(current)showCapabilities(current);if(current?.chat_status==='passed')progress.append(button('開始使用',()=>{U.closeModal();U.navigate('dialogue');document.dispatchEvent(new CustomEvent('qa-dialogue-activate',{detail:{assistant_id:current.assistant_id}}));},'button primary'));if(current?.search_approved)progress.append(button('接著測試核准搜尋',()=>searchTest(pid,progress),'button'));
-  }finally{clearInterval(timer);stop.hidden=true;controls.forEach(n=>{if(n.isConnected)n.disabled=false;});}
+  }finally{clearInterval(timer);stop.hidden=true;controls.forEach(n=>{if(n.isConnected)n.disabled=false;});document.dispatchEvent(new CustomEvent('qa-diagnostics-refresh',{detail:{profile_id:pid}}));}
  },'button primary'),stop,progress);root.append(test);
- const separate=e('details');separate.append(e('summary','','分項重測與詳細能力'),e('p','muted','已驗證角色：'+(roles.join('、')||'無')));
- separate.append(button('重測聊天與辨識（兩次）',async()=>{if(!consent.checked)throw Error('請先同意合成測試。');const r=await U.call('activation_route_test',{profile_id:pid,consent:true});stages({stages:[{stage:'chat',...r}]});document.dispatchEvent(new Event('qa-dialogue-catalog-refresh'));}),button('重測工作格式',()=>document.dispatchEvent(new CustomEvent('qa-agent-probe',{detail:{profile_id:pid}}))),button('重測自主決策',()=>document.dispatchEvent(new CustomEvent('qa-agent-probe',{detail:{profile_id:pid,autonomous:true}}))));root.append(separate);
- const searchButton=button('③ 另行測試核准搜尋（一次請求）',()=>searchTest(pid,progress));searchButton.disabled=!p.search_approved;root.append(searchButton,e('p','muted','搜尋實測與來源品質分開；測試通過後，工作仍須由你確認才執行。'));
+ const diagnostics=e('section');root.append(diagnostics);window.qaDiagnosticsUI.mount(diagnostics,{profile_id:pid},{onStatus:data=>{const passed=check=>data.rows?.some(r=>r.check===check&&r.status==='passed');summary.textContent='聊天：'+(passed('chat')?'可用':'待檢查')+' · 自動交辦：'+(['routing','work','autonomous'].every(passed)?'可用':'待檢查')+' · 搜尋：'+(data.search_approved?(passed('search')?'已核准且測試通過':'已核准，待測試'):'尚未核准');}});
+ const searchButton=button('③ 另行測試核准搜尋',()=>searchTest(pid,progress));searchButton.disabled=!p.search_approved;root.append(searchButton,e('p','muted','搜尋測試含工具結果續答，用量會在同意前顯示；來源品質仍須核對，工作仍須由你確認才執行。'));
  if(p.chat_status==='passed')root.append(button('使用這位助理',()=>{U.closeModal();U.navigate('dialogue');document.dispatchEvent(new CustomEvent('qa-dialogue-activate',{detail:{assistant_id:p.assistant_id}}));},'button primary'));
 }
-async function searchTest(pid,result){const body=U.modal('單次搜尋測試');body.append(e('p','notice','將傳送一筆合成搜尋需求，只使用已核准工具，可能產生 API 費用。來源品質仍須人工核對。'));U.modalButtons(button('取消',U.closeModal),button('同意並測試一次',async()=>{const r=await U.call('agent_search_probe',{profile_id:pid,consent:true});body.replaceChildren(e('p',r.passed?'notice':'error',r.passed?'搜尋收據及格式通過，請另外核對來源品質。':'搜尋未通過，沒有自動重試。'));for(const c of r.checks||[])body.append(e('p','muted',c.message||c.status));U.modalButtons(button('關閉',U.closeModal));document.dispatchEvent(new Event('qa-dialogue-catalog-refresh'));},'button primary'));}
+async function searchTest(pid,result){const panel=await window.qaDiagnosticsUI.open({profile_id:pid});await panel.ready;panel.retest('search');}
 async function form(root,info){
  root.replaceChildren(e('h2','','啟用你的助理'),e('p','muted','填一次設定，在這裡完成檢查，之後直接從對話交辦工作。'));
  if(!info.available){root.append(e('p','notice',info.message));return;}

@@ -1,4 +1,8 @@
-# 1.0.0rc4：統一對話與兩入口工作區
+# 1.0.0rc5：連線診斷與兩入口工作區
+
+`connection_diagnostics.py` 共用於啟用、分項能力測試及 WebBridge，`web_assets/diagnostics.js` 呈現設定內五項診斷與原對話失敗入口。它讀原能力證據及本機請求收據，不做遠端查詢、不授權。重測仍呼叫原 Activation／AgentJobs，受修訂、真實請求及未知送出守護。
+
+私人 `connection-diagnostics.json` 原子保存每位助理最近兩修訂的各項最新結果，最多128助理；另保留128筆雜湊對話／請求關聯的安全錯誤編號。無內容、憑證或端點，沒有 SQLite 遷移。讀壞／寫失敗明示，原對話不受影響。重開的 running 顯示未完成，舊修訂顯示設定已變更。工作單採明確白名單，從不序列化整份狀態或例外；詳細操作見使用手冊。
 
 當前主Store8、DialogueStore5、Python3.10.4及69wheels。下方版本段落為既有模組的沿革；本節為目前主畫面與對話契約。
 

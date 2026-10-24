@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from .assistant_errors import AssistantFailure
 from .dialogue_service import stamp
+from .connection_diagnostics import measured, diagnostic_respond, failure_details
 
 
 def deployment(path=None):
@@ -87,13 +88,14 @@ class Activation:
             b=s.profiles.snapshot(pid)
             return {'profile_id':pid,'assistant_id':f"company:{pid}:{b['revision']}",'saved':True}
 
+    @measured('chat')
     def test(self,pid,consent,*,routing=False,cancelled=None):
         if consent is not True:raise ValueError('測試會傳送兩輪合成訊息，請先確認。')
         if not self.status()['configured']:raise ValueError(self.status()['message'])
         if pid=='demo':raise ValueError('示範模式不是真實啟用測試。')
         def perform(binding):
             marker='QA-'+uuid.uuid4().hex[:12];cid='activation:'+uuid.uuid4().hex
-            history=[];checks=[];passed=False;route_ok=routing
+            history=[];checks=[];passed=False;route_ok=routing;assertion_code=None
             stopped=cancelled or (lambda:False)
             try:
                 prompts=(f'這是合成連線測試。請記住測試代號 {marker}，只回答 OK。不要使用工具。','請只回覆上一輪的測試代號，不要使用工具。')
@@ -105,7 +107,7 @@ class Activation:
                 for n,prompt in enumerate(prompts):
                     if stopped():raise ValueError('cancelled')
                     s=self.s;s.assert_identity();history.append({'role':'user','content':prompt})
-                    result=s.profiles.respond(history,'chat',binding,context={'conversation_id':cid,'request_id':cid+':'+str(n),
+                    result=diagnostic_respond(s,history,'chat',binding,context={'conversation_id':cid,'request_id':cid+':'+str(n),
                         'operation':'activation','search_authorized':False,'cancelled':lambda:s.engine._closed or stopped()})
                     shown=result
                     if routing:
@@ -113,17 +115,19 @@ class Activation:
                             obj=parse(result);shown=obj['text']
                             route_ok=route_ok and obj['kind']==('chat' if n==0 else 'work') and not obj['search'] and (n==0 or marker in obj['goal'])
                         except ValueError:route_ok=False
-                    if stopped() or not isinstance(shown,str) or not shown.strip() or (n==1 and shown.strip()!=marker):raise ValueError('context_assertion_failed')
+                    if stopped():raise ValueError('cancelled')
+                    if not isinstance(shown,str) or not shown.strip() or (n==1 and shown.strip()!=marker):
+                        assertion_code='CONTEXT_ASSERTION';raise ValueError('context_assertion_failed')
                     history.append({'role':'assistant','content':result});checks.append({'round':n+1,'status':'passed'})
                 passed=True;message='聊天兩輪及上下文斷言通過；Skill 與搜尋需另外測試。'
             except Exception as exc:
-                code=exc.code if isinstance(exc,AssistantFailure) else 'FORMAT_OR_LOCAL_SETUP'
+                detail=failure_details(self.s,exc,'chat_assertion',stopped())
+                if assertion_code and not stopped():detail['code']=assertion_code
+                code=detail['code']
                 hints={'AUTHENTICATION':'檢查 API key。','FORBIDDEN':'確認此金鑰有該助理權限。','NOT_FOUND':'核對 Assistant ID 與部署端點。',
                     'TRANSPORT':'請部署者檢查網路及 CA。','TIMEOUT':'服務等待逾時；沒有自動重送。','RATE_LIMIT':'服務限制請求，請稍後明確測試。'}
                 message=hints.get(code,'回覆格式、上下文或本機設定未通過；請查看安全錯誤編號。')
-                from .support import record
-                incident=record(self.s.directory,'activation',exc)
-                checks.append({'round':len(checks)+1,'status':'failed','code':code,'incident':incident})
+                checks.append({'round':len(checks)+1,'status':'cancelled' if stopped() else 'failed',**detail})
             self.s.assert_identity();self.s.profiles.validate(binding)
             if self.s.engine._closed:raise ValueError('工作區已關閉。')
             with self.s.dialogue.store.connect() as db:

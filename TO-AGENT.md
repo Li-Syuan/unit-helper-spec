@@ -1,6 +1,6 @@
 # 給接手 Agent：把 QA agent 接到現場服務
 
-將下方指令貼給 GPT 6 sol／SOL 6.1，並讓它讀取本檔。版本為 **1.0.0rc4 候選版**；不要把本機合成測試通過寫成真實服務已驗收。
+將下方指令貼給 GPT 6 sol／SOL 6.1，並讓它讀取本檔。版本為 **1.0.0rc5 候選版**；不要把本機合成測試通過寫成真實服務已驗收。
 
 本版驗證結果以[驗證紀錄](docs/VALIDATION.md)為準；剪貼簿應依本次實際Windows結果判讀，不能靠重裝69個套件解決。版本仍為候選版。
 
@@ -79,6 +79,18 @@ install-offline.bat "C:\approved\Python3104\python.exe"
 資料庫：主 Store schema8、DialogueStore schema5。既有對話庫1／2／3／4先 SQLite backup，再交易升級；勿直接降低版本或搬移組織舊資料庫。對話資料夾只改本機分類，不改遠端 thread／助理／記憶快照。
 
 ## 3. 測試與問題回報
+
+rc5 優先收取 App「設定助理 → 連線診斷 → 預覽修復工作單」產生的 Markdown。它列出匿名助理、修訂、檢查時間、安全代碼／階段、錯誤編號、程式位置與最小命令。先核對哪位助理、哪個修訂、哪個項目失敗；工作格式失敗不阻擋已通過的聊天，不需先接 AD 或四角色。
+
+若缺資訊，只問足以定位的去識別操作步驟。不要索取 `connection-diagnostics.json` 原檔、整個使用者目錄或 HTTP body。安全 ZIP 是選用附件。`connection_diagnostics.py` 不授予能力，不能修改摘要解鎖功能；缺細節保留「沒有可用紀錄」。
+
+修改診斷或安全匯出，先跑：
+
+```bat
+.venv\Scripts\python.exe scripts\test_runner.py --suite targeted --tests tests.test_connection_diagnostics tests.test_support
+```
+
+按實際修改再選相關模組。UI 指定重測須明確同意：聊天／辨識2次、工作3次、自主3次；搜尋一次測試最多4次模型請求（含工具續答）。未知請求仍先沿原 ID 檢查／恢復，不透過新測試或 request ID 繞過。
 
 修改連線或續談後先跑相關範圍：
 

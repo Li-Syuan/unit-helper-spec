@@ -1,4 +1,4 @@
-# 1.0.0rc4 統一入口
+# 1.0.0rc5 統一入口
 
 新主對話與CLI共用WorkspaceTurns，一次無工具回覆同時取得聊天文字／工作建議。CLI直接輸入即可；待補問時文字交給目前計畫，確認仍用 `/job-run`（TTY人工確認）。`/activation-run <profileID>` 同意後最多8次；`/use-skill <ID|none>` 選方法；`/work-choose <requestID> <chat|work>` 回答模糊建議。用 `/job-reply` 可傳選項答案。原 `/job` 等手動入口保留，能力不足不偷換示範。
 

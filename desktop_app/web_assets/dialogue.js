@@ -42,6 +42,7 @@ function paintRecovery(thread){
  if(r.recoverable)row.prepend(btn('取回原回覆',()=>recoverAction(thread.id,true),'button primary'));
  if(r.retry_unsent)row.prepend(btn('重試未送出',()=>recoverAction(thread.id,'retry',r.id),'button primary'));
  if(thread.busy)row.querySelectorAll('button').forEach(b=>b.disabled=true);
+ if(thread.company){const diagnostic=btn('查看診斷',()=>window.qaDiagnosticsUI.open({thread_id:thread.id}));diagnostic.dataset.diagnosticAction='open-dialogue';row.append(diagnostic);}
  card.append(row);$('dialogue-result').prepend(card);
 }
 async function recoverAction(id,recover,requestId){
