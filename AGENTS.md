@@ -10,7 +10,7 @@ WebView設定助理有五項診斷，原對話失敗可查看。讀取／複製�
 
 正式69wheels全部在offline-app/packages；bundle-manifest.json仍逐檔固定SHA256與原lock。已刪獨立lab、過期驗證材料及重複Copilot／0.20接手文件；唯一接手提示為TO-AGENT.md，工作單為COMPANY-HANDOFF.md。保留全部產品功能、測試、授權文字、正式素材與公司接線範本；不以清理刪除未完成需求。既有.venv與.runtime/python3104相依，必須同時保留；私人.env／設定／資料不屬於可清快取。最新與失敗原始證據留artifacts，舊原始碼與文件由Git查閱，不另複製歷史包。
 
-Copilot開發入口為.github/copilot-instructions.md；四個.agent.md只分配職責，三個手動prompt分別接手／排錯／單項Hermes規劃，操作以TO-AGENT.md為準。它們不是App runtime Skill或產品能力，不授權真實API、排程或寄信。未支援自訂角色／prompt的VS Code可明確附檔使用，不改公司政策；保留Python與現有核心，Hermes移植須逐項核對來源、授權、相容性及驗收。
+Copilot開發入口為.github/copilot-instructions.md；四個.agent.md只分配職責，三個手動prompt分別接手／排錯／單項Hermes規劃，操作以TO-AGENT.md為準。新增.github/skills的qa-map／qa-fix／qa-review是手動啟動的pstack精簡改編；既有入口按需引用，預設單agent、沿用所選模型，不安裝插件／hooks或自動多模型分工。固定上游提交及MIT授權見docs/THIRD-PARTY-NOTICES.md，共用證據規則只存copilot-instructions。它們不是App runtime Skill或產品能力，不授權真實API、排程或寄信。未支援自訂角色／prompt／Skill的VS Code可明確附檔使用，不改公司政策；保留Python與現有核心，Hermes移植須逐項核對來源、授權、相容性及驗收。
 
 # 1.0.0rc4 精簡工作區（優先於下方歷史規則）
 

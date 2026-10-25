@@ -4,6 +4,24 @@
 
 **新增診斷與WebView合成旅程通過；完整回歸仍有一項既有Windows剪貼簿讀取錯誤，不能標為full_passed。仍為候選版，未完成正式1.0、真實達哥或完整Hermes驗收。**
 
+## 開發 Skills 文件檢查
+
+2026-10-25加入三個pstack精簡開發Skills；產品仍為rc5，未修改App、依賴、資料庫或69個wheels。只擴充原有文件案例的metadata／引用檢查，沒有新增測試案例數量。以專案Python3.10.4 x64執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`：**6項通過、0失敗／錯誤／跳過**，案例0.103秒，含入口8.15秒。原始結果在忽略的 `artifacts/testing/latest.json`。本輪沒有重跑quick、full或GUI，也未改寫下方既有失敗紀錄。
+
+檢查涵蓋三份Skill的YAML、名稱唯一性、名稱與資料夾一致、手動啟動旗標，以及Skills／角色／prompt／接手文件的本機連結與章節。固定上游提交與授權已核對，完整來源及改編差異見[第三方說明](THIRD-PARTY-NOTICES.md#pstack-開發-skills)。
+
+Codex隨附的 `quick_validate.py` 對三份原檔均回傳exit 1：它的欄位白名單不包含VS Code的 `disable-model-invocation` 與 `user-invocable`。這是驗證器格式差異，未移除手動旗標或修改驗證器來假裝通過；本專案文件檢查依[VS Code格式](https://code.visualstudio.com/docs/agent-customization/agent-skills)驗證這兩欄為真正的布林值。實際Copilot載入仍須現場確認。
+
+以下為維護者對指引及既有程式的**靜態情境走查**，不是Copilot／模型執行測試，也未呼叫達哥：
+
+| 去識別情境 | 核對結果 |
+|---|---|
+| 助理A目前修訂聊天通過；B有舊修訂通過、目前修訂失敗 | 先按匿名標記／修訂／項目／時間分組，查B目前結果，不複製A或B舊證據。對照diagnostics的revision檢查及狀態讀取；不要求四角色或AD才排錯。 |
+| 聊天送出逾時，只有未知POST，沒有已知run | 保留原request與內容，不換ID或透過重測派發；查原收據。對照DialogueService的retry_unsent／recover及diagnostics未結束請求守護，缺帳本不等於未送出。 |
+| .venv已存在、doctor報lock缺件，pip check成功 | 列缺件與核准離線包完整性，停止反覆安裝；不覆寫舊環境、不連外降版。對照install-offline的既有環境拒絕及安裝前bundle驗證；新環境／修復另依具體部署方案處理。 |
+
+公司VS Code版本／政策下的發現、手動呼叫及修復成效仍 `not_tested`；不聲稱token節省或正式服務已修復。
+
 ## 實際結果
 
 | 範圍 | 結果與界線 |

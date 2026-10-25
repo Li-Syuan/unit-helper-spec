@@ -28,9 +28,23 @@
 | [/qa-diagnose](.github/prompts/qa-diagnose.prompt.md) | 帶錯誤編號與去識別步驟，定位並做最小修正 |
 | [/qa-hermes-plan](.github/prompts/qa-hermes-plan.prompt.md) | 只規劃一項Hermes類功能，列修改入口、必要資訊及驗收；不安裝／執行 |
 
+### 精簡開發 Skills
+
+另提供三個pstack改編Skills，位於 `.github/skills/`。它們是給Copilot使用的開發方法，不會出現在QA agent的「我的Skills」，也不為App新增工具。預設手動啟動（`disable-model-invocation: true`），沿用目前選定的模型；沒有插件安裝、hooks、模型切換或自動分工。來源提交、改編差異及MIT全文見[第三方說明](docs/THIRD-PARTY-NOTICES.md#pstack-開發-skills)。
+
+| 入口 | 直接可用的交辦範例 |
+|---|---|
+| [/qa-map](.github/skills/qa-map/SKILL.md) | `/qa-map 請說明對話送出到達哥回覆的程式路徑，列出恢復入口及相關測試；先不要修改或呼叫API。` |
+| [/qa-fix](.github/skills/qa-fix/SKILL.md) | `/qa-fix 請依這份修復工作單處理續談失敗。先確認原因並重現，再做最小修正；保留原請求與歷史，只跑受影響測試。` |
+| [/qa-review](.github/skills/qa-review/SKILL.md) | `/qa-review 請唯讀審查這次修改與測試證據，優先檢查未知送出、防重及兩位助理隔離；列具體問題，不自動修正。` |
+
+先在VS Code的Customizations／Skills確認這三個名稱可見，再從 `/` 選單明確選用。現有qa-takeover／qa-diagnose prompt分別引用定位及修復方法，QA角色引用同一份審查表；按任務讀取，不把三份同時塞入每次對話。單模型檢查不是獨立多模型審查，也不保證節省固定token數。
+
+不同VS Code版本、harness或管理政策可能影響載入；若找不到Skill，明確附上對應 `SKILL.md` 與共用指引即可，不修改管理政策或安裝完整pstack。prompt files仍依前述Local限制；Skills支援方式以[VS Code官方說明](https://code.visualstudio.com/docs/agent-customization/agent-skills)及現場版本為準。公司Copilot實際載入與修復成效仍 `not_tested`。
+
 第一次可直接貼：「請依 TO-AGENT.md 與 qa-takeover.prompt.md 接手。先完成離線環境盤點，不重建已正常的環境；接著讓我在App設定助理，真實呼叫前說明測試範圍。一次跑通聊天→Plan→搜尋成果，再處理排程。」
 
-GitHub Code ZIP也含 `.github`；它不要求GitHub Actions或再部署API server。未實測公司VS Code版本／政策的自動載入；上述手動附檔方式是備用入口。
+GitHub Code ZIP也含 `.github` 與開發Skills；它不要求GitHub Actions或再部署API server。未實測公司VS Code版本／政策的自動載入；上述手動附檔方式是備用入口。
 
 格式依2026-10-25官方文件核對：[共用指引](https://code.visualstudio.com/docs/agent-customization/custom-instructions)、[自訂角色](https://code.visualstudio.com/docs/agent-customization/custom-agents)、[prompt files](https://code.visualstudio.com/docs/agent-customization/prompt-files)。
 

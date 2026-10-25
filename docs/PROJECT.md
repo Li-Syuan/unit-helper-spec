@@ -13,7 +13,7 @@ schema5的dialogue_routes分開保存raw wire與顯示建議，workspace_views�
 `activation.run`依序最多8次，工具核准必須先做；2輪同thread聊天兼驗辨識、3次工作格式、3次自主格式，各項證據同助理revision，失敗／取消不自動重測。搜尋是另一次明確測試。metadata失敗不阻擋聊天驗證。畫面 `workspace-ui.js` 與 `activation.js` 不自行判定工作成功或批准；原WorkflowService／LangGraph仍執行所有工作。
 
 
-開發接手使用根目錄 [TO-AGENT](../TO-AGENT.md#在-vs-code-copilot-接手) 與 `.github` 共用規則／角色／手動prompt；它們不參與App執行。Hermes對照表提供現行模組與測試入口，未匯入上游核心。
+開發接手使用根目錄 [TO-AGENT](../TO-AGENT.md#在-vs-code-copilot-接手) 與 `.github` 共用規則／角色／手動prompt。`.github/skills/` 的qa-map／qa-fix／qa-review為固定來源的pstack精簡改編，僅供手動開發流程，不參與App執行或授權。Hermes對照表提供現行模組與測試入口，未匯入上游核心。
 
 ## 自主決策與共用工作核心
 

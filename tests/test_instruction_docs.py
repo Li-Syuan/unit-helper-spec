@@ -2,11 +2,15 @@
 import re
 import unittest
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
+
+import yaml
 
 from desktop_app.workflows import WorkflowService, json_object
 
 
-ROOT = Path(__file__).resolve().parents[1] / 'docs' / 'assistant-instructions'
+REPO = Path(__file__).resolve().parents[1]
+ROOT = REPO / 'docs' / 'assistant-instructions'
 
 
 def examples(name):
@@ -63,16 +67,53 @@ class InstructionDocumentTests(unittest.TestCase):
             self.assertIn('## 共用規則', text)
             self.assertIn('## 精確輸出契約', text)
         guide = (ROOT / 'README.md').read_text(encoding='utf-8')
-        for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)', guide):
-            location, _, fragment = target.partition('#')
-            path = (ROOT / location).resolve()
-            self.assertTrue(path.is_file(), target)
-            if fragment:
-                headings = re.findall(r'^#{1,6}\s+(.+)$', path.read_text('utf-8'), re.M)
-                anchors = {re.sub(r'[^\w\s-]', '', heading).lower().replace(' ', '-') for heading in headings}
-                self.assertIn(fragment, anchors, target)
         self.assertIn('not_tested', guide)
         self.assertIn('不能保證零幻覺', guide)
+
+        # Validate discoverable metadata and portable references, not prompt wording.
+        skills = sorted((REPO / '.github' / 'skills').glob('*/SKILL.md'))
+        self.assertTrue(skills, 'No development skills discovered')
+        names = set()
+        for skill in skills:
+            with self.subTest(skill=skill.relative_to(REPO).as_posix()):
+                text = skill.read_text('utf-8')
+                match = re.match(r'\A---\n(.*?)\n---\n', text, re.S)
+                self.assertIsNotNone(match)
+                metadata = yaml.safe_load(match.group(1))
+                self.assertIsInstance(metadata, dict)
+                self.assertIsInstance(metadata.get('name'), str)
+                name = metadata['name']
+                self.assertRegex(name, r'^[a-z0-9]+(?:-[a-z0-9]+)*$')
+                self.assertLessEqual(len(name), 64)
+                self.assertEqual(name, skill.parent.name)
+                self.assertNotIn(name, names)
+                names.add(name)
+                self.assertIsInstance(metadata.get('description'), str)
+                self.assertTrue(metadata['description'].strip())
+                self.assertIs(metadata.get('disable-model-invocation'), True)
+                self.assertIs(metadata.get('user-invocable'), True)
+
+        documents = [ROOT / 'README.md', *skills,
+                     *(REPO / '.github' / 'prompts').glob('*.prompt.md'),
+                     *(REPO / '.github' / 'agents').glob('*.agent.md')]
+        documents += [REPO / name for name in (
+            '.github/copilot-instructions.md', 'TO-AGENT.md', 'README.md',
+            'COMPANY-HANDOFF.md', 'docs/THIRD-PARTY-NOTICES.md')]
+        for document in documents:
+            for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)', document.read_text('utf-8')):
+                with self.subTest(document=document.relative_to(REPO).as_posix(), target=target):
+                    url = urlsplit(target)
+                    if url.scheme in {'http', 'https', 'mailto'}:
+                        continue
+                    self.assertFalse(url.scheme or url.netloc, 'Nonportable local link')
+                    path = (document.parent / unquote(url.path)).resolve() if url.path else document
+                    self.assertTrue(path.is_relative_to(REPO))
+                    self.assertTrue(path.is_file(), target)
+                    if url.fragment:
+                        headings = re.findall(r'^#{1,6}\s+(.+)$', path.read_text('utf-8'), re.M)
+                        anchors = {re.sub(r'[^\w\s-]', '', heading).lower().replace(' ', '-')
+                                   for heading in headings}
+                        self.assertIn(unquote(url.fragment), anchors, target)
 
 
 if __name__ == '__main__':
