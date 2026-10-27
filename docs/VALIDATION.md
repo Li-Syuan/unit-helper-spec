@@ -4,6 +4,12 @@
 
 **新增診斷與WebView合成旅程通過；完整回歸仍有一項既有Windows剪貼簿讀取錯誤，不能標為full_passed。仍為候選版，未完成正式1.0、真實達哥或完整Hermes驗收。**
 
+## 操作流程精簡工作單
+
+2026-10-27新增 [SOL 6.1 改版工作單](UX-SIMPLIFICATION.md)，聚焦從需求到成果的同頁操作。這次只交付文件與既有連結檢查範圍，未修改 App、依賴、資料庫或 wheels，產品仍為 rc5。程式閱讀已核對主對話補充、inline 自動預覽、工作卡、成果及排程入口；這不是新版 GUI 或人工使用性驗收。
+
+專案 Python 3.10.4 x64 執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`，6 項通過，0 失敗、錯誤或跳過，exit code 0。新工作單及 TO-AGENT 引用納入既有本機連結檢查。未重跑 quick、full、WebView 或真實 API；下方既有剪貼簿失敗與現場未測狀態不變。原始結果留在忽略的 `artifacts/testing/latest.json`。
+
 ## 開發 Skills 文件檢查
 
 2026-10-25加入三個pstack精簡開發Skills；產品仍為rc5，未修改App、依賴、資料庫或69個wheels。只擴充原有文件案例的metadata／引用檢查，沒有新增測試案例數量。以專案Python3.10.4 x64執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`：**6項通過、0失敗／錯誤／跳過**，案例0.103秒，含入口8.15秒。原始結果在忽略的 `artifacts/testing/latest.json`。本輪沒有重跑quick、full或GUI，也未改寫下方既有失敗紀錄。

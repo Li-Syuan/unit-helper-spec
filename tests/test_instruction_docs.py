@@ -98,7 +98,8 @@ class InstructionDocumentTests(unittest.TestCase):
                      *(REPO / '.github' / 'agents').glob('*.agent.md')]
         documents += [REPO / name for name in (
             '.github/copilot-instructions.md', 'TO-AGENT.md', 'README.md',
-            'COMPANY-HANDOFF.md', 'docs/THIRD-PARTY-NOTICES.md')]
+            'COMPANY-HANDOFF.md', 'docs/THIRD-PARTY-NOTICES.md',
+            'docs/UX-SIMPLIFICATION.md')]
         for document in documents:
             for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)', document.read_text('utf-8')):
                 with self.subTest(document=document.relative_to(REPO).as_posix(), target=target):
