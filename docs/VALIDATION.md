@@ -10,6 +10,12 @@
 
 專案 Python 3.10.4 x64 執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`，6 項通過，0 失敗、錯誤或跳過，exit code 0。新工作單及 TO-AGENT 引用納入既有本機連結檢查。未重跑 quick、full、WebView 或真實 API；下方既有剪貼簿失敗與現場未測狀態不變。原始結果留在忽略的 `artifacts/testing/latest.json`。
 
+## 現行架構圖文件檢查
+
+2026-10-27依程式基準 `aae9836` 新增[系統架構圖](ARCHITECTURE.md)，包含總覽、對話、代理、排程、資料與診斷六張 Mermaid 圖。已核對 WebSession 組裝、CLI 共用 WebBridge、兩種 LangGraph 路徑、資料庫檔案與待接線介面。這是靜態架構核對，不是全功能或現場驗收。
+
+架構圖的本機引用納入既有文件測試，以 Python 3.10.4 執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`，6 項通過，exit code 0。這些測試驗證文件契約與連結，不驗證 Mermaid 渲染或產品執行。App、依賴、資料庫及 wheels 未修改，未重跑 full 或呼叫真實服務。
+
 ## 開發 Skills 文件檢查
 
 2026-10-25加入三個pstack精簡開發Skills；產品仍為rc5，未修改App、依賴、資料庫或69個wheels。只擴充原有文件案例的metadata／引用檢查，沒有新增測試案例數量。以專案Python3.10.4 x64執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`：**6項通過、0失敗／錯誤／跳過**，案例0.103秒，含入口8.15秒。原始結果在忽略的 `artifacts/testing/latest.json`。本輪沒有重跑quick、full或GUI，也未改寫下方既有失敗紀錄。
