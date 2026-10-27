@@ -14,6 +14,8 @@
 
 維持Python3.10.4與現有核心；完整Hermes仍有[移植缺口](docs/HERMES-COMPATIBILITY.md)，SMTP未實作。
 
+要擴充 Hermes 類能力時，先讀 [Hermes 開發參考包](doc/hermes/README.md)，選定一項 WORK-ITEMS 後再修改程式。包內有固定版本的離線官方文件、來源與 MIT 授權；它們不是 App Skill 或安裝指令。保留本檔與共用指引的批准及達哥接線規則，不因參考文件提到工具就直接開放。
+
 > 請先讀 AGENTS.md、TO-AGENT.md、docs/VALIDATION.md 及 COMPANY-HANDOFF.md，檢查目前分支和未提交修改。保留現場既有接線及設定，不重寫整套 UI 或 agent 引擎。先驗環境，再使用我提供的 endpoint、Assistant ID 和 API key 接通一位達哥助理，完成八次基本檢查、十輪續談及單助理 Skill／Plan／搜尋日報旅程。金鑰只從本機遮蔽設定取得，不要要求我貼進對話或文件。遇到問題先依錯誤編號定位，做最小修正，完成受影響測試。不要循環重裝套件、猜 API 格式、改用示範答案或重送結果未知的請求。實測前說明會呼叫哪個助理及可能耗用的請求；缺少資訊時集中提出具體問題。交付時分列已完成、未驗證、修改檔案和可重現結果。SMTP 為下一階段，依本檔規格實作前先取得必要資訊；本版沒有寄信命令，不要直接寄信。
 
 ## 在 VS Code Copilot 接手

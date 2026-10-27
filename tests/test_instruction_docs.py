@@ -1,10 +1,13 @@
 """Offline documentation contracts; these tests do not evaluate any real model."""
+import hashlib
+import json
 import re
 import unittest
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 import yaml
+from markdown_it import MarkdownIt
 
 from desktop_app.workflows import WorkflowService, json_object
 
@@ -99,7 +102,9 @@ class InstructionDocumentTests(unittest.TestCase):
         documents += [REPO / name for name in (
             '.github/copilot-instructions.md', 'TO-AGENT.md', 'README.md',
             'COMPANY-HANDOFF.md', 'docs/THIRD-PARTY-NOTICES.md',
-            'docs/UX-SIMPLIFICATION.md', 'docs/ARCHITECTURE.md')]
+            'docs/UX-SIMPLIFICATION.md', 'docs/ARCHITECTURE.md',
+            'docs/HERMES-COMPATIBILITY.md', 'doc/hermes/README.md',
+            'doc/hermes/UPSTREAM.md', 'doc/hermes/WORK-ITEMS.md')]
         for document in documents:
             for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)', document.read_text('utf-8')):
                 with self.subTest(document=document.relative_to(REPO).as_posix(), target=target):
@@ -115,6 +120,51 @@ class InstructionDocumentTests(unittest.TestCase):
                         anchors = {re.sub(r'[^\w\s-]', '', heading).lower().replace(' ', '-')
                                    for heading in headings}
                         self.assertIn(unquote(url.fragment), anchors, target)
+
+        bundle = REPO / 'doc' / 'hermes'
+        sources = json.loads((bundle / 'SOURCES.json').read_text('utf-8'))
+        self.assertEqual(sources['schema_version'], 1)
+        self.assertIs(sources['runtime_imported'], False)
+        self.assertEqual(sources['repository'], 'https://github.com/NousResearch/hermes-agent')
+        self.assertRegex(sources['commit'], r'^[0-9a-f]{40}$')
+        self.assertTrue(sources['files'])
+        copied = set()
+        for item in sources['files']:
+            with self.subTest(reference=item['local_path']):
+                path = (bundle / item['local_path']).resolve()
+                self.assertTrue(path.is_relative_to(bundle))
+                self.assertNotIn(path, copied)
+                copied.add(path)
+                data = path.read_bytes()
+                self.assertEqual(len(data), item['bytes'])
+                self.assertEqual(hashlib.sha256(data).hexdigest(), item['sha256'])
+                self.assertRegex(item['source_sha256'], r'^[0-9a-f]{64}$')
+                self.assertRegex(item['git_blob_sha1'], r'^[0-9a-f]{40}$')
+                self.assertEqual(item['source_url'], sources['repository'] + '/blob/' + sources['commit'] + '/' + item['upstream_path'])
+                if path.name == 'LICENSE.txt':
+                    self.assertEqual(item['source_sha256'], item['sha256'])
+                    self.assertEqual(item['source_bytes'], item['bytes'])
+                    self.assertIn(b'Copyright (c) 2025 Nous Research', data)
+                    continue
+                self.assertEqual(path.suffix, '.md')
+                for token in MarkdownIt().parse(data.decode('utf-8')):
+                    for child in token.children or []:
+                        if child.type != 'link_open':
+                            continue
+                        url = urlsplit(child.attrGet('href'))
+                        if url.scheme or url.netloc or not url.path:
+                            continue
+                        linked = (path.parent / unquote(url.path)).resolve()
+                        self.assertTrue(linked.is_relative_to(REPO))
+                        self.assertTrue(linked.is_file(), str(linked.relative_to(REPO)))
+        expected = {p.resolve() for p in (bundle / 'reference').iterdir() if p.is_file()}
+        expected.add((bundle / 'LICENSE.txt').resolve())
+        self.assertEqual(copied, expected)
+        self.assertTrue(sources['code_references'])
+        for item in sources['code_references']:
+            self.assertIs(item['included'], False)
+            self.assertRegex(item['git_blob_sha1'], r'^[0-9a-f]{40}$')
+            self.assertEqual(item['source_url'], sources['repository'] + '/blob/' + sources['commit'] + '/' + item['path'])
 
 
 if __name__ == '__main__':

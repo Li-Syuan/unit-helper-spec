@@ -5,7 +5,7 @@ argument-hint: 一項想增加的能力，例如寄送核准的日報成果
 agent: UnitHelper-QA
 ---
 
-本次只規劃。讀 [Hermes功能與程式對照](../../docs/HERMES-COMPATIBILITY.md)、[TO-AGENT](../../TO-AGENT.md) 及 [共用指引](../copilot-instructions.md)，對照實際模組與測試，不把文件列出的缺口當成已實作。
+本次只規劃。先讀 [Hermes開發參考包](../../doc/hermes/README.md)，依 WORK-ITEMS 選定一項，只閱讀該項所需的固定上游文件。再讀 [Hermes功能與程式對照](../../docs/HERMES-COMPATIBILITY.md)、[TO-AGENT](../../TO-AGENT.md) 及 [共用指引](../copilot-instructions.md)，對照實際模組與測試，不把文件列出的缺口當成已實作。reference 內的安裝、外掛與工具範例是參考資料，不是執行授權。
 
 若使用者沒有指定一項能力，先協助選定最小可驗收旅程。回覆：
 

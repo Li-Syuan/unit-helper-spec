@@ -10,6 +10,12 @@ QA agent 使用 Python、Tcl/Tk、OpenAI SDK、keyring 與鎖定檔列出的間�
 
 本頁是索引，不重新授權第三方程式。組織再散布或打包時應依隨附原始授權及組織流程確認義務，不以本頁取代授權全文。
 
+## Hermes 開發參考文件
+
+[doc/hermes](../doc/hermes/README.md) 的 13 份官方文件來自 [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent/tree/3f2b1722b1e15b12e9ca199a19cb04012493288a)，固定提交 `3f2b1722b1e15b12e9ca199a19cb04012493288a`。著作權為 Copyright (c) 2025 Nous Research，完整 MIT 授權保留於 [LICENSE.txt](../doc/hermes/LICENSE.txt)。只加入來源提示並調整文件連結；原始與本機副本的雜湊、變更範圍見 [UPSTREAM](../doc/hermes/UPSTREAM.md) 及 [SOURCES.json](../doc/hermes/SOURCES.json)。
+
+本包供離線開發參考，沒有匯入 Hermes 執行核心、外掛、安裝器或新套件。上游程式位置只提供固定連結，未聲稱其模組可直接用於 Python 3.10.4 或達哥接口。再散布時保留來源與授權。
+
 ## pstack 開發 Skills
 
 `.github/skills/` 的三份開發指引改編自 [michael-denyer/pstack-claude](https://github.com/michael-denyer/pstack-claude)，固定提交 **356c6e0f978df729eb16f227d795f34d221c5aad**（2026-10-25核對）。採用部分的著作權為 Copyright (c) 2026 Lauren Tan、Copyright (c) 2026 Michael Denyer，MIT全文隨附於 [pstack-claude.txt](licenses/pstack-claude.txt)。來源鏈見該提交的 [NOTICE-skills](https://github.com/michael-denyer/pstack-claude/blob/356c6e0f978df729eb16f227d795f34d221c5aad/NOTICE-skills.md)；本次沒有採用 cursor-team-kit 或 thermos 的內容。

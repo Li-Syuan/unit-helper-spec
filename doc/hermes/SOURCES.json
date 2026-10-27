@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/NousResearch/hermes-agent",
+  "commit": "3f2b1722b1e15b12e9ca199a19cb04012493288a",
+  "captured_date": "2026-10-27",
+  "runtime_imported": false,
+  "transformation": "source-note-and-links-v1",
+  "files": [
+    {
+      "upstream_path": "LICENSE",
+      "local_path": "LICENSE.txt",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/LICENSE",
+      "git_blob_sha1": "75410e73319c72cd3e991a501c5455eb78f38375",
+      "source_sha256": "821556e6336796450ab852d375117b48a4887e71d255794fd6318d99982a5ab6",
+      "source_bytes": 1070,
+      "sha256": "821556e6336796450ab852d375117b48a4887e71d255794fd6318d99982a5ab6",
+      "bytes": 1070
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/architecture.md",
+      "local_path": "reference/architecture.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/architecture.md",
+      "git_blob_sha1": "4d92e5c5668dc069c3fc904d4443373e1409ff2c",
+      "source_sha256": "8a51991c051239e79f14cf7e33d350e945d8f4e9138799be2349f383bd97bc6d",
+      "source_bytes": 17102,
+      "sha256": "3f97e32ab2cc555711a92f3c44b61129bcbf1250b06865fe375353d72619b038",
+      "bytes": 18380
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/agent-loop.md",
+      "local_path": "reference/agent-loop.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/agent-loop.md",
+      "git_blob_sha1": "17bc53ea47ac56ec54ab55ee2f1a9fa11868d442",
+      "source_sha256": "93c1c57c3fba8b0368214c5647a61e14a7243072f2b4c5435349252f5c5e1b08",
+      "source_bytes": 11537,
+      "sha256": "27defa064ec9004c9dd3a36aa3a6c8ecfd008509eae1fe3ebcfcffc1ee9f28af",
+      "bytes": 11885
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/tools-runtime.md",
+      "local_path": "reference/tools-runtime.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/tools-runtime.md",
+      "git_blob_sha1": "54da8906603bd0904cd2d087bfe00e0439833808",
+      "source_sha256": "1ba761bb6b4a699d5a61ee4e016b69c275eeef48c03a5a8afc6ad671453cd874",
+      "source_bytes": 12204,
+      "sha256": "488dbac76aaf42b0b69909033246fba8a2ca247f8a43ee233767314972b20a9d",
+      "bytes": 12883
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/adding-tools.md",
+      "local_path": "reference/adding-tools.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/adding-tools.md",
+      "git_blob_sha1": "c625cb68f1f571b25b9c1d618284275d9924b97d",
+      "source_sha256": "77cb5955792cda7a68c81f7c81d34a1a5a26508b3de5397df817779587a3489f",
+      "source_bytes": 6704,
+      "sha256": "76648d879b1253098e1f36b3cff30427b7d06fe02977a47adb0b503b95e777cf",
+      "bytes": 7283
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/provider-runtime.md",
+      "local_path": "reference/provider-runtime.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/provider-runtime.md",
+      "git_blob_sha1": "04801d675f57840b188ebd0f3ce58e9a811e4d4e",
+      "source_sha256": "34a7761073a95e0260c801bc910a6bf364f2197f73b47600e37666f92f35dbde",
+      "source_bytes": 10940,
+      "sha256": "13e4acb6dfd383b8a8f92879470dcf3385e3602a11278f1c9e34e305c62870ee",
+      "bytes": 11652
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/prompt-assembly.md",
+      "local_path": "reference/prompt-assembly.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/prompt-assembly.md",
+      "git_blob_sha1": "f51608d4bbb2a8a1c4693788bc52cc84df879c76",
+      "source_sha256": "b0333ed28aaccaf5e7e480c0c9000b80ac3db1e7e5c8b2971b1742c48a613c5f",
+      "source_bytes": 18261,
+      "sha256": "3191a81a4a615799e0e7b76ae67412db7d954cd34c6a85c597ea56d57f54bad2",
+      "bytes": 18839
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/session-storage.md",
+      "local_path": "reference/session-storage.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/session-storage.md",
+      "git_blob_sha1": "d3a6c86141a2791464d963df151d4fcf90a432ea",
+      "source_sha256": "1149f4d2c43aaebd15dbd1cbfa8f4df318b9256e1d96393f44e86357519f5929",
+      "source_bytes": 31529,
+      "sha256": "7a512eeb079f499b68f622418a04ab7ce82f09390e51c620231be18a240a2000",
+      "bytes": 32128
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/context-compression-and-caching.md",
+      "local_path": "reference/context-compression-and-caching.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/context-compression-and-caching.md",
+      "git_blob_sha1": "57893de91f1c2efa4702f1507660e5695be59afc",
+      "source_sha256": "e08e3b1387899d34af685139932b2bfdf12bf7ba173d05dbef7973a11a9a3012",
+      "source_bytes": 52819,
+      "sha256": "ff13447adcc6a96286751e12cda7de06962379c4bce6187b69997235bc04b1e6",
+      "bytes": 53434
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/creating-skills.md",
+      "local_path": "reference/creating-skills.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/creating-skills.md",
+      "git_blob_sha1": "8e2f55063029940a061efeaee5d6bb08dc5906b9",
+      "source_sha256": "28650a06adff5d8f60e9638ad2a1a37fa9a7741f27b7580963ffab42e96f6f81",
+      "source_bytes": 20722,
+      "sha256": "bfd95353ab1f86b3d8f36da08d098674f557bbca2c3f2141093a42a71dfd2735",
+      "bytes": 21287
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/cron-internals.md",
+      "local_path": "reference/cron-internals.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/cron-internals.md",
+      "git_blob_sha1": "70106b13f40b4eb26a3e1ad1d265f16fa9092aad",
+      "source_sha256": "fa43be8c136e5f9f59a2ad66d98c8342ff0d450c91915f49c07f5da601b8dc5e",
+      "source_bytes": 28354,
+      "sha256": "e9b7caf42cfcd642c088d50df276e1e89d763b4f17ca992130a5d10a2fb62dc9",
+      "bytes": 29154
+    },
+    {
+      "upstream_path": "website/docs/developer-guide/subagent-lifecycle-api.md",
+      "local_path": "reference/subagent-lifecycle-api.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/developer-guide/subagent-lifecycle-api.md",
+      "git_blob_sha1": "56d9388d0758835e59fd2dfed714764d42c8003e",
+      "source_sha256": "d5f5f2308541dfaf6883d3432b2556a65bb51d4632c97e5f0a8043bf20873d31",
+      "source_bytes": 4517,
+      "sha256": "84d2ee3a9b8770026fdb7ad14bced61c24a51f607c87e735b7013185464087be",
+      "bytes": 5007
+    },
+    {
+      "upstream_path": "website/docs/user-guide/features/memory.md",
+      "local_path": "reference/memory.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/user-guide/features/memory.md",
+      "git_blob_sha1": "3bde00ee5eeebdf1a6aa8133d9e82c7d9c69cf79",
+      "source_sha256": "979cb02df938e3bcb003195e465487aa0cdf5a3e8690ac86eb1ccd96cd69fdd4",
+      "source_bytes": 32097,
+      "sha256": "7967bc7392322a85c1e2eb311ae2cc97163c3e054d39206296443c8ad6cf671c",
+      "bytes": 33613
+    },
+    {
+      "upstream_path": "website/docs/getting-started/installation.md",
+      "local_path": "reference/installation.md",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/website/docs/getting-started/installation.md",
+      "git_blob_sha1": "7f9b2b2ac26986bfcee3dddced676555ba03124f",
+      "source_sha256": "227d2cc2f9ec52d6beaa737b3189dfd791718445249f6d1e7950a4b44fba5f3d",
+      "source_bytes": 13091,
+      "sha256": "aee6a6c91170b747d0fbc070554d4f978e2bf53d7fb6d9f334683909cfaaa1de",
+      "bytes": 15270
+    }
+  ],
+  "code_references": [
+    {
+      "path": "agent/conversation_loop.py",
+      "git_blob_sha1": "a5f99521681965e524fba21816773d2eb2113944",
+      "bytes": 99547,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/agent/conversation_loop.py",
+      "included": false
+    },
+    {
+      "path": "agent/prompt_builder.py",
+      "git_blob_sha1": "f85a291127bdfd59504ac34b4cd3f26dddb4fbd6",
+      "bytes": 105024,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/agent/prompt_builder.py",
+      "included": false
+    },
+    {
+      "path": "agent/context_compressor.py",
+      "git_blob_sha1": "16721abb9f9327c204ea0573e73bc8ad90e25020",
+      "bytes": 330826,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/agent/context_compressor.py",
+      "included": false
+    },
+    {
+      "path": "agent/memory_manager.py",
+      "git_blob_sha1": "c6525e0c1c1b315dc26be085e9d421b894f387e2",
+      "bytes": 50810,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/agent/memory_manager.py",
+      "included": false
+    },
+    {
+      "path": "agent/skill_commands.py",
+      "git_blob_sha1": "a827b948568a1aaad95774a8b6d38eb9f4344f9e",
+      "bytes": 52505,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/agent/skill_commands.py",
+      "included": false
+    },
+    {
+      "path": "hermes_cli/runtime_provider.py",
+      "git_blob_sha1": "da99b41c2019560539aec42b83fa7533ec98e76a",
+      "bytes": 74980,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/hermes_cli/runtime_provider.py",
+      "included": false
+    },
+    {
+      "path": "model_tools.py",
+      "git_blob_sha1": "50101463334c0c33d5643d1f1b16733f038d3346",
+      "bytes": 49980,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/model_tools.py",
+      "included": false
+    },
+    {
+      "path": "tools/registry.py",
+      "git_blob_sha1": "f272b26bc09766b2d1cb84060f6ac2a14abe166a",
+      "bytes": 53070,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/tools/registry.py",
+      "included": false
+    },
+    {
+      "path": "tools/delegate_tool.py",
+      "git_blob_sha1": "be53cfb15ce2031d350d715c78594d329f379b0d",
+      "bytes": 52512,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/tools/delegate_tool.py",
+      "included": false
+    },
+    {
+      "path": "cron/jobs.py",
+      "git_blob_sha1": "c07480451b769bf3a21e8f08db5345289157d072",
+      "bytes": 160521,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/cron/jobs.py",
+      "included": false
+    },
+    {
+      "path": "cron/scheduler.py",
+      "git_blob_sha1": "7df27bf29ed1a32ab7488c5156b55b7e3fa1df74",
+      "bytes": 219108,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/cron/scheduler.py",
+      "included": false
+    },
+    {
+      "path": "hermes_state.py",
+      "git_blob_sha1": "833f4b738f4698034b7da22276fbcf7bfd3f9768",
+      "bytes": 95230,
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3f2b1722b1e15b12e9ca199a19cb04012493288a/hermes_state.py",
+      "included": false
+    }
+  ]
+}

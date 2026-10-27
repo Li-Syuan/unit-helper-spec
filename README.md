@@ -38,6 +38,7 @@ start-app.bat
 - 給開發 Agent：[TO-AGENT.md](TO-AGENT.md)，環境與現場工作：[COMPANY-HANDOFF.md](COMPANY-HANDOFF.md)。VS Code Copilot的角色、手動prompt及 `/qa-map`、`/qa-fix`、`/qa-review` 精簡開發Skills見[接手入口](TO-AGENT.md#在-vs-code-copilot-接手)；不支援時可明確附上Markdown。
 - 使用者：[使用手冊](docs/USER-GUIDE.md)、[資料使用](docs/DATA-USAGE.md)、[工作代理](docs/AGENT-WORK.md)、[CLI](docs/WORKBENCH.md)。
 - 開發者：[AGENTS](AGENTS.md)、[架構](docs/PROJECT.md)、[目前驗證結果](docs/VALIDATION.md)。
+- 擴充工作代理：[Hermes 開發參考包](doc/hermes/README.md)，含離線官方文件、固定來源與按功能拆分的工作單。這是開發資料，不會自動增加 App 功能。
 - rc5 診斷與 WebView 合成旅程已驗證；完整回歸尚有一項既有 Windows 剪貼簿讀取 error 5，未改記通過。複製受阻可另存 Markdown，現場仍須確認。
 - `test-company.bat` 做隔離的本機完整檢查與WebView合成旅程；日常改動用 `scripts/test.ps1` quick 或 targeted，不重複跑full。
 

@@ -10,6 +10,14 @@
 
 專案 Python 3.10.4 x64 執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`，本次選取 6/652 項，6 項通過，0 失敗、錯誤或跳過，exit code 0。更新後的工作單及 TO-AGENT 引用通過既有本機連結檢查。未重跑 quick、full、WebView 或真實 API；下方既有剪貼簿失敗與現場未測狀態不變。原始結果留在忽略的 `artifacts/testing/latest.json`。
 
+## Hermes 開發參考包
+
+2026-10-27新增 [doc/hermes](../doc/hermes/README.md)，固定官方提交 `3f2b1722b1e15b12e9ca199a19cb04012493288a`。含13份離線文件、完整MIT授權、12個已核對存在的固定程式連結，以及H0～H5工作單。原始檔下載以Git blob SHA-1、大小及SHA-256核對；文件只加入來源提示並調整連結，程式碼區塊不執行。原始與本機雜湊見SOURCES.json，14個參考／授權檔合計271,885 bytes。官方原始檔端點曾回429，改用官方blob API低頻率取得完整內容，沒有用缺檔副本交付。
+
+擴充既有文件案例，驗證所有本機入口、reference連結、來源清單與實際檔案集合、大小及雜湊，並確認授權未改寫。以專案Python3.10.4執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`，6/652項通過，0失敗／錯誤／跳過，exit code 0。這是文件與完整性驗證；沒有安裝Hermes、修改App、依賴、schema或69wheels，產品維持rc5。外部延伸連結、上游程式相容、真實達哥、人工使用性及GUI未在本輪驗收。
+
+暫存差異的 whitespace 檢查指出 reference/installation.md 第58行有行尾空白；已核對是上游安裝程式碼範例的原文，依本包保留程式碼區塊的規則不改寫。此項不是 App 執行或文件連結失敗；未將該檢查改記為通過。
+
 ## 現行架構圖文件檢查
 
 2026-10-27依程式基準 `aae9836` 新增[系統架構圖](ARCHITECTURE.md)，包含總覽、對話、代理、排程、資料與診斷六張 Mermaid 圖。已核對 WebSession 組裝、CLI 共用 WebBridge、兩種 LangGraph 路徑、資料庫檔案與待接線介面。這是靜態架構核對，不是全功能或現場驗收。
