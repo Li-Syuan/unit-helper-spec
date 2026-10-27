@@ -16,6 +16,8 @@
 
 架構圖的本機引用納入既有文件測試，以 Python 3.10.4 執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`，6 項通過，exit code 0。這些測試驗證文件契約與連結，不驗證 Mermaid 渲染或產品執行。App、依賴、資料庫及 wheels 未修改，未重跑 full 或呼叫真實服務。
 
+推送後已在 GitHub Preview 逐一檢查六個 Mermaid iframe，全部有圖表 SVG 與對應節點文字，沒有 Parse error、Syntax error 或 Unable to render。瀏覽器截圖擷取不可用，因此未將此項記為完整視覺排版驗收；渲染結果留在本機 `artifacts/architecture-render.json`。
+
 ## 開發 Skills 文件檢查
 
 2026-10-25加入三個pstack精簡開發Skills；產品仍為rc5，未修改App、依賴、資料庫或69個wheels。只擴充原有文件案例的metadata／引用檢查，沒有新增測試案例數量。以專案Python3.10.4 x64執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`：**6項通過、0失敗／錯誤／跳過**，案例0.103秒，含入口8.15秒。原始結果在忽略的 `artifacts/testing/latest.json`。本輪沒有重跑quick、full或GUI，也未改寫下方既有失敗紀錄。
