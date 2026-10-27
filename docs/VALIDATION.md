@@ -6,9 +6,9 @@
 
 ## 操作流程精簡工作單
 
-2026-10-27新增 [SOL 6.1 改版工作單](UX-SIMPLIFICATION.md)，聚焦從需求到成果的同頁操作。這次只交付文件與既有連結檢查範圍，未修改 App、依賴、資料庫或 wheels，產品仍為 rc5。程式閱讀已核對主對話補充、inline 自動預覽、工作卡、成果及排程入口；這不是新版 GUI 或人工使用性驗收。
+2026-10-27更新 [SOL 6.1 改版工作單](UX-SIMPLIFICATION.md)，聚焦從需求到成果的同頁操作，並補上 Job 與 Skill 的操作分工、共用能力檢查的提示修正，以及一位助理、零 Skill 的驗收旅程。TO-AGENT 同步指向這份工作單，明示接手者需修改程式，MD 不會自動套用。這次只交付文件，未修改 App、依賴、資料庫或 wheels，產品仍為 rc5。程式閱讀已核對主對話補充、inline 自動預覽、工作卡、能力提示、成果及排程入口；現場跳轉原因仍未重現，也未完成新版 GUI 或人工使用性驗收。
 
-專案 Python 3.10.4 x64 執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`，6 項通過，0 失敗、錯誤或跳過，exit code 0。新工作單及 TO-AGENT 引用納入既有本機連結檢查。未重跑 quick、full、WebView 或真實 API；下方既有剪貼簿失敗與現場未測狀態不變。原始結果留在忽略的 `artifacts/testing/latest.json`。
+專案 Python 3.10.4 x64 執行 `scripts/test_runner.py --suite targeted --tests tests.test_instruction_docs`，本次選取 6/652 項，6 項通過，0 失敗、錯誤或跳過，exit code 0。更新後的工作單及 TO-AGENT 引用通過既有本機連結檢查。未重跑 quick、full、WebView 或真實 API；下方既有剪貼簿失敗與現場未測狀態不變。原始結果留在忽略的 `artifacts/testing/latest.json`。
 
 ## 現行架構圖文件檢查
 
