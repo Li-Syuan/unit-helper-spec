@@ -103,6 +103,7 @@ class InstructionDocumentTests(unittest.TestCase):
             '.github/copilot-instructions.md', 'TO-AGENT.md', 'README.md',
             'COMPANY-HANDOFF.md', 'docs/THIRD-PARTY-NOTICES.md',
             'docs/UX-SIMPLIFICATION.md', 'docs/ARCHITECTURE.md',
+            'docs/AGENTIC-AI-VISUAL-BRIEF.md',
             'docs/HERMES-COMPATIBILITY.md', 'doc/hermes/README.md',
             'doc/hermes/UPSTREAM.md', 'doc/hermes/WORK-ITEMS.md')]
         for document in documents:
