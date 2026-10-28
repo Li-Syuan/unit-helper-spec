@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="zh-Hant" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="QA agent 1.0.0rc5 的離線架構說明。理解對話、工作、Plan、Skill、LangGraph、達哥接口與本機資料的關係。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>QA agent · 專案架構說明</title>
+  <style>
+    :root{color-scheme:light;--bg:#f3f6fa;--paper:#fff;--ink:#192d40;--muted:#52677b;--line:#d6e1eb;--accent:#086c73;--tint:#e8f5f3;--blue:#245b9d;--blue-bg:#edf3fc;--amber:#815207;--amber-bg:#fff3d9;--red:#a3323f;--red-bg:#fff0f1;--shadow:0 8px 30px #10243d08;--side:#122230;--focus:#aa5300}
+    html[data-theme="dark"]{color-scheme:dark;--bg:#101a26;--paper:#192a3a;--ink:#e6eff7;--muted:#b1c2d2;--line:#385064;--accent:#75dcd0;--tint:#193d40;--blue:#a6cbff;--blue-bg:#213b59;--amber:#ffce7a;--amber-bg:#44371e;--red:#ffb4bf;--red-bg:#452c38;--shadow:none;--side:#0b1521;--focus:#ffd180}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI","Microsoft JhengHei",sans-serif;line-height:1.75;font-size:16px}a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}a:hover{text-decoration-thickness:2px}button{font:inherit;cursor:pointer}button,a,summary{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:4px}button{border:1px solid var(--line);border-radius:8px;padding:7px 13px;background:var(--paper);color:var(--ink)}button:hover{background:var(--tint)}p{margin:0 0 14px}h1,h2,h3,h4{line-height:1.35;margin:0 0 14px}h1{font-size:clamp(32px,3.7vw,52px);letter-spacing:-1.3px}h2{font-size:29px;letter-spacing:-.6px}h3{font-size:19px}h4{font-size:16px}small,.small{font-size:13px}code{font-family:Consolas,"Cascadia Code",monospace;font-size:.88em;overflow-wrap:anywhere}strong{font-weight:650}ul,ol{padding-left:23px;margin:8px 0 15px}li+li{margin-top:7px}[hidden]{display:none!important}.skip{position:fixed;top:-80px;left:20px;background:var(--paper);padding:12px;z-index:10}.skip:focus{top:10px}
+    .sidebar{position:fixed;inset:0 auto 0 0;width:224px;background:var(--side);color:#dce8f4;display:flex;flex-direction:column;padding:27px 20px;z-index:4}.brand{font-size:21px;font-weight:650;display:flex;align-items:center;gap:11px;letter-spacing:-.4px}.brand-mark{display:grid;place-items:center;width:36px;height:36px;border:1px solid #4c8e90;border-radius:10px;color:#91e6d8;font-size:24px}.edition{font-size:12px;color:#a7bed1;margin:12px 0 30px}.sidebar nav{display:grid;gap:6px}.sidebar nav a{display:flex;gap:14px;color:#c7d8e7;text-decoration:none;padding:9px 11px;border-radius:8px;font-size:14px}.sidebar nav a:hover,.sidebar nav a[aria-current="location"]{background:#253c4e;color:#fff}.nav-index{font-family:Consolas,monospace;font-size:12px;color:#85b9bd;align-self:center}.sidebar-foot{margin-top:auto;font-size:12px;color:#a7bed1;border-top:1px solid #354b5e;padding-top:18px}.sidebar-foot strong{display:block;color:#dce8f4;font-size:13px;margin-bottom:5px}
+    .workspace{margin-left:224px}.topbar{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 32px;background:var(--paper);border-bottom:1px solid var(--line)}.topbar-label{font-size:13px;color:var(--muted)}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button{font-size:13px}.content{max-width:1280px;margin:0 auto;padding:30px 34px 64px}.hero{background:#132d3f;color:#f1f8ff;border-radius:18px;padding:36px;display:grid;grid-template-columns:1.4fr 1fr;gap:34px;align-items:center;position:relative;overflow:hidden}.eyebrow{font-size:12px;letter-spacing:1.6px;font-weight:600;text-transform:uppercase;color:#9adecf;margin-bottom:14px}.hero p{color:#c5d9e8;max-width:630px}.hero .meta{font-size:12px;color:#a9c1d3;display:flex;gap:16px;flex-wrap:wrap;margin-top:22px}.hero-flow{border-left:1px solid #3e5b6a;padding-left:28px;display:grid;gap:15px}.hero-flow div{display:flex;align-items:center;gap:12px;font-size:14px}.hero-flow span{display:grid;place-items:center;width:28px;height:28px;border:1px solid #4e8289;border-radius:50%;font-family:Consolas,monospace;font-size:12px;color:#9ce8d9;flex:none}.hero-flow b{font-size:12px;color:#b1c8d8;font-weight:400;display:block}.notice{padding:14px 18px;border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:8px;background:var(--amber-bg);font-size:14px;margin:18px 0}.notice p:last-child{margin:0}.notice.info{border-left-color:var(--blue);background:var(--blue-bg)}.notice.ok{border-left-color:var(--accent);background:var(--tint)}.section{padding-top:42px;scroll-margin-top:75px}.section-head{display:flex;align-items:flex-start;gap:18px;margin-bottom:22px}.section-number{font-family:Consolas,monospace;color:var(--accent);font-size:15px;margin-top:7px;white-space:nowrap}.section-head h2{margin-bottom:7px}.section-head p{color:var(--muted);margin:0;max-width:820px}.grid{display:grid;gap:16px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}.card{min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:21px;box-shadow:var(--shadow)}.card p:last-child{margin-bottom:0}.card p{font-size:14px;color:var(--muted)}.badge{display:inline-block;padding:3px 9px;border-radius:5px;background:var(--tint);color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle;margin-bottom:10px}.badge.blue{background:var(--blue-bg);color:var(--blue)}.badge.amber{background:var(--amber-bg);color:var(--amber)}.badge.red{background:var(--red-bg);color:var(--red)}.muted{color:var(--muted)}.inline-code{padding:2px 5px;background:var(--bg);border-radius:4px}.spaced{margin-top:20px}
+    .map{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:24px}.map-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}.map .card{box-shadow:none;padding:16px;background:var(--bg)}.map h3{font-size:17px;margin-bottom:7px}.map .primary{border-color:var(--accent);background:var(--tint)}.map .external{border-style:dashed;border-color:var(--blue);background:var(--blue-bg)}.connector{display:flex;justify-content:center;align-items:center;gap:9px;color:var(--muted);font-size:13px;padding:11px}.connector span{color:var(--accent);font-size:22px;line-height:1}.map-note{margin-top:16px;padding-top:13px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}.map-note p{margin:0}.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:14px 0}.legend span:before{content:"";display:inline-block;width:13px;height:9px;border:1px solid var(--line);margin-right:7px}.legend .remote:before{border:1px dashed var(--blue)}
+    details{border:1px solid var(--line);border-radius:10px;background:var(--paper);margin:12px 0;overflow:hidden}summary{cursor:pointer;font-size:16px;font-weight:600;padding:16px 20px;list-style-position:inside}summary:hover{background:var(--tint)}details[open]>summary{border-bottom:1px solid var(--line)}.detail-body{padding:21px}.detail-body>:last-child{margin-bottom:0}.timeline{list-style:none;margin:0;padding:0;counter-reset:step}.timeline li{position:relative;padding:0 0 23px 46px;border-left:1px solid var(--line);margin:0 0 0 15px;counter-increment:step}.timeline li:last-child{border:0;padding-bottom:0}.timeline li:before{content:counter(step);position:absolute;left:-16px;top:0;width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--tint);color:var(--accent);font:13px Consolas,monospace}.timeline strong{display:block;margin-bottom:4px}.timeline p{font-size:14px;color:var(--muted);margin:0}.timeline .guard:before{background:var(--amber-bg);color:var(--amber)}.detail-body .code-links{font-size:13px;border-top:1px solid var(--line);padding-top:12px;margin-top:20px}.code-links a{display:inline-block;margin:3px 12px 3px 0;overflow-wrap:anywhere}.loop{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.loop div{padding:17px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}.loop strong{display:block;color:var(--accent)}.loop p{font-size:13px;margin:5px 0 0;color:var(--muted)}.limit{font-size:14px;padding:13px 16px;border-radius:8px;background:var(--tint);color:var(--ink);margin-top:14px}.limit b{color:var(--accent)}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--paper)}table{width:100%;border-collapse:collapse;text-align:left;font-size:14px}caption{text-align:left;padding:15px 18px;font-weight:600;border-bottom:1px solid var(--line)}th,td{padding:14px 17px;border-bottom:1px solid var(--line);vertical-align:top}th{background:var(--bg);font-size:13px;color:var(--muted)}td:first-child{font-weight:600}tr:last-child td{border-bottom:0}.table-wrap code{font-size:12px}.table-wrap .badge{white-space:nowrap;margin:0}.data-table{min-width:620px}.status-table{min-width:560px}.path-box{border:1px solid var(--line);border-radius:9px;background:var(--paper);padding:16px;margin:15px 0;font-size:14px}.path-box code{display:block;margin-top:5px}.module{border-left:3px solid var(--accent)}.module summary{font-size:13px;padding:10px 12px}.module details{margin:14px 0 0}.module .detail-body{padding:12px}.module h3{margin-bottom:8px}.module .tag{font:12px Consolas,monospace;color:var(--accent);display:block;margin-bottom:10px}.check-list{list-style:none;padding:0}.check-list li{padding:10px 0;border-bottom:1px solid var(--line)}.check-list li:last-child{border:0}.check-list strong{color:var(--accent)}.reference-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.reference-list a{padding:16px;background:var(--paper);border:1px solid var(--line);border-radius:9px;text-decoration:none}.reference-list small{display:block;color:var(--muted);margin-top:3px}.footer{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.footer p{margin-bottom:5px}.print-only{display:none}
+    @media(max-width:1150px){.grid.four{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:1fr;padding:28px}.hero-flow{grid-template-columns:1fr 1fr;border-left:0;border-top:1px solid #3e5b6a;padding:20px 0 0}.content{padding:24px}.topbar{padding:12px 24px}.grid.three{gap:10px}.card{padding:17px}}
+    @media(max-width:800px){html{scroll-padding-top:20px}.sidebar{position:static;width:auto;padding:18px 20px 12px}.sidebar .edition{margin:5px 0 14px}.sidebar nav{display:flex;overflow-x:auto;gap:5px}.sidebar nav a{white-space:nowrap;font-size:13px;padding:7px 10px}.sidebar-foot{display:none}.workspace{margin-left:0}.topbar{position:static;padding:12px 20px;align-items:flex-start}.topbar-label{max-width:130px}.content{padding:18px 16px 40px}.section{padding-top:32px}.section-head{gap:12px}.section-head h2{font-size:25px}.grid.three,.grid.two{grid-template-columns:1fr}.map{padding:15px}.hero{padding:24px}.hero-flow{gap:15px}h1{font-size:34px}.loop{grid-template-columns:1fr 1fr}.reference-list{grid-template-columns:1fr}.detail-body{padding:17px}.toolbar{justify-content:flex-end}.table-wrap{max-width:100%}.timeline li{padding-left:31px}}
+    @media(max-width:430px){.grid.four{grid-template-columns:1fr}.hero-flow{grid-template-columns:1fr}.topbar{gap:9px;flex-direction:column;align-items:stretch}.topbar-label{max-width:none}.toolbar{gap:5px;justify-content:flex-start}.toolbar button{padding:6px 9px;font-size:12px}.hero{padding:22px}.section-number{display:none}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    @media print{html{color-scheme:light!important}body{background:#fff!important;color:#152535!important;font-size:10pt}.sidebar,.topbar,.skip,.no-print{display:none!important}.workspace{margin:0}.content{max-width:none;padding:0}.hero{background:#fff!important;color:#152535!important;border:2px solid #345b6b;padding:20px;grid-template-columns:1fr}.hero p,.hero .meta,.eyebrow,.hero-flow b{color:#345263!important}.hero-flow{display:none}h1{font-size:28pt}h2{font-size:20pt}.section{padding-top:24px}.grid.three,.grid.two{grid-template-columns:1fr 1fr}.grid.four{grid-template-columns:1fr 1fr}.map,.card,details,.table-wrap,.path-box,.reference-list a{background:#fff!important;box-shadow:none;border-color:#acbac5}.card p,.muted,.section-head p,.timeline p,.footer{color:#33495b!important}.notice,.limit,.map .primary,.map .external,.badge,.loop div{background:#f4f6f7!important;color:#152535!important}.grid{gap:10px}.card,.hero,summary,.loop div,tr{break-inside:avoid}.table-wrap{overflow:visible}.data-table,.status-table{min-width:0}th,td{padding:9px}a{color:#124b66!important}.table-wrap code{font-size:9pt}.print-only{display:block}.footer{margin-top:20px}.section-head{break-after:avoid}.map-note{color:#33495b!important}}
+    @media print{html,html[data-theme="dark"]{--bg:#f3f6fa;--paper:#fff;--ink:#192d40;--muted:#52677b;--line:#d6e1eb;--accent:#086c73;--tint:#e8f5f3;--blue:#245b9d;--blue-bg:#edf3fc;--amber:#815207;--amber-bg:#fff3d9;--red:#a3323f;--red-bg:#fff0f1}}
+  </style>
+</head>
+<body>
+<a class="skip" href="#main">跳至主要內容</a>
+<aside class="sidebar" aria-label="文件目錄">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">Q</span>QA agent</div>
+  <div class="edition">架構說明 · 1.0.0rc5 候選版</div>
+  <nav aria-label="章節">
+    <a href="#overview"><span class="nav-index">01</span>系統全貌</a>
+    <a href="#concepts"><span class="nav-index">02</span>工作與 Skill</a>
+    <a href="#journeys"><span class="nav-index">03</span>一次工作的旅程</a>
+    <a href="#modules"><span class="nav-index">04</span>程式模組分工</a>
+    <a href="#data"><span class="nav-index">05</span>資料與長期記憶</a>
+    <a href="#connection"><span class="nav-index">06</span>接線與能力檢查</a>
+    <a href="#deployment"><span class="nav-index">07</span>部署與目前界線</a>
+    <a href="#extension"><span class="nav-index">08</span>下一步擴充</a>
+    <a href="#references"><span class="nav-index">09</span>來源與接手文件</a>
+  </nav>
+  <div class="sidebar-foot"><strong>這是一份架構文件</strong>可離線閱讀，不連模型、不讀取設定，也不操作 App。</div>
+</aside>
+<div class="workspace">
+  <header class="topbar">
+    <span class="topbar-label">專案文件 / 系統架構</span>
+    <div class="toolbar">
+      <button type="button" id="theme" aria-pressed="false" hidden>深色閱讀</button>
+      <button type="button" id="expand" aria-pressed="false" hidden>展開全部細節</button>
+      <button type="button" id="print" hidden>列印 / PDF</button>
+    </div>
+  </header>
+  <main id="main" class="content">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">QA agent · Architecture guide</div>
+        <h1>從一句需求，<br>看懂整個工作系統。</h1>
+        <p>畫面接住需求，Python 服務管理計畫與執行，達哥提供助理回覆和核准搜尋。成果與進度保留在本機，讓你能回頭查看與接續。</p>
+        <div class="meta"><span>說明版本 1.0.0rc5</span><span>核對日期 2026-10-28</span><span>程式基準 d86f0cd</span></div>
+      </div>
+      <div class="hero-flow" aria-label="主要使用流程">
+        <div><span>1</span><div>說出需求<b>聊天或提出工作</b></div></div>
+        <div><span>2</span><div>確認計畫<b>知道誰做、做什麼、送哪些資料</b></div></div>
+        <div><span>3</span><div>執行與看成果<b>顯示真實狀態，保留來源</b></div></div>
+        <div><span>4</span><div>需要時啟用排程<b>成功試跑與持續同意分開</b></div></div>
+      </div>
+    </div>
+    <div class="notice"><strong>實作存在，不代表現場驗收完成。</strong> 目前仍為候選版。真實達哥、來源品質、選用 AD 與人工使用性須在部署環境驗收；既有完整回歸仍有一項 Windows 剪貼簿讀取錯誤。本文件沒有修改 App 或將 Hermes 全功能加入程式。</div>
+
+    <section id="overview" class="section">
+      <div class="section-head"><span class="section-number">01</span><div><h2>一個本機工作台，四個責任範圍</h2><p>QA agent 沒有另行部署的 API server。主要畫面、共用服務和排程器都在本機程序裡，只有需要模型回覆或核准搜尋時才連往達哥。</p></div></div>
+      <div class="map" aria-label="QA agent 架構圖">
+        <div class="map-label">使用者入口 · Windows</div>
+        <div class="grid three">
+          <div class="card primary"><h3>WebView 主介面</h3><p>HTML、CSS、JavaScript 呈現對話與我的工作。WebView2 承載畫面。</p></div>
+          <div class="card"><h3>CLI</h3><p><code>qa.bat</code> 使用相同 WebBridge 與服務。預設不啟動排程器。</p></div>
+          <div class="card"><h3>Tkinter 備用</h3><p>自行組裝既有服務，不經 WebBridge。功能不與新版主介面全量對等。</p></div>
+        </div>
+        <div class="connector"><span aria-hidden="true">↓</span>WebView 與 CLI 經固定操作白名單；Tk 直接使用既有服務</div>
+        <div class="card primary"><h3>Python 服務層</h3><p><strong>WebBridge</strong> 驗證操作與輸入，<strong>WebSession</strong> 組裝服務並管理生命週期。工作是否可執行由服務判斷，畫面按鈕不構成完整授權。</p></div>
+        <div class="connector"><span aria-hidden="true">↓</span>需求分流與執行共用既有服務</div>
+        <div class="grid three">
+          <div class="card"><h3>對話與工作連結</h3><p><code>WorkspaceTurns</code><br><code>DialogueService</code><br>保存對話、需求建議及來源識別。</p></div>
+          <div class="card"><h3>計畫與執行</h3><p><code>AgentJobs → WorkflowService</code><br><code>Engine + LangGraph</code><br>管理批准、工作、排程與步驟。</p></div>
+          <div class="card"><h3>本機工作功能</h3><p>Skill、記憶、待辦、成果比較、回饋、資料清理與診斷。</p></div>
+        </div>
+        <div class="connector"><span aria-hidden="true">↓</span>服務讀寫本機資料；遠端請求經 Profiles 與 AssistantsGateway</div>
+        <div class="grid two">
+          <div class="card"><h3>本機保存</h3><p>四份 SQLite、設定、個人偏好與安全日誌。API key 由 Windows 認證管理員保管。</p><a href="#data">查看每份資料的用途</a></div>
+          <div class="card external"><h3>達哥服務</h3><p>OpenAI SDK 呼叫 <code>Threads / Messages / Runs</code>。核准搜尋經同源 <code>pluginapi</code>，結果再提交回原 run。</p><a href="#connection">查看接線與能力界線</a></div>
+        </div>
+        <div class="map-note"><p>這是責任與資料流總覽，不是一格對應一個程序。虛線框表示外部服務；本機資料不是另一套執行引擎。WebView、Tk 與 CLI 不可同時開啟相同工作區。</p></div>
+      </div>
+    </section>
+
+    <section id="concepts" class="section">
+      <div class="section-head"><span class="section-number">02</span><div><h2>先分清楚工作、計畫與方法</h2><p>一般交辦可以只用一位助理，不必先建立 Skill。這些概念服務不同目的，不能互相當作前置條件。</p></div></div>
+      <div class="grid four">
+        <article class="card"><span class="badge blue">對話 · Chat</span><h3>正在討論的內容</h3><p>保留多輪訊息、草稿與閱讀位置。切回原對話時，沿有效助理版本接續遠端 thread。</p></article>
+        <article class="card"><span class="badge">工作 · Job</span><h3>這次要完成什麼</h3><p>例如整理市場日報。交辦記錄連到實際 task，狀態從執行服務讀取，不另存一份成功狀態。</p></article>
+        <article class="card"><span class="badge amber">計畫 · Plan</span><h3>批准這次怎麼做</h3><p>固定需求、助理、選入資料、搜尋工具及限額。修改後舊確認失效，模型不能替人批准。</p></article>
+        <article class="card"><span class="badge blue">方法 · Skill</span><h3>可選用的工作做法</h3><p>保存指示、必要條件與成果格式。它是有版本的資料，不會執行 Markdown 裡的程式。</p></article>
+      </div>
+      <div class="notice info">例如「每天八點整理財經新聞」先是一次工作。成功試跑、核對成果後，再另外啟用排程。只有你想保存方法供以後重用，才需要另存 Skill。現場工作跳到 Skill 的操作混淆已列入 H0 工作單，尚未因文件更新而修正。</div>
+    </section>
+
+    <section id="journeys" class="section">
+      <div class="section-head"><span class="section-number">03</span><div><h2>一次工作怎麼走完</h2><p>展開四條路徑，查看每一步的責任與停止條件。這些是架構說明，頁面上的操作不會建立真實工作。</p></div></div>
+      <details open id="flow-chat"><summary>對話：一次回覆，同時取得文字與需求建議</summary><div class="detail-body">
+        <ol class="timeline">
+          <li><strong>使用者送出文字</strong><p>WorkspaceTurns 固定 request ID。DialogueService 檢查身分、助理修訂、歷史與草稿，先保存請求紀錄。</p></li>
+          <li><strong>達哥回傳辨識建議</strong><p>新版 auto 對話的同一次回覆包含顯示文字及 chat、clarify 或 work。此階段停用工具，普通聊天不另加一筆背景分類請求。</p></li>
+          <li><strong>本機解析並保存</strong><p>嚴格驗證 JSON，將原始 wire 回覆與畫面文字分開保存。不能用解析後文字改寫遠端歷史。</p></li>
+          <li class="guard"><strong>明確分流</strong><p>chat 顯示回答；clarify 讓使用者選直接回答或建立計畫；work 進入工具停用的規劃服務。此時仍沒有執行工作。</p></li>
+        </ol>
+        <div class="notice info">工作卡與工具成果不因顯示在對話裡，就自動送入聊天上下文。舊 chat 對話保留原契約；舊 task 草稿仍固定未啟用，不能當成排程。</div>
+        <div class="code-links">程式入口 <a href="../desktop_app/workspace_turns.py">workspace_turns.py</a><a href="../desktop_app/dialogue_service.py">dialogue_service.py</a><a href="../desktop_app/dialogue_routing.py">dialogue_routing.py</a></div>
+      </div></details>
+      <details id="flow-work"><summary>工作：先規劃，再由有界代理決定下一步</summary><div class="detail-body">
+        <ol class="timeline">
+          <li><strong>補條件與產生計畫</strong><p>AgentJobs 沿用 WorkflowService 規劃。可帶入選用 Skill 與記憶；模型只能提出補問和步驟，規劃停用工具。</p></li>
+          <li class="guard"><strong>使用者確認目前修訂</strong><p>本機預覽驗證助理綁定、輸入來源、步驟與期限。確認後固定批准快照及 request ID，交由 Engine 執行。</p></li>
+          <li><strong>WorkflowService 選擇執行路徑</strong><p>固定流程依序跑已批准步驟。自主 version 2 由 LangGraph 的 decide、act 節點循環，仍使用同一套工作狀態與收據。</p></li>
+          <li><strong>保存成果或停止原因</strong><p>來源不足、需要補充、預算耗盡、取消或失敗時，保留已取得成果並說明限制。部分成果不當成最終成功。</p></li>
+        </ol>
+        <h3 class="spaced">自主決策允許四種動作</h3>
+        <div class="loop">
+          <div><strong>search</strong><p>在批准範圍內呼叫核准搜尋。</p></div><div><strong>delegate</strong><p>依序交給選入且已驗證的文字角色。</p></div><div><strong>compose</strong><p>將指定前置成果整理為文字。</p></div><div><strong>ask</strong><p>回報仍缺資訊，交回使用者。</p></div>
+        </div>
+        <div class="limit">預設 <b>6 個動作 · 12 次模型請求 · 600 秒</b>。派發前持久計數，包含決策與工具續答；恢復不重置額度。相同動作沒有進展時停止。</div>
+        <p class="small muted spaced">主助理提出下一步，本機服務檢查身分、批准範圍、助理版本、取消、時間及收據。單一 Assistant ID 可以分階段工作，但不是獨立多模型覆核；目前 delegate 也不是並行子代理。</p>
+        <div class="code-links">程式入口 <a href="../desktop_app/agent_jobs.py">agent_jobs.py</a><a href="../desktop_app/workflows.py">workflows.py</a><a href="../desktop_app/autonomous.py">autonomous.py</a><a href="../desktop_app/graph_runner.py">graph_runner.py</a></div>
+      </div></details>
+      <details id="flow-schedule"><summary>排程：成功試跑後，另行同意持續執行</summary><div class="detail-body">
+        <ol class="timeline">
+          <li class="guard"><strong>核對成果與來源</strong><p>收到文字不是事實驗證。使用者核對成功試跑的結果，再明確同意持續傳送，選擇每日或每週台北時間。</p></li>
+          <li><strong>保存固定版本排程</strong><p>主 Store 保存流程與助理版本。畫面顯示台北時間，資料庫保留 UTC；每次注入當次日期，避免沿用首次試跑的「昨天」。</p></li>
+          <li><strong>同一個 App 程序檢查到期工作</strong><p>WebSession 約每三秒呼叫 Engine.tick。確認身分、啟停、修訂與未結束請求後，使用 schedule_id 與 scheduled_at 唯一識別 occurrence。</p></li>
+          <li><strong>沿原執行服務產生成果</strong><p>本次 task 交由 WorkflowService 處理。保存歷史與通知；中斷或未知送出不能以另排一次工作繞過恢復規則。</p></li>
+        </ol>
+        <div class="notice">App 必須開啟或留在系統匣。系統匣保留同一程序，不是 Windows service。退出、關機或睡眠時不保證到點執行；漏跑沿既有規則處理，不大量補跑。CLI 預設不啟動定時器。</div>
+        <div class="code-links">程式入口 <a href="../desktop_app/web_session.py">web_session.py</a><a href="../desktop_app/core.py">core.py</a><a href="../desktop_app/tray.py">tray.py</a><a href="../desktop_app/cli.py">cli.py</a></div>
+      </div></details>
+      <details id="flow-recovery"><summary>中斷：先查原請求，避免重複執行</summary><div class="detail-body">
+        <div class="grid two">
+          <article class="card"><span class="badge">已知 run 或完成快取</span><h3>檢查與取回</h3><p>沿原 request ID 與收據查詢狀態。核對 task、步驟、帳本及 checkpoint 後，明確取回已有結果。</p></article>
+          <article class="card"><span class="badge amber">POST 結果未知</span><h3>保留不確定狀態</h3><p>無法證明未送出時，不自動重送、不換 ID 建立副本。缺少紀錄本身不是未派發的證據。</p></article>
+          <article class="card"><span class="badge blue">已證明本機前置失敗</span><h3>受限制的重試入口</h3><p>只有持久紀錄證明 sent=false，且修訂、內容、帳本與真實背景請求條件符合時，才允許沿原識別重試。</p></article>
+          <article class="card"><span class="badge red">使用者取消</span><h3>停止後續派發</h3><p>遠端不保證立即停止。仍追蹤真正的 future；晚到回覆不能變成成功，也不能在收尾前刪除來源。</p></article>
+        </div>
+        <p class="small muted spaced">LangGraph checkpoint 只記錄控制位置，不保證 exactly-once。重新開啟 App 恢復畫面與記錄，不自動派發。遠端 thread 失效時，保留原文並由使用者預覽確認接續內容。</p>
+        <div class="code-links">程式入口 <a href="../desktop_app/dialogue_service.py">dialogue_service.py</a><a href="../desktop_app/assistants_gateway.py">assistants_gateway.py</a><a href="../desktop_app/continuity.py">continuity.py</a></div>
+      </div></details>
+    </section>
+
+    <section id="modules" class="section">
+      <div class="section-head"><span class="section-number">04</span><div><h2>要改哪裡，先看誰負責</h2><p>畫面呈現、業務狀態與遠端接線分開。下一位開發 agent 可以沿入口定位，不必把整套系統重寫。</p></div></div>
+      <div class="grid two">
+        <article class="card module"><span class="tag">Presentation</span><h3>畫面與受限橋接</h3><p>web_assets 呈現操作，WebBridge 接受固定白名單方法。Markdown 經清理後顯示，模型 HTML 不能變成可執行 UI。</p><details><summary>程式位置與修改邊界</summary><div class="detail-body code-links"><a href="../desktop_app/web_assets/index.html">web_assets/index.html</a><a href="../desktop_app/web_bridge.py">web_bridge.py</a><a href="../desktop_app/web_render.py">web_render.py</a><p>不要新增任意 bridge 方法、eval 或模型指定的本機路徑。</p></div></details></article>
+        <article class="card module"><span class="tag">Session &amp; identity</span><h3>工作區生命週期</h3><p>WebSession 組裝服務，處理登入者目錄、排程 tick 與關閉收尾。工作區鎖阻止桌面與 CLI 同時使用同一份資料。</p><details><summary>程式位置與修改邊界</summary><div class="detail-body code-links"><a href="../desktop_app/web_session.py">web_session.py</a><a href="../desktop_app/web_app.py">web_app.py</a><a href="../desktop_app/authentication.py">authentication.py</a><p>UI 執行緒只更新畫面；遠端 I/O 不長時間持有 bridge 全域鎖。</p></div></details></article>
+        <article class="card module"><span class="tag">Conversation</span><h3>對話、草稿與工作來源</h3><p>DialogueService 保存訊息與請求。WorkspaceTurns 把同一輪的建議連到唯一工作，處理補充與目前輸入目標。</p><details><summary>程式位置與修改邊界</summary><div class="detail-body code-links"><a href="../desktop_app/dialogue_service.py">dialogue_service.py</a><a href="../desktop_app/workspace_turns.py">workspace_turns.py</a><a href="../desktop_app/dialogue_store.py">dialogue_store.py</a><p>工作建議先保存，再連結工作；重開或雙擊不另建一份。對話與任務上下文不自動混用。</p></div></details></article>
+        <article class="card module"><span class="tag">Planning &amp; execution</span><h3>計畫、批准與工作狀態</h3><p>AgentJobs 處理交辦。WorkflowService 管理流程定義與步驟，Engine 管理 task、背景執行及排程，LangGraph 控制順序。</p><details><summary>程式位置與修改邊界</summary><div class="detail-body code-links"><a href="../desktop_app/agent_jobs.py">agent_jobs.py</a><a href="../desktop_app/workflows.py">workflows.py</a><a href="../desktop_app/core.py">core.py</a><a href="../desktop_app/graph_runner.py">graph_runner.py</a><p>不另建 runner、排程器或第二套成功狀態。修改預覽後重新確認。</p></div></details></article>
+        <article class="card module"><span class="tag">Provider &amp; tools</span><h3>達哥接口與核准搜尋</h3><p>Profiles 綁定助理版本、憑證與能力。AssistantsGateway 管理遠端 thread、run 與帳本。search_tools 驗證人工核准 policy。</p><details><summary>程式位置與修改邊界</summary><div class="detail-body code-links"><a href="../desktop_app/profiles.py">profiles.py</a><a href="../desktop_app/assistants_gateway.py">assistants_gateway.py</a><a href="../desktop_app/search_tools.py">search_tools.py</a><p>保留 TLS 驗證；不猜 Assistant ID 是 model，也不對未知 POST 自動 retry。</p></div></details></article>
+        <article class="card module"><span class="tag">Memory &amp; methods</span><h3>長期記憶與 Skill 修訂</h3><p>Continuity 管理確認保存的記憶與對話接續。SkillService 管理方法、必要條件、不可變修訂與相容性證據。</p><details><summary>程式位置與修改邊界</summary><div class="detail-body code-links"><a href="../desktop_app/continuity.py">continuity.py</a><a href="../desktop_app/skills.py">skills.py</a><p>只使用選入並預覽的內容。不背景分析所有聊天，不把匯入方法當授權。</p></div></details></article>
+        <article class="card module"><span class="tag">Local work</span><h3>成果、待辦與資料管理</h3><p>成果比較與品質回饋讀取既有快照。個人待辦由使用者更新狀態，和 AI task 分開。刪除先預覽再以交易處理。</p><details><summary>程式位置與修改邊界</summary><div class="detail-body code-links"><a href="../desktop_app/outcomes.py">outcomes.py</a><a href="../desktop_app/local_work.py">local_work.py</a><a href="../desktop_app/data_cleanup.py">data_cleanup.py</a><p>刪來源對話保留獨立工作與排程。存在未結束請求時，不能只按 UI 狀態認定可刪。</p></div></details></article>
+        <article class="card module"><span class="tag">Diagnostics</span><h3>能力證據與安全修復工作單</h3><p>啟用測試寫入實測能力證據。ConnectionDiagnostics 只記錄可分享的說明，support 提供輪替日誌與安全 ZIP。</p><details><summary>程式位置與修改邊界</summary><div class="detail-body code-links"><a href="../desktop_app/activation.py">activation.py</a><a href="../desktop_app/connection_diagnostics.py">connection_diagnostics.py</a><a href="../desktop_app/support.py">support.py</a><p>讀取與匯出不呼叫模型。診斷 JSON 不能授予能力，不能保存原始 HTTP、憑證或對話。</p></div></details></article>
+      </div>
+      <p class="small muted spaced">既有查詢、檔案工具、Groq 試用、舊 task 草稿及分工入口保留相容路徑。正式 Oracle 尚待接線；Groq 僅由明確試用入口使用獨立資料區，不能作為達哥失敗時的替代回覆。</p>
+    </section>
+
+    <section id="data" class="section">
+      <div class="section-head"><span class="section-number">05</span><div><h2>資料在本機，依用途分開保存</h2><p>記憶、聊天歷史、任務收據與安全日誌不是同一種資料。帳本含私人請求內容，不能直接當作診斷附件分享。</p></div></div>
+      <div class="path-box">預設資料根目錄 <code>%LOCALAPPDATA%\UnitHelperLocal</code><span class="small muted">可由 UNITHELPER_DATA_DIR 指定。選用組織登入後，工作區位於 users/&lt;subject 的 SHA256&gt;。啟動設定可能保留在資料根目錄。</span></div>
+      <div class="table-wrap"><table class="data-table"><caption>各份資料的責任</caption><thead><tr><th scope="col">位置</th><th scope="col">保存內容</th><th scope="col">使用與分享界線</th></tr></thead><tbody>
+        <tr><td><code>dialogue-v1.sqlite3</code><br><span class="small muted">DialogueStore schema 5</span></td><td>主對話、raw wire、請求、工作建議、草稿、閱讀位置、資料夾、記憶與快照、聊天及辨識證據。</td><td>私人資料。切換對話沿原上下文，舊 task 草稿仍未啟用。</td></tr>
+        <tr><td><code>local-v1.sqlite3</code><br><span class="small muted">主 Store schema 8</span></td><td>Plan、task、流程版本、Skill、交辦、排程、occurrences、成果、待辦、回報及品質回饋。</td><td>業務狀態與成果的主要來源。獨立排程不隨來源對話刪除。</td></tr>
+        <tr><td><code>assistant-sessions.sqlite3</code></td><td>遠端 thread 與 run、session、請求及回覆、工具結果與送出收據。</td><td>含私人內容，不是安全日誌；恢復時需和工作及 checkpoint 核對。</td></tr>
+        <tr><td><code>workflow-checkpoints.sqlite3</code></td><td>LangGraph 控制位置、識別及定義指紋。</td><td>不是成功證明，也不保證遠端請求只執行一次。</td></tr>
+        <tr><td><code>assistants.json</code><br><code>config.json</code><br><code>ui-preferences.json</code></td><td>助理端點與 ID、修訂、金鑰索引、工具核准、能力設定、啟動及外觀偏好。</td><td>無明文 API key 仍可能含私人連線資訊，不提交 Git。deployment.json 是選用預填。</td></tr>
+        <tr><td>Windows 認證管理員</td><td>API key，設定檔只保留索引。</td><td>認證管理員不可用就報錯，不退回明文保存。</td></tr>
+        <tr><td><code>connection-diagnostics.json</code><br><code>logs/events.jsonl</code></td><td>白名單錯誤代碼、階段、時間及安全錯誤編號，日誌有輪替。</td><td>經既有安全匯出流程預覽後分享。不得補入原始 HTTP、對話、金鑰或員工資料。</td></tr>
+      </tbody></table></div>
+      <div class="grid two spaced">
+        <article class="card"><h3>長期記憶是可管理的筆記</h3><p>由使用者選取、預覽並確認保存，預設同助理隔離。新對話固定記憶快照，修改影響後續新對話；Skill 只使用明確選入內容。這裡沒有向量庫或背景自動學習。</p></article>
+        <article class="card"><h3>備份與刪除有範圍</h3><p>schema 升級先 SQLite backup，再交易遷移。多個資料庫不保證斷電原子性，還原前關閉 App 並使用一致備份。刪除本機資料不會撤回遠端歷史、獨立副本或備份。</p></article>
+      </div>
+      <div class="notice info">AD 是選用接線。identity_mode=company 先通過原生登入與 authenticate hook，才建立 Store 和排程器；未接線就拒絕登入。本機 subject 目錄隔離不等同 Windows ACL 或完整多租戶授權。</div>
+    </section>
+
+    <section id="connection" class="section">
+      <div class="section-head"><span class="section-number">06</span><div><h2>設定三個參數，分開確認能力</h2><p>endpoint、Assistant ID、API key 決定連到哪一位助理。是否能穩定聊天、產生工作格式或搜尋，仍需各自驗證。</p></div></div>
+      <div class="grid three">
+        <article class="card"><span class="badge blue">設定</span><h3>保存連線與金鑰</h3><p>CA 預設系統信任，TLS 保持驗證。變更端點、ID 或相關設定會提升修訂，撤銷不再適用的能力與核准。</p></article>
+        <article class="card"><span class="badge amber">搜尋選用</span><h3>先固定核准工具</h3><p>讀取宣告後由人核對 function 名稱、schema 與範圍。metadata 成功不代表工具已實測；讀取失敗也不直接代表聊天不可用。</p></article>
+        <article class="card"><span class="badge">實測</span><h3>再取得同修訂證據</h3><p>明確啟動基本檢查最多 8 次合成模型請求。聊天與辨識 2 次、工作格式 3 次、自主決策 3 次，結果分開保存。</p></article>
+      </div>
+      <div class="notice ok">聊天通過就可以聊天，工作能力未通過不需要假裝全部啟用。搜尋另行明確測試，最多 4 次模型請求。收到文字不能代替核對工具收據或來源品質。</div>
+      <details><summary>為什麼達哥不能只換一個 model 名稱？</summary><div class="detail-body">
+        <p>已知成功契約是 Assistants 的 Threads、Messages、Runs。Assistant ID 在建立 run 時指定，不是 Chat Completions 的 model。遠端 thread 由 App 沿既有對話保留，不在退出時自動刪除。</p>
+        <p>出現 requires_action 時，只能執行既有核准搜尋。每批先完整驗證，最多 4 個工具 call、3 批與 600 秒，結果提交回原 run。模型不能指定新的 URL、headers 或本機命令。</p>
+        <p>主對話 auto 辨識、工作規劃與一般文字角色仍停用工具。正式服務失敗明確報錯，不偷偷換成示範或 Groq 回覆。</p>
+        <div class="code-links"><a href="ASSISTANT-INTEGRATION.md">既有 API 接線說明</a><a href="../desktop_app/assistants_gateway.py">AssistantsGateway 原始碼</a></div>
+      </div></details>
+      <details><summary>診斷如何幫助下一位開發 agent？</summary><div class="detail-body">
+        <p>設定頁按助理和修訂呈現聊天、需求辨識、工作格式、自主決策與搜尋結果。每項保留階段、白名單代碼、時間及錯誤編號，網路錯誤不直接斷言為 CA 問題。</p>
+        <p>最近兩個助理修訂的摘要以原子寫入保存，最多 128 位助理與 128 筆匿名對話錯誤關聯。重開時尚未結束的檢查顯示未完成，不補造成功。</p>
+        <p>查看、複製或匯出 Markdown 和安全 ZIP 不呼叫模型，也不自動上傳。摘要只供說明，不能授予能力。重測須指定目前修訂並明確同意，未知送出及未結束請求仍阻擋重送。</p>
+        <div class="code-links"><a href="../desktop_app/connection_diagnostics.py">connection_diagnostics.py</a><a href="../TO-AGENT.md">TO-AGENT 接手入口</a></div>
+      </div></details>
+    </section>
+
+    <section id="deployment" class="section">
+      <div class="section-head"><span class="section-number">07</span><div><h2>部署所需與目前能力邊界</h2><p>原始碼、離線 wheels 與私人工作區各自管理。下載參考文件不會改變執行中的 App。</p></div></div>
+      <div class="grid two">
+        <article class="card"><h3>交付與環境</h3><ul class="check-list"><li><strong>Windows x64 + Python 3.10.4</strong><br><span class="small muted">Python、WebView2 與 .NET 由部署者準備，不含在 wheelhouse。</span></li><li><strong>69 個正式鎖定 wheels</strong><br><span class="small muted">offline-app/packages，安裝前核對 lock、manifest 與 SHA256；缺件停止，不連外補件。</span></li><li><strong>保留既有合格環境</strong><br><span class="small muted">.venv 與 .runtime/python3104 有相依，不隨文件更新刪除或重建。</span></li></ul></article>
+        <article class="card"><h3>日常與開發入口</h3><ul class="check-list"><li><code>start-app.bat</code><br><span class="small muted">主要 WebView 工作區。</span></li><li><code>start-tk.bat</code><br><span class="small muted">Tkinter 備用介面。</span></li><li><code>qa.bat</code><br><span class="small muted">共用服務 CLI，工作區互斥，預設無排程器。</span></li></ul></article>
+      </div>
+      <div class="table-wrap spaced"><table class="status-table"><caption>有程式、能接線、已驗收，分開看</caption><thead><tr><th scope="col">範圍</th><th scope="col">目前狀態</th><th scope="col">仍需確認</th></tr></thead><tbody>
+        <tr><td>對話、計畫、自主工作、Skill、記憶與排程</td><td><span class="badge">實作存在</span></td><td>實際達哥格式、十輪續談、來源品質、排程與人工使用性。</td></tr>
+        <tr><td>達哥 adapter 與核准 pluginapi</td><td><span class="badge">實作存在</span></td><td>現場多 ID、權限與工具收據，不能只以 metadata 成功驗收。</td></tr>
+        <tr><td>AD、正式 Oracle</td><td><span class="badge amber">待接線</span></td><td>內部驗證函數、使用名單、核准 SQL、權限範圍及人工比對。</td></tr>
+        <tr><td>SMTP、任意 shell、任意檔案工具、MCP、並行子代理</td><td><span class="badge amber">尚未實作</span></td><td>逐項設計、取得授權、實作及驗收，不因文件提到就開放。</td></tr>
+        <tr><td>完整 Hermes、中央協作、遠端更新、常駐服務</td><td><span class="badge amber">未交付</span></td><td>保留需求缺口；現有核心是 QA agent 與 LangGraph。</td></tr>
+        <tr><td>正式 1.0 上線</td><td><span class="badge red">尚未驗收</span></td><td>既有完整回歸 651/652 通過，1 項剪貼簿 error 5。現場驗收亦未完成。</td></tr>
+      </tbody></table></div>
+      <p class="small muted spaced">上述測試數來自既有 rc5 驗證紀錄，不是此次文件工作重跑的結果。詳細證據與未測事項以 <a href="VALIDATION.md">VALIDATION.md</a> 為準。</p>
+    </section>
+
+    <section id="extension" class="section">
+      <div class="section-head"><span class="section-number">08</span><div><h2>擴充時，先讓一件工作順利完成</h2><p>Hermes 參考包提供設計來源。QA 保持 Python 3.10.4 與現有核心，依選定工作逐項改程式，不整套安裝另一個 runtime。</p></div></div>
+      <div class="notice ok"><strong>近期優先 H0。</strong> 解決使用者以為在做 Job，卻被導向 Skill 的問題。一位助理、零 Skill，應能完成補問、確認與查看成果。這是待實作的 UX 工作單，並非本 HTML 已修好的功能。</div>
+      <div class="grid three">
+        <article class="card"><span class="badge">H0 · 操作流程</span><h3>交辦與 Skill 分清楚</h3><p>一般工作不要求建方法。保存方法是使用者明確選擇的獨立操作。</p></article>
+        <article class="card"><span class="badge blue">H1 · 自主工作</span><h3>補問與中斷可接續</h3><p>沿原收據恢復，不重設預算、不藉新副本重送未知請求。</p></article>
+        <article class="card"><span class="badge blue">H2 · 自動工作</span><h3>試跑接上排程</h3><p>保留時間條件、人工核對及持續同意，顯示下次執行與暫停。</p></article>
+        <article class="card"><span class="badge blue">H3 · 重用</span><h3>記憶與方法可核對</h3><p>選入內容可見，工作固定修訂，長對話接續保留來源。</p></article>
+        <article class="card"><span class="badge amber">H4 · 新工具</span><h3>一次擴充一個契約</h3><p>先定參數、權限、收據與取消，再接資料庫或核准郵件能力。</p></article>
+        <article class="card"><span class="badge amber">H5 · 並行協作</span><h3>管理真正的子代理</h3><p>需設計父子狀態、總額度、取消與部分失敗，不能只增加進度卡。</p></article>
+      </div>
+      <p class="spaced">實作範圍、程式入口與驗收案例集中在 <a href="../doc/hermes/WORK-ITEMS.md">Hermes 擴充工作單</a>。<code>.github/skills</code> 裡的 qa-map、qa-fix、qa-review 是給 Copilot 的開發流程，與 App 的使用者 Skill 分開。</p>
+    </section>
+
+    <section id="references" class="section">
+      <div class="section-head"><span class="section-number">09</span><div><h2>可追溯的程式與文件</h2><p>本頁為現行架構的閱讀版。對照基準 d86f0cd，服務、資料庫與 graph 路徑已靜態核對；不代表這次重跑了整個產品。</p></div></div>
+      <div class="reference-list">
+        <a href="ARCHITECTURE.md">架構 Markdown 與六張 Mermaid 圖<small>較細的呼叫、資料與流程圖。</small></a>
+        <a href="PROJECT.md">現行產品與架構<small>功能範圍與模組責任。</small></a>
+        <a href="../TO-AGENT.md">TO-AGENT<small>現場 agent 的唯一接手入口。</small></a>
+        <a href="../COMPANY-HANDOFF.md">接手工作單<small>內部資訊、修改位置與完成條件。</small></a>
+        <a href="UX-SIMPLIFICATION.md">操作流程精簡工作單<small>優先解決 Job 與 Skill 混淆。</small></a>
+        <a href="../doc/hermes/README.md">Hermes 參考包<small>固定上游、離線文件、授權及擴充路線。</small></a>
+        <a href="DATA-USAGE.md">資料使用與刪除說明<small>本機、遠端、快照與備份的界線。</small></a>
+        <a href="DEVELOPMENT.md">開發與驗證指南<small>環境、targeted、quick 與 full 分流。</small></a>
+        <a href="../offline-app/README.md">離線部署說明<small>套件包完整性與安裝條件。</small></a>
+        <a href="VALIDATION.md">目前驗證紀錄<small>保留真實失敗與現場未測事項。</small></a>
+      </div>
+      <div class="notice info"><strong>如何閱讀這個 HTML？</strong> 從 GitHub 下載專案 ZIP，解壓後用瀏覽器開啟 docs/ARCHITECTURE.html。頁面內容、樣式與互動均可離線使用，不需要啟動 App。原始碼與其他文件連結需要保留專案相對目錄；單獨分享此 HTML 仍可讀完整正文。GitHub 檔案頁顯示原始碼，沒有在本次啟用 GitHub Pages。</div>
+    </section>
+    <footer class="footer">
+      <p>QA agent · 專案架構說明 · 2026-10-28 · 1.0.0rc5</p>
+      <p>本頁沒有外部字型、CDN、模型請求或遙測。閱讀主題只影響本頁，不改 App 設定。程式內容以 <a href="https://github.com/Li-Syuan/unit-helper-spec/tree/d86f0cde27a3083043c12c91ff049c6761bc8dfc" target="_blank" rel="noopener noreferrer">固定基準提交</a> 為準。</p>
+      <p class="print-only">列印版會展開說明細節。相對連結需搭配專案原始檔。</p>
+    </footer>
+  </main>
+</div>
+<script>
+  const themeButton = document.querySelector('#theme');
+  const expandButton = document.querySelector('#expand');
+  const printButton = document.querySelector('#print');
+  const details = [...document.querySelectorAll('details')];
+  [themeButton, expandButton, printButton].forEach(button => { button.hidden = false; });
+  themeButton.addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme !== 'dark';
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    themeButton.setAttribute('aria-pressed', String(dark));
+    themeButton.textContent = dark ? '淺色閱讀' : '深色閱讀';
+  });
+  expandButton.addEventListener('click', () => {
+    const open = !details.every(item => item.open);
+    details.forEach(item => { item.open = open; });
+  });
+  details.forEach(item => item.addEventListener('toggle', () => {
+    const expanded = details.every(detail => detail.open);
+    expandButton.textContent = expanded ? '收合全部細節' : '展開全部細節';
+    expandButton.setAttribute('aria-pressed', String(expanded));
+  }));
+  let beforePrint = null;
+  window.addEventListener('beforeprint', () => {
+    if (beforePrint !== null) return;
+    beforePrint = details.map(item => item.open);
+    details.forEach(item => { item.open = true; });
+  });
+  window.addEventListener('afterprint', () => {
+    if (beforePrint === null) return;
+    details.forEach((item, index) => { item.open = beforePrint[index]; });
+    beforePrint = null;
+  });
+  printButton.addEventListener('click', () => window.print());
+  const sectionLinks = [...document.querySelectorAll('.sidebar nav a')];
+  sectionLinks.forEach(link => link.addEventListener('click', () => {
+    sectionLinks.forEach(item => item.removeAttribute('aria-current'));
+    link.setAttribute('aria-current', 'location');
+  }));
+</script>
+</body>
+</html>
